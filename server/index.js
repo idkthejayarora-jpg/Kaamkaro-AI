@@ -29,6 +29,7 @@ app.use('/api/ai',           require('./routes/ai'));
 app.use('/api/goals',        require('./routes/goals'));
 app.use('/api/templates',    require('./routes/templates'));
 app.use('/api/webhook',      require('./routes/webhook'));
+app.use('/api/events',       require('./routes/events'));
 
 // ── Production static serving ──────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
