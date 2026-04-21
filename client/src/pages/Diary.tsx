@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSSE } from '../hooks/useSSE';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
   AlertCircle, Clock, Languages, UserPlus, Globe, Trash2, RefreshCw,
