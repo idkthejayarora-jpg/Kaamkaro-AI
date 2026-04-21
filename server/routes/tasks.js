@@ -86,6 +86,7 @@ router.patch('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     const updated = await updateOne('tasks', req.params.id, req.body);
+    broadcast('task:updated', updated);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
