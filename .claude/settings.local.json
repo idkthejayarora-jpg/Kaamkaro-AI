@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(command -v node)",
+      "Bash(/usr/local/bin/node --version)",
+      "Bash(brew list:*)",
+      "Bash(mdfind -name \"node\" -onlyin /usr/local)",
+      "Bash(mdfind \"kMDItemFSName == 'node'\")",
+      "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/setup.sh\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const f=require\\('/Users/jaigopalarora/Kaamkaro AI/server/data/users.json'\\); console.log\\(f.map\\(u=>\\({name:u.name,phone:u.phone,role:u.role}\\)\\)\\)\")",
+      "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/launch.command\")",
+      "Bash(mkdir -p \"/Users/jaigopalarora/Desktop/Kaamkaro AI.app/Contents/MacOS\")",
+      "Bash(mkdir -p \"/Users/jaigopalarora/Desktop/Kaamkaro AI.app/Contents/Resources\")",
+      "Bash(chmod +x \"/Users/jaigopalarora/Desktop/Kaamkaro AI.app/Contents/MacOS/kaamkaro\")",
+      "Bash(python3 -)",
+      "Bash(xattr -cr \"/Users/jaigopalarora/Desktop/Kaamkaro AI.app\")",
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f '/Users/jaigopalarora/Desktop/Kaamkaro AI.app')",
+      "Bash(touch \"/Users/jaigopalarora/Desktop/Kaamkaro AI.app\")",
+      "Bash(timeout 8 node index.js)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"phone\":\"admin\",\"password\":\"Admin@Kamal2024\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(xargs kill *)",
+      "Bash(npx tsc *)",
+      "Read(//Users/jaigopalarora/**)",
+      "Bash(node -e \"require\\('./routes/diary'\\); console.log\\('✅ diary.js OK'\\)\")",
+      "Bash(node -e \"require\\('./routes/diary'\\); console.log\\('✅ OK'\\)\")",
+      "Bash(node -e \"require\\('./routes/ai'\\); require\\('./routes/diary'\\); console.log\\('✅ server routes OK'\\)\")"
+    ]
+  }
+}

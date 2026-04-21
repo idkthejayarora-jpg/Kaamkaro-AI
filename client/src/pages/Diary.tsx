@@ -1,0 +1,532 @@
+import { useEffect, useState, useRef } from 'react';
+import {
+  Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
+  AlertCircle, Clock, Languages, UserPlus, Globe, Trash2,
+} from 'lucide-react';
+import { diaryAPI } from '../lib/api';
+import type { DiaryEntry } from '../types';
+
+// ── Web Speech API types (not always in TS DOM lib) ───────────────────────────
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  [index: number]: { transcript: string };
+}
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResult[];
+}
+interface ISpeechRecognition extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onstart:  (() => void) | null;
+  onend:    (() => void) | null;
+  onerror:  ((e: { error: string }) => void) | null;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+}
+declare global {
+  interface Window {
+    SpeechRecognition:        new () => ISpeechRecognition;
+    webkitSpeechRecognition:  new () => ISpeechRecognition;
+  }
+}
+
+// ── Language modes ────────────────────────────────────────────────────────────
+const VOICE_LANGS = [
+  { code: 'hi-IN',    label: 'हिंदी',    hint: 'Hindi / Hinglish' },
+  { code: 'en-IN',    label: 'English',  hint: 'English (India)'   },
+] as const;
+type VoiceLangCode = typeof VOICE_LANGS[number]['code'];
+
+const SENTIMENT_STYLES: Record<string, string> = {
+  positive: 'text-green-400 bg-green-500/10 border-green-500/20',
+  neutral:  'text-white/40 bg-white/5 border-white/10',
+  negative: 'text-red-400 bg-red-500/10 border-red-500/20',
+};
+const LANG_BADGE: Record<string, string> = {
+  hindi:    'हिं · Hindi',
+  english:  'EN · English',
+  hinglish: 'HG · Hinglish',
+};
+
+// ── Diary card ────────────────────────────────────────────────────────────────
+function DiaryCard({ entry, onDelete }: {
+  entry: DiaryEntry;
+  onDelete: (id: string) => void;
+}) {
+  const [expanded,    setExpanded]    = useState(entry.status === 'done' && entry.aiEntries.length > 0);
+  const [showOrig,    setShowOrig]    = useState(false);
+  const [deleting,    setDeleting]    = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const hasTranslation =
+    entry.translatedContent && entry.translatedContent.trim() !== entry.content.trim();
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this diary entry? This cannot be undone.')) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await diaryAPI.delete(entry.id);
+      onDelete(entry.id);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })
+        ?.response?.data?.error || 'Delete failed — please try again.';
+      setDeleteError(msg);
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      {/* ── Header row ── */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-white/25 text-xs">
+              {new Date(entry.createdAt).toLocaleDateString('en-IN', {
+                day: 'numeric', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </span>
+            {entry.detectedLanguage && (
+              <span className="badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
+                <Globe size={8} className="mr-0.5 inline" />
+                {LANG_BADGE[entry.detectedLanguage] ?? entry.detectedLanguage}
+              </span>
+            )}
+            {entry.status === 'processing' && (
+              <span className="badge badge-gold text-[10px] flex items-center gap-1">
+                <Clock size={9} className="animate-pulse" /> Analysing…
+              </span>
+            )}
+            {entry.status === 'done' && (
+              <span className="badge badge-green text-[10px]">
+                {entry.aiEntries.length} {entry.aiEntries.length === 1 ? 'entry' : 'entries'} extracted
+              </span>
+            )}
+            {entry.status === 'error' && (
+              <span className="badge badge-red text-[10px]">AI error</span>
+            )}
+          </div>
+
+          {/* Content — show translation by default, toggle to original */}
+          {hasTranslation ? (
+            <div>
+              <p className="text-white/60 text-sm leading-relaxed line-clamp-3">
+                {showOrig ? entry.content : entry.translatedContent}
+              </p>
+              <button
+                onClick={() => setShowOrig(s => !s)}
+                className="flex items-center gap-1 text-gold/50 hover:text-gold text-[10px] mt-1.5 transition-colors"
+              >
+                <Languages size={10} />
+                {showOrig ? 'Show translated' : 'Show original'}
+              </button>
+            </div>
+          ) : (
+            <p className="text-white/60 text-sm leading-relaxed line-clamp-3">{entry.content}</p>
+          )}
+
+          {deleteError && (
+            <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+              <AlertCircle size={11} />{deleteError}
+            </p>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+          {entry.status === 'done' && entry.aiEntries.length > 0 && (
+            <button
+              onClick={() => setExpanded(e => !e)}
+              className="p-1.5 text-white/30 hover:text-gold transition-colors rounded-lg"
+            >
+              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            </button>
+          )}
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all text-xs font-medium disabled:opacity-50"
+          >
+            {deleting
+              ? <div className="w-3 h-3 border border-red-400/50 border-t-red-400 rounded-full animate-spin" />
+              : <Trash2 size={12} />}
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── AI-extracted entries ── */}
+      {expanded && entry.aiEntries.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-3 animate-fade-in">
+          <p className="text-white/30 text-xs flex items-center gap-1.5">
+            <Sparkles size={11} className="text-gold" />
+            Kamal extracted these interactions:
+          </p>
+          {entry.aiEntries.map((e, i) => (
+            <div key={i} className="bg-dark-200 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="w-6 h-6 rounded-full bg-dark-100 border border-dark-50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white/40 text-[10px] font-bold">
+                      {(e.customerName || '?')[0].toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-white font-medium text-sm">{e.customerName}</span>
+                  {e.spokenName && e.spokenName !== e.customerName && (
+                    <span className="text-white/25 text-xs">(said: "{e.spokenName}")</span>
+                  )}
+                  {e.isNewCustomer ? (
+                    <span className="flex items-center gap-1 badge bg-green-500/10 text-green-400 border-green-500/20 text-[10px]">
+                      <UserPlus size={9} /> New customer added
+                    </span>
+                  ) : e.matchedCustomerName ? (
+                    <span className="badge badge-gold text-[10px]">✓ Matched</span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {e.sentiment && (
+                    <span className={`badge text-[10px] border ${SENTIMENT_STYLES[e.sentiment] ?? ''}`}>
+                      {e.sentiment}
+                    </span>
+                  )}
+                  <span className="text-white/20 text-[10px]">{Math.round((e.confidence ?? 0) * 100)}%</span>
+                </div>
+              </div>
+              {e.date && (
+                <p className="text-white/30 text-xs">
+                  {new Date(e.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </p>
+              )}
+              <p className="text-white/60 text-xs leading-relaxed">{e.notes}</p>
+              {e.originalNotes && e.originalNotes !== e.notes && (
+                <details className="mt-0.5">
+                  <summary className="text-white/25 text-[10px] cursor-pointer hover:text-white/40 select-none">
+                    Original text
+                  </summary>
+                  <p className="text-white/30 text-xs mt-1 leading-relaxed pl-2 border-l border-dark-50">
+                    {e.originalNotes}
+                  </p>
+                </details>
+              )}
+              {e.actionItems && e.actionItems.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap pt-0.5">
+                  {e.actionItems.map((a, j) => (
+                    <span key={j} className="badge badge-gray text-[10px]">→ {a}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Voice hook ────────────────────────────────────────────────────────────────
+// Robust: auto-restarts on unexpected stop, uses refs to avoid stale closures
+function useVoice(onFinalText: (text: string) => void) {
+  const [listening,   setListening]   = useState(false);
+  const [interimText, setInterimText] = useState('');
+  const [voiceLang,   setVoiceLang]   = useState<VoiceLangCode>('hi-IN');
+  const [hasVoice,    setHasVoice]    = useState(false);
+
+  // Refs — so callbacks always see current values without re-creating recognition
+  const recRef          = useRef<ISpeechRecognition | null>(null);
+  const listeningRef    = useRef(false);
+  const stoppingRef     = useRef(false);  // true = user intentionally stopped
+  const accumRef        = useRef('');     // confirmed (isFinal) text this session
+  const voiceLangRef    = useRef(voiceLang);
+  const onFinalRef      = useRef(onFinalText);
+
+  useEffect(() => { voiceLangRef.current = voiceLang; }, [voiceLang]);
+  useEffect(() => { onFinalRef.current   = onFinalText; }, [onFinalText]);
+
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    setHasVoice(!!SR);
+  }, []);
+
+  const getSR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const buildRecognition = () => {
+    const SR = getSR();
+    if (!SR) return null;
+    const rec = new SR();
+    rec.lang            = voiceLangRef.current;
+    rec.continuous      = false;   // we handle restart ourselves — more reliable
+    rec.interimResults  = true;
+    rec.maxAlternatives = 1;
+
+    rec.onstart = () => {
+      // don't setListening here — already set in startListening
+    };
+
+    rec.onresult = (ev: SpeechRecognitionEvent) => {
+      let fin = '', intr = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const r = ev.results[i];
+        if (r.isFinal) fin  += r[0].transcript + ' ';
+        else           intr += r[0].transcript;
+      }
+      if (fin) accumRef.current += fin;
+      setInterimText(intr);
+    };
+
+    rec.onerror = (e: { error: string }) => {
+      // 'no-speech' and 'aborted' are normal; surface anything else
+      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        console.warn('[Voice] error:', e.error);
+      }
+      // onerror is always followed by onend, so handle restart there
+    };
+
+    rec.onend = () => {
+      setInterimText('');
+      if (listeningRef.current && !stoppingRef.current) {
+        // Chrome stopped us unexpectedly — restart immediately
+        try {
+          recRef.current = buildRecognition();
+          recRef.current?.start();
+        } catch { /* ignore */ }
+        return;
+      }
+      // Intentional stop — commit all accumulated text
+      listeningRef.current = false;
+      setListening(false);
+      const text = accumRef.current.trim();
+      accumRef.current = '';
+      if (text) onFinalRef.current(text);
+    };
+
+    return rec;
+  };
+
+  const start = () => {
+    if (!getSR() || listeningRef.current) return;
+    stoppingRef.current  = false;
+    listeningRef.current = true;
+    accumRef.current     = '';
+    setListening(true);
+    setInterimText('');
+    recRef.current = buildRecognition();
+    try { recRef.current?.start(); }
+    catch { listeningRef.current = false; setListening(false); }
+  };
+
+  const stop = () => {
+    stoppingRef.current  = true;
+    listeningRef.current = false;
+    recRef.current?.stop();
+    // onend fires and commits text
+  };
+
+  const toggle = () => {
+    if (listeningRef.current) stop(); else start();
+  };
+
+  return { listening, interimText, voiceLang, setVoiceLang, hasVoice, start, stop, toggle };
+}
+
+// ── Main Diary page ───────────────────────────────────────────────────────────
+export default function Diary() {
+  const [entries,    setEntries]    = useState<DiaryEntry[]>([]);
+  const [content,    setContent]    = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error,      setError]      = useState('');
+  const [loading,    setLoading]    = useState(true);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Append voice text to existing content
+  const handleVoiceText = (text: string) => {
+    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + text : text);
+  };
+
+  const voice = useVoice(handleVoiceText);
+
+  useEffect(() => {
+    diaryAPI.list().then(d => { setEntries(d); setLoading(false); });
+    pollRef.current = setInterval(() => {
+      setEntries(prev => {
+        if (prev.some(e => e.status === 'processing')) {
+          diaryAPI.list().then(setEntries);
+        }
+        return prev;
+      });
+    }, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  const handleSubmit = async () => {
+    const text = content.trim();
+    if (!text) { setError('Write or speak something first'); return; }
+    if (voice.listening) voice.stop();
+    setError('');
+    setSubmitting(true);
+    try {
+      const entry = await diaryAPI.create(text);
+      setEntries(prev => [entry, ...prev]);
+      setContent('');
+    } catch {
+      setError('Failed to save entry. Try again.');
+    } finally { setSubmitting(false); }
+  };
+
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Diary</h1>
+        <p className="text-white/30 text-sm mt-1">
+          Hindi, English, ya Hinglish — kuch bhi likho ya bolo. Kamal AI customers automatically detect aur add karega.
+        </p>
+      </div>
+
+      {/* ── Composer ─────────────────────────────────────────────────────── */}
+      <div className="card border-gold/15 space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className="text-gold" />
+          <span className="text-white/50 text-sm font-medium">Today's Entry</span>
+          <span className="text-white/20 text-xs ml-auto">{wordCount} words</span>
+        </div>
+
+        <textarea
+          className="w-full bg-dark-200 border border-dark-50 text-white placeholder-white/20 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none focus:outline-none focus:border-gold/40 transition-colors min-h-[140px]"
+          placeholder={
+            `Aaj Rahul Sharma se baat ki, wo interested lag raha tha proposal mein...\n\n` +
+            `Tip: Customer ka naam mention karo — Kamal AI automatically detect aur link karega.`
+          }
+          value={content}
+          onChange={e => setContent(e.target.value)}
+        />
+
+        {/* Live interim transcript */}
+        {voice.listening && (
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-red-500/5 border border-red-500/20 rounded-xl">
+            <div className="flex items-end gap-0.5 flex-shrink-0">
+              {[3,5,7,5,3].map((h, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 bg-red-400 rounded-full animate-bounce"
+                  style={{ height: `${h}px`, animationDelay: `${i * 100}ms` }}
+                />
+              ))}
+            </div>
+            <span className="text-red-400 text-xs font-medium">Recording…</span>
+            {voice.interimText && (
+              <span className="text-white/40 text-xs italic truncate">{voice.interimText}</span>
+            )}
+          </div>
+        )}
+
+        {error && (
+          <p className="flex items-center gap-2 text-red-400 text-sm">
+            <AlertCircle size={14} />{error}
+          </p>
+        )}
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Language selector — only show when voice is available */}
+          {voice.hasVoice && (
+            <div className="flex rounded-xl border border-dark-50 overflow-hidden">
+              {VOICE_LANGS.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => { if (!voice.listening) voice.setVoiceLang(l.code); }}
+                  disabled={voice.listening}
+                  title={l.hint}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    voice.voiceLang === l.code
+                      ? 'bg-gold text-dark-500'
+                      : 'text-white/30 hover:text-white'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {voice.hasVoice && (
+            <button
+              onClick={voice.toggle}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                voice.listening
+                  ? 'bg-red-500 border-red-500 text-white'
+                  : 'border-dark-50 text-white/50 hover:text-white hover:border-gold/40'
+              }`}
+            >
+              {voice.listening ? <><MicOff size={14} /> Stop</> : <><Mic size={14} /> Speak</>}
+            </button>
+          )}
+
+          <button
+            onClick={handleSubmit}
+            disabled={!content.trim() || submitting}
+            className="btn-primary flex items-center gap-2 ml-auto"
+          >
+            {submitting
+              ? <><div className="w-4 h-4 border-2 border-dark-500/30 border-t-dark-500 rounded-full animate-spin" />Saving…</>
+              : <><Send size={14} />Save & Analyse</>}
+          </button>
+        </div>
+
+        {!voice.hasVoice && (
+          <p className="text-white/15 text-xs">Voice input not available in this browser (use Chrome for best results)</p>
+        )}
+      </div>
+
+      {/* ── How it works ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { n: '1', title: 'Bolo ya likho',     desc: 'Hindi, Hinglish, English — mic button se bolein ya type karein' },
+          { n: '2', title: 'AI analyse karta',  desc: 'Kamal customer names dhundta hai — typos aur Hinglish spellings bhi samajh leta hai' },
+          { n: '3', title: 'Auto link + create', desc: 'Match mile to link hota hai, na mile to naya customer khud bana deta hai' },
+        ].map(({ n, title, desc }) => (
+          <div key={n} className="bg-dark-300 border border-dark-50 rounded-xl p-4 flex gap-3">
+            <div className="w-6 h-6 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-gold text-[10px] font-bold">{n}</span>
+            </div>
+            <div>
+              <p className="text-white text-sm font-medium">{title}</p>
+              <p className="text-white/25 text-xs mt-0.5">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Entry history ─────────────────────────────────────────────────── */}
+      {!loading && (
+        <div>
+          <h2 className="text-white font-semibold mb-3">
+            Entry History
+            {entries.length > 0 && <span className="text-white/25 font-normal text-sm ml-2">({entries.length})</span>}
+          </h2>
+          {entries.length === 0 ? (
+            <div className="card text-center py-12">
+              <p className="text-white/25 text-sm">Koi entry nahi abhi. Upar likhen ya bolein.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {entries.map(e => (
+                <DiaryCard
+                  key={e.id}
+                  entry={e}
+                  onDelete={id => setEntries(prev => prev.filter(x => x.id !== id))}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

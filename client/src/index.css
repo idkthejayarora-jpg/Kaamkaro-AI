@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Color tokens (dark mode = default) ───────────────────────────────────────*/
+:root {
+  --gold: #D4AF37;
+  --gold-light: #E8C84B;
+  --gold-dark: #B8961E;
+
+  /* Dark theme (default) */
+  --color-dark:     10  10  10;   /* #0A0A0A */
+  --color-dark-50:  42  42  42;   /* #2A2A2A */
+  --color-dark-100: 31  31  31;   /* #1F1F1F */
+  --color-dark-200: 26  26  26;   /* #1A1A1A */
+  --color-dark-300: 20  20  20;   /* #141414 */
+  --color-dark-400: 15  15  15;   /* #0F0F0F */
+  --color-dark-500: 10  10  10;   /* #0A0A0A */
+}
+
+/* ── Light mode overrides ──────────────────────────────────────────────────────*/
+html.light {
+  --color-dark:     244 246 248;  /* page bg */
+  --color-dark-50:  209 213 219;  /* borders */
+  --color-dark-100: 229 231 235;  /* hover bg */
+  --color-dark-200: 243 244 246;  /* input bg */
+  --color-dark-300: 255 255 255;  /* card bg */
+  --color-dark-400: 248 249 251;  /* sidebar bg */
+  --color-dark-500: 241 243 247;  /* page bg */
+}
+
+/* Text color overrides in light mode */
+html.light .text-white          { color: #111827 !important; }
+html.light .text-white\/90      { color: rgba(17,24,39,0.9) !important; }
+html.light .text-white\/80      { color: rgba(17,24,39,0.8) !important; }
+html.light .text-white\/70      { color: rgba(17,24,39,0.7) !important; }
+html.light .text-white\/60      { color: rgba(17,24,39,0.6) !important; }
+html.light .text-white\/50      { color: rgba(17,24,39,0.5) !important; }
+html.light .text-white\/40      { color: rgba(17,24,39,0.4) !important; }
+html.light .text-white\/30      { color: rgba(17,24,39,0.3) !important; }
+html.light .text-white\/25      { color: rgba(17,24,39,0.25) !important; }
+html.light .text-white\/20      { color: rgba(17,24,39,0.2) !important; }
+
+/* Keep gold text slightly darker on light bg for contrast */
+html.light .text-gold { color: #a07b00 !important; }
+html.light .text-gold\/60 { color: rgba(160,123,0,0.6) !important; }
+html.light .text-gold\/40 { color: rgba(160,123,0,0.4) !important; }
+
+/* Btn-primary: keep text dark on gold bg */
+html.light .btn-primary { color: #111827 !important; }
+
+/* Sidebar active state in light */
+html.light .sidebar-link.active { background: rgba(160,123,0,0.12) !important; color: #a07b00 !important; }
+
+/* Placeholder text */
+html.light ::placeholder { color: rgba(17,24,39,0.35) !important; }
+
+/* Recharts in light mode */
+html.light .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+}
+html.light .recharts-cartesian-grid-horizontal line,
+html.light .recharts-cartesian-grid-vertical line {
+  stroke: #e5e7eb !important;
+}
+
+/* Scrollbar in light mode */
+html.light ::-webkit-scrollbar-track { background: #f1f5f9; }
+html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+
+/* ── Base ─────────────────────────────────────────────────────────────────────*/
+@layer base {
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply bg-dark-500 text-white font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  * { @apply border-dark-50; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-dark-300; }
+  ::-webkit-scrollbar-thumb { @apply bg-dark-50 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+  ::selection { background: rgba(212,175,55,0.3); color: #fff; }
+}
+
+@layer components {
+  .card {
+    @apply bg-dark-300 border border-dark-50 rounded-xl p-5 transition-all duration-200;
+  }
+  .card:hover {
+    @apply border-gold/30;
+  }
+
+  .btn-primary {
+    @apply bg-gold text-dark-500 font-semibold px-4 py-2 rounded-lg
+           hover:bg-gold-400 active:scale-95 transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply border border-gold/40 text-gold font-medium px-4 py-2 rounded-lg
+           hover:bg-gold/10 active:scale-95 transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply text-white/60 font-medium px-4 py-2 rounded-lg
+           hover:bg-dark-50 hover:text-white active:scale-95 transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply bg-red-500/10 text-red-400 border border-red-500/20 font-medium px-4 py-2 rounded-lg
+           hover:bg-red-500/20 active:scale-95 transition-all duration-150;
+  }
+
+  .input {
+    @apply w-full bg-dark-200 border border-dark-50 text-white placeholder-white/30
+           rounded-lg px-4 py-2.5 text-sm
+           focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30
+           transition-all duration-150;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-green  { @apply bg-green-500/15 text-green-400; }
+  .badge-red    { @apply bg-red-500/15 text-red-400; }
+  .badge-gold   { @apply bg-gold/15 text-gold; }
+  .badge-gray   { @apply bg-white/5 text-white/40; }
+
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  .gold-glow {
+    box-shadow: 0 0 20px rgba(212,175,55,0.15);
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+           text-white/50 hover:text-white hover:bg-dark-50 transition-all duration-150;
+  }
+  .sidebar-link.active {
+    @apply text-gold bg-gold/10 hover:bg-gold/15;
+  }
+}
+
+/* ── Recharts overrides ────────────────────────────────────────────────────────*/
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #1A1A1A !important;
+  border: 1px solid #2A2A2A !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+}
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #1F1F1F !important;
+}
+
+/* ── Loading spinner ───────────────────────────────────────────────────────────*/
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #1A1A1A 25%, #222 50%, #1A1A1A 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Voice pulse animation ─────────────────────────────────────────────────────*/
+@keyframes voicePulse {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+.voice-bar { animation: voicePulse 0.8s ease-in-out infinite; }
+.voice-bar:nth-child(2) { animation-delay: 0.1s; }
+.voice-bar:nth-child(3) { animation-delay: 0.2s; }
+.voice-bar:nth-child(4) { animation-delay: 0.3s; }
+.voice-bar:nth-child(5) { animation-delay: 0.4s; }

@@ -1,0 +1,120 @@
+import axios from 'axios';
+
+const api = axios.create({ baseURL: '/api', timeout: 30000 });
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('kk_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('kk_token');
+      localStorage.removeItem('kk_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
+export const authAPI = {
+  login: (phone: string, password: string) =>
+    api.post('/auth/login', { phone, password }).then(r => r.data),
+  me: () => api.get('/auth/me').then(r => r.data),
+};
+
+export const staffAPI = {
+  list: () => api.get('/staff').then(r => r.data),
+  get:  (id: string) => api.get(`/staff/${id}`).then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/staff', data).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/staff/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/staff/${id}`).then(r => r.data),
+  resetPassword: (id: string, newPassword: string) =>
+    api.post(`/staff/${id}/reset-password`, { newPassword }).then(r => r.data),
+  setAvailability: (id: string, availability: string) =>
+    api.patch(`/staff/${id}/availability`, { availability }).then(r => r.data),
+  getPerformance: (id: string) => api.get(`/staff/${id}/performance`).then(r => r.data),
+};
+
+export const customersAPI = {
+  list: () => api.get('/customers').then(r => r.data),
+  get:  (id: string) => api.get(`/customers/${id}`).then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/customers', data).then(r => r.data),
+  bulkImport: (customers: Record<string, unknown>[]) =>
+    api.post('/customers/bulk-import', { customers }).then(r => r.data),
+  bulkActions: (ids: string[], action: string, value?: string) =>
+    api.post('/customers/bulk-actions', { ids, action, value }).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/customers/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/customers/${id}`).then(r => r.data),
+};
+
+export const vendorsAPI = {
+  list: () => api.get('/vendors').then(r => r.data),
+  get:  (id: string) => api.get(`/vendors/${id}`).then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/vendors', data).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/vendors/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/vendors/${id}`).then(r => r.data),
+};
+
+export const interactionsAPI = {
+  list: (params?: { customerId?: string; staffId?: string }) =>
+    api.get('/interactions', { params }).then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/interactions', data).then(r => r.data),
+  delete: (id: string) => api.delete(`/interactions/${id}`).then(r => r.data),
+};
+
+export const tasksAPI = {
+  list: (params?: { completed?: boolean; staffId?: string }) =>
+    api.get('/tasks', { params }).then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/tasks', data).then(r => r.data),
+  complete: (id: string) => api.patch(`/tasks/${id}/complete`).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/tasks/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/tasks/${id}`).then(r => r.data),
+};
+
+export const diaryAPI = {
+  list: () => api.get('/diary').then(r => r.data),
+  get:  (id: string) => api.get(`/diary/${id}`).then(r => r.data),
+  create: (content: string, date?: string) =>
+    api.post('/diary', { content, date }).then(r => r.data),
+  delete: (id: string) => api.delete(`/diary/${id}`).then(r => r.data),
+};
+
+export const exportAPI = {
+  download: () => api.get('/export', { responseType: 'blob' }).then(r => r.data),
+};
+
+export const auditAPI = {
+  list: (params?: { resource?: string; userId?: string; limit?: number }) =>
+    api.get('/audit', { params }).then(r => r.data),
+};
+
+export const goalsAPI = {
+  list: () => api.get('/goals').then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/goals', data).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/goals/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/goals/${id}`).then(r => r.data),
+};
+
+export const templatesAPI = {
+  list: () => api.get('/templates').then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/templates', data).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/templates/${id}`, data).then(r => r.data),
+  use: (id: string) => api.post(`/templates/${id}/use`).then(r => r.data),
+  delete: (id: string) => api.delete(`/templates/${id}`).then(r => r.data),
+};
+
+export const aiAPI = {
+  chat: (message: string, history: { role: string; content: string }[]) =>
+    api.post('/ai/kamal', { message, history }).then(r => r.data),
+  recommendations: () => api.get('/ai/recommendations').then(r => r.data),
+  dashboardSummary: () => api.get('/ai/dashboard-summary').then(r => r.data),
+  weeklyReport: () => api.get('/ai/weekly-report').then(r => r.data),
+  sentimentTrend: (customerId: string) => api.get(`/ai/sentiment-trend/${customerId}`).then(r => r.data),
+  leaderboard: () => api.get('/ai/leaderboard').then(r => r.data),
+};
+
+export default api;

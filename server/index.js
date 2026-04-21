@@ -1,0 +1,92 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
+const { readDB, writeDB } = require('./utils/db');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// ── Middleware ─────────────────────────────────────────────────────────────────
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ── Routes ─────────────────────────────────────────────────────────────────────
+app.use('/api/auth',         require('./routes/auth'));
+app.use('/api/staff',        require('./routes/staff'));
+app.use('/api/customers',    require('./routes/customers'));
+app.use('/api/vendors',      require('./routes/vendors'));
+app.use('/api/interactions', require('./routes/interactions'));
+app.use('/api/tasks',        require('./routes/tasks'));
+app.use('/api/diary',        require('./routes/diary'));
+app.use('/api/export',       require('./routes/export'));
+app.use('/api/audit',        require('./routes/audit'));
+app.use('/api/ai',           require('./routes/ai'));
+app.use('/api/goals',        require('./routes/goals'));
+app.use('/api/templates',    require('./routes/templates'));
+app.use('/api/webhook',      require('./routes/webhook'));
+
+// ── Production static serving ──────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
+
+// ── First-run seed ────────────────────────────────────────────────────────────
+// Only creates the admin account if no users exist.
+// All other data starts empty — add your own staff, customers, and vendors.
+async function seed() {
+  // Ensure data dir exists
+  const path = require('path');
+  const fs   = require('fs-extra');
+  const dataDir = path.join(__dirname, 'data');
+  await fs.ensureDir(dataDir);
+
+  // Create admin account if no users exist
+  const users = await readDB('users');
+  if (!Array.isArray(users) || users.length === 0) {
+    const hashed = await bcrypt.hash('Admin@Kamal2024', 10);
+    await writeDB('users', [{
+      id: uuidv4(),
+      name: 'Admin',
+      phone: 'admin',
+      password: hashed,
+      role: 'admin',
+      email: '',
+      joinDate: new Date().toISOString(),
+      avatar: 'A',
+      createdAt: new Date().toISOString(),
+    }]);
+    console.log('✅ Admin account created');
+    console.log('   Phone:    admin');
+    console.log('   Password: Admin@Kamal2024');
+    console.log('   ⚠️  Change this password after first login\n');
+  } else {
+    console.log(`✅ Found ${users.length} admin user(s)`);
+  }
+
+  // Ensure all other collections exist (never overwrite existing data)
+  const collections = ['staff', 'customers', 'vendors', 'performance', 'interactions', 'tasks', 'diary', 'auditLog', 'goals', 'templates'];
+  for (const col of collections) {
+    const filePath = path.join(dataDir, `${col}.json`);
+    const exists = await fs.pathExists(filePath);
+    if (!exists) {
+      await writeDB(col, []);
+      console.log(`  Created empty collection: ${col}`);
+    }
+  }
+}
+
+// ── Start ──────────────────────────────────────────────────────────────────────
+seed().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Kaamkaro AI → http://localhost:${PORT}`);
+    console.log(`📁 Backups  → ~/Desktop/KaamkaroAI_Backup/\n`);
+  });
+}).catch(console.error);

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "name": "Soni (AD)",
+    "phone": "9811907375",
+    "password": "$2a$10$q.mYqovKZrhsb.M11tIVUuPAayhpcWAlvMP6gFlfY/S5Xif3q9sYa",
+    "role": "staff",
+    "email": "",
+    "avatar": "S(",
+    "customers": [],
+    "active": true,
+    "joinDate": "2026-04-18T11:44:34.152Z",
+    "createdAt": "2026-04-18T11:44:34.152Z",
+    "streakData": {
+      "currentStreak": 1,
+      "lastActivityDate": "2026-04-21",
+      "longestStreak": 1
+    },
+    "availability": "available",
+    "updatedAt": "2026-04-21T13:01:02.683Z"
+  }
+]

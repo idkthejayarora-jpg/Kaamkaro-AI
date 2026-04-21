@@ -1,0 +1,468 @@
+✅ Found 1 admin user(s)
+
+🚀 Kaamkaro AI → http://localhost:3001
+📁 Backups  → ~/Desktop/KaamkaroAI_Backup/
+
+✅ Found 1 admin user(s)
+
+🚀 Kaamkaro AI → http://localhost:3001
+📁 Backups  → ~/Desktop/KaamkaroAI_Backup/
+
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGvVybUMCv8w7nSiEii9"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc6b0a68c8d7e5-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:33:36 GMT',
+    'request-id': 'req_011CaGvVybUMCv8w7nSiEii9',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=12',
+    'set-cookie': '_cfuvid=fjemb6ttUsG1YaYeWQpKDQVSmj7TVPZytVmifmjdais-1776774816.3857067-1.0.1.1-7IB_UsRwbS3jIraKnbHmtLL5iEkDm3j0O3kemgRD8pg; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '8',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGvVybUMCv8w7nSiEii9',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGvVybUMCv8w7nSiEii9'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGvWnUGPnx3Fn4JXCtcR"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc6b4efa65caa8-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:33:47 GMT',
+    'request-id': 'req_011CaGvWnUGPnx3Fn4JXCtcR',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=9',
+    'set-cookie': '_cfuvid=6HKX5DIeXSDtegzKEjaQTpTrsOjLh.p8kVHc8iqPAzM-1776774827.3574967-1.0.1.1-fE8hJht34FiE4Qm.3A5ept.nbX1g_NepZWXs4KkNO7o; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '7',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGvWnUGPnx3Fn4JXCtcR',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGvWnUGPnx3Fn4JXCtcR'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGvXRw2e4zrAyCQvCZo8"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc6b85bc2c22a8-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:33:56 GMT',
+    'request-id': 'req_011CaGvXRw2e4zrAyCQvCZo8',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=7',
+    'set-cookie': '_cfuvid=DD_Zv57FA4RtNxMBQEMXXSCUPDp792_7ct69YRNNPQI-1776774836.117725-1.0.1.1-ID2r1h6xeF6GFO02kJYIFf8P1XAMxI1z0QdBEKrHyk8; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '5',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGvXRw2e4zrAyCQvCZo8',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGvXRw2e4zrAyCQvCZo8'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGvXeekeZ1T3dYt1Bztm"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc6b98493122a8-DEL',
+    connection: 'keep-alive',
+    'content-length': '130',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:33:59 GMT',
+    'request-id': 'req_011CaGvXeekeZ1T3dYt1Bztm',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=32',
+    'set-cookie': '_cfuvid=MVyPhnJwf_wiMvuSkqkVyYCu9rGlwkhMTR2rXaPRMWU-1776774839.0811987-1.0.1.1-pLejuzv8kP.vi0DHltg8FD7M7bjzra_KZAMOzPQrnDs; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-envoy-upstream-service-time': '25',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGvXeekeZ1T3dYt1Bztm',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGvXeekeZ1T3dYt1Bztm'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwAvzYHbGeYJ1dpDmpd"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc77f15c5f5988-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:42:25 GMT',
+    'request-id': 'req_011CaGwAvzYHbGeYJ1dpDmpd',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=14',
+    'set-cookie': '_cfuvid=1.bwvEtIdfVve5vI8MJFKilrG9YWfWJrzevhJGmpsjY-1776775344.8535793-1.0.1.1-Rbpx3SXfY72jdIV_Z6gEIuZq6YA_NAoNsN_ttF7uPGM; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '11',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwAvzYHbGeYJ1dpDmpd',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwAvzYHbGeYJ1dpDmpd'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwBFKrrsE1AkLJpLqKy"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:401:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc780c1c625988-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:42:29 GMT',
+    'request-id': 'req_011CaGwBFKrrsE1AkLJpLqKy',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=23',
+    'set-cookie': '_cfuvid=ZzZKc1H6blpE1.dzcaKTtWJFHdeiJo_Odpcjh8pZQcI-1776775349.137724-1.0.1.1-V5Mpix5A9CXa4OzWGWdrsan8XQeM7yf_YFLbXNa0GwQ; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '19',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwBFKrrsE1AkLJpLqKy',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwBFKrrsE1AkLJpLqKy'
+  }
+}
+Kamal error: AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwVRrsJfLnjCkitRK1d"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:124:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc7e11ac7259de-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:46:36 GMT',
+    'request-id': 'req_011CaGwVRrsJfLnjCkitRK1d',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=17',
+    'set-cookie': '_cfuvid=Kf4Ca7RVS1101L2SQPYRKXJVSV7lDaBqa_YlN2yDpR0-1776775595.7850983-1.0.1.1-o.DpfzN.RCBYCL7oEpJSmklvn4fL7CL8B4iVQCYTAoI; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '16',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwVRrsJfLnjCkitRK1d',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwVRrsJfLnjCkitRK1d'
+  }
+}
+Kamal error: AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwVtxnCQNZxFHTgXNLG"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:124:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc7e394f5c4bda-DEL',
+    connection: 'keep-alive',
+    'content-length': '130',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:46:42 GMT',
+    'request-id': 'req_011CaGwVtxnCQNZxFHTgXNLG',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=26',
+    'set-cookie': '_cfuvid=1DK5JMHy8IcJa3fl66XGHk34icFv6lnoIj01DL28ROE-1776775602.1243236-1.0.1.1-hWtEgxYAfCs4yBtwVEdMT2SrL1ejO5TNDq2sOPp4TS0; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-envoy-upstream-service-time': '24',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwVtxnCQNZxFHTgXNLG',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwVtxnCQNZxFHTgXNLG'
+  }
+}
+Kamal error: AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwWYfvPZLFSeD2D9pV5"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:124:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc7e707d14dde2-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:46:51 GMT',
+    'request-id': 'req_011CaGwWYfvPZLFSeD2D9pV5',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=9',
+    'set-cookie': '_cfuvid=6Ul919T.WkcpJOwE92CJjV47Ua5vD0UX.LgDdpRofQY-1776775610.9517086-1.0.1.1-oSej6smZAUIwnd4YMjCYoETkU1idCPFPSI3TGG0Ripo; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '6',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwWYfvPZLFSeD2D9pV5',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwWYfvPZLFSeD2D9pV5'
+  }
+}
+Kamal error: AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwctTiMCQ2zHgQZRACK"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:124:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc808a1bd34723-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:48:17 GMT',
+    'request-id': 'req_011CaGwctTiMCQ2zHgQZRACK',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=9',
+    'set-cookie': '_cfuvid=0cHqqJipfwWVS3p1BbXb3srFhiKtOELWdPH1FBewTYo-1776775696.9760685-1.0.1.1-nzXHpBDZ3YaziGzxcJ5_vAyrY7QzBHtw7KhLMFeVDic; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '8',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwctTiMCQ2zHgQZRACK',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwctTiMCQ2zHgQZRACK'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwquLQsE4mHcbMMjCKU"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc84d8ccdc976b-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:51:13 GMT',
+    'request-id': 'req_011CaGwquLQsE4mHcbMMjCKU',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=147',
+    'set-cookie': '_cfuvid=T02WTdzS8A8R9c3AvcVasE3eeUR7jAyZvduSfyAdeXM-1776775873.4054024-1.0.1.1-6z6r4VSNjQm_V77skIvedsF5.LfnPHAQ.46FAuTIAOQ; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '145',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwquLQsE4mHcbMMjCKU',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwquLQsE4mHcbMMjCKU'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGwqztHg6UV2qNmoyv18"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:401:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc84e1baa7976b-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:51:15 GMT',
+    'request-id': 'req_011CaGwqztHg6UV2qNmoyv18',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=9',
+    'set-cookie': '_cfuvid=wpqNvp5mdbftMz.Yy4GqSz6rsBr3NRBYLb18vd.iHw4-1776775874.8350902-1.0.1.1-I7B54IuaGNrs7SObyVW1HHALFkQGb9FMhbUoJBnIaKE; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '6',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGwqztHg6UV2qNmoyv18',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGwqztHg6UV2qNmoyv18'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGws9bwCzGJPpsgRRF5Y"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc85433d5e23e2-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 12:51:30 GMT',
+    'request-id': 'req_011CaGws9bwCzGJPpsgRRF5Y',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=12',
+    'set-cookie': '_cfuvid=b3_i1e8Seum3Vp6KqR1wmaji2LM6Xbdh1MjqK.binFA-1776775890.4315765-1.0.1.1-4Z_9Pbgl02IaquBfhKvjn4i8novSvesfyXhMLMvO1Hs; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '9',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGws9bwCzGJPpsgRRF5Y',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGws9bwCzGJPpsgRRF5Y'
+  }
+}
+AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CaGy9WEiuUe3yQTj7F5WN"}
+    at APIError.generate (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/error.js:44:20)
+    at Anthropic.makeStatusError (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:282:33)
+    at Anthropic.makeRequest (/Users/jaigopalarora/Kaamkaro AI/server/node_modules/@anthropic-ai/sdk/core.js:326:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js:290:20 {
+  status: 401,
+  headers: {
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9efc9de39b615790-DEL',
+    connection: 'keep-alive',
+    'content-encoding': 'gzip',
+    'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+    'content-type': 'application/json',
+    date: 'Tue, 21 Apr 2026 13:08:19 GMT',
+    'request-id': 'req_011CaGy9WEiuUe3yQTj7F5WN',
+    server: 'cloudflare',
+    'server-timing': 'x-originResponse;dur=13',
+    'set-cookie': '_cfuvid=mM2MIk8D_x7.V_t9EvTsbmQOodmmx41KNkpaoEnq.Gk-1776776899.1356344-1.0.1.1-JUie2Obg5oj1WEQrSbvnc1XzEvHySg.fXMetGtNMTTI; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'transfer-encoding': 'chunked',
+    vary: 'Accept-Encoding',
+    'x-envoy-upstream-service-time': '11',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'false'
+  },
+  request_id: 'req_011CaGy9WEiuUe3yQTj7F5WN',
+  error: {
+    type: 'error',
+    error: { type: 'authentication_error', message: 'invalid x-api-key' },
+    request_id: 'req_011CaGy9WEiuUe3yQTj7F5WN'
+  }
+}

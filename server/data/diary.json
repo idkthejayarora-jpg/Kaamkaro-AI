@@ -1,0 +1,146 @@
+[
+  {
+    "id": "9192fa11-dcb7-437b-b4d3-6c7a84b5b514",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "content": "We Viva Viva wedding Viva wedding collection Viva wedding collection Rajasthan Viva wedding collection Rajasthan Viva wedding collection Rajasthan Viva wedding collection Rajasthan a new Viva wedding collection Rajasthan a new party Viva wedding collection Rajasthan a new party came Viva wedding collection Rajasthan a new party came to Viva wedding collection Rajasthan a new party came to shop Viva wedding collection Rajasthan a new party came to shop and Viva wedding collection Rajasthan a new party came to shop and Viva wedding collection Rajasthan a new party came to shop and Viva wedding collection Rajasthan a new party came to shop and bought Viva wedding collection Rajasthan a new party came to shop and bought a Viva wedding collection Rajasthan a new party came to shop and bought a D Viva wedding collection Rajasthan a new party came to shop and bought a decent Viva wedding collection Rajasthan a new party came to shop and bought a decent Viva wedding collection Rajasthan a new party came to shop and bought a decent",
+    "date": "2026-04-21",
+    "status": "done",
+    "aiEntries": [
+      {
+        "customerName": "General",
+        "customerId": null,
+        "matchedCustomerName": null,
+        "date": null,
+        "notes": "We Viva Viva wedding Viva wedding collection Viva wedding collection Rajasthan Viva wedding collection Rajasthan Viva wedding collection Rajasthan Viva wedding collection Rajasthan a new Viva wedding collection Rajasthan a new party Viva wedding collection Rajasthan a new party came Viva wedding collection Rajasthan a new party came to Viva wedding collection Rajasthan a new party came to shop Viva wedding collection Rajasthan a new party came to shop and Viva wedding collection Rajasthan a new party came to shop and Viva wedding collection Rajasthan a new party came to shop and Viva wedding collection Rajasthan a new party came to shop and bought Viva wedding collection Rajasthan a new party came to shop and bought a Viva wedding collection Rajasthan a new party came to shop and bought a D Viva wedding collection Rajasthan a new party came to shop and bought a decent Viva wedding collection Rajasthan a new party came to shop and bought a decent Viva wedding collection Rajasthan a new party came to shop and bought a decent",
+        "actionItems": [],
+        "sentiment": "neutral",
+        "confidence": 0.4
+      }
+    ],
+    "createdAt": "2026-04-21T10:59:54.698Z",
+    "processedAt": "2026-04-21T10:59:54.712Z",
+    "updatedAt": "2026-04-21T10:59:54.712Z"
+  },
+  {
+    "id": "f0c7727b-9be0-4799-ae95-456c1f8df40b",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "content": "Viva Wedding collectiom Rajasthan (H) - New party shop pe aayi aur AD set liye",
+    "date": "2026-04-21",
+    "status": "done",
+    "aiEntries": [
+      {
+        "customerName": "General",
+        "customerId": null,
+        "matchedCustomerName": null,
+        "date": null,
+        "notes": "Viva Wedding collectiom Rajasthan (H) - New party shop pe aayi aur AD set liye",
+        "actionItems": [],
+        "sentiment": "neutral",
+        "confidence": 0.4
+      }
+    ],
+    "createdAt": "2026-04-21T11:00:45.866Z",
+    "processedAt": "2026-04-21T11:00:45.872Z",
+    "updatedAt": "2026-04-21T11:00:45.872Z"
+  },
+  {
+    "id": "817d4da1-6446-47ed-a800-f61f4598c952",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "content": "Yt Shushma balia - inko AD bracelet whatsapp kiye, order nikla hai",
+    "date": "2026-04-21",
+    "status": "done",
+    "aiEntries": [
+      {
+        "customerName": "YT Shushma Balia",
+        "customerId": "e6ef165c-0737-4bd6-8bc1-9eb908bf75ff",
+        "matchedCustomerName": "YT Shushma Balia",
+        "date": null,
+        "notes": "Yt Shushma balia - inko AD bracelet whatsapp kiye, order nikla hai",
+        "actionItems": [],
+        "sentiment": "neutral",
+        "confidence": 0.4
+      }
+    ],
+    "createdAt": "2026-04-21T11:01:47.662Z",
+    "processedAt": "2026-04-21T11:01:47.667Z",
+    "updatedAt": "2026-04-21T11:01:47.668Z"
+  },
+  {
+    "id": "fd396f6e-e4ce-4641-adab-5d7906819fcd",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "content": "JDS - Matt Gold photos kari on whatsapp",
+    "date": "2026-04-21",
+    "status": "done",
+    "aiEntries": [
+      {
+        "customerName": "JDS ",
+        "customerId": "a11fdc23-c240-4698-9dec-c011c0c21d82",
+        "matchedCustomerName": "JDS ",
+        "date": null,
+        "notes": "JDS - Matt Gold photos kari on whatsapp",
+        "actionItems": [],
+        "sentiment": "neutral",
+        "confidence": 0.4
+      }
+    ],
+    "createdAt": "2026-04-21T11:02:18.619Z",
+    "processedAt": "2026-04-21T11:02:18.625Z",
+    "updatedAt": "2026-04-21T11:02:18.625Z"
+  },
+  {
+    "id": "862d0618-f9ef-4b36-993d-6209be3f51f3",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "content": "Joulani Omex mall - shop pe aayi floor pe, counter se maal lia",
+    "date": "2026-04-21",
+    "status": "done",
+    "aiEntries": [
+      {
+        "customerName": "General",
+        "customerId": null,
+        "matchedCustomerName": null,
+        "date": null,
+        "notes": "Joulani Omex mall - shop pe aayi floor pe, counter se maal lia",
+        "actionItems": [],
+        "sentiment": "neutral",
+        "confidence": 0.4
+      }
+    ],
+    "createdAt": "2026-04-21T11:02:48.271Z",
+    "processedAt": "2026-04-21T11:02:48.279Z",
+    "updatedAt": "2026-04-21T11:02:48.280Z"
+  },
+  {
+    "id": "0a52a258-3a6a-4562-b854-8783c2c82601",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "content": "Hafuda Kerala - AD ke bridal set customize karke bheje",
+    "date": "2026-04-21",
+    "status": "done",
+    "aiEntries": [
+      {
+        "spokenName": "General",
+        "customerName": "General",
+        "customerId": null,
+        "matchedCustomerName": null,
+        "isNewCustomer": false,
+        "autoCreatedId": null,
+        "date": null,
+        "notes": "Hafuda Kerala - AD ke bridal set customize karke bheje",
+        "originalNotes": "Hafuda Kerala - AD ke bridal set customize karke bheje",
+        "actionItems": [],
+        "sentiment": "neutral",
+        "confidence": 0.35
+      }
+    ],
+    "translatedContent": null,
+    "detectedLanguage": "hinglish",
+    "createdAt": "2026-04-21T11:27:47.790Z",
+    "processedAt": "2026-04-21T11:27:47.799Z",
+    "updatedAt": "2026-04-21T11:27:47.799Z"
+  }
+]
