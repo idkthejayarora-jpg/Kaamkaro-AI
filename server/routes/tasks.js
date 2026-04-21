@@ -103,6 +103,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     await deleteOne('tasks', req.params.id);
+    broadcast('task:deleted', { id: req.params.id });
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
