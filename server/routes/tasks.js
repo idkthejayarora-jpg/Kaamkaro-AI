@@ -48,6 +48,7 @@ router.post('/', async (req, res) => {
 
     await insertOne('tasks', task);
     await logAudit(req.user.id, req.user.name, 'create', 'task', task.id, `Task: ${title}`);
+    broadcast('task:created', task);
     res.status(201).json(task);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
