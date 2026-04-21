@@ -89,7 +89,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
     try {
       const updated = await diaryAPI.reanalyze(entry.id);
       onReanalyzed(updated);
-    } catch { /* server will set status=processing, polling handles the rest */ }
+    } catch { /* server will set status=processing; SSE will push the result */ }
     finally { setReanalyzing(false); }
   };
 
