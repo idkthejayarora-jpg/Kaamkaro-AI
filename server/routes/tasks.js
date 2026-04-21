@@ -69,6 +69,7 @@ router.patch('/:id/complete', async (req, res) => {
       completed,
       completedAt: completed ? new Date().toISOString() : null,
     });
+    broadcast('task:updated', updated);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
