@@ -50,29 +50,40 @@ router.post('/kamal', async (req, res) => {
       ? customers.filter(c => c.assignedTo === req.user.id).map(c => c.name)
       : [];
 
-    const contextSummary = `You are Kamal, the intelligent AI assistant for Kaamkaro AI — a staff performance tracking platform.
+    const customerIdMap = customers.slice(0, 60).map(c => `${c.name}=${c.id}`).join(', ');
+    const contextSummary = `You are Kamal — a proactive AI agent for Kaamkaro AI, a sales staff CRM. You don't just answer questions; you TAKE ACTIONS when asked.
 
-LIVE SYSTEM DATA:
-- Total staff: ${staff.length} | Total customers: ${customers.length} | Active customers: ${customers.filter(c => c.status !== 'closed' && c.status !== 'churned').length}
-- Overdue customers (7+ days no contact): ${overdue.length}${overdue.length > 0 ? ` — ${overdue.slice(0, 3).map(c => c.name).join(', ')}${overdue.length > 3 ? ' and more' : ''}` : ''}
-- Tasks due today or overdue: ${dueTasks.length}${dueTasks.length > 0 ? ` — ${dueTasks.slice(0, 2).map(t => t.title).join(', ')}` : ''}
-- This week avg response rate: ${avgResponse}%
-- Current user: ${req.user.name} (${req.user.role}) | Current streak: ${streak} days
-${myCustomers.length > 0 ? `- My customers: ${myCustomers.slice(0, 10).join(', ')}` : ''}
-- Date: ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+LIVE DATA (${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}):
+• Staff: ${staff.length} | Customers: ${customers.length} active | Pipeline: ${customers.filter(c=>!['closed','churned'].includes(c.status)).length} open
+• Overdue (7+ days silent): ${overdue.length}${overdue.length > 0 ? ' → ' + overdue.slice(0, 4).map(c => c.name).join(', ') + (overdue.length > 4 ? ` +${overdue.length-4} more` : '') : ' ✓ none'}
+• Due/overdue tasks: ${dueTasks.length}${dueTasks.length > 0 ? ' → ' + dueTasks.slice(0, 2).map(t => t.title).join(', ') : ' ✓ none'}
+• This week avg response rate: ${avgResponse}%
+• You are: ${req.user.name} (${req.user.role}) | Streak: ${streak} days
+${myCustomers.length > 0 ? `• Your customers: ${myCustomers.slice(0, 12).join(', ')}` : ''}
 
-NAVIGATION (include JSON at end if navigating):
-{"navigate": "/path"} — paths: /dashboard, /staff, /customers, /vendors, /tasks, /diary, /recommendations, /audit, /leaderboard, /followup, /goals
+═══ ACTIONS YOU CAN TAKE ═══
+When the user says things like "log a call", "mark Rahul as interested", "create a task", "called Priya today" — DO IT immediately. Put the action JSON on its own line at the very end of your response (after your text).
 
-ACTION MODE — If the user asks you to LOG an interaction, CREATE a task, or UPDATE a customer stage, include an action JSON at the end:
-Log interaction: {"action": "log_interaction", "customerId": "id", "customerName": "name", "type": "call|message|email|meeting", "responded": true|false, "notes": "...", "followUpDate": "YYYY-MM-DD or null"}
-Create task: {"action": "create_task", "title": "...", "dueDate": "YYYY-MM-DD", "customerId": "id or null", "customerName": "name or null"}
-Update stage: {"action": "update_stage", "customerId": "id", "customerName": "name", "status": "lead|contacted|interested|negotiating|closed|churned"}
+Log a call/contact:
+{"action": "log_interaction", "customerId": "ID", "customerName": "Name", "type": "call", "responded": true, "notes": "brief note", "followUpDate": null}
 
-Customer IDs for action mode: ${customers.slice(0, 20).map(c => `${c.name}=${c.id}`).join(', ')}
+Create a task:
+{"action": "create_task", "title": "Task title", "dueDate": "YYYY-MM-DD", "customerId": "ID or null", "customerName": "Name or null"}
 
-Be proactive. If there are overdue customers or due tasks, mention them even if not asked.
-Be concise, warm, and specific. Speak like a smart colleague, not a chatbot.`;
+Move pipeline stage:
+{"action": "update_stage", "customerId": "ID", "customerName": "Name", "status": "lead|contacted|interested|negotiating|closed|churned"}
+
+Navigate to a page:
+{"navigate": "/customers"} — paths: /dashboard /staff /customers /vendors /tasks /diary /recommendations /audit /leaderboard /followup /goals
+
+CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.length-60} more` : ''}
+
+═══ RESPONSE STYLE ═══
+• Be direct and action-first: confirm what you did, don't ask clarifying questions unless truly needed
+• 2-4 sentences max unless giving a detailed report
+• Speak like a sharp, warm colleague — not a corporate chatbot
+• Always mention the most urgent thing if the user hasn't asked about it
+• Support Hindi/Hinglish queries — respond in English but acknowledge Hindi naturally`;
 
     if (!client) {
       const lowerMsg = message.toLowerCase();
@@ -133,21 +144,34 @@ Be concise, warm, and specific. Speak like a smart colleague, not a chatbot.`;
     let actionPayload = null;
     let response = raw;
 
-    // Extract navigate JSON
-    const navMatch = raw.match(/\{"navigate":\s*"([^"]+)"\}/);
+    // Extract navigate JSON — single-line match is sufficient
+    const navMatch = raw.match(/\{\s*"navigate"\s*:\s*"([^"]+)"\s*\}/);
     if (navMatch) {
       navigate = navMatch[1];
       response = response.replace(navMatch[0], '').trim();
     }
 
-    // Extract action JSON
-    const actionMatch = raw.match(/\{"action":[^}]+\}/s);
-    if (actionMatch) {
-      try {
-        actionPayload = JSON.parse(actionMatch[0]);
-        response = response.replace(actionMatch[0], '').trim();
-      } catch {}
-    }
+    // Robust action JSON extraction — handles multi-line, markdown fences, nested nulls
+    // Strategy: find all {...} blocks, try to parse each for "action" key
+    try {
+      // Strip markdown code fences first
+      const stripped = raw.replace(/```json?\s*/g, '').replace(/```\s*/g, '');
+      // Find JSON object boundaries — greedy match of {...} blocks
+      const jsonBlocks = [...stripped.matchAll(/(\{[\s\S]*?\})/g)];
+      for (const match of jsonBlocks) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          if (parsed && typeof parsed.action === 'string') {
+            actionPayload = parsed;
+            response = response
+              .replace(match[1], '')
+              .replace(/```json?\s*/g, '').replace(/```\s*/g, '')
+              .trim();
+            break;
+          }
+        } catch { /* not valid JSON, try next */ }
+      }
+    } catch { /* ignore extraction errors */ }
 
     // Execute action server-side
     let actionResult = null;

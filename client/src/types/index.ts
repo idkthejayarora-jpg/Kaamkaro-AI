@@ -29,6 +29,13 @@ export interface Staff extends User {
 
 export type PipelineStatus = 'lead' | 'contacted' | 'interested' | 'negotiating' | 'closed' | 'churned';
 
+export interface CustomerNote {
+  id: string;
+  text: string;
+  createdBy: string;
+  createdAt: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -38,6 +45,7 @@ export interface Customer {
   status: PipelineStatus;
   lastContact: string | null;
   notes: string;
+  notesList?: CustomerNote[];
   tags: string[];
   dealValue: number | null;
   createdAt: string;

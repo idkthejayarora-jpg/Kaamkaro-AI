@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"/Users/jaigopalarora/Kaamkaro AI/scripts/auto-push.sh\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

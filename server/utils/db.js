@@ -2,12 +2,21 @@ const fs = require('fs-extra');
 const path = require('path');
 const os = require('os');
 
-const DATA_DIR = path.join(__dirname, '../data');
-const BACKUP_DIR = path.join(os.homedir(), 'Desktop', 'KaamkaroAI_Backup');
+// On Railway: mount a persistent volume at /data and set DATA_PATH=/data/kaamkaro
+// On local:   defaults to server/data as before
+const DATA_DIR = process.env.DATA_PATH
+  ? path.resolve(process.env.DATA_PATH)
+  : path.join(__dirname, '../data');
+
+// Backup only makes sense on local macOS — skip on Railway/Linux containers
+const IS_LOCAL_MAC = os.platform() === 'darwin' && !process.env.RAILWAY_ENVIRONMENT;
+const BACKUP_DIR = IS_LOCAL_MAC
+  ? path.join(os.homedir(), 'Desktop', 'KaamkaroAI_Backup')
+  : null;
 
 async function ensureDirs() {
   await fs.ensureDir(DATA_DIR);
-  await fs.ensureDir(BACKUP_DIR);
+  if (BACKUP_DIR) await fs.ensureDir(BACKUP_DIR);
 }
 
 async function readDB(collection) {
@@ -31,22 +40,19 @@ async function writeDB(collection, data) {
 }
 
 async function backupCollection(collection, data) {
+  if (!BACKUP_DIR) return; // skip on Railway/cloud deployments
   try {
     const backupFile = path.join(BACKUP_DIR, `${collection}.json`);
     await fs.writeFile(backupFile, JSON.stringify(data, null, 2), 'utf-8');
-    // Also write a timestamped snapshot every time (rolling last 10)
+    // Timestamped snapshot — rolling last 10
     const snapshotDir = path.join(BACKUP_DIR, 'snapshots');
     await fs.ensureDir(snapshotDir);
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const snapshotFile = path.join(snapshotDir, `${collection}_${ts}.json`);
-    await fs.writeFile(snapshotFile, JSON.stringify(data, null, 2), 'utf-8');
-    // Prune old snapshots — keep latest 10 per collection
-    const files = (await fs.readdir(snapshotDir))
-      .filter(f => f.startsWith(`${collection}_`))
-      .sort();
+    await fs.writeFile(path.join(snapshotDir, `${collection}_${ts}.json`), JSON.stringify(data, null, 2), 'utf-8');
+    // Prune — keep latest 10 per collection
+    const files = (await fs.readdir(snapshotDir)).filter(f => f.startsWith(`${collection}_`)).sort();
     if (files.length > 10) {
-      const toDelete = files.slice(0, files.length - 10);
-      for (const f of toDelete) {
+      for (const f of files.slice(0, files.length - 10)) {
         await fs.remove(path.join(snapshotDir, f));
       }
     }

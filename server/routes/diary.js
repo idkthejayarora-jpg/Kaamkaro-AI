@@ -350,6 +350,28 @@ Return ONLY valid JSON (no markdown, no explanation):
   }
 }
 
+// POST /api/diary/:id/reanalyze — re-run AI analysis on an existing entry
+router.post('/:id/reanalyze', async (req, res) => {
+  try {
+    const entries = await readDB('diary');
+    const entry = entries.find(e => e.id === req.params.id);
+    if (!entry) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && entry.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    await updateOne('diary', req.params.id, {
+      status: 'processing', aiEntries: [], translatedContent: null,
+      detectedLanguage: null, error: null,
+    });
+    const updated = { ...entry, status: 'processing', aiEntries: [], translatedContent: null, detectedLanguage: null };
+    res.json(updated);
+    // Re-run in background; frontend 4-second poll will pick up the result
+    processDiaryEntry(req.params.id, entry.content, entry.staffId, entry.staffName).catch(console.error);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 function titleCase(str) {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 }

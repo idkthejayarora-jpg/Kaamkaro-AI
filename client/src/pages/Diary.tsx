@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
-  AlertCircle, Clock, Languages, UserPlus, Globe, Trash2,
+  AlertCircle, Clock, Languages, UserPlus, Globe, Trash2, RefreshCw,
 } from 'lucide-react';
 import { diaryAPI } from '../lib/api';
 import type { DiaryEntry } from '../types';
@@ -54,14 +54,16 @@ const LANG_BADGE: Record<string, string> = {
 };
 
 // ── Diary card ────────────────────────────────────────────────────────────────
-function DiaryCard({ entry, onDelete }: {
+function DiaryCard({ entry, onDelete, onReanalyzed }: {
   entry: DiaryEntry;
   onDelete: (id: string) => void;
+  onReanalyzed: (updated: DiaryEntry) => void;
 }) {
-  const [expanded,    setExpanded]    = useState(entry.status === 'done' && entry.aiEntries.length > 0);
-  const [showOrig,    setShowOrig]    = useState(false);
-  const [deleting,    setDeleting]    = useState(false);
-  const [deleteError, setDeleteError] = useState('');
+  const [expanded,      setExpanded]      = useState(entry.status === 'done' && entry.aiEntries.length > 0);
+  const [showOrig,      setShowOrig]      = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+  const [deleteError,   setDeleteError]   = useState('');
+  const [reanalyzing,   setReanalyzing]   = useState(false);
 
   const hasTranslation =
     entry.translatedContent && entry.translatedContent.trim() !== entry.content.trim();
@@ -79,6 +81,15 @@ function DiaryCard({ entry, onDelete }: {
       setDeleteError(msg);
       setDeleting(false);
     }
+  };
+
+  const handleReanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      const updated = await diaryAPI.reanalyze(entry.id);
+      onReanalyzed(updated);
+    } catch { /* server will set status=processing, polling handles the rest */ }
+    finally { setReanalyzing(false); }
   };
 
   return (
@@ -140,7 +151,7 @@ function DiaryCard({ entry, onDelete }: {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
           {entry.status === 'done' && entry.aiEntries.length > 0 && (
             <button
               onClick={() => setExpanded(e => !e)}
@@ -149,15 +160,27 @@ function DiaryCard({ entry, onDelete }: {
               {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
+          {/* Re-analyze — always available so staff can fix bad extractions */}
+          <button
+            onClick={handleReanalyze}
+            disabled={reanalyzing || entry.status === 'processing'}
+            title="Re-run AI analysis"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40 transition-all text-xs font-medium disabled:opacity-40"
+          >
+            {reanalyzing
+              ? <div className="w-3 h-3 border border-gold/40 border-t-gold rounded-full animate-spin" />
+              : <RefreshCw size={11} />}
+            <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : 'Re-run'}</span>
+          </button>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all text-xs font-medium disabled:opacity-50"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all text-xs font-medium disabled:opacity-50"
           >
             {deleting
               ? <div className="w-3 h-3 border border-red-400/50 border-t-red-400 rounded-full animate-spin" />
-              : <Trash2 size={12} />}
-            {deleting ? 'Deleting…' : 'Delete'}
+              : <Trash2 size={11} />}
+            <span className="hidden sm:inline">{deleting ? 'Deleting…' : 'Delete'}</span>
           </button>
         </div>
       </div>
@@ -231,20 +254,21 @@ function DiaryCard({ entry, onDelete }: {
 }
 
 // ── Voice hook ────────────────────────────────────────────────────────────────
-// Robust: auto-restarts on unexpected stop, uses refs to avoid stale closures
+// Fixed: each isFinal committed once immediately. processedIdxRef prevents
+// Chrome's duplicate onresult events from causing repeated words.
 function useVoice(onFinalText: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interimText, setInterimText] = useState('');
   const [voiceLang,   setVoiceLang]   = useState<VoiceLangCode>('hi-IN');
   const [hasVoice,    setHasVoice]    = useState(false);
 
-  // Refs — so callbacks always see current values without re-creating recognition
   const recRef          = useRef<ISpeechRecognition | null>(null);
   const listeningRef    = useRef(false);
-  const stoppingRef     = useRef(false);  // true = user intentionally stopped
-  const accumRef        = useRef('');     // confirmed (isFinal) text this session
+  const stoppingRef     = useRef(false);
   const voiceLangRef    = useRef(voiceLang);
   const onFinalRef      = useRef(onFinalText);
+  // Tracks the highest resultIndex already committed this session — prevents duplicates
+  const processedIdxRef = useRef(-1);
 
   useEffect(() => { voiceLangRef.current = voiceLang; }, [voiceLang]);
   useEffect(() => { onFinalRef.current   = onFinalText; }, [onFinalText]);
@@ -259,51 +283,55 @@ function useVoice(onFinalText: (text: string) => void) {
   const buildRecognition = () => {
     const SR = getSR();
     if (!SR) return null;
+    processedIdxRef.current = -1; // reset for new session
+
     const rec = new SR();
     rec.lang            = voiceLangRef.current;
-    rec.continuous      = false;   // we handle restart ourselves — more reliable
+    rec.continuous      = false;  // manual restart is more reliable on mobile/Chrome
     rec.interimResults  = true;
     rec.maxAlternatives = 1;
-
-    rec.onstart = () => {
-      // don't setListening here — already set in startListening
-    };
 
     rec.onresult = (ev: SpeechRecognitionEvent) => {
       let fin = '', intr = '';
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        // Skip any index we already committed (Chrome occasionally re-fires old finals)
+        if (i <= processedIdxRef.current) continue;
         const r = ev.results[i];
-        if (r.isFinal) fin  += r[0].transcript + ' ';
-        else           intr += r[0].transcript;
+        if (r.isFinal) {
+          fin += r[0].transcript + ' ';
+          processedIdxRef.current = i; // mark committed
+        } else {
+          intr += r[0].transcript;
+        }
       }
-      if (fin) accumRef.current += fin;
       setInterimText(intr);
+      // Commit immediately — no accumRef needed, avoids all duplication
+      if (fin.trim()) onFinalRef.current(fin.trim());
     };
 
     rec.onerror = (e: { error: string }) => {
-      // 'no-speech' and 'aborted' are normal; surface anything else
       if (e.error !== 'no-speech' && e.error !== 'aborted') {
         console.warn('[Voice] error:', e.error);
       }
-      // onerror is always followed by onend, so handle restart there
     };
 
     rec.onend = () => {
       setInterimText('');
       if (listeningRef.current && !stoppingRef.current) {
-        // Chrome stopped us unexpectedly — restart immediately
-        try {
-          recRef.current = buildRecognition();
-          recRef.current?.start();
-        } catch { /* ignore */ }
+        // Unexpected stop — wait 200 ms to clear audio buffer, then restart
+        // This prevents echo/ambient sound being picked up right after a session ends
+        setTimeout(() => {
+          if (!listeningRef.current || stoppingRef.current) return;
+          try {
+            recRef.current = buildRecognition();
+            recRef.current?.start();
+          } catch { /* ignore DOMException if already running */ }
+        }, 200);
         return;
       }
-      // Intentional stop — commit all accumulated text
       listeningRef.current = false;
       setListening(false);
-      const text = accumRef.current.trim();
-      accumRef.current = '';
-      if (text) onFinalRef.current(text);
+      stoppingRef.current = false;
     };
 
     return rec;
@@ -313,7 +341,6 @@ function useVoice(onFinalText: (text: string) => void) {
     if (!getSR() || listeningRef.current) return;
     stoppingRef.current  = false;
     listeningRef.current = true;
-    accumRef.current     = '';
     setListening(true);
     setInterimText('');
     recRef.current = buildRecognition();
@@ -325,7 +352,7 @@ function useVoice(onFinalText: (text: string) => void) {
     stoppingRef.current  = true;
     listeningRef.current = false;
     recRef.current?.stop();
-    // onend fires and commits text
+    // Each final was already committed inline — nothing to flush
   };
 
   const toggle = () => {
@@ -521,6 +548,7 @@ export default function Diary() {
                   key={e.id}
                   entry={e}
                   onDelete={id => setEntries(prev => prev.filter(x => x.id !== id))}
+                  onReanalyzed={updated => setEntries(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x))}
                 />
               ))}
             </div>

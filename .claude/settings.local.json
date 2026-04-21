@@ -26,7 +26,10 @@
       "Read(//Users/jaigopalarora/**)",
       "Bash(node -e \"require\\('./routes/diary'\\); console.log\\('✅ diary.js OK'\\)\")",
       "Bash(node -e \"require\\('./routes/diary'\\); console.log\\('✅ OK'\\)\")",
-      "Bash(node -e \"require\\('./routes/ai'\\); require\\('./routes/diary'\\); console.log\\('✅ server routes OK'\\)\")"
+      "Bash(node -e \"require\\('./routes/ai'\\); require\\('./routes/diary'\\); console.log\\('✅ server routes OK'\\)\")",
+      "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/scripts/auto-push.sh\")",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }

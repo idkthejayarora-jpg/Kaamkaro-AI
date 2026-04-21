@@ -159,6 +159,47 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// POST /api/customers/:id/notes — append a timestamped note
+router.post('/:id/notes', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text?.trim()) return res.status(400).json({ error: 'Text required' });
+    const customers = await readDB('customers');
+    const c = customers.find(x => x.id === req.params.id);
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && c.assignedTo !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    const note = {
+      id: uuidv4(), text: text.trim(),
+      createdBy: req.user.name,
+      createdAt: new Date().toISOString(),
+    };
+    const notesList = Array.isArray(c.notesList) ? [...c.notesList, note] : [note];
+    await updateOne('customers', req.params.id, { notesList });
+    res.status(201).json(note);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/customers/:id/notes/:noteId — remove a specific note
+router.delete('/:id/notes/:noteId', async (req, res) => {
+  try {
+    const customers = await readDB('customers');
+    const c = customers.find(x => x.id === req.params.id);
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && c.assignedTo !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    const notesList = (c.notesList || []).filter(n => n.id !== req.params.noteId);
+    await updateOne('customers', req.params.id, { notesList });
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // DELETE /api/customers/:id
 router.delete('/:id', adminOnly, async (req, res) => {
   try {

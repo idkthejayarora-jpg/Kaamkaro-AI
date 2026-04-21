@@ -2,11 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import {
   Plus, Search, Phone, Mail, X, Check, ChevronDown, ChevronUp,
   Upload, Clock, MessageSquare, Calendar, TrendingUp, TrendingDown,
-  Minus, Activity, DollarSign, Trash2, Users, Tag, UserPlus,
+  Minus, Activity, DollarSign, Trash2, Users, Tag, UserPlus, StickyNote, Send,
 } from 'lucide-react';
 import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Customer, Staff, Interaction, PipelineStatus, Template, SentimentPoint } from '../types';
+import type { Customer, CustomerNote, Staff, Interaction, PipelineStatus, Template, SentimentPoint } from '../types';
 
 // ── Pipeline config ────────────────────────────────────────────────────────────
 const STAGES: { key: PipelineStatus; label: string; color: string; bg: string }[] = [
@@ -322,45 +322,159 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
   );
 }
 
-// ── Customer interaction timeline ─────────────────────────────────────────────
+// ── Customer interaction timeline (with delete) ───────────────────────────────
 function CustomerTimeline({ customerId }: { customerId: string }) {
-  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [items, setItems]   = useState<Interaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const TYPE_ICON: Record<string, React.ElementType> = { call: Phone, message: MessageSquare, email: Mail, meeting: Calendar };
 
   useEffect(() => {
-    interactionsAPI.list({ customerId }).then(data => { setInteractions(data); setLoading(false); });
+    interactionsAPI.list({ customerId }).then(data => { setItems(data); setLoading(false); });
   }, [customerId]);
 
-  if (loading) return <div className="py-4 text-center text-white/25 text-xs">Loading...</div>;
-  if (interactions.length === 0) return <div className="py-4 text-center text-white/25 text-xs">No interactions logged yet</div>;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this interaction log?')) return;
+    setDeletingId(id);
+    try {
+      await interactionsAPI.delete(id);
+      setItems(prev => prev.filter(x => x.id !== id));
+    } catch { alert('Failed to delete interaction'); }
+    finally { setDeletingId(null); }
+  };
+
+  if (loading) return <div className="py-4 text-center text-white/25 text-xs">Loading…</div>;
+  if (items.length === 0) return <div className="py-4 text-center text-white/25 text-xs">No interactions logged yet</div>;
 
   return (
-    <div className="space-y-2 mt-3">
-      {interactions.map(i => {
+    <div className="space-y-1 mt-2">
+      {items.map(i => {
         const Icon = TYPE_ICON[i.type] || Phone;
         return (
-          <div key={i.id} className="flex gap-3 py-2 border-b border-dark-50/40 last:border-0">
+          <div key={i.id} className="flex gap-3 py-2 border-b border-dark-50/40 last:border-0 group">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${i.responded ? 'bg-green-500/15' : 'bg-dark-200'}`}>
               <Icon size={11} className={i.responded ? 'text-green-400' : 'text-white/30'} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-white/70 text-xs font-medium capitalize">{i.type}</span>
                 <span className={`text-[10px] ${i.responded ? 'text-green-400' : 'text-white/25'}`}>
                   {i.responded ? '✓ Responded' : '✗ No response'}
                 </span>
-                {i.source === 'webhook' && <span className="badge badge-gold text-[9px]">via webhook</span>}
-                {i.source === 'kamal_ai' && <span className="badge bg-purple-500/10 text-purple-400 text-[9px]">via Kamal</span>}
+                {i.source === 'webhook' && <span className="badge badge-gold text-[9px]">webhook</span>}
+                {i.source === 'kamal_ai' && <span className="badge bg-purple-500/10 text-purple-400 text-[9px]">Kamal</span>}
               </div>
-              {i.notes && <p className="text-white/40 text-xs mt-0.5 truncate">{i.notes}</p>}
+              {i.notes && <p className="text-white/40 text-xs mt-0.5 line-clamp-2">{i.notes}</p>}
             </div>
-            <span className="text-white/20 text-[10px] flex-shrink-0">
-              {new Date(i.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-white/20 text-[10px]">
+                {new Date(i.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+              </span>
+              <button
+                onClick={() => handleDelete(i.id)}
+                disabled={deletingId === i.id}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-white/20 hover:text-red-400 p-0.5"
+                title="Delete this log"
+              >
+                {deletingId === i.id
+                  ? <div className="w-3 h-3 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />
+                  : <Trash2 size={11} />}
+              </button>
+            </div>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── Customer Notes (append-only timeline, each deletable) ─────────────────────
+function CustomerNotes({ customerId }: { customerId: string }) {
+  const [notes, setNotes]     = useState<CustomerNote[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [saving, setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [loaded, setLoaded]   = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    customersAPI.get(customerId).then(c => {
+      setNotes(c.notesList || []);
+      setLoaded(true);
+    });
+  }, [customerId]);
+
+  const handleAdd = async () => {
+    const text = newNote.trim();
+    if (!text) return;
+    setSaving(true);
+    try {
+      const note = await customersAPI.addNote(customerId, text);
+      setNotes(prev => [...prev, note]);
+      setNewNote('');
+      inputRef.current?.focus();
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (noteId: string) => {
+    if (!confirm('Delete this note?')) return;
+    setDeleting(noteId);
+    try {
+      await customersAPI.deleteNote(customerId, noteId);
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+    } finally { setDeleting(null); }
+  };
+
+  if (!loaded) return <div className="py-4 text-center text-white/25 text-xs">Loading notes…</div>;
+
+  return (
+    <div className="space-y-3 mt-2">
+      {/* Add note */}
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          className="input flex-1 text-xs py-2"
+          placeholder="Add a note… (e.g. 'Very interested in premium plan')"
+          value={newNote}
+          onChange={e => setNewNote(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAdd(); } }}
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!newNote.trim() || saving}
+          className="btn-primary text-xs py-2 px-3 flex-shrink-0 flex items-center gap-1"
+        >
+          <Send size={11} />{saving ? '…' : 'Add'}
+        </button>
+      </div>
+
+      {/* Notes list — newest first */}
+      {notes.length === 0 ? (
+        <p className="text-white/20 text-xs text-center py-3">No notes yet — add your first one above</p>
+      ) : (
+        <div className="space-y-2">
+          {[...notes].reverse().map(n => (
+            <div key={n.id} className="flex gap-2 p-3 bg-dark-200 rounded-xl border border-dark-50/50 group">
+              <div className="flex-1 min-w-0">
+                <p className="text-white/70 text-xs leading-relaxed">{n.text}</p>
+                <p className="text-white/25 text-[10px] mt-1.5">
+                  {n.createdBy} · {new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <button
+                onClick={() => handleDelete(n.id)}
+                disabled={deleting === n.id}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-white/20 hover:text-red-400 p-1 flex-shrink-0 self-start"
+                title="Delete note"
+              >
+                {deleting === n.id
+                  ? <div className="w-3 h-3 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />
+                  : <Trash2 size={11} />}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -495,7 +609,7 @@ export default function Customers() {
   const [showCSV, setShowCSV]         = useState(false);
   const [logging, setLogging]         = useState<Customer | null>(null);
   const [expanded, setExpanded]       = useState<string | null>(null);
-  const [expandedTab, setExpandedTab] = useState<'timeline' | 'sentiment'>('timeline');
+  const [expandedTab, setExpandedTab] = useState<'timeline' | 'sentiment' | 'notes'>('timeline');
   const [loading, setLoading]         = useState(true);
   const [selected, setSelected]         = useState<string[]>([]);
   const [quickCreating, setQuickCreating] = useState(false);
@@ -769,17 +883,22 @@ export default function Customers() {
                 {/* Expanded panel */}
                 {isOpen && (
                   <div className="mt-3 pt-3 border-t border-dark-50/50 animate-fade-in">
-                    <div className="flex gap-3 mb-3">
-                      {(['timeline', 'sentiment'] as const).map(tab => (
-                        <button key={tab} onClick={() => setExpandedTab(tab)}
-                          className={`text-xs font-medium capitalize px-3 py-1 rounded-lg transition-colors ${
-                            expandedTab === tab ? 'bg-gold/10 text-gold' : 'text-white/30 hover:text-white'
+                    <div className="flex gap-1 mb-3 flex-wrap">
+                      {[
+                        { key: 'timeline',  label: '📋 History' },
+                        { key: 'notes',     label: '📝 Notes'   },
+                        { key: 'sentiment', label: '📈 Sentiment' },
+                      ].map(({ key, label }) => (
+                        <button key={key} onClick={() => setExpandedTab(key as typeof expandedTab)}
+                          className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${
+                            expandedTab === key ? 'bg-gold/10 text-gold' : 'text-white/30 hover:text-white'
                           }`}>
-                          {tab === 'sentiment' ? '📈 Sentiment' : '📋 History'}
+                          {label}
                         </button>
                       ))}
                     </div>
-                    {expandedTab === 'timeline' && <CustomerTimeline customerId={c.id} />}
+                    {expandedTab === 'timeline'  && <CustomerTimeline customerId={c.id} />}
+                    {expandedTab === 'notes'     && <CustomerNotes customerId={c.id} />}
                     {expandedTab === 'sentiment' && <SentimentTrendView customerId={c.id} />}
                   </div>
                 )}

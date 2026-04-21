@@ -49,6 +49,8 @@ export const customersAPI = {
     api.post('/customers/bulk-actions', { ids, action, value }).then(r => r.data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/customers/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/customers/${id}`).then(r => r.data),
+  addNote: (id: string, text: string) => api.post(`/customers/${id}/notes`, { text }).then(r => r.data),
+  deleteNote: (id: string, noteId: string) => api.delete(`/customers/${id}/notes/${noteId}`).then(r => r.data),
 };
 
 export const vendorsAPI = {
@@ -81,6 +83,7 @@ export const diaryAPI = {
   create: (content: string, date?: string) =>
     api.post('/diary', { content, date }).then(r => r.data),
   delete: (id: string) => api.delete(`/diary/${id}`).then(r => r.data),
+  reanalyze: (id: string) => api.post(`/diary/${id}/reanalyze`).then(r => r.data),
 };
 
 export const exportAPI = {

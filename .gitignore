@@ -1,0 +1,30 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output (Railway builds this at deploy time)
+client/dist/
+
+# Logs
+*.log
+.server.log
+.client.log
+
+# PID files
+.server.pid
+.client.pid
+
+# Local env (contains secrets — NEVER commit)
+server/.env
+.env
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
+
+# Data files — keep server/data/*.json in git for seeding & GitHub backup
+# If you DON'T want data in git, uncomment the line below:
+# server/data/

@@ -48,15 +48,16 @@ function ActionBadge({ action }: { action: KamalMessage['actionResult'] }) {
   );
 }
 
-// ── Robust voice hook (same pattern as Diary) ─────────────────────────────────
+// ── Robust voice hook for Kamal (command mode: commits on first final) ────────
 function useVoiceCommand(onResult: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interim,     setInterim]     = useState('');
   const [hasVoice,    setHasVoice]    = useState(false);
-  const recRef       = useRef<ISR | null>(null);
-  const listeningRef = useRef(false);
-  const stoppingRef  = useRef(false);
-  const onResultRef  = useRef(onResult);
+  const recRef          = useRef<ISR | null>(null);
+  const listeningRef    = useRef(false);
+  const stoppingRef     = useRef(false);
+  const processedIdxRef = useRef(-1);
+  const onResultRef     = useRef(onResult);
   useEffect(() => { onResultRef.current = onResult; }, [onResult]);
 
   useEffect(() => {
@@ -68,24 +69,35 @@ function useVoiceCommand(onResult: (text: string) => void) {
   const build = useCallback((): ISR | null => {
     const SR = getSR();
     if (!SR) return null;
+    processedIdxRef.current = -1;
+
     const rec = new SR();
-    rec.lang           = 'hi-IN'; // handles Hinglish + English well
-    rec.continuous     = false;
-    rec.interimResults = true;
+    // en-IN handles Hinglish better than hi-IN for command-style short phrases
+    // (Chrome code-switches to Hindi words within English grammar)
+    rec.lang            = 'en-IN';
+    rec.continuous      = false;
+    rec.interimResults  = true;
     rec.maxAlternatives = 1;
 
     rec.onresult = (e: SREvent) => {
       let fin = '', intr = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) fin  += e.results[i][0].transcript;
-        else                       intr += e.results[i][0].transcript;
+        if (i <= processedIdxRef.current) continue;
+        if (e.results[i].isFinal) {
+          fin += e.results[i][0].transcript + ' ';
+          processedIdxRef.current = i;
+        } else {
+          intr += e.results[i][0].transcript;
+        }
       }
       setInterim(intr);
       if (fin.trim()) {
         setInterim('');
-        onResultRef.current(fin.trim());
+        // Commit immediately and stop — command mode, one utterance at a time
         stoppingRef.current = true;
-        rec.stop();
+        listeningRef.current = false;
+        onResultRef.current(fin.trim());
+        try { rec.stop(); } catch {}
       }
     };
 
@@ -98,11 +110,11 @@ function useVoiceCommand(onResult: (text: string) => void) {
     rec.onend = () => {
       setInterim('');
       if (listeningRef.current && !stoppingRef.current) {
-        // unexpected end — restart
-        try {
-          recRef.current = build();
-          recRef.current?.start();
-        } catch {}
+        // Unexpected stop — restart after brief pause
+        setTimeout(() => {
+          if (!listeningRef.current || stoppingRef.current) return;
+          try { recRef.current = build(); recRef.current?.start(); } catch {}
+        }, 150);
         return;
       }
       listeningRef.current = false;
@@ -127,7 +139,7 @@ function useVoiceCommand(onResult: (text: string) => void) {
   const stop = useCallback(() => {
     stoppingRef.current  = true;
     listeningRef.current = false;
-    recRef.current?.stop();
+    try { recRef.current?.stop(); } catch {}
   }, []);
 
   const toggle = () => { if (listeningRef.current) stop(); else start(); };
@@ -198,10 +210,10 @@ export default function KamalAssistant() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — bottom-20 on mobile to clear iOS home bar + browser nav */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 ${
+        className={`fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 ${
           open ? 'bg-dark-200 border-2 border-gold/50 rotate-0' : 'bg-gold hover:scale-105 animate-pulse-gold'
         }`}
         title="Kamal AI Agent"
@@ -211,7 +223,7 @@ export default function KamalAssistant() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[340px] sm:w-[390px] bg-dark-300 border border-dark-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up" style={{ maxHeight: '75vh', minHeight: '400px' }}>
+        <div className="fixed bottom-36 sm:bottom-24 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[340px] md:w-[390px] bg-dark-300 border border-dark-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up" style={{ maxHeight: '75vh', minHeight: '400px' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-dark-50 bg-dark-400 flex-shrink-0">
             <div className="flex items-center gap-2.5">

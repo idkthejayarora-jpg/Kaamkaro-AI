@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd client && npm install && npm run build && cd ../server && npm install"
+
+[deploy]
+startCommand = "node server/index.js"
+healthcheckPath = "/api/auth/me"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "kaamkaro-ai"
