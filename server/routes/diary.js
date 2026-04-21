@@ -117,6 +117,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(403).json({ error: 'You can only delete your own entries' });
     }
     await deleteOne('diary', req.params.id);
+    broadcast('diary:deleted', { id: req.params.id });
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
