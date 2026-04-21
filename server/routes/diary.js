@@ -370,8 +370,8 @@ router.post('/:id/reanalyze', async (req, res) => {
       detectedLanguage: null, error: null,
     });
     const updated = { ...entry, status: 'processing', aiEntries: [], translatedContent: null, detectedLanguage: null };
+    broadcast('diary:updated', updated);
     res.json(updated);
-    // Re-run in background; frontend 4-second poll will pick up the result
     processDiaryEntry(req.params.id, entry.content, entry.staffId, entry.staffName).catch(console.error);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
