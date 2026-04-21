@@ -29,7 +29,10 @@
       "Bash(node -e \"require\\('./routes/ai'\\); require\\('./routes/diary'\\); console.log\\('✅ server routes OK'\\)\")",
       "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/scripts/auto-push.sh\")",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(gh auth *)",
+      "Bash(security find-internet-password *)",
+      "Bash(ssh -T git@github.com)"
     ]
   }
 }
