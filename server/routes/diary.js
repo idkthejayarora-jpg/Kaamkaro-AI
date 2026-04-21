@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware } = require('../middleware/auth');
 const { updateStaffStreak } = require('../utils/streak');
+const { broadcast } = require('../utils/sse');
 
 let Anthropic;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
