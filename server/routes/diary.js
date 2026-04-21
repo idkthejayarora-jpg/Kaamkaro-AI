@@ -338,7 +338,7 @@ Return ONLY valid JSON (no markdown, no explanation):
       });
     }
 
-    await updateOne('diary', entryId, {
+    const finalEntry = await updateOne('diary', entryId, {
       status: 'done',
       aiEntries: resolvedEntries,
       translatedContent: aiResult.translatedContent || null,
@@ -346,9 +346,13 @@ Return ONLY valid JSON (no markdown, no explanation):
       processedAt: new Date().toISOString(),
     });
 
+    // 🔴 Real-time push — all connected browser tabs get this instantly
+    broadcast('diary:updated', finalEntry);
+
   } catch (err) {
     console.error('[Diary] Processing error:', err);
-    await updateOne('diary', entryId, { status: 'error', error: err.message });
+    const errEntry = await updateOne('diary', entryId, { status: 'error', error: err.message });
+    broadcast('diary:updated', errEntry);
   }
 }
 
