@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { API_BASE } from '../lib/api';
 
 type SSEHandler = (data: unknown) => void;
 
@@ -27,7 +26,7 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
     function connect() {
       const token = localStorage.getItem('token');
       // Pass token as query param (EventSource doesn't support custom headers)
-      const url = `${API_BASE}/events${token ? `?token=${token}` : ''}`;
+      const url = `/api/events${token ? `?token=${token}` : ''}`;
       es = new EventSource(url);
 
       es.addEventListener('connected', () => {
