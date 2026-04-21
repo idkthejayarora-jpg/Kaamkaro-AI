@@ -370,7 +370,6 @@ export default function Diary() {
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState('');
   const [loading,    setLoading]    = useState(true);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Append voice text to existing content
   const handleVoiceText = (text: string) => {
@@ -379,18 +378,26 @@ export default function Diary() {
 
   const voice = useVoice(handleVoiceText);
 
+  // Initial load
   useEffect(() => {
     diaryAPI.list().then(d => { setEntries(d); setLoading(false); });
-    pollRef.current = setInterval(() => {
-      setEntries(prev => {
-        if (prev.some(e => e.status === 'processing')) {
-          diaryAPI.list().then(setEntries);
-        }
-        return prev;
-      });
-    }, 4000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
+
+  // Real-time updates via SSE (replaces 4-second polling)
+  useSSE({
+    'diary:updated': (entry) => {
+      setEntries(prev => {
+        const idx = prev.findIndex(e => e.id === (entry as DiaryEntry).id);
+        if (idx === -1) return [entry as DiaryEntry, ...prev];
+        const next = [...prev];
+        next[idx] = { ...prev[idx], ...(entry as DiaryEntry) };
+        return next;
+      });
+    },
+    'diary:deleted': (payload) => {
+      setEntries(prev => prev.filter(e => e.id !== (payload as { id: string }).id));
+    },
+  });
 
   const handleSubmit = async () => {
     const text = content.trim();
