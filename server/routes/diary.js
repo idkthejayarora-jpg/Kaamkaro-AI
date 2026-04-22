@@ -299,8 +299,7 @@ Respond ONLY with this JSON, no other text:
   ]
 }`;
 
-    const result = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const result = await callClaude(client, {
       max_tokens: 3000,
       messages: [{ role: 'user', content: prompt }],
     });
