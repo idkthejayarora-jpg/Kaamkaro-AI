@@ -57,27 +57,34 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
   onDelete: (id: string) => void;
   onReanalyzed: (updated: DiaryEntry) => void;
 }) {
-  const [expanded,      setExpanded]      = useState(entry.status === 'done' && entry.aiEntries.length > 0);
-  const [showOrig,      setShowOrig]      = useState(false);
-  const [deleting,      setDeleting]      = useState(false);
-  const [deleteError,   setDeleteError]   = useState('');
-  const [reanalyzing,   setReanalyzing]   = useState(false);
+  const [expanded,    setExpanded]    = useState(entry.status === 'done' && entry.aiEntries.length > 0);
+  const [showOrig,    setShowOrig]    = useState(false);
+  const [deleting,    setDeleting]    = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [reanalyzing, setReanalyzing] = useState(false);
 
-  const hasTranslation =
-    entry.translatedContent && entry.translatedContent.trim() !== entry.content.trim();
+  // A translation exists and is meaningfully different from the raw entry
+  const hasTranslation = !!(
+    entry.translatedContent &&
+    entry.translatedContent.trim().length > 10 &&
+    entry.translatedContent.trim() !== entry.content.trim()
+  );
+
+  // Non-English entries that got translated
+  const wasTranslated = hasTranslation &&
+    entry.detectedLanguage &&
+    entry.detectedLanguage !== 'english';
 
   const handleDelete = async () => {
     if (!confirm('Delete this diary entry? This cannot be undone.')) return;
-    setDeleting(true);
-    setDeleteError('');
+    setDeleting(true); setDeleteError('');
     try {
       await diaryAPI.delete(entry.id);
       onDelete(entry.id);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })
         ?.response?.data?.error || 'Delete failed — please try again.';
-      setDeleteError(msg);
-      setDeleting(false);
+      setDeleteError(msg); setDeleting(false);
     }
   };
 
@@ -86,8 +93,12 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
     try {
       const updated = await diaryAPI.reanalyze(entry.id);
       onReanalyzed(updated);
-    } catch { /* server will set status=processing; SSE will push the result */ }
+    } catch { /* SSE will push the updated entry */ }
     finally { setReanalyzing(false); }
+  };
+
+  const LANG_LABEL: Record<string, string> = {
+    hindi: 'Hindi', hinglish: 'Hinglish', english: 'English',
   };
 
   return (
@@ -95,6 +106,8 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
       {/* ── Header row ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
+
+          {/* Meta row: date + badges */}
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="text-white/25 text-xs">
               {new Date(entry.createdAt).toLocaleDateString('en-IN', {
@@ -102,20 +115,30 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
                 hour: '2-digit', minute: '2-digit',
               })}
             </span>
+
+            {/* Language detected badge */}
             {entry.detectedLanguage && (
               <span className="badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
                 <Globe size={8} className="mr-0.5 inline" />
-                {LANG_BADGE[entry.detectedLanguage] ?? entry.detectedLanguage}
+                {LANG_LABEL[entry.detectedLanguage] ?? entry.detectedLanguage}
               </span>
             )}
+
+            {/* Translation badge — shown for non-English entries */}
+            {wasTranslated && (
+              <span className="badge bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">
+                <Languages size={8} className="mr-0.5 inline" /> Translated
+              </span>
+            )}
+
             {entry.status === 'processing' && (
               <span className="badge badge-gold text-[10px] flex items-center gap-1">
-                <Clock size={9} className="animate-pulse" /> Analysing…
+                <Clock size={9} className="animate-pulse" /> Translating & analysing…
               </span>
             )}
             {entry.status === 'done' && (
               <span className="badge badge-green text-[10px]">
-                {entry.aiEntries.length} {entry.aiEntries.length === 1 ? 'entry' : 'entries'} extracted
+                {entry.aiEntries.length} {entry.aiEntries.length === 1 ? 'customer' : 'customers'} extracted
               </span>
             )}
             {entry.status === 'error' && (
@@ -125,25 +148,50 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
             )}
           </div>
 
-          {/* Content — show translation by default, toggle to original */}
+          {/* ── Content block ── */}
           {hasTranslation ? (
-            <div>
-              <p className="text-white/60 text-sm leading-relaxed line-clamp-3">
-                {showOrig ? entry.content : entry.translatedContent}
-              </p>
+            <div className="space-y-2">
+              {/* English translation — PRIMARY, always visible */}
+              {!showOrig && (
+                <div>
+                  {wasTranslated && (
+                    <p className="text-blue-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
+                      <Languages size={9} /> English Translation
+                    </p>
+                  )}
+                  <p className="text-white/75 text-sm leading-relaxed">
+                    {entry.translatedContent}
+                  </p>
+                </div>
+              )}
+
+              {/* Original text — shown when toggled */}
+              {showOrig && (
+                <div>
+                  <p className="text-purple-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
+                    <Globe size={9} /> Original ({LANG_LABEL[entry.detectedLanguage ?? ''] ?? entry.detectedLanguage})
+                  </p>
+                  <p className="text-white/50 text-sm leading-relaxed">{entry.content}</p>
+                </div>
+              )}
+
+              {/* Toggle */}
               <button
                 onClick={() => setShowOrig(s => !s)}
-                className="flex items-center gap-1 text-gold/50 hover:text-gold text-[10px] mt-1.5 transition-colors"
+                className="flex items-center gap-1 text-white/20 hover:text-white/50 text-[10px] transition-colors"
               >
-                <Languages size={10} />
-                {showOrig ? 'Show translated' : 'Show original'}
+                <Languages size={9} />
+                {showOrig ? 'Show English translation' : 'Show original text'}
               </button>
             </div>
           ) : (
-            <p className="text-white/60 text-sm leading-relaxed line-clamp-3">{entry.content}</p>
+            /* No translation — just show content (already English or still processing) */
+            <p className="text-white/60 text-sm leading-relaxed">
+              {entry.content}
+            </p>
           )}
 
-          {/* Show AI error reason so user knows what to fix */}
+          {/* Error reason */}
           {entry.status === 'error' && entry.error && (
             <div className="mt-2 flex items-start gap-2 bg-red-500/8 border border-red-500/20 rounded-lg px-3 py-2">
               <AlertCircle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
