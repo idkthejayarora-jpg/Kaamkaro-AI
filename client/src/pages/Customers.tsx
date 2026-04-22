@@ -627,6 +627,18 @@ export default function Customers() {
   };
   useEffect(() => { load(); }, []);
 
+  // Real-time: new customers auto-created by diary analysis appear instantly
+  useSSE({
+    'customer:created': (c) => {
+      setCustomers(prev =>
+        prev.find(x => x.id === (c as Customer).id) ? prev : [...prev, c as Customer]
+      );
+    },
+    'customer:updated': (c) => {
+      setCustomers(prev => prev.map(x => x.id === (c as Customer).id ? { ...x, ...(c as Customer) } : x));
+    },
+  });
+
   // All unique tags across customers
   const allTags = [...new Set(customers.flatMap(c => c.tags || []))];
 
