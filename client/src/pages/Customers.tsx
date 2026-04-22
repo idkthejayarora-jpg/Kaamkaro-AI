@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useSSE } from '../hooks/useSSE';
 import type { Customer, CustomerNote, Staff, Interaction, PipelineStatus, Template, SentimentPoint } from '../types';
 
 // ── Pipeline config ────────────────────────────────────────────────────────────
