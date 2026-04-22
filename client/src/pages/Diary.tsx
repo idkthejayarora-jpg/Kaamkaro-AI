@@ -119,10 +119,10 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
               </span>
             )}
 
-            {/* Translation badge — shown for non-English entries */}
+            {/* Summary badge — shown for non-English entries */}
             {wasTranslated && (
               <span className="badge bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">
-                <Languages size={8} className="mr-0.5 inline" /> Translated
+                <Languages size={8} className="mr-0.5 inline" /> Summarised
               </span>
             )}
 
