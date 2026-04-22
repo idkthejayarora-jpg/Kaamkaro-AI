@@ -1,8 +1,5 @@
 # Nixpacks build config for Kaamkaro AI (monorepo: client/ + server/)
-# Explicit phases so Railway knows exactly how to build this monorepo.
-
-[phases.setup]
-nixPkgs = ["nodejs_20"]
+# Explicitly defines install/build phases so Railway builds the React client.
 
 [phases.install]
 cmds = [
