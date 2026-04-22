@@ -154,6 +154,7 @@ router.patch('/:id', async (req, res) => {
     if (updates.dealValue !== undefined) updates.dealValue = Number(updates.dealValue) || null;
     const updated = await updateOne('customers', req.params.id, updates);
     if (!updated) return res.status(404).json({ error: 'Not found' });
+    broadcast('customer:updated', updated);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
