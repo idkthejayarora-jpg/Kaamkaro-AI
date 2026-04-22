@@ -34,7 +34,8 @@
       "Bash(security find-internet-password *)",
       "Bash(ssh -T git@github.com)",
       "Bash(node -e \"require\\('./server/routes/events'\\); require\\('./server/utils/sse'\\); console.log\\('✅ SSE modules OK'\\)\")",
-      "Bash(node -e \"require\\('./server/routes/diary'\\); require\\('./server/routes/tasks'\\); console.log\\('✅ diary + tasks SSE wiring OK'\\)\")"
+      "Bash(node -e \"require\\('./server/routes/diary'\\); require\\('./server/routes/tasks'\\); console.log\\('✅ diary + tasks SSE wiring OK'\\)\")",
+      "Bash(npm run *)"
     ]
   }
 }

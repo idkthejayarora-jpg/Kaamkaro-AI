@@ -158,115 +158,161 @@ router.post('/', async (req, res) => {
 
 // ── Core AI processing ─────────────────────────────────────────────────────────
 
+/**
+ * Robustly extract a JSON object from an AI response string.
+ * Handles: markdown fences, leading/trailing text, nested objects.
+ */
+function extractJSON(text) {
+  // Strip markdown fences
+  let s = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  // Try direct parse first (happy path)
+  try { return JSON.parse(s); } catch {}
+
+  // Find the outermost {...} block
+  const start = s.indexOf('{');
+  const end   = s.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(s.slice(start, end + 1)); } catch {}
+  }
+
+  return null;
+}
+
 async function processDiaryEntry(entryId, content, staffId, staffName) {
   try {
-    // Load ALL customers — AI will fuzzy-match across the entire DB
     const allCustomers = await readDB('customers');
-
-    const customerList = allCustomers.map(c => ({
-      id: c.id,
-      name: c.name,
-      assignedTo: c.assignedTo,
-    }));
+    const customerList = allCustomers.map(c => ({ id: c.id, name: c.name }));
 
     const client = getClient();
-    let aiResult = null;
 
-    if (client) {
-      const prompt = `You are Kamal AI, analyzing a sales staff member's daily work diary.
-The entry may be written in Hindi, English, or Hinglish (mixed Hindi-English). Your job is to understand it fully regardless of language.
+    if (!client) {
+      // ── No API key: fuzzy-match names we can find, give useful notes ──
+      console.warn('[Diary] No ANTHROPIC_API_KEY — using local fallback');
+      const words   = content.split(/\s+/);
+      const capWords = words.filter(w => /^[A-Z][a-z]{2,}/.test(w));
+      const foundCustomers = [];
 
-EXISTING CUSTOMERS IN DATABASE:
-${customerList.length > 0
-  ? customerList.map(c => `- "${c.name}" (id: ${c.id})`).join('\n')
-  : '(No customers yet)'}
+      for (const word of [...new Set(capWords)]) {
+        const match = fuzzyMatchCustomer(word, allCustomers, 0.80);
+        if (match && !foundCustomers.find(c => c.id === match.id)) {
+          foundCustomers.push(match);
+        }
+      }
 
-DIARY ENTRY (may be in Hindi / Hinglish / English):
----
-${content.slice(0, 6000)}
----
+      const entries = foundCustomers.length > 0
+        ? foundCustomers.map(c => ({
+            spokenName: c.name,
+            matchedCustomerName: c.name,
+            matchedCustomerId: c.id,
+            isNewCustomer: false,
+            date: null,
+            notes: `Work diary entry logged. Full text: ${content.slice(0, 200)}`,
+            originalNotes: content.slice(0, 200),
+            actionItems: [],
+            sentiment: 'neutral',
+            confidence: 0.5,
+          }))
+        : [{
+            spokenName: 'General',
+            matchedCustomerName: null,
+            matchedCustomerId: null,
+            isNewCustomer: false,
+            date: null,
+            notes: content.slice(0, 400),
+            originalNotes: content.slice(0, 400),
+            actionItems: [],
+            sentiment: 'neutral',
+            confidence: 0.3,
+          }];
 
-YOUR TASKS:
-1. Detect language (hindi / english / hinglish)
-2. Translate the FULL entry to clear, professional English
-3. Extract EVERY customer interaction or mention — even brief ones
-4. For each customer name found:
-   - Match against the existing customer list using fuzzy logic (handle typos, Hindi spellings, short forms, nicknames)
-   - If "rahul" → likely "Rahul Sharma" if that exists; "vikrum" → "Vikram"; "sharma ji" → match surname
-   - If genuinely NO match exists (not just a typo), mark as new customer
-5. Summarize each interaction in clear English
-6. Extract action items from the entry
+      const finalEntry = await updateOne('diary', entryId, {
+        status: 'done', aiEntries: entries,
+        translatedContent: null, detectedLanguage: 'hinglish',
+        processedAt: new Date().toISOString(),
+      });
+      broadcast('diary:updated', finalEntry);
+      return;
+    }
 
-IMPORTANT MATCHING RULES:
-- Be aggressive in matching — prefer matching over creating new
-- Common mistakes to handle: doubled letters (Meera/Mira), missing letters (Arun/Arjun), Hindi spellings (Vijay/Bijay, Suresh/Suresh)
-- First-name only mentions should match against known customers by first name
-- "client", "customer", "unka", "unhe", "wo", "woh" refer to the last mentioned customer
+    // ── AI path ────────────────────────────────────────────────────────────────
+    const customerRef = customerList.length > 0
+      ? customerList.map(c => `"${c.name}" [id:${c.id}]`).join('\n')
+      : '(none yet — treat every name as a new customer)';
 
-Return ONLY valid JSON (no markdown, no explanation):
+    const prompt = `You are a sales CRM assistant. Analyze this sales staff diary entry and extract structured data.
+
+DIARY ENTRY:
+"""
+${content.slice(0, 5000)}
+"""
+
+KNOWN CUSTOMERS (match against these, use exact IDs):
+${customerRef}
+
+INSTRUCTIONS:
+1. Detect the language: hindi / english / hinglish
+2. Write a clear English translation/summary of the whole entry (2-4 sentences, professional tone — do NOT copy the raw text)
+3. Find every customer or person mentioned (even briefly)
+4. For each person: fuzzy-match against known customers (handle typos, nicknames, surname-only refs like "sharma ji", Hindi spellings like vijay/bijay)
+5. For each customer entry write:
+   - "notes": 1-2 sentence professional SUMMARY of what happened (what was discussed, outcome, next steps) — do NOT copy raw text verbatim
+   - "actionItems": concrete follow-up actions if any
+   - "sentiment": positive / neutral / negative based on how the interaction went
+
+Respond ONLY with this JSON, no other text:
 {
   "detectedLanguage": "hindi|english|hinglish",
-  "translatedContent": "Full English translation of the diary entry, natural and professional",
+  "translatedContent": "2-4 sentence professional English summary of the entire diary entry",
   "entries": [
     {
-      "spokenName": "exact name/reference as written in diary",
-      "matchedCustomerName": "matched name from DB list, or null if new",
-      "matchedCustomerId": "matched id from DB list, or null if new",
-      "isNewCustomer": true,
+      "spokenName": "name as written in diary",
+      "matchedCustomerName": "exact name from known list or null",
+      "matchedCustomerId": "exact id from known list or null",
+      "isNewCustomer": false,
       "date": "YYYY-MM-DD or null",
-      "notes": "clear English summary of what happened with this customer",
-      "originalNotes": "the original Hinglish/Hindi text about this customer",
-      "actionItems": ["item1"],
+      "notes": "Professional summary of this interaction — what happened, outcome, mood",
+      "originalNotes": "relevant original text snippet",
+      "actionItems": ["specific follow-up action"],
       "sentiment": "positive|neutral|negative",
-      "confidence": 0.85
+      "confidence": 0.9
     }
   ]
 }`;
 
-      const result = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }],
-      });
+    const result = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
+    const rawText = result.content[0].text;
+    console.log('[Diary] AI raw response (first 200):', rawText.slice(0, 200));
+
+    let aiResult = extractJSON(rawText);
+
+    if (!aiResult || !Array.isArray(aiResult.entries)) {
+      console.error('[Diary] JSON extraction failed. Raw:', rawText.slice(0, 500));
+      // Hard fallback: ask the model again with a stricter prompt
       try {
-        const raw = result.content[0].text.trim()
-          .replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        aiResult = JSON.parse(raw);
-      } catch (parseErr) {
-        console.error('Diary AI parse error:', parseErr.message);
-        // Fallback: at least return translation attempt
-        aiResult = {
-          detectedLanguage: 'hinglish',
-          translatedContent: null,
-          entries: [{ spokenName: 'General', matchedCustomerName: null, matchedCustomerId: null, isNewCustomer: false, date: null, notes: content.slice(0, 300), originalNotes: content.slice(0, 300), actionItems: [], sentiment: 'neutral', confidence: 0.3 }],
-        };
-      }
-    } else {
-      // No AI key — do simple line-based extraction with fuzzy matching
-      const lines = content.split('\n').filter(l => l.trim().length > 10);
+        const retry = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Extract customer names from this diary entry and return ONLY raw JSON with no other text:\n"${content.slice(0, 2000)}"\n\nReturn: {"detectedLanguage":"hinglish","translatedContent":"Brief professional summary","entries":[{"spokenName":"name","matchedCustomerName":null,"matchedCustomerId":null,"isNewCustomer":true,"date":null,"notes":"What happened with this customer","originalNotes":"","actionItems":[],"sentiment":"neutral","confidence":0.7}]}`
+          }],
+        });
+        aiResult = extractJSON(retry.content[0].text);
+      } catch {}
+    }
+
+    // Ultimate fallback if both attempts fail
+    if (!aiResult) {
       aiResult = {
         detectedLanguage: 'hinglish',
-        translatedContent: null,
-        entries: lines.slice(0, 5).map(line => {
-          const matched = fuzzyMatchCustomer(
-            // grab first capitalized word as likely name
-            (line.match(/[A-Z][a-z]+/g) || [])[0] || '',
-            allCustomers
-          );
-          return {
-            spokenName: matched?.name || 'General',
-            matchedCustomerName: matched?.name || null,
-            matchedCustomerId: matched?.id || null,
-            isNewCustomer: false,
-            date: null,
-            notes: line.trim(),
-            originalNotes: line.trim(),
-            actionItems: [],
-            sentiment: 'neutral',
-            confidence: 0.35,
-          };
-        }),
+        translatedContent: 'Could not auto-translate — see original entry.',
+        entries: [],
       };
     }
 
