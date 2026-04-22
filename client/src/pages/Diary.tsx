@@ -36,12 +36,9 @@ declare global {
   }
 }
 
-// ── Language modes ────────────────────────────────────────────────────────────
-const VOICE_LANGS = [
-  { code: 'hi-IN',    label: 'हिंदी',    hint: 'Hindi / Hinglish' },
-  { code: 'en-IN',    label: 'English',  hint: 'English (India)'   },
-] as const;
-type VoiceLangCode = typeof VOICE_LANGS[number]['code'];
+// hi-IN is used for all recording — Chrome's engine handles Hindi, English and
+// Hinglish (mixed) automatically in this locale. No manual selection needed.
+const VOICE_LANG = 'hi-IN';
 
 const SENTIMENT_STYLES: Record<string, string> = {
   positive: 'text-green-400 bg-green-500/10 border-green-500/20',

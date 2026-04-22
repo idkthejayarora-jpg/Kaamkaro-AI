@@ -36,7 +36,9 @@
       "Bash(node -e \"require\\('./server/routes/events'\\); require\\('./server/utils/sse'\\); console.log\\('✅ SSE modules OK'\\)\")",
       "Bash(node -e \"require\\('./server/routes/diary'\\); require\\('./server/routes/tasks'\\); console.log\\('✅ diary + tasks SSE wiring OK'\\)\")",
       "Bash(npm run *)",
-      "Bash(node -e \"require\\('./server/routes/diary'\\); console.log\\('✅ diary.js OK'\\)\")"
+      "Bash(node -e \"require\\('./server/routes/diary'\\); console.log\\('✅ diary.js OK'\\)\")",
+      "Bash(node -e \"require\\('./server/index.js'\\)\")",
+      "Bash(kill %1)"
     ]
   }
 }
