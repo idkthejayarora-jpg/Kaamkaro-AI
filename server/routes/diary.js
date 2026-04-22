@@ -206,44 +206,86 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
     const client = getClient();
 
     if (!client) {
-      // ── No API key: fuzzy-match names we can find, give useful notes ──
-      console.warn('[Diary] No ANTHROPIC_API_KEY — using local fallback');
-      const words   = content.split(/\s+/);
-      const capWords = words.filter(w => /^[A-Z][a-z]{2,}/.test(w));
-      const foundCustomers = [];
+      // ── No API key: extract names via regex heuristics + create new customers ──
+      console.warn('[Diary] No ANTHROPIC_API_KEY — using local name-extraction fallback');
 
-      for (const word of [...new Set(capWords)]) {
-        const match = fuzzyMatchCustomer(word, allCustomers, 0.80);
-        if (match && !foundCustomers.find(c => c.id === match.id)) {
-          foundCustomers.push(match);
+      const FALLBACK_STOPS = new Set([
+        'general','client','customer','sir','madam','bhai','ji','the','and','but','for',
+        'with','okay','done','yes','no','call','meeting','office','today','tomorrow',
+        'morning','evening','aaj','kal','subah','shaam','unka','unhe','wo','woh',
+        'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
+      ]);
+
+      // Extract: capitalised words AND common Hindi name patterns
+      const candidateNames = new Set();
+      // English-style capitalised words (min 3 chars)
+      const capWords = content.match(/\b[A-Z][a-z]{2,}\b/g) || [];
+      capWords.forEach(w => candidateNames.add(w));
+      // Multi-word: "Rahul Kumar", "Priya Singh" etc.
+      const bigramMatches = content.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || [];
+      bigramMatches.forEach(w => candidateNames.add(w));
+
+      const now2 = new Date().toISOString();
+      const entries = [];
+      const createdInFallback = [];
+
+      for (const name of candidateNames) {
+        const nameLower = name.toLowerCase().trim();
+        if (FALLBACK_STOPS.has(nameLower) || name.length < 3) continue;
+
+        // Try fuzzy match against existing customers
+        let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...createdInFallback], 0.78);
+
+        if (resolved) {
+          // Update lastContact on match
+          try { await updateOne('customers', resolved.id, { lastContact: now2 }); } catch {}
+        } else {
+          // Create new customer
+          try {
+            const newCust = {
+              id: uuidv4(), name: titleCase(name), phone: '', email: '',
+              assignedTo: staffId, status: 'lead', lastContact: now2,
+              notes: `Auto-created from diary entry by ${staffName} (no AI key)`,
+              notesList: [], tags: ['diary-import'], dealValue: null, createdAt: now2,
+            };
+            await insertOne('customers', newCust);
+            allCustomers.push(newCust);
+            createdInFallback.push(newCust);
+            resolved = newCust;
+            broadcast('customer:created', newCust);
+            console.log(`[Diary fallback] ✅ Created customer: "${newCust.name}"`);
+          } catch (err) {
+            console.error('[Diary fallback] Failed to create customer:', err.message);
+            continue;
+          }
         }
+
+        entries.push({
+          spokenName: name,
+          customerName: resolved.name,
+          customerId: resolved.id,
+          matchedCustomerName: resolved.name,
+          matchedCustomerId: resolved.id,
+          isNewCustomer: createdInFallback.some(c => c.id === resolved.id),
+          date: null,
+          notes: `Diary entry logged — AI analysis requires ANTHROPIC_API_KEY to be set on Railway.`,
+          originalNotes: content.slice(0, 300),
+          actionItems: [],
+          sentiment: 'neutral',
+          confidence: 0.4,
+        });
       }
 
-      const entries = foundCustomers.length > 0
-        ? foundCustomers.map(c => ({
-            spokenName: c.name,
-            matchedCustomerName: c.name,
-            matchedCustomerId: c.id,
-            isNewCustomer: false,
-            date: null,
-            notes: `Work diary entry logged. Full text: ${content.slice(0, 200)}`,
-            originalNotes: content.slice(0, 200),
-            actionItems: [],
-            sentiment: 'neutral',
-            confidence: 0.5,
-          }))
-        : [{
-            spokenName: 'General',
-            matchedCustomerName: null,
-            matchedCustomerId: null,
-            isNewCustomer: false,
-            date: null,
-            notes: content.slice(0, 400),
-            originalNotes: content.slice(0, 400),
-            actionItems: [],
-            sentiment: 'neutral',
-            confidence: 0.3,
-          }];
+      if (entries.length === 0) {
+        entries.push({
+          spokenName: 'General', customerName: 'General', customerId: null,
+          matchedCustomerName: null, isNewCustomer: false, date: null,
+          notes: 'No customer names detected. Set ANTHROPIC_API_KEY on Railway for full AI analysis.',
+          originalNotes: content.slice(0, 400),
+          actionItems: ['Set ANTHROPIC_API_KEY in Railway environment variables'],
+          sentiment: 'neutral', confidence: 0.2,
+        });
+      }
 
       const finalEntry = await updateOne('diary', entryId, {
         status: 'done', aiEntries: entries,
