@@ -50,9 +50,9 @@ export default function FollowupQueue() {
     setStaffList(staff);
 
     const now = Date.now();
-    const items: QueueItem[] = customers
-      .filter(c => !['closed', 'churned'].includes(c.status))
-      .map(c => {
+    const items: QueueItem[] = (customers as Customer[])
+      .filter((c: Customer) => !['closed', 'churned'].includes(c.status))
+      .map((c: Customer) => {
         const days = c.lastContact
           ? Math.round((now - new Date(c.lastContact).getTime()) / 86400000)
           : null;
