@@ -197,6 +197,82 @@ function extractJSON(text) {
   return null;
 }
 
+// ── Local fallback: regex name extraction + customer auto-create (no AI needed) ──
+// Called when: no API key, invalid key (401), model error, or any API failure.
+// Always completes successfully — diary entry is never left in 'error' state.
+const FALLBACK_STOPS = new Set([
+  'general','client','customer','sir','madam','bhai','ji','the','and','but','for',
+  'with','okay','done','yes','no','call','meeting','office','today','tomorrow',
+  'morning','evening','aaj','kal','subah','shaam','unka','unhe','wo','woh',
+  'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
+]);
+
+async function runLocalFallback(entryId, content, staffId, staffName, allCustomers) {
+  const candidateNames = new Set();
+  // Two-word names first (higher confidence): "Rahul Kumar", "Priya Singh"
+  (content.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || []).forEach(w => candidateNames.add(w));
+  // Single capitalised words
+  (content.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => candidateNames.add(w));
+
+  const now = new Date().toISOString();
+  const entries = [];
+  const created = [];
+
+  for (const name of candidateNames) {
+    if (FALLBACK_STOPS.has(name.toLowerCase()) || name.length < 3) continue;
+
+    let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...created], 0.78);
+    if (resolved) {
+      try { await updateOne('customers', resolved.id, { lastContact: now }); } catch {}
+    } else {
+      try {
+        const newCust = {
+          id: uuidv4(), name: titleCase(name), phone: '', email: '',
+          assignedTo: staffId, status: 'lead', lastContact: now,
+          notes: `Auto-created from diary entry by ${staffName}`,
+          notesList: [], tags: ['diary-import'], dealValue: null, createdAt: now,
+        };
+        await insertOne('customers', newCust);
+        allCustomers.push(newCust);
+        created.push(newCust);
+        resolved = newCust;
+        broadcast('customer:created', newCust);
+        console.log(`[Diary fallback] ✅ Created: "${newCust.name}"`);
+      } catch (e) {
+        console.error('[Diary fallback] create failed:', e.message);
+        continue;
+      }
+    }
+
+    entries.push({
+      spokenName: name, customerName: resolved.name,
+      customerId: resolved.id, matchedCustomerName: resolved.name,
+      matchedCustomerId: resolved.id,
+      isNewCustomer: created.some(c => c.id === resolved.id),
+      date: null, notes: 'Logged from diary entry.',
+      originalNotes: content.slice(0, 300),
+      actionItems: [], sentiment: 'neutral', confidence: 0.4,
+    });
+  }
+
+  if (entries.length === 0) {
+    entries.push({
+      spokenName: 'General', customerName: 'General', customerId: null,
+      matchedCustomerName: null, isNewCustomer: false, date: null,
+      notes: 'No customer names detected in this entry.',
+      originalNotes: content.slice(0, 400),
+      actionItems: [], sentiment: 'neutral', confidence: 0.2,
+    });
+  }
+
+  const saved = await updateOne('diary', entryId, {
+    status: 'done', aiEntries: entries,
+    translatedContent: null, detectedLanguage: 'hinglish',
+    processedAt: new Date().toISOString(),
+  });
+  broadcast('diary:updated', saved);
+}
+
 async function processDiaryEntry(entryId, content, staffId, staffName) {
   try {
     const allCustomers = await readDB('customers');
@@ -205,94 +281,8 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
     const client = getClient();
 
     if (!client) {
-      // ── No API key: extract names via regex heuristics + create new customers ──
-      console.warn('[Diary] No ANTHROPIC_API_KEY — using local name-extraction fallback');
-
-      const FALLBACK_STOPS = new Set([
-        'general','client','customer','sir','madam','bhai','ji','the','and','but','for',
-        'with','okay','done','yes','no','call','meeting','office','today','tomorrow',
-        'morning','evening','aaj','kal','subah','shaam','unka','unhe','wo','woh',
-        'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
-      ]);
-
-      // Extract: capitalised words AND common Hindi name patterns
-      const candidateNames = new Set();
-      // English-style capitalised words (min 3 chars)
-      const capWords = content.match(/\b[A-Z][a-z]{2,}\b/g) || [];
-      capWords.forEach(w => candidateNames.add(w));
-      // Multi-word: "Rahul Kumar", "Priya Singh" etc.
-      const bigramMatches = content.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || [];
-      bigramMatches.forEach(w => candidateNames.add(w));
-
-      const now2 = new Date().toISOString();
-      const entries = [];
-      const createdInFallback = [];
-
-      for (const name of candidateNames) {
-        const nameLower = name.toLowerCase().trim();
-        if (FALLBACK_STOPS.has(nameLower) || name.length < 3) continue;
-
-        // Try fuzzy match against existing customers
-        let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...createdInFallback], 0.78);
-
-        if (resolved) {
-          // Update lastContact on match
-          try { await updateOne('customers', resolved.id, { lastContact: now2 }); } catch {}
-        } else {
-          // Create new customer
-          try {
-            const newCust = {
-              id: uuidv4(), name: titleCase(name), phone: '', email: '',
-              assignedTo: staffId, status: 'lead', lastContact: now2,
-              notes: `Auto-created from diary entry by ${staffName} (no AI key)`,
-              notesList: [], tags: ['diary-import'], dealValue: null, createdAt: now2,
-            };
-            await insertOne('customers', newCust);
-            allCustomers.push(newCust);
-            createdInFallback.push(newCust);
-            resolved = newCust;
-            broadcast('customer:created', newCust);
-            console.log(`[Diary fallback] ✅ Created customer: "${newCust.name}"`);
-          } catch (err) {
-            console.error('[Diary fallback] Failed to create customer:', err.message);
-            continue;
-          }
-        }
-
-        entries.push({
-          spokenName: name,
-          customerName: resolved.name,
-          customerId: resolved.id,
-          matchedCustomerName: resolved.name,
-          matchedCustomerId: resolved.id,
-          isNewCustomer: createdInFallback.some(c => c.id === resolved.id),
-          date: null,
-          notes: `Diary entry logged — AI analysis requires ANTHROPIC_API_KEY to be set on Railway.`,
-          originalNotes: content.slice(0, 300),
-          actionItems: [],
-          sentiment: 'neutral',
-          confidence: 0.4,
-        });
-      }
-
-      if (entries.length === 0) {
-        entries.push({
-          spokenName: 'General', customerName: 'General', customerId: null,
-          matchedCustomerName: null, isNewCustomer: false, date: null,
-          notes: 'No customer names detected. Set ANTHROPIC_API_KEY on Railway for full AI analysis.',
-          originalNotes: content.slice(0, 400),
-          actionItems: ['Set ANTHROPIC_API_KEY in Railway environment variables'],
-          sentiment: 'neutral', confidence: 0.2,
-        });
-      }
-
-      const finalEntry = await updateOne('diary', entryId, {
-        status: 'done', aiEntries: entries,
-        translatedContent: null, detectedLanguage: 'hinglish',
-        processedAt: new Date().toISOString(),
-      });
-      broadcast('diary:updated', finalEntry);
-      return;
+      console.warn('[Diary] No ANTHROPIC_API_KEY — using local fallback');
+      return await runLocalFallback(entryId, content, staffId, staffName, allCustomers);
     }
 
     // ── AI path ────────────────────────────────────────────────────────────────
