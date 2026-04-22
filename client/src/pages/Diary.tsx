@@ -167,17 +167,21 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
               {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
-          {/* Re-analyze — always available so staff can fix bad extractions */}
+          {/* Re-analyze — highlighted when failed so user knows to tap it */}
           <button
             onClick={handleReanalyze}
             disabled={reanalyzing || entry.status === 'processing'}
             title="Re-run AI analysis"
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40 transition-all text-xs font-medium disabled:opacity-40"
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border transition-all text-xs font-medium disabled:opacity-40 ${
+              entry.status === 'error'
+                ? 'border-gold/60 bg-gold/15 text-gold hover:bg-gold/25 hover:border-gold animate-pulse-slow'
+                : 'border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40'
+            }`}
           >
             {reanalyzing
               ? <div className="w-3 h-3 border border-gold/40 border-t-gold rounded-full animate-spin" />
               : <RefreshCw size={11} />}
-            <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : 'Re-run'}</span>
+            <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : entry.status === 'error' ? 'Retry AI' : 'Re-run'}</span>
           </button>
           <button
             onClick={handleDelete}
