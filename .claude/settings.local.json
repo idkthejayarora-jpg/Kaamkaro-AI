@@ -51,7 +51,9 @@
       "Bash(npm --version)",
       "Bash(python3 -c ' *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('version:', d['version']\\)\")",
-      "Bash(node -e \"require\\('./routes/diary'\\); require\\('./routes/ai'\\); console.log\\('✅ both routes OK'\\)\")"
+      "Bash(node -e \"require\\('./routes/diary'\\); require\\('./routes/ai'\\); console.log\\('✅ both routes OK'\\)\")",
+      "Bash(node -e \"require\\('./server/routes/diary.js'\\); console.log\\('✅ syntax OK'\\);\")",
+      "Bash(node)"
     ]
   }
 }

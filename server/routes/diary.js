@@ -302,7 +302,12 @@ function extractNamesFromText(text) {
     (text.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => addName(w));
   }
 
-  return [...found.values()];
+  // ── Deduplication: remove partial names already covered by a full name ────────
+  // e.g. "Verma" is redundant if "Vijay Verma" is already in the set
+  const all = [...found.values()];
+  return all.filter(name =>
+    !all.some(longer => longer !== name && longer.toLowerCase().includes(name.toLowerCase()))
+  );
 }
 
 /**
