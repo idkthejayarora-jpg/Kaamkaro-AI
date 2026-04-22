@@ -257,19 +257,15 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
 function useVoice(onFinalText: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interimText, setInterimText] = useState('');
-  const [voiceLang,   setVoiceLang]   = useState<VoiceLangCode>('hi-IN');
   const [hasVoice,    setHasVoice]    = useState(false);
 
   const recRef          = useRef<ISpeechRecognition | null>(null);
   const listeningRef    = useRef(false);
   const stoppingRef     = useRef(false);
-  const voiceLangRef    = useRef(voiceLang);
   const onFinalRef      = useRef(onFinalText);
-  // Tracks the highest resultIndex already committed this session — prevents duplicates
   const processedIdxRef = useRef(-1);
 
-  useEffect(() => { voiceLangRef.current = voiceLang; }, [voiceLang]);
-  useEffect(() => { onFinalRef.current   = onFinalText; }, [onFinalText]);
+  useEffect(() => { onFinalRef.current = onFinalText; }, [onFinalText]);
 
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -281,11 +277,11 @@ function useVoice(onFinalText: (text: string) => void) {
   const buildRecognition = () => {
     const SR = getSR();
     if (!SR) return null;
-    processedIdxRef.current = -1; // reset for new session
+    processedIdxRef.current = -1;
 
     const rec = new SR();
-    rec.lang            = voiceLangRef.current;
-    rec.continuous      = false;  // manual restart is more reliable on mobile/Chrome
+    rec.lang            = VOICE_LANG;  // hi-IN handles Hindi + English + Hinglish
+    rec.continuous      = false;
     rec.interimResults  = true;
     rec.maxAlternatives = 1;
 
