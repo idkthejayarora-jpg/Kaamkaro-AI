@@ -12,6 +12,8 @@ type SSEHandler = (data: unknown) => void;
  *   });
  *
  * The hook reconnects automatically on disconnect (exponential back-off).
+ * When the page is hidden (e.g. app in background on mobile) SSE is paused to
+ * save battery and connections. It reconnects immediately on visibility restore.
  */
 export function useSSE(handlers: Record<string, SSEHandler>) {
   const handlersRef = useRef(handlers);
@@ -24,8 +26,16 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
     // reconnect quickly but not so fast we spam the server
     let retryDelay = 3000;
     let destroyed = false;
+    let paused = false;
+
+    function disconnect() {
+      if (retryTimeout) { clearTimeout(retryTimeout); retryTimeout = null; }
+      es?.close();
+      es = null;
+    }
 
     function connect() {
+      if (destroyed || paused) return;
       const token = localStorage.getItem('kk_token');
       const url = `/api/events${token ? `?token=${token}` : ''}`;
       es = new EventSource(url);
@@ -47,7 +57,8 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
 
       es.onerror = () => {
         es?.close();
-        if (destroyed) return;
+        es = null;
+        if (destroyed || paused) return;
         retryTimeout = setTimeout(() => {
           // Cap at 15s — no need to wait long, Railway just drops idle conns
           retryDelay = Math.min(retryDelay * 1.5, 15000);
@@ -56,12 +67,32 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
       };
     }
 
-    connect();
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'hidden') {
+        // Page went to background — pause SSE to save battery/connections
+        paused = true;
+        disconnect();
+      } else {
+        // Page became visible — reconnect immediately
+        paused = false;
+        retryDelay = 3000; // reset back-off
+        connect();
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Only connect if page is already visible
+    if (document.visibilityState !== 'hidden') {
+      connect();
+    } else {
+      paused = true;
+    }
 
     return () => {
       destroyed = true;
-      if (retryTimeout) clearTimeout(retryTimeout);
-      es?.close();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      disconnect();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — handlers update via ref
 }
