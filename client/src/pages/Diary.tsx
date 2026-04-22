@@ -146,38 +146,33 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
           {/* ── Content block ── */}
           {hasTranslation ? (
             <div className="space-y-2">
-              {/* English translation — PRIMARY, always visible */}
-              {!showOrig && (
-                <div>
-                  {wasTranslated && (
-                    <p className="text-blue-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
-                      <Languages size={9} /> English Summary
+              {/* Original Hinglish/Hindi text — always visible as the primary preview */}
+              <div>
+                {wasTranslated && (
+                  <p className="text-purple-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
+                    <Globe size={9} /> {LANG_LABEL[entry.detectedLanguage ?? ''] ?? entry.detectedLanguage}
+                  </p>
+                )}
+                <p className="text-white/80 text-sm leading-relaxed">{entry.content}</p>
+              </div>
+
+              {/* English summary — collapsible, shown by default */}
+              {wasTranslated && (
+                <div className="border-t border-dark-50/40 pt-2">
+                  <button
+                    onClick={() => setShowOrig(s => !s)}
+                    className="flex items-center gap-1 text-blue-400/50 hover:text-blue-400/80 text-[10px] transition-colors mb-1"
+                  >
+                    <Languages size={9} />
+                    {showOrig ? 'Hide English summary' : 'Show English summary'}
+                  </button>
+                  {showOrig && (
+                    <p className="text-white/45 text-xs leading-relaxed italic">
+                      {entry.translatedContent}
                     </p>
                   )}
-                  <p className="text-white/75 text-sm leading-relaxed">
-                    {entry.translatedContent}
-                  </p>
                 </div>
               )}
-
-              {/* Original text — shown when toggled */}
-              {showOrig && (
-                <div>
-                  <p className="text-purple-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
-                    <Globe size={9} /> Original ({LANG_LABEL[entry.detectedLanguage ?? ''] ?? entry.detectedLanguage})
-                  </p>
-                  <p className="text-white/50 text-sm leading-relaxed">{entry.content}</p>
-                </div>
-              )}
-
-              {/* Toggle */}
-              <button
-                onClick={() => setShowOrig(s => !s)}
-                className="flex items-center gap-1 text-white/20 hover:text-white/50 text-[10px] transition-colors"
-              >
-                <Languages size={9} />
-                {showOrig ? 'Show English summary' : 'Show original text'}
-              </button>
             </div>
           ) : (
             /* No translation — just show content (already English or still processing) */
