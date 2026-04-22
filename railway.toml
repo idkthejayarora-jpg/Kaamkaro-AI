@@ -3,11 +3,8 @@ builder = "nixpacks"
 buildCommand = "cd client && npm install && npm run build && cd ../server && npm install"
 
 [deploy]
-startCommand = "node server/index.js"
+startCommand = "NODE_ENV=production node server/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 5
-
-[deploy.environmentVariables]
-NODE_ENV = "production"
+restartPolicyMaxRetries = 3
