@@ -462,27 +462,6 @@ export default function Diary() {
         )}
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Language selector — only show when voice is available */}
-          {voice.hasVoice && (
-            <div className="flex rounded-xl border border-dark-50 overflow-hidden">
-              {VOICE_LANGS.map(l => (
-                <button
-                  key={l.code}
-                  onClick={() => { if (!voice.listening) voice.setVoiceLang(l.code); }}
-                  disabled={voice.listening}
-                  title={l.hint}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    voice.voiceLang === l.code
-                      ? 'bg-gold text-dark-500'
-                      : 'text-white/30 hover:text-white'
-                  }`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          )}
-
           {voice.hasVoice && (
             <button
               onClick={voice.toggle}
