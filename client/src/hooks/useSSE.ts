@@ -24,7 +24,7 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
     let destroyed = false;
 
     function connect() {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('kk_token');
       // Pass token as query param (EventSource doesn't support custom headers)
       const url = `/api/events${token ? `?token=${token}` : ''}`;
       es = new EventSource(url);
