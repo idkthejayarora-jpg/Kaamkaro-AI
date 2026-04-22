@@ -192,6 +192,50 @@ const INDIAN_NAMES = new Set([
   'yadav',
 ]);
 
+// ── Indian locations — stripped from name captures (e.g. "kamal ghaziabad" → "Kamal") ──
+// Voice transcription often runs a person's name and their city together since
+// salespeople frequently say "kamal ghaziabad wala" or just "kamal ghaziabad".
+const INDIAN_LOCATIONS = new Set([
+  // UP / NCR
+  'ghaziabad','noida','meerut','agra','lucknow','kanpur','varanasi','allahabad',
+  'prayagraj','bareilly','aligarh','moradabad','mathura','vrindavan','saharanpur',
+  'muzaffarnagar','hapur','bulandshahr','firozabad','etawah','mainpuri',
+  'greater noida','faridabad','gurgaon','gurugram','sonipat','panipat','rohtak',
+  'hisar','bhiwani','rewari','bahadurgarh','loni','dasna','muradnagar','pilkhuwa',
+  // Delhi
+  'delhi','newdelhi','dwarka','rohini','janakpuri','shahdara','laxminagar',
+  'preetvihar','vikasnagar','uttamnagar','saket','vasantkunj','mayurvihar',
+  // Punjab / Haryana / Rajasthan
+  'chandigarh','amritsar','ludhiana','jalandhar','patiala','bathinda','mohali',
+  'jaipur','jodhpur','udaipur','ajmer','bikaner','kota','alwar','sikar',
+  // Madhya Pradesh
+  'bhopal','indore','gwalior','jabalpur','ujjain','sagar','satna','rewa',
+  // Maharashtra
+  'mumbai','pune','nagpur','nashik','aurangabad','solapur','kolhapur','thane',
+  'navi mumbai','kalyan','dombivli','vasai','virar','bhiwandi',
+  // Gujarat
+  'ahmedabad','surat','vadodara','rajkot','bhavnagar','jamnagar','gandhinagar',
+  'anand','nadiad','mehsana',
+  // Uttar Pradesh misc
+  'gorakhpur','jhansi','banda','chitrakoot','fatehpur','unnao','sitapur',
+  'hardoi','lakhimpur','shahjahanpur','pilibhit','budaun','rampur','sambhal',
+  // Bihar / Jharkhand
+  'patna','gaya','bhagalpur','muzaffarpur','purnia','ranchi','jamshedpur',
+  'dhanbad','bokaro','hazaribagh','giridih',
+  // Other major cities
+  'kolkata','hyderabad','bangalore','bengaluru','chennai','bhubaneswar',
+  'visakhapatnam','vijayawada','coimbatore','madurai','thiruvananthapuram',
+  'kochi','kozhikode','mysore','mangalore','hubli','belgaum',
+  'dehradun','haridwar','rishikesh','nainital','haldwani',
+  'shimla','manali','dharamsala',
+  'jammu','srinagar','leh',
+  'guwahati','dibrugarh','silchar',
+  'raipur','bilaspur','durg','korba',
+  // Common area/locality words that appear after names
+  'wala','wali','waale','waali','side','area','city','town','nagar',
+  'vihar','enclave','colony','sector','block','phase','extension',
+]);
+
 // ── Built-in NLP functions — zero external dependencies ───────────────────────
 
 /**
