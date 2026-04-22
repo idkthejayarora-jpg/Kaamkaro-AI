@@ -12,8 +12,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // Model used for diary analysis — override via ANTHROPIC_MODEL env var on Railway
-// claude-opus-4-5 gives the best name extraction; falls back to 3.5-sonnet if unavailable
-const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-5';
+const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 
 function getClient() {
   if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
