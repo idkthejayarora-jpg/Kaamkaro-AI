@@ -353,6 +353,15 @@ export default function KamalAssistant() {
             ))}
           </div>
 
+          {/* Voice error banner */}
+          {voice.voiceError && (
+            <div className="px-3 pb-1 flex-shrink-0">
+              <p className="text-amber-400 text-[10px] flex items-center gap-1">
+                <AlertCircle size={10} />{voice.voiceError}
+              </p>
+            </div>
+          )}
+
           {/* Input bar */}
           <div className="p-3 border-t border-dark-50 flex items-center gap-2 flex-shrink-0">
             <input
