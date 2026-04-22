@@ -151,7 +151,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
                 <div>
                   {wasTranslated && (
                     <p className="text-blue-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
-                      <Languages size={9} /> English Translation
+                      <Languages size={9} /> English Summary
                     </p>
                   )}
                   <p className="text-white/75 text-sm leading-relaxed">
