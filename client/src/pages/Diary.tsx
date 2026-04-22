@@ -143,6 +143,13 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
             <p className="text-white/60 text-sm leading-relaxed line-clamp-3">{entry.content}</p>
           )}
 
+          {/* Show AI error reason so user knows what to fix */}
+          {entry.status === 'error' && entry.error && (
+            <div className="mt-2 flex items-start gap-2 bg-red-500/8 border border-red-500/20 rounded-lg px-3 py-2">
+              <AlertCircle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-300 text-xs leading-relaxed">{entry.error}</p>
+            </div>
+          )}
           {deleteError && (
             <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
               <AlertCircle size={11} />{deleteError}
