@@ -1,0 +1,20 @@
+# Nixpacks build config for Kaamkaro AI (monorepo: client/ + server/)
+# This tells Railway exactly how to install deps and build the React frontend.
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-11_x"]
+
+[phases.install]
+cmds = [
+  "cd client && npm install --prefer-offline",
+  "cd server && npm install --prefer-offline"
+]
+
+[phases.build]
+cmds = [
+  "cd client && npm run build"
+]
+dependsOn = ["install"]
+
+[start]
+cmd = "NODE_ENV=production node server/index.js"
