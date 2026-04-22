@@ -422,7 +422,10 @@ export default function Diary() {
 
   // Initial load
   useEffect(() => {
-    diaryAPI.list().then(d => { setEntries(d); setLoading(false); });
+    diaryAPI.list()
+      .then(d => { setEntries(d); })
+      .catch(() => { /* show empty state — not a crash */ })
+      .finally(() => setLoading(false));
   }, []);
 
   // Real-time updates via SSE (replaces 4-second polling)
