@@ -1,5 +1,6 @@
 # Nixpacks build config for Kaamkaro AI (monorepo: client/ + server/)
-# Explicitly defines install/build phases so Railway builds the React client.
+# Only defines install/build phases — start command is in railway.toml [deploy].
+# Having [start] here AND startCommand in railway.toml causes a bash-not-found conflict.
 
 [phases.install]
 cmds = [
@@ -12,6 +13,3 @@ cmds = [
   "cd client && npm run build"
 ]
 dependsOn = ["install"]
-
-[start]
-cmd = "NODE_ENV=production node server/index.js"
