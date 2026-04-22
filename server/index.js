@@ -114,8 +114,19 @@ async function seed() {
   }
 }
 
+// ── Global unhandled error catchers — prevent server crashes ──────────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('[UnhandledRejection]', reason);
+  // Do NOT exit — keep server alive
+});
+process.on('uncaughtException', (err) => {
+  console.error('[UncaughtException]', err);
+  // Do NOT exit — keep server alive
+});
+
 // ── Start ──────────────────────────────────────────────────────────────────────
-seed().then(() => {
+// seed() failure must NOT prevent the server from starting
+function startServer() {
   app.listen(PORT, () => {
     console.log(`\n🚀 Kaamkaro AI → http://localhost:${PORT}`);
     if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here') {
@@ -125,4 +136,12 @@ seed().then(() => {
       console.log(`   Diary analysis and Kamal AI chat will use fallback mode until key is set.\n`);
     }
   });
-}).catch(console.error);
+}
+
+seed()
+  .catch(err => {
+    console.error('[Seed] Failed — starting server anyway:', err);
+  })
+  .finally(() => {
+    startServer();
+  });
