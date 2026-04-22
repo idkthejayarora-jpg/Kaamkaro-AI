@@ -8,6 +8,22 @@ const DATA_DIR = process.env.DATA_PATH
   ? path.resolve(process.env.DATA_PATH)
   : path.join(__dirname, '../data');
 
+// ── Write queue — prevent concurrent writes from corrupting JSON files ─────────
+// Each collection has its own Promise chain; writes are serialised per collection.
+const writeQueue = new Map(); // collection → Promise
+
+function queueWrite(collection, fn) {
+  const prev = writeQueue.get(collection) || Promise.resolve();
+  const next = prev.then(fn).catch(err => {
+    // Log but don't break the chain — next write can still proceed
+    console.error(`[DB writeQueue] Error in ${collection}:`, err);
+    throw err; // re-throw so the original caller sees the error
+  });
+  // Store a version that never rejects so the chain always continues
+  writeQueue.set(collection, next.catch(() => {}));
+  return next;
+}
+
 // Backup only makes sense on local macOS — skip on Railway/Linux containers
 const IS_LOCAL_MAC = os.platform() === 'darwin' && !process.env.RAILWAY_ENVIRONMENT;
 const BACKUP_DIR = IS_LOCAL_MAC
