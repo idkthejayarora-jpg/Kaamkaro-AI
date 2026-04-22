@@ -128,7 +128,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
 
             {entry.status === 'processing' && (
               <span className="badge badge-gold text-[10px] flex items-center gap-1">
-                <Clock size={9} className="animate-pulse" /> Translating & analysing…
+                <Clock size={9} className="animate-pulse" /> Analysing…
               </span>
             )}
             {entry.status === 'done' && (
