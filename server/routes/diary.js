@@ -11,9 +11,28 @@ try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
 const router = express.Router();
 router.use(authMiddleware);
 
+// Model used for diary analysis — override via ANTHROPIC_MODEL env var on Railway
+// claude-opus-4-5 gives the best name extraction; falls back to 3.5-sonnet if unavailable
+const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-5';
+
 function getClient() {
   if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+
+// Wrapper that retries with a safe fallback model if the primary model isn't found
+async function callClaude(client, params) {
+  try {
+    return await client.messages.create({ model: AI_MODEL, ...params });
+  } catch (err) {
+    const isModelErr = err?.status === 404 || err?.status === 400 ||
+      (err?.message || '').toLowerCase().includes('model');
+    if (isModelErr && AI_MODEL !== 'claude-3-5-sonnet-20241022') {
+      console.warn(`[Diary] Model "${AI_MODEL}" failed (${err.status}), retrying with claude-3-5-sonnet-20241022`);
+      return await client.messages.create({ model: 'claude-3-5-sonnet-20241022', ...params });
+    }
+    throw err;
+  }
 }
 
 // ── Fuzzy name matching ────────────────────────────────────────────────────────
