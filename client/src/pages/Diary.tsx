@@ -176,7 +176,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
                 className="flex items-center gap-1 text-white/20 hover:text-white/50 text-[10px] transition-colors"
               >
                 <Languages size={9} />
-                {showOrig ? 'Show English translation' : 'Show original text'}
+                {showOrig ? 'Show English summary' : 'Show original text'}
               </button>
             </div>
           ) : (
