@@ -75,6 +75,10 @@ const STOP_WORDS = new Set([
   'before','through','during','also','just','even','when','then','than','only',
   'been','will','would','could','should','shall','some','both','each','into',
   'over','here','there','what','which','where','while','said','says','told',
+  // Pronouns and auxiliaries (prevent "Sunita She", "He Was" etc.)
+  'she','he','his','her','its','was','are','were','has','had','did','not',
+  'him','who','all','one','two','three','four','five','six','seven','eight',
+  'nine','ten','new','old','big','small','first','last','next','same','like',
   // Days / months
   'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
   'january','february','march','april','may','june',
