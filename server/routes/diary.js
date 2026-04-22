@@ -702,6 +702,44 @@ function extractAmount(text) {
   return null;
 }
 
+/**
+ * Build a human-readable note for the interaction log entry on the customer profile.
+ * Combines sentiment, amount, and next actions into a compact string.
+ */
+function buildInteractionNote(content, sentiment, amount, actions) {
+  const parts = [];
+
+  // Sentiment opening line
+  if (sentiment === 'positive') {
+    parts.push('Positive interaction logged from diary entry.');
+  } else if (sentiment === 'negative') {
+    parts.push('Interaction noted — follow up required.');
+  } else {
+    parts.push('Interaction logged from diary entry.');
+  }
+
+  // Deal amount if detected
+  if (amount) {
+    const formatted = amount >= 100000
+      ? `₹${(amount / 100000).toFixed(1).replace(/\.0$/, '')} lakh`
+      : `₹${amount.toLocaleString('en-IN')}`;
+    parts.push(`Deal amount: ${formatted}.`);
+  }
+
+  // Next action (first one)
+  if (actions && actions.length > 0) {
+    parts.push(`Next: ${actions[0]}.`);
+  }
+
+  // Snippet of original text (first 150 chars)
+  const snippet = content.trim().slice(0, 150);
+  if (snippet) {
+    parts.push(`Entry: "${snippet}${content.length > 150 ? '…' : ''}"`);
+  }
+
+  return parts.join(' ');
+}
+
 // ── Core processing ────────────────────────────────────────────────────────────
 
 /**
