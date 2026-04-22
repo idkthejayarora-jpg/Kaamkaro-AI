@@ -62,6 +62,13 @@ if (fs.existsSync(indexHtml)) {
   app.get('*', (req, res) => res.sendFile(indexHtml));
 }
 
+// ── Express error middleware — must be AFTER all routes ───────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[Express Error]', err);
+  res.status(500).json({ error: 'Server error', message: err.message });
+});
+
 // ── First-run seed ────────────────────────────────────────────────────────────
 // Only creates the admin account if no users exist.
 // All other data starts empty — add your own staff, customers, and vendors.
