@@ -49,19 +49,32 @@ function ActionBadge({ action }: { action: KamalMessage['actionResult'] }) {
 }
 
 // ── Robust voice hook for Kamal (command mode: commits on first final) ────────
+// Production: handles all SpeechRecognition error types; never restarts on
+// fatal errors (not-allowed, audio-capture); cleans up with abort() not stop().
 function useVoiceCommand(onResult: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interim,     setInterim]     = useState('');
   const [hasVoice,    setHasVoice]    = useState(false);
+  const [voiceError,  setVoiceError]  = useState('');
   const recRef          = useRef<ISR | null>(null);
   const listeningRef    = useRef(false);
   const stoppingRef     = useRef(false);
+  const fatalErrorRef   = useRef(false);
   const processedIdxRef = useRef(-1);
   const onResultRef     = useRef(onResult);
   useEffect(() => { onResultRef.current = onResult; }, [onResult]);
 
   useEffect(() => {
     setHasVoice(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+  }, []);
+
+  // Cleanup on unmount — always abort to free mic
+  useEffect(() => {
+    return () => {
+      listeningRef.current = false;
+      stoppingRef.current  = true;
+      try { recRef.current?.abort(); } catch {}
+    };
   }, []);
 
   const getSR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -94,21 +107,50 @@ function useVoiceCommand(onResult: (text: string) => void) {
       if (fin.trim()) {
         setInterim('');
         // Commit immediately and stop — command mode, one utterance at a time
-        stoppingRef.current = true;
+        stoppingRef.current  = true;
         listeningRef.current = false;
         onResultRef.current(fin.trim());
-        try { rec.stop(); } catch {}
+        try { rec.abort(); } catch {}
       }
     };
 
     rec.onerror = (e: { error: string }) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') {
-        console.warn('[Kamal voice]', e.error);
+      switch (e.error) {
+        case 'no-speech':
+        case 'aborted':
+          break; // expected — ignore
+        case 'not-allowed':
+        case 'audio-capture':
+          fatalErrorRef.current = true;
+          listeningRef.current  = false;
+          stoppingRef.current   = true;
+          setListening(false);
+          setVoiceError(
+            e.error === 'not-allowed'
+              ? 'Mic permission denied'
+              : 'Mic not available',
+          );
+          try { rec.abort(); } catch {}
+          break;
+        case 'network':
+          fatalErrorRef.current = true;
+          listeningRef.current  = false;
+          stoppingRef.current   = true;
+          setListening(false);
+          setVoiceError('Voice network error — check connection');
+          try { rec.abort(); } catch {}
+          break;
+        default:
+          console.warn('[Kamal voice]', e.error);
       }
     };
 
     rec.onend = () => {
       setInterim('');
+      if (fatalErrorRef.current) {
+        fatalErrorRef.current = false;
+        return;
+      }
       if (listeningRef.current && !stoppingRef.current) {
         // Unexpected stop — restart after brief pause
         setTimeout(() => {
@@ -127,6 +169,8 @@ function useVoiceCommand(onResult: (text: string) => void) {
 
   const start = useCallback(() => {
     if (!getSR() || listeningRef.current) return;
+    setVoiceError('');
+    fatalErrorRef.current = false;
     listeningRef.current = true;
     stoppingRef.current  = false;
     setListening(true);
@@ -139,12 +183,12 @@ function useVoiceCommand(onResult: (text: string) => void) {
   const stop = useCallback(() => {
     stoppingRef.current  = true;
     listeningRef.current = false;
-    try { recRef.current?.stop(); } catch {}
+    try { recRef.current?.abort(); } catch {}
   }, []);
 
   const toggle = () => { if (listeningRef.current) stop(); else start(); };
 
-  return { listening, interim, hasVoice, toggle, stop };
+  return { listening, interim, hasVoice, voiceError, toggle, stop };
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
