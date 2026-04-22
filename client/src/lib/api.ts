@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api', timeout: 30000 });
+// 60 s timeout — accommodates Railway cold-start spin-up time
+const api = axios.create({ baseURL: '/api', timeout: 60000 });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('kk_token');
@@ -11,11 +12,38 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
+    // 401 → force logout and redirect to login
     if (err.response?.status === 401) {
       localStorage.removeItem('kk_token');
       localStorage.removeItem('kk_user');
       window.location.href = '/login';
+      return Promise.reject(err);
     }
+
+    // Network timeout or no response (server unreachable / Railway cold start)
+    if (err.code === 'ECONNABORTED' || !err.response) {
+      const msg = err.code === 'ECONNABORTED'
+        ? 'Request timed out — server may be starting up. Please try again.'
+        : 'Network error — check your internet connection and try again.';
+      // Use a non-blocking alert so UI is not frozen; can be swapped for a toast lib later
+      if (typeof window !== 'undefined') {
+        console.warn('[API]', msg, err.message);
+        // Only show alert for user-initiated requests (not background polls)
+        // Gate on navigator.onLine so we don't double-alert on offline events
+        if (!navigator.onLine) {
+          // Browser is offline — the 'offline' event will surface this to the user
+        } else {
+          // Surface to user via a dismissible banner stored in sessionStorage to avoid spam
+          const key = `kk_neterr_${err.code ?? 'NET'}`;
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            setTimeout(() => sessionStorage.removeItem(key), 15000); // allow repeat after 15 s
+            window.dispatchEvent(new CustomEvent('kk:network-error', { detail: { message: msg } }));
+          }
+        }
+      }
+    }
+
     return Promise.reject(err);
   }
 );
