@@ -1,4 +1,8 @@
 require('dotenv').config();
+// On Railway, PORT is always set — use that as a proxy for "production" environment
+if (process.env.PORT && !process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
+}
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
