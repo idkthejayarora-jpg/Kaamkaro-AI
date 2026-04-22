@@ -616,43 +616,129 @@ router.post('/:id/reanalyze', async (req, res) => {
   }
 });
 
+// ── Task / interaction helpers ─────────────────────────────────────────────────
+
+/**
+ * Parse a due date from diary text.
+ * Handles: kal/tomorrow, parso/day after tomorrow, aaj/today, next week, agle hafte.
+ * Falls back to tomorrow if a future-intent phrase is found but no date is specified.
+ */
+function parseDueDateFromText(text) {
+  const lower = text.toLowerCase();
+  const d = new Date();
+  const fmt = (dt) => dt.toISOString().split('T')[0];
+
+  if (/\bparso\b|\bday after tomorrow\b/.test(lower)) { d.setDate(d.getDate() + 2); return fmt(d); }
+  if (/\bkal\b|\btomorrow\b/.test(lower))              { d.setDate(d.getDate() + 1); return fmt(d); }
+  if (/\baaj\b|\btoday\b/.test(lower))                 { return fmt(d); }
+  if (/\bnext week\b|\bagle hafte\b|\bis hafte\b/.test(lower)) { d.setDate(d.getDate() + 7); return fmt(d); }
+  if (/\bnext month\b|\bagle mahine\b/.test(lower))    { d.setDate(d.getDate() + 30); return fmt(d); }
+  // Generic future intent → default to tomorrow
+  d.setDate(d.getDate() + 1);
+  return fmt(d);
+}
+
+/**
+ * Detect if text has a future-intent phrase that should create a task.
+ * Returns [{title, dueDate}] — one entry per detected action.
+ * Keeps it tight: max 3 tasks per diary entry.
+ */
+function detectTasks(text, customerName) {
+  const lower = text.toLowerCase();
+  const dueDate = parseDueDateFromText(text);
+  const cName = customerName || 'Customer';
+
+  const patterns = [
+    // Video call / call
+    { r: /video\s*call/i,                                      t: `Video call with ${cName}`    },
+    { r: /(?:call back|call karega|call karein|phone karega|ring karega|call karna)/i,
+                                                               t: `Call ${cName}`               },
+    // Meeting
+    { r: /(?:milenge|milna hai|meeting|appointment)/i,         t: `Meeting with ${cName}`       },
+    // Quote / proposal
+    { r: /(?:quote|proposal|estimate|quotation|bhejega|bhejna)/i, t: `Send quote to ${cName}`  },
+    // Payment follow-up
+    { r: /(?:payment|invoice|bill|baaki|dues)/i,               t: `Follow up on payment — ${cName}` },
+    // Delivery
+    { r: /(?:deliver|dispatch|courier|bhejna|mal bhejega)/i,   t: `Arrange delivery for ${cName}` },
+    // Follow up (generic)
+    { r: /follow.?up/i,                                        t: `Follow up with ${cName}`    },
+    // Demo
+    { r: /(?:demo|demonstration|dikhana|dikhayenge)/i,         t: `Product demo for ${cName}`  },
+  ];
+
+  const tasks = [];
+  for (const { r, t } of patterns) {
+    if (r.test(lower)) {
+      tasks.push({ title: t, dueDate });
+      if (tasks.length >= 3) break;
+    }
+  }
+  return tasks;
+}
+
+/**
+ * Extract a rupee amount from text.
+ * Handles: "50000 ka", "₹50000", "50k", "5 lakh", "Rs 50,000"
+ */
+function extractAmount(text) {
+  const lower = text.toLowerCase();
+  let m;
+
+  // "5 lakh", "5.5 lakh"
+  m = lower.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lac)/);
+  if (m) return Math.round(parseFloat(m[1]) * 100000);
+
+  // "50k"
+  m = lower.match(/(\d+(?:\.\d+)?)\s*k\b/);
+  if (m) return Math.round(parseFloat(m[1]) * 1000);
+
+  // "₹50000" / "rs 50000" / "50000 ka" / "50,000"
+  m = lower.match(/(?:₹|rs\.?\s*)?(\d[\d,]{2,})(?:\s*(?:ka|ke|ki|rupees?|ruppees?))?/);
+  if (m) {
+    const val = parseInt(m[1].replace(/,/g, ''), 10);
+    if (val >= 100) return val; // ignore tiny numbers like "50 ka chai"
+  }
+  return null;
+}
+
 // ── Core processing ────────────────────────────────────────────────────────────
 
 /**
- * Main diary processing function.
+ * Main diary processing.
  *
- * PHASE 1 (always runs, always completes):
- *   Built-in NLP → extract names, sentiment, actions → auto-create customers →
- *   save entry as 'done' with English summary.
+ * PHASE 1 — always runs, always completes fast (pure local NLP):
+ *   Extract names → resolve/create customers → log interactions →
+ *   create tasks → save diary as 'done' → broadcast.
+ *   All customer + task + interaction writes happen in parallel after
+ *   the diary broadcast so the UI updates instantly.
  *
- * PHASE 2 (optional, best-effort):
- *   If ANTHROPIC_API_KEY is set AND credits are available, try AI for a richer
- *   translation and better notes. If AI fails for ANY reason, the Phase-1 result
- *   stands — the diary entry is never left in 'error' state.
+ * PHASE 2 — optional AI enhancement (skipped when no API key / no credits).
  */
 async function processDiaryEntry(entryId, content, staffId, staffName) {
-  // ── PHASE 1: Built-in NLP ──────────────────────────────────────────────────
+  // ── PHASE 1: Local NLP — parallel reads ────────────────────────────────────
   let allCustomers = [];
   try { allCustomers = await readDB('customers'); } catch {}
 
-  const lang        = detectLanguage(content);
-  const names       = extractNamesFromText(content);
-  const sentiment   = detectSentimentLocal(content);
-  const actions     = extractActionItemsLocal(content);
-  const summary     = buildEnglishSummary(names, lang, sentiment, actions, staffName);
-  const now         = new Date().toISOString();
+  const lang      = detectLanguage(content);
+  const names     = extractNamesFromText(content);
+  const sentiment = detectSentimentLocal(content);
+  const actions   = extractActionItemsLocal(content);
+  const summary   = buildEnglishSummary(names, lang, sentiment, actions, staffName);
+  const amount    = extractAmount(content);
+  const now       = new Date().toISOString();
 
-  const newCustomers = [];
-  const localEntries = [];
+  const newCustomers  = [];
+  const localEntries  = [];
+  const resolvedList  = []; // [{customer, isNew}] — used for post-broadcast side effects
 
   for (const name of names) {
     let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...newCustomers], 0.78);
+    let isNew = false;
 
     if (resolved) {
-      // Update lastContact timestamp on existing customer
-      try { await updateOne('customers', resolved.id, { lastContact: now }); } catch {}
+      allCustomers = allCustomers.map(c => c.id === resolved.id ? { ...c, lastContact: now } : c);
     } else {
-      // Auto-create new customer
       try {
         const newCust = {
           id: uuidv4(), name: titleCase(name), phone: '', email: '',
@@ -664,6 +750,7 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
         allCustomers.push(newCust);
         newCustomers.push(newCust);
         resolved = newCust;
+        isNew = true;
         broadcast('customer:created', newCust);
         console.log(`[Diary NLP] ✅ Created customer: "${newCust.name}"`);
       } catch (e) {
@@ -672,7 +759,8 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
       }
     }
 
-    const isNew = newCustomers.some(c => c.id === resolved.id);
+    resolvedList.push({ customer: resolved, isNew });
+
     const noteText = sentiment === 'positive'
       ? 'Positive interaction logged.'
       : sentiment === 'negative'
@@ -696,7 +784,6 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
     });
   }
 
-  // If no names found, still log the entry as a general note
   if (localEntries.length === 0) {
     localEntries.push({
       spokenName: 'General', customerName: 'General', customerId: null,
@@ -704,22 +791,85 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
       notes: actions.length > 0
         ? `General activity logged. Next: ${actions[0]}.`
         : 'No specific customer names detected in this entry.',
-      originalNotes:  content.slice(0, 400),
-      actionItems:    actions,
+      originalNotes: content.slice(0, 400),
+      actionItems:   actions,
       sentiment,
-      confidence:     0.3,
+      confidence:    0.3,
     });
   }
 
-  // Save immediately — diary is DONE after Phase 1
+  // ── Save diary + broadcast IMMEDIATELY so UI updates right away ────────────
   const savedEntry = await updateOne('diary', entryId, {
-    status:           'done',
-    aiEntries:        localEntries,
+    status:            'done',
+    aiEntries:         localEntries,
     translatedContent: summary,
     detectedLanguage:  lang,
     processedAt:       now,
   });
   broadcast('diary:updated', savedEntry);
+
+  // ── Side effects run in parallel (non-blocking after UI update) ────────────
+  const sideEffects = [];
+
+  for (const { customer, isNew } of resolvedList) {
+    // 1. Update lastContact + dealValue on existing customers
+    if (!isNew) {
+      const patch = { lastContact: now };
+      if (amount && (!customer.dealValue || amount > customer.dealValue)) {
+        patch.dealValue = amount;
+      }
+      sideEffects.push(updateOne('customers', customer.id, patch).catch(() => {}));
+    } else if (amount) {
+      sideEffects.push(updateOne('customers', customer.id, { dealValue: amount }).catch(() => {}));
+    }
+
+    // 2. Log interaction on customer profile
+    const interactionNote = buildInteractionNote(content, sentiment, amount, actions);
+    const interaction = {
+      id: uuidv4(),
+      customerId:  customer.id,
+      staffId,
+      staffName,
+      type:        'diary',
+      responded:   true,
+      notes:       interactionNote,
+      followUpDate: null,
+      diaryEntryId: entryId,
+      createdAt:   now,
+    };
+    sideEffects.push(
+      insertOne('interactions', interaction)
+        .then(() => broadcast('interaction:created', interaction))
+        .catch(() => {})
+    );
+
+    // 3. Create tasks for detected future-intent phrases
+    const detectedTasks = detectTasks(content, customer.name);
+    for (const { title, dueDate } of detectedTasks) {
+      const task = {
+        id: uuidv4(),
+        staffId,
+        customerId:   customer.id,
+        customerName: customer.name,
+        title,
+        notes:        `Auto-created from diary entry: "${content.slice(0, 120)}${content.length > 120 ? '…' : ''}"`,
+        dueDate,
+        completed:    false,
+        completedAt:  null,
+        createdAt:    now,
+      };
+      sideEffects.push(
+        insertOne('tasks', task)
+          .then(() => {
+            broadcast('task:created', task);
+            console.log(`[Diary NLP] 📋 Task created: "${title}" due ${dueDate}`);
+          })
+          .catch(() => {})
+      );
+    }
+  }
+
+  await Promise.allSettled(sideEffects);
 
   if (newCustomers.length > 0) {
     console.log(`[Diary NLP] Created ${newCustomers.length} new customer(s) for ${staffName}`);
