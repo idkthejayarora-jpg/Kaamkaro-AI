@@ -275,12 +275,27 @@ function detectLanguage(text) {
 function extractNamesFromText(text) {
   const found = new Map(); // normalizedKey → displayName (titleCase)
 
+  /**
+   * Strip trailing location words from a captured name candidate, then store.
+   * "kamal ghaziabad" → strips "ghaziabad" → stores "Kamal"
+   * "rahul sharma noida" → strips "noida" → stores "Rahul Sharma"
+   * "vijay kumar" → no location → stores "Vijay Kumar"
+   */
   const addName = (raw) => {
-    const name = titleCase(raw.trim().replace(/\s+/g, ' '));
+    let parts = raw.trim().replace(/\s+/g, ' ').toLowerCase().split(' ');
+    // Strip trailing location words (may be multi-word like "greater noida")
+    while (parts.length > 1 && (INDIAN_LOCATIONS.has(parts[parts.length - 1]) || STOP_WORDS.has(parts[parts.length - 1]))) {
+      parts = parts.slice(0, -1);
+    }
+    // Also try stripping a two-word trailing location (e.g. "greater noida")
+    if (parts.length > 2) {
+      const lastTwo = parts.slice(-2).join(' ');
+      if (INDIAN_LOCATIONS.has(lastTwo)) parts = parts.slice(0, -2);
+    }
+    const name = titleCase(parts.join(' '));
     const key  = normalizeName(name);
     if (!key || key.length < 3) return;
-    const parts = name.split(' ');
-    if (parts.some(p => STOP_WORDS.has(p.toLowerCase()))) return;
+    if (parts.some(p => STOP_WORDS.has(p))) return;
     if (!found.has(key)) found.set(key, name);
   };
 
