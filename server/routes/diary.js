@@ -192,48 +192,75 @@ const INDIAN_NAMES = new Set([
   'yadav',
 ]);
 
-// ── Indian locations — stripped from name captures (e.g. "kamal ghaziabad" → "Kamal") ──
-// Voice transcription often runs a person's name and their city together since
-// salespeople frequently say "kamal ghaziabad wala" or just "kamal ghaziabad".
+// ── Indian locations — kept AS PART of the customer name ─────────────────────
+// Customers in this system are identified as "name place" (e.g. "Manish Agra",
+// "Mohit Lajpat Nagar", "Ansh Chauhan Kolkata", "Bittoo Fashion Chandigarh").
+// When voice recognition produces "manish agra" we store it as "Manish Agra",
+// NOT just "Manish". The place is the disambiguator the sales team uses.
 const INDIAN_LOCATIONS = new Set([
-  // UP / NCR
+  // UP / NCR districts & cities
   'ghaziabad','noida','meerut','agra','lucknow','kanpur','varanasi','allahabad',
   'prayagraj','bareilly','aligarh','moradabad','mathura','vrindavan','saharanpur',
   'muzaffarnagar','hapur','bulandshahr','firozabad','etawah','mainpuri',
-  'greater noida','faridabad','gurgaon','gurugram','sonipat','panipat','rohtak',
+  'faridabad','gurgaon','gurugram','sonipat','panipat','rohtak',
   'hisar','bhiwani','rewari','bahadurgarh','loni','dasna','muradnagar','pilkhuwa',
-  // Delhi
-  'delhi','newdelhi','dwarka','rohini','janakpuri','shahdara','laxminagar',
+  // Delhi localities & areas
+  'delhi','dwarka','rohini','janakpuri','shahdara','laxminagar','laxmi nagar',
   'preetvihar','vikasnagar','uttamnagar','saket','vasantkunj','mayurvihar',
+  'lajpat','lajpatnagar','karolbagh','karol bagh','chandnichowk','chandni chowk',
+  'connaught','paharganj','nehrunagar','nehru nagar','jangpura','lodhi','lodhi road',
+  'gtb nagar','gtbnagar','vishwas nagar','vishwasnagar','dilshad','dilshad garden',
+  'yamuna vihar','yamuna','seelampur','gandhi nagar','gandhingar','krishna nagar',
+  'lake city','model town','pitampura','shalimar bagh','punjabi bagh','rajouri',
+  'rajouri garden','tilak nagar','uttam nagar','subhash nagar','ramesh nagar',
+  'kirti nagar','moti nagar','rajender nagar','patel nagar','inderpuri',
+  'naraina','madipur','paschim vihar','nilothi','nangloi','mangolpuri',
+  'sultanpur','ghitorni','chattarpur','mehrauli','hauz khas','green park',
+  'malviya nagar','safdarjung','lodi colony','jor bagh','ina','andrews ganj',
+  'okhla','jasola','kalindi kunj','badarpur','molar band','sangam vihar',
+  'govindpuri','kalkaji','nehru place','alaknanda','chittaranjan park',
+  'east of kailash','greater kailash','panchsheel','srinivaspuri',
+  'new friends colony','sukhdev vihar','madangir','ambedkar nagar',
+  'sarita vihar','masoodpur','moti bagh','rk puram','safdarjung enclave',
+  'vasant vihar','munirka','ber sarai','mahipalpur','aerocity',
+  'dwarka sector','noida sector',
   // Punjab / Haryana / Rajasthan
   'chandigarh','amritsar','ludhiana','jalandhar','patiala','bathinda','mohali',
+  'zirakpur','kharar','derabassi','ropar','fatehgarh','muktsar','moga','barnala',
   'jaipur','jodhpur','udaipur','ajmer','bikaner','kota','alwar','sikar',
+  'bhilwara','tonk','sawai madhopur','dholpur','karauli','bundi','chittorgarh',
   // Madhya Pradesh
   'bhopal','indore','gwalior','jabalpur','ujjain','sagar','satna','rewa',
+  'dewas','shivpuri','morena','bhind','datia','vidisha','raisen','sehore',
   // Maharashtra
   'mumbai','pune','nagpur','nashik','aurangabad','solapur','kolhapur','thane',
-  'navi mumbai','kalyan','dombivli','vasai','virar','bhiwandi',
+  'navi mumbai','kalyan','dombivli','vasai','virar','bhiwandi','ulhasnagar',
+  'ambernath','badlapur','panvel','khopoli','lonavala','pune city','pimpri',
+  'chinchwad','pimpri chinchwad','akola','amravati','nanded','latur','osmanabad',
   // Gujarat
   'ahmedabad','surat','vadodara','rajkot','bhavnagar','jamnagar','gandhinagar',
-  'anand','nadiad','mehsana',
-  // Uttar Pradesh misc
+  'anand','nadiad','mehsana','junagadh','porbandar','surendranagar','patan',
+  'palanpur','himmatnagar','godhra','ankleshwar','bharuch','valsad','navsari',
+  // UP misc
   'gorakhpur','jhansi','banda','chitrakoot','fatehpur','unnao','sitapur',
   'hardoi','lakhimpur','shahjahanpur','pilibhit','budaun','rampur','sambhal',
+  'bijnor','amroha','hapur','greater noida','noida extension',
   // Bihar / Jharkhand
   'patna','gaya','bhagalpur','muzaffarpur','purnia','ranchi','jamshedpur',
-  'dhanbad','bokaro','hazaribagh','giridih',
-  // Other major cities
+  'dhanbad','bokaro','hazaribagh','giridih','darbhanga','motihari','samastipur',
+  // Other major metros & cities
   'kolkata','hyderabad','bangalore','bengaluru','chennai','bhubaneswar',
   'visakhapatnam','vijayawada','coimbatore','madurai','thiruvananthapuram',
-  'kochi','kozhikode','mysore','mangalore','hubli','belgaum',
-  'dehradun','haridwar','rishikesh','nainital','haldwani',
-  'shimla','manali','dharamsala',
-  'jammu','srinagar','leh',
-  'guwahati','dibrugarh','silchar',
-  'raipur','bilaspur','durg','korba',
-  // Common area/locality words that appear after names
-  'wala','wali','waale','waali','side','area','city','town','nagar',
-  'vihar','enclave','colony','sector','block','phase','extension',
+  'kochi','kozhikode','mysore','mangalore','hubli','belgaum','davangere',
+  'dehradun','haridwar','rishikesh','nainital','haldwani','roorkee',
+  'shimla','manali','dharamsala','solan','mandi','kullu',
+  'jammu','srinagar','leh','udhampur','kathua',
+  'guwahati','dibrugarh','silchar','tezpur','jorhat',
+  'raipur','bilaspur','durg','korba','rajnandgaon',
+  'bhopal','jabalpur',
+  // Generic locality suffixes — kept in location set so dictionary scan includes them
+  'nagar','vihar','enclave','colony','sector','block','phase','extension',
+  'market','chowk','crossing','road','marg','place','garden','park','puri',
 ]);
 
 // ── Built-in NLP functions — zero external dependencies ───────────────────────
