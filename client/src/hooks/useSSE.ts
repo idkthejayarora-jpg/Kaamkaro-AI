@@ -20,29 +20,28 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
   useEffect(() => {
     let es: EventSource | null = null;
     let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-    let retryDelay = 1000;
+    // Start at 3s — Railway proxy has a ~60s idle timeout so connections drop;
+    // reconnect quickly but not so fast we spam the server
+    let retryDelay = 3000;
     let destroyed = false;
 
     function connect() {
       const token = localStorage.getItem('kk_token');
-      // Pass token as query param (EventSource doesn't support custom headers)
       const url = `/api/events${token ? `?token=${token}` : ''}`;
       es = new EventSource(url);
 
       es.addEventListener('connected', () => {
-        retryDelay = 1000; // reset on successful connect
+        retryDelay = 3000; // reset on successful connect
       });
 
-      // Register listeners for all event types
+      // Register all event listeners declared by the consumer
       const eventNames = Object.keys(handlersRef.current);
       for (const name of eventNames) {
         es.addEventListener(name, (ev: MessageEvent) => {
           try {
             const data = JSON.parse(ev.data);
             handlersRef.current[name]?.(data);
-          } catch {
-            // ignore parse errors
-          }
+          } catch { /* ignore malformed events */ }
         });
       }
 
@@ -50,7 +49,8 @@ export function useSSE(handlers: Record<string, SSEHandler>) {
         es?.close();
         if (destroyed) return;
         retryTimeout = setTimeout(() => {
-          retryDelay = Math.min(retryDelay * 2, 30000);
+          // Cap at 15s — no need to wait long, Railway just drops idle conns
+          retryDelay = Math.min(retryDelay * 1.5, 15000);
           connect();
         }, retryDelay);
       };
