@@ -479,8 +479,22 @@ Respond ONLY with this JSON, no other text:
     broadcast('diary:updated', finalEntry);
 
   } catch (err) {
-    console.error('[Diary] Processing error:', err);
-    const errEntry = await updateOne('diary', entryId, { status: 'error', error: err.message });
+    const errMsg = err?.message || String(err);
+    const errStatus = err?.status || err?.statusCode || 'unknown';
+    console.error(`[Diary] ❌ Processing error (HTTP ${errStatus}): ${errMsg}`);
+    if (err?.error) console.error('[Diary] API error body:', JSON.stringify(err.error));
+    // Store the actual error so the UI can show it
+    const userFacingError = errStatus === 401
+      ? 'Invalid ANTHROPIC_API_KEY — check Railway environment variables'
+      : errStatus === 404 || (errMsg.includes('model'))
+        ? `Model "${AI_MODEL}" not found — set ANTHROPIC_MODEL env var on Railway`
+        : errStatus === 429
+          ? 'API rate limit hit — will retry automatically on re-analyze'
+          : errMsg.slice(0, 200);
+    const errEntry = await updateOne('diary', entryId, {
+      status: 'error',
+      error: userFacingError,
+    });
     broadcast('diary:updated', errEntry);
   }
 }
