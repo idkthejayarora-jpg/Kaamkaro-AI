@@ -435,8 +435,10 @@ function extractNamesFromText(text) {
       const candidate = m[1].trim();
       const parts = candidate.toLowerCase().split(/\s+/);
       if (!parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) continue;
+      // Require at least one word to be a KNOWN PERSON NAME or capitalized in original
+      // (INDIAN_LOCATIONS alone is not enough — "delhi wale ne" shouldn't produce "Delhi")
       const isValid = parts.some(p =>
-        INDIAN_NAMES.has(p) || INDIAN_LOCATIONS.has(p) ||
+        INDIAN_NAMES.has(p) ||
         new RegExp('\\b' + p.charAt(0).toUpperCase() + p.slice(1) + '\\b').test(text)
       );
       if (isValid) addName(candidate);
