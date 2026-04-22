@@ -1,44 +1,64 @@
-const CACHE_NAME = 'kaamkaro-v1';
-const STATIC_ASSETS = ['/', '/index.html'];
+// Kaamkaro AI Service Worker
+// Cache version — bump this string on each major release to bust stale caches.
+const CACHE_VERSION = '2026-04-22-v2';
+const CACHE_NAME = `kaamkaro-${CACHE_VERSION}`;
 
-// Install — cache shell
+// ── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
+  // skipWaiting forces this SW to activate immediately (replaces old SW).
   self.skipWaiting();
 });
 
-// Activate — clear old caches
+// ── Activate ─────────────────────────────────────────────────────────────────
 self.addEventListener('activate', event => {
+  // Delete ALL old caches (any name that isn't this exact version).
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch — network first for API, cache first for assets
+// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  const { request } = event;
+  const url = new URL(request.url);
 
-  // Always network for API calls
-  if (url.pathname.startsWith('/api')) {
-    event.respondWith(fetch(event.request));
+  // Skip non-GET and cross-origin requests entirely.
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // API calls — always network, never cache.
+  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/uploads')) {
+    event.respondWith(fetch(request));
     return;
   }
 
-  // Cache-first for static assets, fall back to network
+  // Hashed static assets (/assets/xxx-HASH.js|css) — cache-first (safe, hash changes with content).
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(request).then(cached => {
+          if (cached) return cached;
+          return fetch(request).then(response => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          });
+        })
+      )
+    );
+    return;
+  }
+
+  // Everything else (HTML navigation, manifest, sw.js, icons) — network-first.
+  // Fall back to cached index.html ONLY if genuinely offline.
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+    fetch(request)
+      .then(response => {
+        if (response.ok) {
+          caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
+        }
         return response;
-      }).catch(() => caches.match('/index.html'));
-    })
+      })
+      .catch(() => caches.match('/index.html'))
   );
 });
