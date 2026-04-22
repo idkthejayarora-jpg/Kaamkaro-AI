@@ -44,20 +44,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     }
 
+    // If auth check hangs for >8 s (e.g. Railway cold start), give up and show login
+    let authTimedOut = false;
+    const authTimeout = setTimeout(() => {
+      authTimedOut = true;
+      localStorage.removeItem('kk_token');
+      localStorage.removeItem('kk_user');
+      setUser(null);
+      setToken(null);
+      setLoading(false);
+    }, 8000);
+
     authAPI.me()
       .then(freshUser => {
+        if (authTimedOut) return; // timeout already fired — ignore late response
+        clearTimeout(authTimeout);
         setUser(freshUser);
         setToken(storedToken);
         localStorage.setItem('kk_user', JSON.stringify(freshUser));
       })
       .catch(() => {
+        if (authTimedOut) return;
+        clearTimeout(authTimeout);
         // Token is invalid/expired — clear everything
         localStorage.removeItem('kk_token');
         localStorage.removeItem('kk_user');
         setUser(null);
         setToken(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!authTimedOut) setLoading(false);
+      });
   }, []);
 
   const login = async (phone: string, password: string) => {
