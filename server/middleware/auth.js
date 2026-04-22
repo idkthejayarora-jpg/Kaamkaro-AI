@@ -1,6 +1,15 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'kaamkaro-kamal-secret-2024';
+const _DEFAULT_SECRET = 'kaamkaro-kamal-secret-2024';
+const JWT_SECRET = process.env.JWT_SECRET || _DEFAULT_SECRET;
+
+// Warn loudly in production if no JWT_SECRET is set — tokens can be forged
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn(
+    '[Auth] WARNING: JWT_SECRET env var is not set. Using insecure default secret. ' +
+    'Set JWT_SECRET in Railway environment variables immediately.',
+  );
+}
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
