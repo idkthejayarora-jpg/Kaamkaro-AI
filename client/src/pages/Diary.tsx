@@ -254,14 +254,18 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
 // ── Voice hook ────────────────────────────────────────────────────────────────
 // Fixed: each isFinal committed once immediately. processedIdxRef prevents
 // Chrome's duplicate onresult events from causing repeated words.
+// Production: handles all SpeechRecognition error types; never restarts on
+// fatal errors (not-allowed, audio-capture); cleans up with abort() not stop().
 function useVoice(onFinalText: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interimText, setInterimText] = useState('');
   const [hasVoice,    setHasVoice]    = useState(false);
+  const [voiceError,  setVoiceError]  = useState('');
 
   const recRef          = useRef<ISpeechRecognition | null>(null);
   const listeningRef    = useRef(false);
   const stoppingRef     = useRef(false);
+  const fatalErrorRef   = useRef(false); // set on errors where restart would be pointless
   const onFinalRef      = useRef(onFinalText);
   const processedIdxRef = useRef(-1);
 
@@ -270,6 +274,15 @@ function useVoice(onFinalText: (text: string) => void) {
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     setHasVoice(!!SR);
+  }, []);
+
+  // Cleanup on unmount — always abort to free mic
+  useEffect(() => {
+    return () => {
+      listeningRef.current = false;
+      stoppingRef.current  = true;
+      try { recRef.current?.abort(); } catch {}
+    };
   }, []);
 
   const getSR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -304,16 +317,50 @@ function useVoice(onFinalText: (text: string) => void) {
     };
 
     rec.onerror = (e: { error: string }) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') {
-        console.warn('[Voice] error:', e.error);
+      switch (e.error) {
+        case 'no-speech':
+          // Silence — ignore, let onend restart as normal
+          break;
+        case 'aborted':
+          // We triggered this — ignore
+          break;
+        case 'not-allowed':
+        case 'audio-capture':
+          // Fatal: mic denied or unavailable — stop and tell the user
+          fatalErrorRef.current = true;
+          listeningRef.current  = false;
+          stoppingRef.current   = true;
+          setListening(false);
+          setVoiceError(
+            e.error === 'not-allowed'
+              ? 'Microphone permission denied. Allow mic access in browser settings.'
+              : 'Microphone not available. Check your audio device.',
+          );
+          try { rec.abort(); } catch {}
+          break;
+        case 'network':
+          // Network error with speech API — stop and tell user
+          fatalErrorRef.current = true;
+          listeningRef.current  = false;
+          stoppingRef.current   = true;
+          setListening(false);
+          setVoiceError('Voice recognition network error. Check your internet connection.');
+          try { rec.abort(); } catch {}
+          break;
+        default:
+          console.warn('[Voice] error:', e.error);
       }
     };
 
     rec.onend = () => {
       setInterimText('');
+      if (fatalErrorRef.current) {
+        // Fatal error already handled in onerror — do not restart
+        fatalErrorRef.current = false;
+        return;
+      }
       if (listeningRef.current && !stoppingRef.current) {
         // Unexpected stop — wait 200 ms to clear audio buffer, then restart
-        // This prevents echo/ambient sound being picked up right after a session ends
         setTimeout(() => {
           if (!listeningRef.current || stoppingRef.current) return;
           try {
@@ -333,6 +380,8 @@ function useVoice(onFinalText: (text: string) => void) {
 
   const start = () => {
     if (!getSR() || listeningRef.current) return;
+    setVoiceError('');
+    fatalErrorRef.current = false;
     stoppingRef.current  = false;
     listeningRef.current = true;
     setListening(true);
@@ -345,15 +394,15 @@ function useVoice(onFinalText: (text: string) => void) {
   const stop = () => {
     stoppingRef.current  = true;
     listeningRef.current = false;
-    recRef.current?.stop();
-    // Each final was already committed inline — nothing to flush
+    // abort() immediately releases mic; stop() waits for final result (can hang)
+    try { recRef.current?.abort(); } catch {}
   };
 
   const toggle = () => {
     if (listeningRef.current) stop(); else start();
   };
 
-  return { listening, interimText, hasVoice, start, stop, toggle };
+  return { listening, interimText, hasVoice, voiceError, start, stop, toggle };
 }
 
 // ── Main Diary page ───────────────────────────────────────────────────────────
