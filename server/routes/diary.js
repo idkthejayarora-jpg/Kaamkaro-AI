@@ -140,9 +140,15 @@ const INDIAN_NAMES = new Set([
   'sonu','subhash','sudhir','sumit','sunil','suresh','surjit',
   'tanmay','tarun','tushar','tej',
   'uday','umesh','upen','utpal',
-  'varun','vikas','vikram','vinay','vinod','vishal','vivek','vicky',
-  'yash','yogesh','yunus','yusuf',
+  'varun','vikas','vijay','vijaypal','vimal','vinay','vineet','vinod',
+  'vishal','vivek','vicky','virendra',
+  'yash','yogesh','yuvraj','yunus','yusuf',
   'zaheer','zubair',
+  // Nicknames & common informal names
+  'ansh','anshu','bittu','bittoo','bunty','pinku','rinku','tinku',
+  'sunny','rocky','ricky','raja','kundan','inder','devraj','monu',
+  'tonu','pappu','chhotu','chotu','golu','gollu','prince','lucky',
+  'babloo','pappu','chintu','pintu','sonu','ramu','shamu','lalu',
   // ── Female first names ──
   'aarti','aditi','akansha','akanksha','alka','amrita','ananya','anita',
   'anjali','ankita','anushka','aparna','archana','arpita','asha','ashwini',
