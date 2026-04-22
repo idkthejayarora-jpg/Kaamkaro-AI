@@ -26,4 +26,12 @@ git commit -m "$MSG" --no-verify 2>/dev/null
 
 # Push to whatever branch is current (main or master)
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
-git push origin "$BRANCH" 2>/dev/null && echo "✅ Pushed → Railway deploying..." || echo "⚠️  Push failed — check git remote/auth"
+if git push origin "$BRANCH" 2>/dev/null; then
+  echo "✅ Pushed → Railway deploying..."
+else
+  echo ""
+  echo "⚠️  Auto-push failed — GitHub credentials not set up."
+  echo "   Run this ONCE to fix permanently:"
+  echo "   bash \"/Users/jaigopalarora/Kaamkaro AI/scripts/setup-github-auth.sh\""
+  echo ""
+fi

@@ -38,7 +38,8 @@
       "Bash(npm run *)",
       "Bash(node -e \"require\\('./server/routes/diary'\\); console.log\\('✅ diary.js OK'\\)\")",
       "Bash(node -e \"require\\('./server/index.js'\\)\")",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/scripts/setup-github-auth.sh\")"
     ]
   }
 }
