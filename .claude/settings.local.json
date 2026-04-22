@@ -39,7 +39,9 @@
       "Bash(node -e \"require\\('./server/routes/diary'\\); console.log\\('✅ diary.js OK'\\)\")",
       "Bash(node -e \"require\\('./server/index.js'\\)\")",
       "Bash(kill %1)",
-      "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/scripts/setup-github-auth.sh\")"
+      "Bash(chmod +x \"/Users/jaigopalarora/Kaamkaro AI/scripts/setup-github-auth.sh\")",
+      "Bash(node -e \"require\\('./index.js'\\)\")",
+      "Bash(node -e \"require\\('./routes/diary'\\); require\\('./routes/customers'\\); require\\('./routes/ai'\\); require\\('./routes/tasks'\\); console.log\\('OK'\\)\")"
     ]
   }
 }
