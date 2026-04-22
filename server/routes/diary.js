@@ -290,40 +290,49 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
       ? customerList.map(c => `"${c.name}" [id:${c.id}]`).join('\n')
       : '(none yet — treat every name as a new customer)';
 
-    const prompt = `You are a sales CRM assistant. Analyze this sales staff diary entry and extract structured data.
+    const prompt = `You are a bilingual sales CRM assistant fluent in Hindi, Hinglish, and English.
 
-DIARY ENTRY:
+DIARY ENTRY (may be in Hindi, Hinglish, or English):
 """
 ${content.slice(0, 5000)}
 """
 
-KNOWN CUSTOMERS (match against these, use exact IDs):
+KNOWN CUSTOMERS (match against these exact IDs):
 ${customerRef}
 
-INSTRUCTIONS:
-1. Detect the language: hindi / english / hinglish
-2. Write a clear English translation/summary of the whole entry (2-4 sentences, professional tone — do NOT copy the raw text)
-3. Find every customer or person mentioned (even briefly)
-4. For each person: fuzzy-match against known customers (handle typos, nicknames, surname-only refs like "sharma ji", Hindi spellings like vijay/bijay)
-5. For each customer entry write:
-   - "notes": 1-2 sentence professional SUMMARY of what happened (what was discussed, outcome, next steps) — do NOT copy raw text verbatim
-   - "actionItems": concrete follow-up actions if any
-   - "sentiment": positive / neutral / negative based on how the interaction went
+YOUR TASKS:
 
-Respond ONLY with this JSON, no other text:
+1. DETECT LANGUAGE: "hindi", "english", or "hinglish"
+
+2. TRANSLATE TO ENGLISH: Write a complete, natural English translation of the ENTIRE diary entry.
+   - Translate EVERY sentence — do not skip anything
+   - If Hindi: translate word for word into natural English
+   - If Hinglish (mixed): translate the Hindi parts, keep English parts as-is
+   - Write in first person as the staff member narrating their day
+   - Include all details: who they met, what was discussed, outcome, next steps
+   - Length: match the original — short entry → short translation, long entry → full translation
+   - Do NOT write a summary — write a TRANSLATION
+
+3. EXTRACT CUSTOMERS: Find every person/customer name mentioned (even briefly).
+   - Handle Hindi spellings: "vijay"="bijay", "sharma ji"=Sharma, nicknames
+   - Match against known customers using fuzzy logic
+   - For NEW names not in the known list: set isNewCustomer=true, matchedCustomerId=null
+   - For each person write professional English notes on what happened
+
+Respond ONLY with this exact JSON structure, no other text:
 {
   "detectedLanguage": "hindi|english|hinglish",
-  "translatedContent": "2-4 sentence professional English summary of the entire diary entry",
+  "translatedContent": "Complete natural English translation of the full diary entry, written in first person",
   "entries": [
     {
-      "spokenName": "name as written in diary",
+      "spokenName": "name exactly as written in diary",
       "matchedCustomerName": "exact name from known list or null",
       "matchedCustomerId": "exact id from known list or null",
       "isNewCustomer": false,
       "date": "YYYY-MM-DD or null",
-      "notes": "Professional summary of this interaction — what happened, outcome, mood",
-      "originalNotes": "relevant original text snippet",
-      "actionItems": ["specific follow-up action"],
+      "notes": "1-2 sentence English summary: what happened, outcome, next step",
+      "originalNotes": "the original Hindi/Hinglish text about this person",
+      "actionItems": ["concrete follow-up action if any"],
       "sentiment": "positive|neutral|negative",
       "confidence": 0.9
     }
