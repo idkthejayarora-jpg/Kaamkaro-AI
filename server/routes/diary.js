@@ -317,21 +317,30 @@ Respond ONLY with this JSON, no other text:
     }
 
     // ── Post-AI: resolve + auto-create customers ────────────────────────────
-    const newCustomers = []; // customers created during this run
+    // Words that look like names but aren't — don't auto-create these as customers
+    const STOP_NAMES = new Set([
+      'general','client','customer','sir','madam','bhai','ji','unka','unhe','wo','woh',
+      'aaj','kal','subah','shaam','office','meeting','call','today','tomorrow','morning',
+      'done','ok','okay','yes','no','the','and','but','for','with',
+    ]);
+
+    const newCustomers  = [];
     const resolvedEntries = [];
+    const now = new Date().toISOString();
 
     for (const e of (aiResult.entries || [])) {
       const spokenName = (e.spokenName || '').trim();
-      const isGeneric  = !spokenName || spokenName.toLowerCase() === 'general';
+      const nameLower  = spokenName.toLowerCase();
+      const isGeneric  = !spokenName || STOP_NAMES.has(nameLower) || spokenName.length < 3;
 
       // Step 1: trust the AI's matched customer ID if it gave one
       let resolvedCustomer = null;
       if (e.matchedCustomerId) {
         resolvedCustomer = allCustomers.find(c => c.id === e.matchedCustomerId) || null;
+        if (resolvedCustomer) console.log(`[Diary] AI matched "${spokenName}" → "${resolvedCustomer.name}"`);
       }
 
-      // Step 2: server-side fuzzy match as a safety net
-      // (also searches any customers we created earlier in this same entry)
+      // Step 2: server-side fuzzy match as safety net (catches cases where AI got ID wrong)
       if (!resolvedCustomer && !isGeneric) {
         resolvedCustomer = fuzzyMatchCustomer(spokenName, [...allCustomers, ...newCustomers]);
         if (resolvedCustomer) {
@@ -339,9 +348,8 @@ Respond ONLY with this JSON, no other text:
         }
       }
 
-      // Step 3: no match found at all → auto-create the customer
-      // We do NOT rely on the AI's isNewCustomer flag — the fuzzy match is the truth
-      if (!resolvedCustomer && !isGeneric && spokenName.length >= 2) {
+      // Step 3: no match → auto-create as new customer assigned to this staff member
+      if (!resolvedCustomer && !isGeneric) {
         try {
           const newCust = {
             id: uuidv4(),
@@ -350,23 +358,32 @@ Respond ONLY with this JSON, no other text:
             email: '',
             assignedTo: staffId,
             status: 'lead',
-            lastContact: null,
+            lastContact: now,
             notes: `Auto-created from diary entry by ${staffName}`,
+            notesList: [],
             tags: ['diary-import'],
             dealValue: null,
-            createdAt: new Date().toISOString(),
+            createdAt: now,
           };
           await insertOne('customers', newCust);
           resolvedCustomer = newCust;
           newCustomers.push(newCust);
-          allCustomers.push(newCust); // available for rest of this batch
-          console.log(`[Diary] ✅ Auto-created customer: "${newCust.name}" for staff ${staffName}`);
-        } catch (createErr) {
-          console.error('[Diary] ❌ Failed to auto-create customer:', createErr.message);
+          allCustomers.push(newCust);
+          console.log(`[Diary] ✅ Auto-created customer: "${newCust.name}"`);
+        } catch (err) {
+          console.error('[Diary] ❌ Failed to create customer:', err.message);
         }
       }
 
-      const isNew = newCustomers.some(c => c.id === resolvedCustomer?.id);
+      // Step 4: update lastContact on existing customers found in diary
+      if (resolvedCustomer && !newCustomers.find(c => c.id === resolvedCustomer.id)) {
+        try {
+          await updateOne('customers', resolvedCustomer.id, { lastContact: now });
+        } catch {}
+      }
+
+      const isNew   = newCustomers.some(c => c.id === resolvedCustomer?.id);
+      const summary = e.notes && e.notes.trim().length > 10 ? e.notes.trim() : `Interaction logged from diary entry on ${new Date().toLocaleDateString('en-IN')}`;
 
       resolvedEntries.push({
         spokenName:          spokenName || 'General',
@@ -376,12 +393,17 @@ Respond ONLY with this JSON, no other text:
         isNewCustomer:       isNew,
         autoCreatedId:       isNew ? resolvedCustomer?.id : null,
         date:                e.date        || null,
-        notes:               e.notes       || '',
+        notes:               summary,
         originalNotes:       e.originalNotes || e.notes || '',
-        actionItems:         e.actionItems || [],
-        sentiment:           e.sentiment   || 'neutral',
-        confidence:          e.confidence  || 0.5,
+        actionItems:         Array.isArray(e.actionItems) ? e.actionItems : [],
+        sentiment:           ['positive','neutral','negative'].includes(e.sentiment) ? e.sentiment : 'neutral',
+        confidence:          typeof e.confidence === 'number' ? e.confidence : 0.5,
       });
+    }
+
+    // Log auto-created customers count
+    if (newCustomers.length > 0) {
+      console.log(`[Diary] ✅ Created ${newCustomers.length} new customers from entry by ${staffName}`);
     }
 
     const finalEntry = await updateOne('diary', entryId, {
