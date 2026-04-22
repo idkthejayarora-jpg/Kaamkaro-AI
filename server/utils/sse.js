@@ -11,15 +11,16 @@ const clients = new Set();
  */
 function addClient(res) {
   res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // Nginx: disable buffering
+  res.setHeader('X-Accel-Buffering', 'no');  // Nginx: disable buffering
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Railway / Cloudflare close idle connections at ~60s — ping every 20s to stay alive
   res.flushHeaders();
 
-  // Keep-alive ping every 25 seconds (prevents proxy timeouts)
   const ping = setInterval(() => {
     try { res.write(': ping\n\n'); } catch { clearInterval(ping); }
-  }, 25000);
+  }, 20000);
 
   // Send a connected event
   res.write(`event: connected\ndata: ${JSON.stringify({ ts: Date.now() })}\n\n`);
