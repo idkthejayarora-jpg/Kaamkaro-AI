@@ -230,3 +230,27 @@ export interface SentimentPoint {
   notes?: string;
   confidence: number;
 }
+
+// ── PDF Upload ─────────────────────────────────────────────────────────────────
+
+export interface PDFExtractedEntry {
+  customerName: string;
+  matchedCustomerName: string | null;
+  matchedCustomerId: string | null;
+  isNewCustomer: boolean;
+  date: string | null;
+  notes: string;
+  actionItems: string[];
+  sentiment: 'positive' | 'neutral' | 'negative';
+  confidence: number;
+}
+
+export interface PDFEntry {
+  id: string;
+  fileName: string;
+  status: 'processing' | 'done' | 'error';
+  entries: PDFExtractedEntry[];
+  error?: string;
+  uploadedAt: string;
+  processedAt?: string;
+}
