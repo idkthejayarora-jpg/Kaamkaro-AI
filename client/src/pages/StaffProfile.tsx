@@ -22,16 +22,17 @@ export default function StaffProfile() {
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      staffAPI.get(id),
-      customersAPI.list(),
-      staffAPI.getPerformance(id),
-      interactionsAPI.list({ staffId: id }),
+      staffAPI.get(id).catch(() => null),
+      customersAPI.list().catch(() => [] as Customer[]),
+      staffAPI.getPerformance(id).catch(() => [] as Performance[]),
+      interactionsAPI.list({ staffId: id }).catch(() => [] as Interaction[]),
     ]).then(([s, c, p, i]) => {
-      setStaff(s);
-      setCustomers(c.filter((cu: Customer) => cu.assignedTo === id));
-      setPerformance(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
-      setInteractions(i);
-    }).finally(() => setLoading(false));
+      setStaff(s as Staff | null);
+      setCustomers((c as Customer[]).filter(cu => cu.assignedTo === id));
+      setPerformance((p as Performance[]).sort((a, b) => a.week.localeCompare(b.week)));
+      setInteractions(i as Interaction[]);
+    }).catch(() => { /* show "not found" below */ })
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return (
