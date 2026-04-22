@@ -79,6 +79,9 @@ const STOP_WORDS = new Set([
   'she','he','his','her','its','was','are','were','has','had','did','not',
   'him','who','all','one','two','three','four','five','six','seven','eight',
   'nine','ten','new','old','big','small','first','last','next','same','like',
+  // Action verbs — appear before names but are NOT part of the name
+  'called','met','spoke','visited','contacted','talked','phoned','texted',
+  'emailed','messaged','reached','sent','gave','took','brought','bought',
   // Days / months
   'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
   'january','february','march','april','may','june',
