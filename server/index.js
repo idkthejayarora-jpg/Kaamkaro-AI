@@ -91,6 +91,11 @@ async function seed() {
 seed().then(() => {
   app.listen(PORT, () => {
     console.log(`\n🚀 Kaamkaro AI → http://localhost:${PORT}`);
-    console.log(`📁 Backups  → ~/Desktop/KaamkaroAI_Backup/\n`);
+    if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here') {
+      console.log(`🤖 Kamal AI   → active (claude-sonnet-4-6)`);
+    } else {
+      console.log(`⚠️  Kamal AI   → NO API KEY — set ANTHROPIC_API_KEY in Railway env vars`);
+      console.log(`   Diary analysis and Kamal AI chat will use fallback mode until key is set.\n`);
+    }
   });
 }).catch(console.error);
