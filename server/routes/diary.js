@@ -337,17 +337,27 @@ function extractNamesFromText(text) {
   }
 
   // ── Pass 2: Dictionary scan — works on fully-lowercase voice transcriptions ──
-  // Tokenise text and look for runs of 1–2 consecutive known Indian name tokens.
+  // Tokenise text and look for runs of 1–2 consecutive known Indian name tokens,
+  // then skip any immediately following location token.
   const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
   for (let i = 0; i < tokens.length; i++) {
     const t0 = tokens[i];
     if (!INDIAN_NAMES.has(t0)) continue;
 
     const t1 = tokens[i + 1];
+    const t2 = tokens[i + 2];
+
     if (t1 && INDIAN_NAMES.has(t1) && !STOP_WORDS.has(t1)) {
-      // First name + surname (or two name parts)
-      addName(`${t0} ${t1}`);
-      i++; // consume both tokens
+      // "rahul sharma" — first name + surname
+      const namePart = `${t0} ${t1}`;
+      i++;
+      // "rahul sharma ghaziabad" — skip trailing location
+      if (t2 && (INDIAN_LOCATIONS.has(t2) || INDIAN_LOCATIONS.has(`${t1} ${t2}`))) i++;
+      addName(namePart);
+    } else if (t1 && INDIAN_LOCATIONS.has(t1)) {
+      // "kamal ghaziabad" — name + location: take name, skip location
+      addName(t0);
+      i++; // consume location token so it isn't mistaken for something else
     } else {
       addName(t0);
     }
