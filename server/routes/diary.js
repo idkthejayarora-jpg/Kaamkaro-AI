@@ -313,12 +313,11 @@ Respond ONLY with this JSON, no other text:
       console.error('[Diary] JSON extraction failed. Raw:', rawText.slice(0, 500));
       // Hard fallback: ask the model again with a stricter prompt
       try {
-        const retry = await client.messages.create({
-          model: 'claude-sonnet-4-6',
+        const retry = await callClaude(client, {
           max_tokens: 1000,
           messages: [{
             role: 'user',
-            content: `Extract customer names from this diary entry and return ONLY raw JSON with no other text:\n"${content.slice(0, 2000)}"\n\nReturn: {"detectedLanguage":"hinglish","translatedContent":"Brief professional summary","entries":[{"spokenName":"name","matchedCustomerName":null,"matchedCustomerId":null,"isNewCustomer":true,"date":null,"notes":"What happened with this customer","originalNotes":"","actionItems":[],"sentiment":"neutral","confidence":0.7}]}`
+            content: `Extract customer names from this diary entry and return ONLY valid JSON:\n"${content.slice(0, 2000)}"\n\nReturn exactly this structure:\n{"detectedLanguage":"hinglish","translatedContent":"Brief professional summary","entries":[{"spokenName":"name as written","matchedCustomerName":null,"matchedCustomerId":null,"isNewCustomer":true,"date":null,"notes":"What happened with this customer","originalNotes":"","actionItems":[],"sentiment":"neutral","confidence":0.7}]}`
           }],
         });
         aiResult = extractJSON(retry.content[0].text);
