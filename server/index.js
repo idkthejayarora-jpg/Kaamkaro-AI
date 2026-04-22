@@ -51,12 +51,15 @@ app.use('/api/templates',    require('./routes/templates'));
 app.use('/api/webhook',      require('./routes/webhook'));
 app.use('/api/events',       require('./routes/events'));
 
-// ── Production static serving ──────────────────────────────────────────────────
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-  });
+// ── Static frontend serving ────────────────────────────────────────────────────
+// Serve React app whenever the dist folder exists — works on Railway regardless
+// of NODE_ENV, and skips gracefully in local dev (where dist isn't built)
+const distDir   = path.join(__dirname, '../client/dist');
+const indexHtml = path.join(distDir, 'index.html');
+const fs = require('fs');
+if (fs.existsSync(indexHtml)) {
+  app.use(express.static(distDir));
+  app.get('*', (req, res) => res.sendFile(indexHtml));
 }
 
 // ── First-run seed ────────────────────────────────────────────────────────────
