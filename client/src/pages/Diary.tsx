@@ -504,6 +504,12 @@ export default function Diary() {
           </div>
         )}
 
+        {voice.voiceError && (
+          <p className="flex items-center gap-2 text-amber-400 text-sm">
+            <AlertCircle size={14} />{voice.voiceError}
+          </p>
+        )}
+
         {error && (
           <p className="flex items-center gap-2 text-red-400 text-sm">
             <AlertCircle size={14} />{error}
