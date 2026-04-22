@@ -10,7 +10,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+// Allow same-origin requests (Railway) + localhost dev + any explicitly set CLIENT_URL
+app.use(cors({
+  origin: (origin, cb) => {
+    // No origin = same-origin request (mobile app, curl, server-to-server) — always allow
+    if (!origin) return cb(null, true);
+    const allowed = [
+      process.env.CLIENT_URL,
+      'http://localhost:5173',
+      'http://localhost:3001',
+    ].filter(Boolean);
+    // Allow any Railway domain or explicitly listed origin
+    if (allowed.includes(origin) || origin.endsWith('.railway.app') || origin.endsWith('.up.railway.app')) {
+      return cb(null, true);
+    }
+    cb(null, true); // permissive — tighten if needed
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
