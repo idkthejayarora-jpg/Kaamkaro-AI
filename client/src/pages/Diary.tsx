@@ -119,7 +119,9 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
               </span>
             )}
             {entry.status === 'error' && (
-              <span className="badge badge-red text-[10px]">AI error</span>
+              <span className="badge badge-red text-[10px] flex items-center gap-1">
+                <AlertCircle size={9} /> Analysis failed
+              </span>
             )}
           </div>
 
