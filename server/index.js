@@ -134,7 +134,7 @@ function startServer() {
   app.listen(PORT, () => {
     console.log(`\n🚀 Kaamkaro AI → http://localhost:${PORT}`);
     if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here') {
-      console.log(`🤖 Kamal AI   → active (claude-sonnet-4-6)`);
+      console.log(`🤖 Kamal AI   → active (claude-haiku-4-5)`);
     } else {
       console.log(`⚠️  Kamal AI   → NO API KEY — set ANTHROPIC_API_KEY in Railway env vars`);
       console.log(`   Diary analysis and Kamal AI chat will use fallback mode until key is set.\n`);

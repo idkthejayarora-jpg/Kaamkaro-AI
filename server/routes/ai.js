@@ -133,7 +133,7 @@ CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.
     ];
 
     const result = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5',
       max_tokens: 1024,
       system: contextSummary,
       messages,
@@ -312,7 +312,7 @@ For each staff member return:
 Return ONLY the JSON array.`;
 
     const result = await client.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 2048,
+      model: 'claude-haiku-4-5', max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -423,7 +423,7 @@ Team data for this week:
 Write in a warm, direct management style. Mention the top performer by name. Flag anyone who needs attention (low interactions or response rate). End with one actionable recommendation for next week.`;
 
     const result = await client.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 512,
+      model: 'claude-haiku-4-5', max_tokens: 512,
       messages: [{ role: 'user', content: prompt }],
     });
 
