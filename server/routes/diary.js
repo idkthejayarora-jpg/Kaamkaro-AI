@@ -291,60 +291,107 @@ function detectLanguage(text) {
 /**
  * Extract person/customer names from diary text.
  *
- * Works for BOTH typed text (proper casing) AND voice transcriptions (all lowercase),
- * because voice API (hi-IN) never capitalises names.
+ * Customer name format used by this team: "person place"
+ * e.g. "Manish Agra", "Mohit Lajpat Nagar", "Ansh Chauhan Kolkata",
+ *      "Bittoo Fashion Chandigarh"
+ *
+ * Works for BOTH typed text (proper casing) AND voice transcriptions (all lowercase).
  *
  * Three passes — best to worst confidence:
- *   1. Context patterns (case-insensitive) — name near action word
- *   2. Indian names dictionary scan — word list covering 400+ common names/surnames
+ *   1. Dictionary scan — name → optional surname → optional location (voice-first)
+ *   2. Context patterns (case-insensitive) — name near action word
  *   3. Capitalised words fallback — typed text only
  */
 function extractNamesFromText(text) {
   const found = new Map(); // normalizedKey → displayName (titleCase)
 
-  /**
-   * Strip trailing location words from a captured name candidate, then store.
-   * "kamal ghaziabad" → strips "ghaziabad" → stores "Kamal"
-   * "rahul sharma noida" → strips "noida" → stores "Rahul Sharma"
-   * "vijay kumar" → no location → stores "Vijay Kumar"
-   */
   const addName = (raw) => {
+    // Only strip the very last word if it's a pure grammatical filler
+    // (e.g. "wala", "wali") — NOT locations, because locations are part of the name.
+    const FILLER = new Set(['wala','wali','waale','waali','vale','vali']);
     let parts = raw.trim().replace(/\s+/g, ' ').toLowerCase().split(' ');
-    // Strip trailing location words (may be multi-word like "greater noida")
-    while (parts.length > 1 && (INDIAN_LOCATIONS.has(parts[parts.length - 1]) || STOP_WORDS.has(parts[parts.length - 1]))) {
+    if (parts.length > 1 && FILLER.has(parts[parts.length - 1])) {
       parts = parts.slice(0, -1);
     }
-    // Also try stripping a two-word trailing location (e.g. "greater noida")
-    if (parts.length > 2) {
-      const lastTwo = parts.slice(-2).join(' ');
-      if (INDIAN_LOCATIONS.has(lastTwo)) parts = parts.slice(0, -2);
-    }
+    // Reject if any word is a plain stop word
+    if (parts.some(p => STOP_WORDS.has(p))) return;
+    if (parts.length === 0) return;
     const name = titleCase(parts.join(' '));
     const key  = normalizeName(name);
     if (!key || key.length < 3) return;
-    if (parts.some(p => STOP_WORDS.has(p))) return;
     if (!found.has(key)) found.set(key, name);
   };
 
-  // ── Pass 1: Context patterns (case-insensitive, catches voice text) ──────────
-  // Each pattern captures a name that appears next to an action verb or postposition.
-  // We accept the capture only if AT LEAST ONE word is either:
-  //   (a) in INDIAN_NAMES dictionary, or
-  //   (b) starts with a capital letter in the original text (typed, not voice).
-  // This prevents false positives like "Back Regarding" from "called back regarding".
+  // ── Pass 1: Dictionary scan — primary path for voice text ─────────────────
+  //
+  // Builds names by greedily consuming:
+  //   [person name] [optional surname] [optional location word(s)]
+  //
+  // Examples:
+  //   "manish agra"              → "Manish Agra"
+  //   "mohit lajpat nagar"       → "Mohit Lajpat Nagar"
+  //   "ansh chauhan kolkata"     → "Ansh Chauhan Kolkata"
+  //   "rahul sharma"             → "Rahul Sharma"
+  //   "priya delhi"              → "Priya Delhi"
+  //   "vijay sharma ghaziabad"   → "Vijay Sharma Ghaziabad"
+  //
+  const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (!INDIAN_NAMES.has(t)) continue;
+
+    const parts = [t];
+    let j = i + 1;
+
+    // Consume optional surname (next token in INDIAN_NAMES)
+    if (j < tokens.length && INDIAN_NAMES.has(tokens[j]) && !STOP_WORDS.has(tokens[j])) {
+      parts.push(tokens[j]);
+      j++;
+    }
+
+    // Consume optional location — may be 1 or 2 words ("noida" / "lajpat nagar" / "greater noida")
+    if (j < tokens.length) {
+      const loc1 = tokens[j];
+      const loc2 = tokens[j + 1];
+      const twoWord = loc2 ? `${loc1} ${loc2}` : '';
+
+      if (twoWord && INDIAN_LOCATIONS.has(twoWord)) {
+        // Two-word location: "lajpat nagar", "greater noida", "navi mumbai"
+        parts.push(loc1, loc2);
+        j += 2;
+      } else if (INDIAN_LOCATIONS.has(loc1)) {
+        // Single-word location: "agra", "delhi", "chandigarh"
+        parts.push(loc1);
+        j++;
+        // Check if the next word extends the location (e.g. "sector 18" → just take "sector")
+        // or is another location word like "nagar" after a base city
+        if (j < tokens.length && INDIAN_LOCATIONS.has(tokens[j])) {
+          parts.push(tokens[j]);
+          j++;
+        }
+      }
+    }
+
+    addName(parts.join(' '));
+    i = j - 1; // consume all tokens we used
+  }
+
+  // ── Pass 2: Context patterns (case-insensitive, catches named entities near verbs) ──
+  // Captures up to 3 words so "called manish agra" gives "Manish Agra".
+  // We accept only if at least one word is a known Indian name OR capitalised in original.
   const ctxPatterns = [
-    // "called rahul sharma" / "met priya" / "spoke with kumar"
-    /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile|milke)\s+([a-zA-Z][a-z]{2,}(?:\s+[a-zA-Z][a-z]{2,})?)/gi,
-    // "rahul ne" / "sharma ko" / "priya se" — Hindi postpositional pattern
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)\s+(?:ne|ko|se)\b/gi,
-    // "sharma ji" / "rahul bhai" / "kumar sahab"
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)\s+(?:ji|sahab|bhai)\b/gi,
-    // "Mr Gupta" / "Mrs Sharma" / "Shri Verma"
+    // "called manish agra" / "met ansh chauhan" / "spoke with mohit lajpat nagar"
+    /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile|milke)\s+([a-zA-Z][a-z]{2,}(?:\s+[a-zA-Z][a-z]{2,}){0,2})/gi,
+    // "manish agra ne" / "sharma ko" / "priya delhi se"
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ne|ko|se)\b/gi,
+    // "sharma ji" / "manish agra ji"
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ji|sahab|bhai)\b/gi,
+    // "Mr Gupta" / "Shri Verma"
     /(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
-    // "customer rahul" / "client priya"
-    /(?:customer|client|party|buyer|prospect)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
-    // "rahul ka order" / "priya ki payment" — possessive Hindi
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam)/gi,
+    // "customer manish agra" / "client mohit lajpat nagar"
+    /(?:customer|client|party|buyer|prospect)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
+    // "manish agra ka order" / "priya delhi ki payment"
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam)/gi,
   ];
 
   for (const pattern of ctxPatterns) {
@@ -352,41 +399,13 @@ function extractNamesFromText(text) {
     while ((m = pattern.exec(text)) !== null) {
       const candidate = m[1].trim();
       const parts = candidate.toLowerCase().split(/\s+/);
-      // All words ≥ 3 chars and not in stop-words
       if (!parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) continue;
-      // At least one word must be a known Indian name OR capitalized in original text
-      const isValidName = parts.some(p =>
-        INDIAN_NAMES.has(p) ||
+      // At least one word must be a known person name or location (locations are valid parts here)
+      const isValid = parts.some(p =>
+        INDIAN_NAMES.has(p) || INDIAN_LOCATIONS.has(p) ||
         new RegExp('\\b' + p.charAt(0).toUpperCase() + p.slice(1) + '\\b').test(text)
       );
-      if (isValidName) addName(candidate);
-    }
-  }
-
-  // ── Pass 2: Dictionary scan — works on fully-lowercase voice transcriptions ──
-  // Tokenise text and look for runs of 1–2 consecutive known Indian name tokens,
-  // then skip any immediately following location token.
-  const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
-  for (let i = 0; i < tokens.length; i++) {
-    const t0 = tokens[i];
-    if (!INDIAN_NAMES.has(t0)) continue;
-
-    const t1 = tokens[i + 1];
-    const t2 = tokens[i + 2];
-
-    if (t1 && INDIAN_NAMES.has(t1) && !STOP_WORDS.has(t1)) {
-      // "rahul sharma" — first name + surname
-      const namePart = `${t0} ${t1}`;
-      i++;
-      // "rahul sharma ghaziabad" — skip trailing location
-      if (t2 && (INDIAN_LOCATIONS.has(t2) || INDIAN_LOCATIONS.has(`${t1} ${t2}`))) i++;
-      addName(namePart);
-    } else if (t1 && INDIAN_LOCATIONS.has(t1)) {
-      // "kamal ghaziabad" — name + location: take name, skip location
-      addName(t0);
-      i++; // consume location token so it isn't mistaken for something else
-    } else {
-      addName(t0);
+      if (isValid) addName(candidate);
     }
   }
 
