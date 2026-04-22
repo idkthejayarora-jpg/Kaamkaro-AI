@@ -369,6 +369,8 @@ Respond ONLY with this JSON, no other text:
           resolvedCustomer = newCust;
           newCustomers.push(newCust);
           allCustomers.push(newCust);
+          // Push to Customers page in real-time so it appears instantly
+          broadcast('customer:created', newCust);
           console.log(`[Diary] ✅ Auto-created customer: "${newCust.name}"`);
         } catch (err) {
           console.error('[Diary] ❌ Failed to create customer:', err.message);
