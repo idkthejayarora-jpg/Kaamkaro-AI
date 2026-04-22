@@ -469,22 +469,36 @@ Respond ONLY with this JSON, no other text:
 
   } catch (err) {
     const errMsg = err?.message || String(err);
-    const errStatus = err?.status || err?.statusCode || 'unknown';
-    console.error(`[Diary] ❌ Processing error (HTTP ${errStatus}): ${errMsg}`);
-    if (err?.error) console.error('[Diary] API error body:', JSON.stringify(err.error));
-    // Store the actual error so the UI can show it
-    const userFacingError = errStatus === 401
-      ? 'Invalid ANTHROPIC_API_KEY — check Railway environment variables'
-      : errStatus === 404 || (errMsg.includes('model'))
-        ? `Model "${AI_MODEL}" not found — set ANTHROPIC_MODEL env var on Railway`
-        : errStatus === 429
-          ? 'API rate limit hit — will retry automatically on re-analyze'
-          : errMsg.slice(0, 200);
-    const errEntry = await updateOne('diary', entryId, {
-      status: 'error',
-      error: userFacingError,
-    });
-    broadcast('diary:updated', errEntry);
+    const errStatus = err?.status || err?.statusCode || 0;
+    console.error(`[Diary] ❌ API error (HTTP ${errStatus}): ${errMsg}`);
+    if (err?.error) console.error('[Diary] body:', JSON.stringify(err.error));
+
+    // For auth/model/rate-limit errors → silently fall back to local extraction
+    // so the diary entry always completes and never blocks the user.
+    const useLocalFallback = errStatus === 401 || errStatus === 403 ||
+      errStatus === 404 || errStatus === 429 ||
+      errMsg.toLowerCase().includes('model') ||
+      errMsg.toLowerCase().includes('api key') ||
+      errMsg.toLowerCase().includes('auth');
+
+    if (useLocalFallback) {
+      console.warn(`[Diary] Falling back to local extraction (${errStatus})`);
+      try {
+        const allCustomers = await readDB('customers');
+        return await runLocalFallback(entryId, content, staffId, staffName, allCustomers);
+      } catch (fallbackErr) {
+        console.error('[Diary] Even local fallback failed:', fallbackErr.message);
+      }
+    }
+
+    // Only set status=error for unexpected server/network failures
+    try {
+      const errEntry = await updateOne('diary', entryId, {
+        status: 'error',
+        error: errMsg.slice(0, 200),
+      });
+      broadcast('diary:updated', errEntry);
+    } catch {}
   }
 }
 
