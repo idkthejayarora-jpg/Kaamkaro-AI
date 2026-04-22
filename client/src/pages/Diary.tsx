@@ -45,11 +45,6 @@ const SENTIMENT_STYLES: Record<string, string> = {
   neutral:  'text-white/40 bg-white/5 border-white/10',
   negative: 'text-red-400 bg-red-500/10 border-red-500/20',
 };
-const LANG_BADGE: Record<string, string> = {
-  hindi:    'हिं · Hindi',
-  english:  'EN · English',
-  hinglish: 'HG · Hinglish',
-};
 
 // ── Diary card ────────────────────────────────────────────────────────────────
 function DiaryCard({ entry, onDelete, onReanalyzed }: {
