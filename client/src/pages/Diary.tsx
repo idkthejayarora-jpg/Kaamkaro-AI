@@ -353,7 +353,7 @@ function useVoice(onFinalText: (text: string) => void) {
     if (listeningRef.current) stop(); else start();
   };
 
-  return { listening, interimText, voiceLang, setVoiceLang, hasVoice, start, stop, toggle };
+  return { listening, interimText, hasVoice, start, stop, toggle };
 }
 
 // ── Main Diary page ───────────────────────────────────────────────────────────
