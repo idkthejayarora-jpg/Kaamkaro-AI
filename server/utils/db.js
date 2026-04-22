@@ -48,11 +48,13 @@ async function readDB(collection) {
 }
 
 async function writeDB(collection, data) {
-  await ensureDirs();
-  const filePath = path.join(DATA_DIR, `${collection}.json`);
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-  // Real-time backup to Desktop
-  await backupCollection(collection, data);
+  return queueWrite(collection, async () => {
+    await ensureDirs();
+    const filePath = path.join(DATA_DIR, `${collection}.json`);
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    // Real-time backup to Desktop
+    await backupCollection(collection, data);
+  });
 }
 
 async function backupCollection(collection, data) {
