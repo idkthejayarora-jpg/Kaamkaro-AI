@@ -230,6 +230,11 @@ function extractNamesFromText(text) {
   };
 
   // ── Pass 1: Context patterns (case-insensitive, catches voice text) ──────────
+  // Each pattern captures a name that appears next to an action verb or postposition.
+  // We accept the capture only if AT LEAST ONE word is either:
+  //   (a) in INDIAN_NAMES dictionary, or
+  //   (b) starts with a capital letter in the original text (typed, not voice).
+  // This prevents false positives like "Back Regarding" from "called back regarding".
   const ctxPatterns = [
     // "called rahul sharma" / "met priya" / "spoke with kumar"
     /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile|milke)\s+([a-zA-Z][a-z]{2,}(?:\s+[a-zA-Z][a-z]{2,})?)/gi,
@@ -249,11 +254,15 @@ function extractNamesFromText(text) {
     let m;
     while ((m = pattern.exec(text)) !== null) {
       const candidate = m[1].trim();
-      // Each word must be ≥ 3 chars and not a stop word
       const parts = candidate.toLowerCase().split(/\s+/);
-      if (parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) {
-        addName(candidate);
-      }
+      // All words ≥ 3 chars and not in stop-words
+      if (!parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) continue;
+      // At least one word must be a known Indian name OR capitalized in original text
+      const isValidName = parts.some(p =>
+        INDIAN_NAMES.has(p) ||
+        new RegExp('\\b' + p.charAt(0).toUpperCase() + p.slice(1) + '\\b').test(text)
+      );
+      if (isValidName) addName(candidate);
     }
   }
 
