@@ -75,6 +75,98 @@ const STOP_WORDS = new Set([
   'that','from','have','they','their','monday','tuesday','wednesday','thursday',
   'friday','saturday','sunday','january','february','march','april','may','june',
   'july','august','september','october','november','december',
+  // Hindi/Hinglish common words that look like names
+  'main','mera','meri','mere','hum','hamara','hamari','aap','apna','apni',
+  'woh','yeh','koi','kuch','sab','log','din','raat','time','date','number',
+  'phone','mobile','whatsapp','email','address','price','rate','amount',
+  'product','service','order','delivery','payment','advance','balance',
+  'interested','confirmed','cancelled','pending','done','complete',
+]);
+
+// ── Common Indian names dictionary ─────────────────────────────────────────────
+// Voice transcriptions are ALL LOWERCASE — this dictionary lets us detect names
+// that the capitalization-based regex cannot find.
+const INDIAN_NAMES = new Set([
+  // ── Male first names ──
+  'aarav','aarush','aayush','abhijit','abhijeet','abhimanyu','abhishek',
+  'adarsh','aditya','ajay','ajit','akash','akhil','alok','amit','amitabh',
+  'amol','amrit','anand','aniket','anil','animesh','anish','ankit','ankur',
+  'anshul','anuj','anup','anurag','arjun','arnav','arun','arvind','asif',
+  'atul','ayush','azhar',
+  'bablu','babu','badal','balram','bharat','bhaskar','bhavesh','bhupesh',
+  'chandan','chandrakant','chinmay','chirag',
+  'danish','darshan','deepak','devendra','devesh','dheeraj','dhruv','dilip',
+  'dinesh','dipak','durgesh',
+  'farhan','farooq',
+  'ganesh','gaurav','girish','gopal','govind','gulshan',
+  'hardik','haresh','hari','harish','harshit','hemant','himanshu','hitesh',
+  'imran',
+  'jagdish','jagmohan','jai','jatin','jayesh','jignesh',
+  'kailash','kamal','karan','kartik','kapil','krishna','kuldeep','kunal',
+  'lalit','lokesh','lucky',
+  'mahendra','mahesh','manish','manoj','mayank','mihir','mitesh','mohit',
+  'mohan','mukesh','munna','murali',
+  'naresh','naveen','neeraj','nikhil','nilesh','niraj','nitin','nitesh',
+  'om','omkar',
+  'pankaj','paresh','parth','pavan','pawan','pintu','pradeep','pranav',
+  'prakash','prasad','pratik','prateek','praveen','puneet',
+  'rahul','raj','rajan','rajesh','rajiv','raju','rakesh','ram','ramesh',
+  'ravi','ritesh','rohit','rohan','roop','rupesh',
+  'sachin','sagar','sahil','salman','samir','sanjay','sanjeev','santosh',
+  'satish','saurabh','shailesh','shiv','shivam','shyam','siddharth','soham',
+  'sonu','subhash','sudhir','sumit','sunil','suresh','surjit',
+  'tanmay','tarun','tushar','tej',
+  'uday','umesh','upen','utpal',
+  'varun','vikas','vikram','vinay','vinod','vishal','vivek','vicky',
+  'yash','yogesh','yunus','yusuf',
+  'zaheer','zubair',
+  // ── Female first names ──
+  'aarti','aditi','akansha','akanksha','alka','amrita','ananya','anita',
+  'anjali','ankita','anushka','aparna','archana','arpita','asha','ashwini',
+  'babita','bharati','bindiya','bindu',
+  'chanda','chitra','champa','chanchal',
+  'deepa','deepika','disha','divya','dolly','durga',
+  'ekta',
+  'farida','fatima',
+  'gauri','gayatri','geeta','gita','gulnaar',
+  'hema','heena','hina',
+  'indira','isha','ishita',
+  'jaya','jyoti',
+  'kajal','kavita','kiran','komal','koshika','krishna','kumari','khushi',
+  'lakshmi','lata','leela','lekha','lucky',
+  'madhuri','mamta','manisha','manju','mansi','maya','meena','meera',
+  'minal','monika','muskan',
+  'namita','nancy','neelam','neetu','neha','nidhi','nisha','nitu',
+  'pallavi','payal','pinky','pooja','poonam','prachi','pragya','prerna',
+  'preeti','priya','priyanka','puja',
+  'radha','rani','raveena','reena','rekha','ritu','rohini','ruhi','rupa',
+  'sarita','savita','seema','shalu','shalini','sheela','shilpa','shweta',
+  'simran','smita','sneha','sonia','sonali','swati','sunita','supriya',
+  'tanvi','tara','taruna',
+  'usha','urmila',
+  'vandana','varsha','vatsala','vidya',
+  'yashoda','yogita',
+  'zoya','zareen',
+  // ── Common Indian surnames ──
+  'agarwal','agrawal','ahuja','ansari','arora',
+  'bajaj','bansal','basu','bhatia','bhat','bhatt','bose',
+  'chandra','chauhan','chaudhary','choudhary','chopra',
+  'das','dave','desai','deshpande','dubey','dutta',
+  'garg','ghosh','gill','goswami','goyal','grewal','gupta',
+  'iyer',
+  'jain','jha','joshi','jindal',
+  'kapoor','kaur','khan','khanna','krishnan','kumar',
+  'lal',
+  'mahajan','malik','malhotra','mehta','menon','mishra',
+  'nair','naidu','nanda',
+  'pandey','patel','patil','pillai',
+  'qureshi',
+  'rao','rastogi','reddy','roy',
+  'sahoo','saxena','sen','seth','shah','sharma','shukla','singh','sinha',
+  'srivastava','soni',
+  'thakur','tiwari','trivedi',
+  'varma','verma','vyas',
+  'yadav',
 ]);
 
 // ── Built-in NLP functions — zero external dependencies ───────────────────────
@@ -103,49 +195,82 @@ function detectLanguage(text) {
 }
 
 /**
- * Extract person/customer names from diary text using context patterns.
- * Handles English, Hinglish, and mixed text.
+ * Extract person/customer names from diary text.
+ *
+ * Works for BOTH typed text (proper casing) AND voice transcriptions (all lowercase),
+ * because voice API (hi-IN) never capitalises names.
+ *
+ * Three passes — best to worst confidence:
+ *   1. Context patterns (case-insensitive) — name near action word
+ *   2. Indian names dictionary scan — word list covering 400+ common names/surnames
+ *   3. Capitalised words fallback — typed text only
  */
 function extractNamesFromText(text) {
-  const names = new Set();
+  const found = new Map(); // normalizedKey → displayName (titleCase)
 
-  // Context-aware patterns (highest confidence — name appears near action words)
-  const contextPatterns = [
-    // "called Rahul Kumar", "met Priya", "spoke with Sharma"
-    /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)/g,
-    // "Vijay ne", "Sharma ko", "Rahul se"
-    /([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)\s+(?:ne|ko|se|ka|ki|ke|bhi)\b/g,
-    // "Sharma ji", "Rahul bhai", "Kumar sahab"
-    /([A-Za-z]{3,}(?:\s+[A-Za-z]{2,})?)\s+(?:ji|sahab|bhai|sir|madam)\b/gi,
-    // "Mr. Gupta", "Mrs. Sharma", "Dr. Verma"
-    /(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)/g,
-    // "customer Ravi called" / "client Sunita said"
-    /(?:customer|client|party)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)/gi,
+  const addName = (raw) => {
+    const name = titleCase(raw.trim().replace(/\s+/g, ' '));
+    const key  = normalizeName(name);
+    if (!key || key.length < 3) return;
+    const parts = name.split(' ');
+    if (parts.some(p => STOP_WORDS.has(p.toLowerCase()))) return;
+    if (!found.has(key)) found.set(key, name);
+  };
+
+  // ── Pass 1: Context patterns (case-insensitive, catches voice text) ──────────
+  const ctxPatterns = [
+    // "called rahul sharma" / "met priya" / "spoke with kumar"
+    /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile|milke)\s+([a-zA-Z][a-z]{2,}(?:\s+[a-zA-Z][a-z]{2,})?)/gi,
+    // "rahul ne" / "sharma ko" / "priya se" — Hindi postpositional pattern
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)\s+(?:ne|ko|se)\b/gi,
+    // "sharma ji" / "rahul bhai" / "kumar sahab"
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)\s+(?:ji|sahab|bhai)\b/gi,
+    // "Mr Gupta" / "Mrs Sharma" / "Shri Verma"
+    /(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
+    // "customer rahul" / "client priya"
+    /(?:customer|client|party|buyer|prospect)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
+    // "rahul ka order" / "priya ki payment" — possessive Hindi
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam)/gi,
   ];
 
-  for (const pattern of contextPatterns) {
+  for (const pattern of ctxPatterns) {
     let m;
     while ((m = pattern.exec(text)) !== null) {
-      const name = titleCase(m[1].trim());
-      if (!STOP_WORDS.has(name.toLowerCase()) && name.length >= 3) {
-        names.add(name);
+      const candidate = m[1].trim();
+      // Each word must be ≥ 3 chars and not a stop word
+      const parts = candidate.toLowerCase().split(/\s+/);
+      if (parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) {
+        addName(candidate);
       }
     }
   }
 
-  // Bigrams: two consecutive capitalized words (e.g. "Rahul Kumar")
-  (text.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || []).forEach(n => {
-    if (!STOP_WORDS.has(n.toLowerCase())) names.add(n);
-  });
+  // ── Pass 2: Dictionary scan — works on fully-lowercase voice transcriptions ──
+  // Tokenise text and look for runs of 1–2 consecutive known Indian name tokens.
+  const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  for (let i = 0; i < tokens.length; i++) {
+    const t0 = tokens[i];
+    if (!INDIAN_NAMES.has(t0)) continue;
 
-  // Single capitalized words — only if nothing else was found
-  if (names.size === 0) {
-    (text.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => {
-      if (!STOP_WORDS.has(w.toLowerCase()) && w.length >= 3) names.add(w);
-    });
+    const t1 = tokens[i + 1];
+    if (t1 && INDIAN_NAMES.has(t1) && !STOP_WORDS.has(t1)) {
+      // First name + surname (or two name parts)
+      addName(`${t0} ${t1}`);
+      i++; // consume both tokens
+    } else {
+      addName(t0);
+    }
   }
 
-  return [...names];
+  // ── Pass 3: Capitalised bigrams / single words (typed text fallback) ─────────
+  (text.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || []).forEach(n => addName(n));
+
+  if (found.size === 0) {
+    // Last resort: any single capitalised word
+    (text.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => addName(w));
+  }
+
+  return [...found.values()];
 }
 
 /**
