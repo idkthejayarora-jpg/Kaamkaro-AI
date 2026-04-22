@@ -69,18 +69,30 @@ function titleCase(str) {
 
 // ── Stop words — words that look like names but aren't ────────────────────────
 const STOP_WORDS = new Set([
-  'general','client','customer','sir','madam','bhai','ji','unka','unhe','wo','woh',
-  'aaj','kal','subah','shaam','office','meeting','call','today','tomorrow','morning',
-  'evening','done','ok','okay','yes','no','the','and','but','for','with','this',
-  'that','from','have','they','their','monday','tuesday','wednesday','thursday',
-  'friday','saturday','sunday','january','february','march','april','may','june',
+  // English common words
+  'general','client','customer','sir','madam','the','and','but','for','with','this',
+  'that','from','have','they','their','back','regarding','about','because','after',
+  'before','through','during','also','just','even','when','then','than','only',
+  'been','will','would','could','should','shall','some','both','each','into',
+  'over','here','there','what','which','where','while','said','says','told',
+  // Days / months
+  'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
+  'january','february','march','april','may','june',
   'july','august','september','october','november','december',
-  // Hindi/Hinglish common words that look like names
+  // Common English words that pass capital/length tests
+  'today','tomorrow','morning','evening','office','meeting','call','done',
+  'okay','yes','no','okay','ok','time','date','number','phone','mobile',
+  'email','address','price','rate','amount','product','service',
+  'order','delivery','payment','advance','balance','interested',
+  'confirmed','cancelled','pending','complete','regarding',
+  // Hindi/Hinglish common words
+  'bhai','ji','unka','unhe','wo','woh','aaj','kal','subah','shaam',
   'main','mera','meri','mere','hum','hamara','hamari','aap','apna','apni',
-  'woh','yeh','koi','kuch','sab','log','din','raat','time','date','number',
-  'phone','mobile','whatsapp','email','address','price','rate','amount',
-  'product','service','order','delivery','payment','advance','balance',
-  'interested','confirmed','cancelled','pending','done','complete',
+  'woh','yeh','koi','kuch','sab','log','din','raat',
+  'aur','lekin','phir','toh','bhi','par','per','hai','tha','thi',
+  'the','nahi','nahin','haan','kya','kaise','kyun','kab',
+  'yahan','wahan','kal','aaj','abhi','pehle','baad',
+  'whatsapp','mobile','number','rupees','lakh','crore',
 ]);
 
 // ── Common Indian names dictionary ─────────────────────────────────────────────
