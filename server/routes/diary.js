@@ -297,51 +297,90 @@ function detectLanguage(text) {
 /**
  * Extract person/customer names from diary text.
  *
- * Customer name format used by this team: "person place"
+ * Customer name format used by this team: "person [surname] [place]"
  * e.g. "Manish Agra", "Mohit Lajpat Nagar", "Ansh Chauhan Kolkata",
- *      "Bittoo Fashion Chandigarh"
+ *      "Bittoo Fashion Chandigarh" — name combinations can be anything.
  *
  * Works for BOTH typed text (proper casing) AND voice transcriptions (all lowercase).
  *
- * Three passes — best to worst confidence:
- *   1. Dictionary scan — name → optional surname → optional location (voice-first)
- *   2. Context patterns (case-insensitive) — name near action word
- *   3. Capitalised words fallback — typed text only
+ * Four passes — best to worst confidence:
+ *   1. Location-anchored — finds ANY words before a known city (no dict needed)
+ *   2. INDIAN_NAMES dict scan — for names without a city suffix
+ *   3. Context patterns — name near action word / Hindi postposition
+ *   4. Capitalised words fallback — typed text only
  */
 function extractNamesFromText(text) {
   const found = new Map(); // normalizedKey → displayName (titleCase)
 
+  // Grammatical fillers that appear after a name but aren't part of it
+  const FILLER = new Set(['wala','wali','waale','waali','wale','vale','vali']);
+
   const addName = (raw) => {
-    // Only strip the very last word if it's a pure grammatical filler
-    // (e.g. "wala", "wali") — NOT locations, because locations are part of the name.
-    const FILLER = new Set(['wala','wali','waale','waali','vale','vali']);
     let parts = raw.trim().replace(/\s+/g, ' ').toLowerCase().split(' ');
-    if (parts.length > 1 && FILLER.has(parts[parts.length - 1])) {
+    // Strip trailing filler (wala/wali etc.) but NOT locations
+    while (parts.length > 1 && FILLER.has(parts[parts.length - 1])) {
       parts = parts.slice(0, -1);
     }
-    // Reject if any word is a plain stop word
-    if (parts.some(p => STOP_WORDS.has(p))) return;
     if (parts.length === 0) return;
+    // Reject if any word is a stop word
+    if (parts.some(p => STOP_WORDS.has(p))) return;
     const name = titleCase(parts.join(' '));
     const key  = normalizeName(name);
     if (!key || key.length < 3) return;
     if (!found.has(key)) found.set(key, name);
   };
 
-  // ── Pass 1: Dictionary scan — primary path for voice text ─────────────────
+  const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+
+  // ── Pass 1: Location-anchored extraction ──────────────────────────────────
   //
-  // Builds names by greedily consuming:
-  //   [person name] [optional surname] [optional location word(s)]
+  // Scans for known cities/localities and captures 1-3 words BEFORE them as the
+  // customer name. This handles arbitrary name combinations the user says because
+  // the city is the reliable anchor, not the person's name.
   //
-  // Examples:
   //   "manish agra"              → "Manish Agra"
-  //   "mohit lajpat nagar"       → "Mohit Lajpat Nagar"
+  //   "bittoo fashion chandigarh"→ "Bittoo Fashion Chandigarh"
   //   "ansh chauhan kolkata"     → "Ansh Chauhan Kolkata"
-  //   "rahul sharma"             → "Rahul Sharma"
-  //   "priya delhi"              → "Priya Delhi"
+  //   "mohit lajpat nagar"       → "Mohit Lajpat Nagar"
   //   "vijay sharma ghaziabad"   → "Vijay Sharma Ghaziabad"
   //
-  const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  for (let i = 0; i < tokens.length; i++) {
+    let locWords = 0;       // how many tokens form the location
+    let locLabel = '';      // the location string
+
+    // Try two-word location first ("lajpat nagar", "greater noida")
+    const maybe2 = i + 1 < tokens.length ? `${tokens[i]} ${tokens[i + 1]}` : '';
+    if (maybe2 && INDIAN_LOCATIONS.has(maybe2)) {
+      locWords = 2; locLabel = maybe2;
+    } else if (INDIAN_LOCATIONS.has(tokens[i])) {
+      locWords = 1; locLabel = tokens[i];
+    }
+
+    if (locWords === 0) continue; // not a location token
+
+    // Look back up to 3 words for the name (stop at stop words or short words)
+    const nameTokens = [];
+    for (let k = i - 1; k >= 0 && i - k <= 3; k--) {
+      const w = tokens[k];
+      if (STOP_WORDS.has(w) || w.length < 3 || FILLER.has(w)) break;
+      nameTokens.unshift(w);
+    }
+
+    if (nameTokens.length > 0) {
+      // Full customer name = person name + location
+      const locParts = locLabel.split(' ');
+      addName([...nameTokens, ...locParts].join(' '));
+    }
+
+    i += locWords - 1; // skip location tokens on next iterations
+  }
+
+  // ── Pass 2: INDIAN_NAMES dict scan — for names with no city context ────────
+  //
+  // "rahul sharma", "priya ne call kiya", etc.
+  // Only starts a name group from a KNOWN first name/surname to prevent
+  // "Kumar Sunita" false positives when "vijay" precedes "kumar".
+  //
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     if (!INDIAN_NAMES.has(t)) continue;
@@ -349,54 +388,41 @@ function extractNamesFromText(text) {
     const parts = [t];
     let j = i + 1;
 
-    // Consume optional surname (next token in INDIAN_NAMES)
+    // Consume optional surname (next token also in INDIAN_NAMES)
     if (j < tokens.length && INDIAN_NAMES.has(tokens[j]) && !STOP_WORDS.has(tokens[j])) {
       parts.push(tokens[j]);
       j++;
     }
 
-    // Consume optional location — may be 1 or 2 words ("noida" / "lajpat nagar" / "greater noida")
+    // Consume optional location (1-2 words) — appended to name per team convention
     if (j < tokens.length) {
       const loc1 = tokens[j];
       const loc2 = tokens[j + 1];
-      const twoWord = loc2 ? `${loc1} ${loc2}` : '';
+      const two  = loc2 ? `${loc1} ${loc2}` : '';
 
-      if (twoWord && INDIAN_LOCATIONS.has(twoWord)) {
-        // Two-word location: "lajpat nagar", "greater noida", "navi mumbai"
-        parts.push(loc1, loc2);
-        j += 2;
+      if (two && INDIAN_LOCATIONS.has(two)) {
+        parts.push(loc1, loc2); j += 2;
       } else if (INDIAN_LOCATIONS.has(loc1)) {
-        // Single-word location: "agra", "delhi", "chandigarh"
-        parts.push(loc1);
-        j++;
-        // Check if the next word extends the location (e.g. "sector 18" → just take "sector")
-        // or is another location word like "nagar" after a base city
+        parts.push(loc1); j++;
         if (j < tokens.length && INDIAN_LOCATIONS.has(tokens[j])) {
-          parts.push(tokens[j]);
-          j++;
+          parts.push(tokens[j]); j++;
         }
       }
     }
 
     addName(parts.join(' '));
-    i = j - 1; // consume all tokens we used
+    i = j - 1;
   }
 
-  // ── Pass 2: Context patterns (case-insensitive, catches named entities near verbs) ──
+  // ── Pass 3: Context patterns (case-insensitive) ────────────────────────────
   // Captures up to 3 words so "called manish agra" gives "Manish Agra".
-  // We accept only if at least one word is a known Indian name OR capitalised in original.
+  // At least one captured word must be a known name or location (prevents generic captures).
   const ctxPatterns = [
-    // "called manish agra" / "met ansh chauhan" / "spoke with mohit lajpat nagar"
     /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile|milke)\s+([a-zA-Z][a-z]{2,}(?:\s+[a-zA-Z][a-z]{2,}){0,2})/gi,
-    // "manish agra ne" / "sharma ko" / "priya delhi se"
     /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ne|ko|se)\b/gi,
-    // "sharma ji" / "manish agra ji"
     /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ji|sahab|bhai)\b/gi,
-    // "Mr Gupta" / "Shri Verma"
     /(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
-    // "customer manish agra" / "client mohit lajpat nagar"
     /(?:customer|client|party|buyer|prospect)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
-    // "manish agra ka order" / "priya delhi ki payment"
     /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam)/gi,
   ];
 
@@ -406,7 +432,6 @@ function extractNamesFromText(text) {
       const candidate = m[1].trim();
       const parts = candidate.toLowerCase().split(/\s+/);
       if (!parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) continue;
-      // At least one word must be a known person name or location (locations are valid parts here)
       const isValid = parts.some(p =>
         INDIAN_NAMES.has(p) || INDIAN_LOCATIONS.has(p) ||
         new RegExp('\\b' + p.charAt(0).toUpperCase() + p.slice(1) + '\\b').test(text)
