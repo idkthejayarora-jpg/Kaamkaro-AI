@@ -66,12 +66,24 @@ function AdminDashboard() {
 
   useEffect(() => {
     (async () => {
-      const [s, sum] = await Promise.all([staffAPI.list(), aiAPI.dashboardSummary()]);
-      setStaff(s);
-      setSummary(sum);
-      const allPerf = await Promise.all(s.map((st: Staff) => staffAPI.getPerformance(st.id)));
-      setPerf(allPerf.flat());
-      setLoading(false);
+      try {
+        const [s, sum] = await Promise.all([
+          staffAPI.list().catch(() => [] as Staff[]),
+          aiAPI.dashboardSummary().catch(() => null),
+        ]);
+        setStaff(s);
+        setSummary(sum);
+        if (s.length > 0) {
+          const allPerf = await Promise.all(
+            s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => []))
+          );
+          setPerf(allPerf.flat());
+        }
+      } catch {
+        // Non-fatal — show dashboard with empty state rather than blank page
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 

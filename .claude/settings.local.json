@@ -48,7 +48,8 @@
       "Bash(cat client/vite.config.ts)",
       "Bash(cat client/vite.config.js)",
       "Bash(node -e \"const deps=require\\('./package.json'\\).dependencies; console.log\\(Object.keys\\(deps\\).sort\\(\\).join\\('\\\\n'\\)\\)\")",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
