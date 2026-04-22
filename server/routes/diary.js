@@ -26,9 +26,9 @@ async function callClaude(client, params) {
   } catch (err) {
     const isModelErr = err?.status === 404 || err?.status === 400 ||
       (err?.message || '').toLowerCase().includes('model');
-    if (isModelErr && AI_MODEL !== 'claude-3-5-sonnet-20241022') {
-      console.warn(`[Diary] Model "${AI_MODEL}" failed (${err.status}), retrying with claude-3-5-sonnet-20241022`);
-      return await client.messages.create({ model: 'claude-3-5-sonnet-20241022', ...params });
+    if (isModelErr && AI_MODEL !== 'claude-3-5-haiku-20241022') {
+      console.warn(`[Diary] Model "${AI_MODEL}" failed (${err.status}), retrying with claude-3-5-haiku-20241022`);
+      return await client.messages.create({ model: 'claude-3-5-haiku-20241022', ...params });
     }
     throw err;
   }
