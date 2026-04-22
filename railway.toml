@@ -1,13 +1,10 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd client && npm install && npm run build && cd ../server && npm install"
+buildCommand = "npm install --prefix client && npm run build --prefix client && npm install --prefix server"
 
 [deploy]
-startCommand = "node server/index.js"
+startCommand = "NODE_ENV=production node server/index.js"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
-
-[[services]]
-name = "kaamkaro-ai"
+restartPolicyMaxRetries = 5
