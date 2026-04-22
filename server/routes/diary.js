@@ -5,13 +5,13 @@ const { authMiddleware } = require('../middleware/auth');
 const { updateStaffStreak } = require('../utils/streak');
 const { broadcast } = require('../utils/sse');
 
+// Anthropic is optional — only used if API key + credits are present
 let Anthropic;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
 
 const router = express.Router();
 router.use(authMiddleware);
 
-// Model used for diary analysis — override via ANTHROPIC_MODEL env var on Railway
 const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 
 function getClient() {
@@ -19,27 +19,13 @@ function getClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
-// Wrapper that retries with a safe fallback model if the primary model isn't found
-async function callClaude(client, params) {
-  try {
-    return await client.messages.create({ model: AI_MODEL, ...params });
-  } catch (err) {
-    const isModelErr = err?.status === 404 || err?.status === 400 ||
-      (err?.message || '').toLowerCase().includes('model');
-    if (isModelErr && AI_MODEL !== 'claude-3-5-haiku-20241022') {
-      console.warn(`[Diary] Model "${AI_MODEL}" failed (${err.status}), retrying with claude-3-5-haiku-20241022`);
-      return await client.messages.create({ model: 'claude-3-5-haiku-20241022', ...params });
-    }
-    throw err;
-  }
-}
-
 // ── Fuzzy name matching ────────────────────────────────────────────────────────
-// Handles typos, Hindi-English transliteration variations, missing vowels, etc.
 
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
-  const dp = Array.from({ length: m + 1 }, (_, i) => Array(n + 1).fill(0).map((_, j) => i === 0 ? j : j === 0 ? i : 0));
+  const dp = Array.from({ length: m + 1 }, (_, i) =>
+    Array(n + 1).fill(0).map((_, j) => i === 0 ? j : j === 0 ? i : 0)
+  );
   for (let i = 1; i <= m; i++)
     for (let j = 1; j <= n; j++)
       dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
@@ -47,38 +33,21 @@ function levenshtein(a, b) {
 }
 
 function normalizeName(name) {
-  return name
-    .toLowerCase()
-    .trim()
-    // Common Hindi/Hinglish vowel normalizations
-    .replace(/ph/g, 'f')
-    .replace(/bh/g, 'b')
-    .replace(/kh/g, 'k')
-    .replace(/gh/g, 'g')
-    .replace(/sh/g, 's')
-    .replace(/th/g, 't')
-    .replace(/dh/g, 'd')
-    // Common vowel variations (aa→a, ee→i, oo→u)
-    .replace(/aa/g, 'a')
-    .replace(/ee/g, 'i')
-    .replace(/oo/g, 'u')
-    .replace(/ou/g, 'u')
-    .replace(/ei/g, 'i')
-    .replace(/v/g, 'w')   // vijay/wijay
-    .replace(/[^a-z\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return name.toLowerCase().trim()
+    .replace(/ph/g, 'f').replace(/bh/g, 'b').replace(/kh/g, 'k')
+    .replace(/gh/g, 'g').replace(/sh/g, 's').replace(/th/g, 't').replace(/dh/g, 'd')
+    .replace(/aa/g, 'a').replace(/ee/g, 'i').replace(/oo/g, 'u')
+    .replace(/ou/g, 'u').replace(/ei/g, 'i').replace(/v/g, 'w')
+    .replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function nameSimilarity(a, b) {
   const na = normalizeName(a);
   const nb = normalizeName(b);
   if (na === nb) return 1.0;
-  // Token-level match: if all tokens of the shorter name match tokens of the longer
   const ta = na.split(' ');
   const tb = nb.split(' ');
   if (ta.some(t => tb.some(t2 => t === t2 && t.length > 2))) return 0.9;
-  // Levenshtein similarity
   const dist = levenshtein(na, nb);
   const maxLen = Math.max(na.length, nb.length);
   return maxLen === 0 ? 1 : 1 - dist / maxLen;
@@ -94,6 +63,146 @@ function fuzzyMatchCustomer(spokenName, customers, threshold = 0.72) {
   return bestScore >= threshold ? best : null;
 }
 
+function titleCase(str) {
+  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+}
+
+// ── Stop words — words that look like names but aren't ────────────────────────
+const STOP_WORDS = new Set([
+  'general','client','customer','sir','madam','bhai','ji','unka','unhe','wo','woh',
+  'aaj','kal','subah','shaam','office','meeting','call','today','tomorrow','morning',
+  'evening','done','ok','okay','yes','no','the','and','but','for','with','this',
+  'that','from','have','they','their','monday','tuesday','wednesday','thursday',
+  'friday','saturday','sunday','january','february','march','april','may','june',
+  'july','august','september','october','november','december',
+]);
+
+// ── Built-in NLP functions — zero external dependencies ───────────────────────
+
+/**
+ * Detect if text is Hindi (Devanagari), Hinglish (Hindi words in Roman script),
+ * or plain English.
+ */
+function detectLanguage(text) {
+  // Devanagari Unicode range → definite Hindi
+  if (/[\u0900-\u097F]/.test(text)) return 'hindi';
+
+  const hinglishMarkers = [
+    'aaj','kal','baat','kiya','hua','hui','gaya','gaye','mila','mile','milna',
+    'nahi','nahin','hai','hain','tha','thi','the','se','ko','ne','ka','ki','ke',
+    'aur','lekin','pakki','raazi','khush','naraaz','matlab','thoda','bohot',
+    'bahut','phir','sab','abhi','pehle','baad','unse','inse','unka','mujhe',
+    'humne','aapne','unhone','wahan','yahan','kab','kaise','kyun','kya',
+    'accha','theek','shukriya','bilkul','zaroor',
+  ];
+  const words = text.toLowerCase().split(/\W+/).filter(Boolean);
+  const count = words.filter(w => hinglishMarkers.includes(w)).length;
+  return (count >= 2 || (words.length > 5 && count / words.length > 0.08))
+    ? 'hinglish'
+    : 'english';
+}
+
+/**
+ * Extract person/customer names from diary text using context patterns.
+ * Handles English, Hinglish, and mixed text.
+ */
+function extractNamesFromText(text) {
+  const names = new Set();
+
+  // Context-aware patterns (highest confidence — name appears near action words)
+  const contextPatterns = [
+    // "called Rahul Kumar", "met Priya", "spoke with Sharma"
+    /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)/g,
+    // "Vijay ne", "Sharma ko", "Rahul se"
+    /([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)\s+(?:ne|ko|se|ka|ki|ke|bhi)\b/g,
+    // "Sharma ji", "Rahul bhai", "Kumar sahab"
+    /([A-Za-z]{3,}(?:\s+[A-Za-z]{2,})?)\s+(?:ji|sahab|bhai|sir|madam)\b/gi,
+    // "Mr. Gupta", "Mrs. Sharma", "Dr. Verma"
+    /(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)/g,
+    // "customer Ravi called" / "client Sunita said"
+    /(?:customer|client|party)\s+([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})?)/gi,
+  ];
+
+  for (const pattern of contextPatterns) {
+    let m;
+    while ((m = pattern.exec(text)) !== null) {
+      const name = titleCase(m[1].trim());
+      if (!STOP_WORDS.has(name.toLowerCase()) && name.length >= 3) {
+        names.add(name);
+      }
+    }
+  }
+
+  // Bigrams: two consecutive capitalized words (e.g. "Rahul Kumar")
+  (text.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || []).forEach(n => {
+    if (!STOP_WORDS.has(n.toLowerCase())) names.add(n);
+  });
+
+  // Single capitalized words — only if nothing else was found
+  if (names.size === 0) {
+    (text.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => {
+      if (!STOP_WORDS.has(w.toLowerCase()) && w.length >= 3) names.add(w);
+    });
+  }
+
+  return [...names];
+}
+
+/**
+ * Detect sentiment from sales-relevant keyword lists.
+ */
+function detectSentimentLocal(text) {
+  const lower = text.toLowerCase();
+  const positive = [
+    'deal','confirmed','agreed','interested','happy','closed','success','sold',
+    'bought','approved','order','payment','received','signed','contract',
+    'pakki','raazi','khush','haan','accha','bilkul','zaroor','positive',
+  ];
+  const negative = [
+    'rejected','angry','upset','cancelled','refused','complaint','problem',
+    'issue','failed','loss','dispute','return','refund','delay','pending',
+    'naraaz','mana','nahi','nahin','bad','difficult',
+  ];
+  let score = 0;
+  positive.forEach(w => { if (lower.includes(w)) score++; });
+  negative.forEach(w => { if (lower.includes(w)) score--; });
+  return score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral';
+}
+
+/**
+ * Extract actionable follow-up items using keyword pattern matching.
+ */
+function extractActionItemsLocal(text) {
+  const checks = [
+    { r: /follow.?up|followup/i,                             a: 'Follow up with customer'  },
+    { r: /(?:send|quote|proposal|estimate|quotation|bhej)/i, a: 'Send quote/proposal'      },
+    { r: /(?:call back|callback|phone back|ring)/i,          a: 'Call back customer'        },
+    { r: /(?:schedule|appointment|milenge|milna hai)/i,      a: 'Schedule meeting'          },
+    { r: /(?:payment|invoice|bill|dues|baaki)/i,             a: 'Follow up on payment'      },
+    { r: /(?:demo|demonstration|presentation|dikhana)/i,     a: 'Arrange product demo'      },
+    { r: /(?:deliver|delivery|dispatch|courier|bhejna)/i,    a: 'Arrange delivery'          },
+  ];
+  return [...new Set(checks.filter(c => c.r.test(text)).map(c => c.a))].slice(0, 4);
+}
+
+/**
+ * Build a structured English summary from the extracted NLP data.
+ * This is shown as "English Summary" in the UI when no AI translation is available.
+ */
+function buildEnglishSummary(names, lang, sentiment, actions, staffName) {
+  const langLabel = lang === 'hindi' ? 'Hindi' : lang === 'hinglish' ? 'Hindi/Hinglish' : 'English';
+  const nameStr   = names.length > 0 ? names.join(', ') : 'no specific customers identified';
+  const sentStr   = sentiment === 'positive'
+    ? 'Overall positive outcome.'
+    : sentiment === 'negative'
+    ? 'Some challenges or objections noted.'
+    : 'Standard interaction.';
+  const actStr = actions.length > 0
+    ? ` Next steps: ${actions.join('; ')}.`
+    : '';
+  return `Entry recorded in ${langLabel} by ${staffName}. Customers mentioned: ${nameStr}. ${sentStr}${actStr}`;
+}
+
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
 // GET /api/diary
@@ -105,7 +214,7 @@ router.get('/', async (req, res) => {
     }
     entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.json(entries);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -120,12 +229,12 @@ router.get('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     res.json(entry);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// DELETE /api/diary/:id — staff can delete their own entries; admin can delete any
+// DELETE /api/diary/:id
 router.delete('/:id', async (req, res) => {
   try {
     const entries = await readDB('diary');
@@ -137,7 +246,7 @@ router.delete('/:id', async (req, res) => {
     await deleteOne('diary', req.params.id);
     broadcast('diary:deleted', { id: req.params.id });
     res.json({ message: 'Deleted' });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -164,354 +273,15 @@ router.post('/', async (req, res) => {
     await insertOne('diary', entry);
     await updateStaffStreak(req.user.id);
 
-    // Respond immediately so the UI is snappy
+    // Respond immediately — processing happens async in background
     res.status(202).json(entry);
-
-    // Process async in background
     processDiaryEntry(entry.id, content, req.user.id, req.user.name).catch(console.error);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ── Core AI processing ─────────────────────────────────────────────────────────
-
-/**
- * Robustly extract a JSON object from an AI response string.
- * Handles: markdown fences, leading/trailing text, nested objects.
- */
-function extractJSON(text) {
-  // Strip markdown fences
-  let s = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-
-  // Try direct parse first (happy path)
-  try { return JSON.parse(s); } catch {}
-
-  // Find the outermost {...} block
-  const start = s.indexOf('{');
-  const end   = s.lastIndexOf('}');
-  if (start !== -1 && end !== -1 && end > start) {
-    try { return JSON.parse(s.slice(start, end + 1)); } catch {}
-  }
-
-  return null;
-}
-
-// ── Local fallback: regex name extraction + customer auto-create (no AI needed) ──
-// Called when: no API key, invalid key (401), model error, or any API failure.
-// Always completes successfully — diary entry is never left in 'error' state.
-const FALLBACK_STOPS = new Set([
-  'general','client','customer','sir','madam','bhai','ji','the','and','but','for',
-  'with','okay','done','yes','no','call','meeting','office','today','tomorrow',
-  'morning','evening','aaj','kal','subah','shaam','unka','unhe','wo','woh',
-  'monday','tuesday','wednesday','thursday','friday','saturday','sunday',
-]);
-
-async function runLocalFallback(entryId, content, staffId, staffName, allCustomers) {
-  const candidateNames = new Set();
-  // Two-word names first (higher confidence): "Rahul Kumar", "Priya Singh"
-  (content.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || []).forEach(w => candidateNames.add(w));
-  // Single capitalised words
-  (content.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => candidateNames.add(w));
-
-  const now = new Date().toISOString();
-  const entries = [];
-  const created = [];
-
-  for (const name of candidateNames) {
-    if (FALLBACK_STOPS.has(name.toLowerCase()) || name.length < 3) continue;
-
-    let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...created], 0.78);
-    if (resolved) {
-      try { await updateOne('customers', resolved.id, { lastContact: now }); } catch {}
-    } else {
-      try {
-        const newCust = {
-          id: uuidv4(), name: titleCase(name), phone: '', email: '',
-          assignedTo: staffId, status: 'lead', lastContact: now,
-          notes: `Auto-created from diary entry by ${staffName}`,
-          notesList: [], tags: ['diary-import'], dealValue: null, createdAt: now,
-        };
-        await insertOne('customers', newCust);
-        allCustomers.push(newCust);
-        created.push(newCust);
-        resolved = newCust;
-        broadcast('customer:created', newCust);
-        console.log(`[Diary fallback] ✅ Created: "${newCust.name}"`);
-      } catch (e) {
-        console.error('[Diary fallback] create failed:', e.message);
-        continue;
-      }
-    }
-
-    entries.push({
-      spokenName: name, customerName: resolved.name,
-      customerId: resolved.id, matchedCustomerName: resolved.name,
-      matchedCustomerId: resolved.id,
-      isNewCustomer: created.some(c => c.id === resolved.id),
-      date: null, notes: 'Logged from diary entry.',
-      originalNotes: content.slice(0, 300),
-      actionItems: [], sentiment: 'neutral', confidence: 0.4,
-    });
-  }
-
-  if (entries.length === 0) {
-    entries.push({
-      spokenName: 'General', customerName: 'General', customerId: null,
-      matchedCustomerName: null, isNewCustomer: false, date: null,
-      notes: 'No customer names detected in this entry.',
-      originalNotes: content.slice(0, 400),
-      actionItems: [], sentiment: 'neutral', confidence: 0.2,
-    });
-  }
-
-  const saved = await updateOne('diary', entryId, {
-    status: 'done', aiEntries: entries,
-    translatedContent: null, detectedLanguage: 'hinglish',
-    processedAt: new Date().toISOString(),
-  });
-  broadcast('diary:updated', saved);
-}
-
-async function processDiaryEntry(entryId, content, staffId, staffName) {
-  try {
-    const allCustomers = await readDB('customers');
-    const customerList = allCustomers.map(c => ({ id: c.id, name: c.name }));
-
-    const client = getClient();
-
-    if (!client) {
-      console.warn('[Diary] No ANTHROPIC_API_KEY — using local fallback');
-      return await runLocalFallback(entryId, content, staffId, staffName, allCustomers);
-    }
-
-    // ── AI path ────────────────────────────────────────────────────────────────
-    const customerRef = customerList.length > 0
-      ? customerList.map(c => `"${c.name}" [id:${c.id}]`).join('\n')
-      : '(none yet — treat every name as a new customer)';
-
-    const prompt = `You are a bilingual sales CRM assistant fluent in Hindi, Hinglish, and English.
-
-DIARY ENTRY (may be in Hindi, Hinglish, or English):
-"""
-${content.slice(0, 5000)}
-"""
-
-KNOWN CUSTOMERS (match against these exact IDs):
-${customerRef}
-
-YOUR TASKS:
-
-1. DETECT LANGUAGE: "hindi", "english", or "hinglish"
-
-2. TRANSLATE TO ENGLISH: Write a complete, natural English translation of the ENTIRE diary entry.
-   - Translate EVERY sentence — do not skip anything
-   - If Hindi: translate word for word into natural English
-   - If Hinglish (mixed): translate the Hindi parts, keep English parts as-is
-   - Write in first person as the staff member narrating their day
-   - Include all details: who they met, what was discussed, outcome, next steps
-   - Length: match the original — short entry → short translation, long entry → full translation
-   - Do NOT write a summary — write a TRANSLATION
-
-3. EXTRACT CUSTOMERS: Find every person/customer name mentioned (even briefly).
-   - Handle Hindi spellings: "vijay"="bijay", "sharma ji"=Sharma, nicknames
-   - Match against known customers using fuzzy logic
-   - For NEW names not in the known list: set isNewCustomer=true, matchedCustomerId=null
-   - For each person write professional English notes on what happened
-
-Respond ONLY with this exact JSON structure, no other text:
-{
-  "detectedLanguage": "hindi|english|hinglish",
-  "translatedContent": "Complete natural English translation of the full diary entry, written in first person",
-  "entries": [
-    {
-      "spokenName": "name exactly as written in diary",
-      "matchedCustomerName": "exact name from known list or null",
-      "matchedCustomerId": "exact id from known list or null",
-      "isNewCustomer": false,
-      "date": "YYYY-MM-DD or null",
-      "notes": "1-2 sentence English summary: what happened, outcome, next step",
-      "originalNotes": "the original Hindi/Hinglish text about this person",
-      "actionItems": ["concrete follow-up action if any"],
-      "sentiment": "positive|neutral|negative",
-      "confidence": 0.9
-    }
-  ]
-}`;
-
-    const result = await callClaude(client, {
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const rawText = result.content[0].text;
-    console.log('[Diary] AI raw response (first 200):', rawText.slice(0, 200));
-
-    let aiResult = extractJSON(rawText);
-
-    if (!aiResult || !Array.isArray(aiResult.entries)) {
-      console.error('[Diary] JSON extraction failed. Raw:', rawText.slice(0, 500));
-      // Hard fallback: ask the model again with a stricter prompt
-      try {
-        const retry = await callClaude(client, {
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `Extract customer names from this diary entry and return ONLY valid JSON:\n"${content.slice(0, 2000)}"\n\nReturn exactly this structure:\n{"detectedLanguage":"hinglish","translatedContent":"Brief professional summary","entries":[{"spokenName":"name as written","matchedCustomerName":null,"matchedCustomerId":null,"isNewCustomer":true,"date":null,"notes":"What happened with this customer","originalNotes":"","actionItems":[],"sentiment":"neutral","confidence":0.7}]}`
-          }],
-        });
-        aiResult = extractJSON(retry.content[0].text);
-      } catch {}
-    }
-
-    // Ultimate fallback if both attempts fail
-    if (!aiResult) {
-      aiResult = {
-        detectedLanguage: 'hinglish',
-        translatedContent: 'Could not auto-translate — see original entry.',
-        entries: [],
-      };
-    }
-
-    // ── Post-AI: resolve + auto-create customers ────────────────────────────
-    // Words that look like names but aren't — don't auto-create these as customers
-    const STOP_NAMES = new Set([
-      'general','client','customer','sir','madam','bhai','ji','unka','unhe','wo','woh',
-      'aaj','kal','subah','shaam','office','meeting','call','today','tomorrow','morning',
-      'done','ok','okay','yes','no','the','and','but','for','with',
-    ]);
-
-    const newCustomers  = [];
-    const resolvedEntries = [];
-    const now = new Date().toISOString();
-
-    for (const e of (aiResult.entries || [])) {
-      const spokenName = (e.spokenName || '').trim();
-      const nameLower  = spokenName.toLowerCase();
-      const isGeneric  = !spokenName || STOP_NAMES.has(nameLower) || spokenName.length < 3;
-
-      // Step 1: trust the AI's matched customer ID if it gave one
-      let resolvedCustomer = null;
-      if (e.matchedCustomerId) {
-        resolvedCustomer = allCustomers.find(c => c.id === e.matchedCustomerId) || null;
-        if (resolvedCustomer) console.log(`[Diary] AI matched "${spokenName}" → "${resolvedCustomer.name}"`);
-      }
-
-      // Step 2: server-side fuzzy match as safety net (catches cases where AI got ID wrong)
-      if (!resolvedCustomer && !isGeneric) {
-        resolvedCustomer = fuzzyMatchCustomer(spokenName, [...allCustomers, ...newCustomers]);
-        if (resolvedCustomer) {
-          console.log(`[Diary] Fuzzy matched "${spokenName}" → "${resolvedCustomer.name}"`);
-        }
-      }
-
-      // Step 3: no match → auto-create as new customer assigned to this staff member
-      if (!resolvedCustomer && !isGeneric) {
-        try {
-          const newCust = {
-            id: uuidv4(),
-            name: titleCase(spokenName),
-            phone: '',
-            email: '',
-            assignedTo: staffId,
-            status: 'lead',
-            lastContact: now,
-            notes: `Auto-created from diary entry by ${staffName}`,
-            notesList: [],
-            tags: ['diary-import'],
-            dealValue: null,
-            createdAt: now,
-          };
-          await insertOne('customers', newCust);
-          resolvedCustomer = newCust;
-          newCustomers.push(newCust);
-          allCustomers.push(newCust);
-          // Push to Customers page in real-time so it appears instantly
-          broadcast('customer:created', newCust);
-          console.log(`[Diary] ✅ Auto-created customer: "${newCust.name}"`);
-        } catch (err) {
-          console.error('[Diary] ❌ Failed to create customer:', err.message);
-        }
-      }
-
-      // Step 4: update lastContact on existing customers found in diary
-      if (resolvedCustomer && !newCustomers.find(c => c.id === resolvedCustomer.id)) {
-        try {
-          await updateOne('customers', resolvedCustomer.id, { lastContact: now });
-        } catch {}
-      }
-
-      const isNew   = newCustomers.some(c => c.id === resolvedCustomer?.id);
-      const summary = e.notes && e.notes.trim().length > 10 ? e.notes.trim() : `Interaction logged from diary entry on ${new Date().toLocaleDateString('en-IN')}`;
-
-      resolvedEntries.push({
-        spokenName:          spokenName || 'General',
-        customerName:        resolvedCustomer?.name || spokenName || 'General',
-        customerId:          resolvedCustomer?.id   || null,
-        matchedCustomerName: resolvedCustomer?.name || null,
-        isNewCustomer:       isNew,
-        autoCreatedId:       isNew ? resolvedCustomer?.id : null,
-        date:                e.date        || null,
-        notes:               summary,
-        originalNotes:       e.originalNotes || e.notes || '',
-        actionItems:         Array.isArray(e.actionItems) ? e.actionItems : [],
-        sentiment:           ['positive','neutral','negative'].includes(e.sentiment) ? e.sentiment : 'neutral',
-        confidence:          typeof e.confidence === 'number' ? e.confidence : 0.5,
-      });
-    }
-
-    // Log auto-created customers count
-    if (newCustomers.length > 0) {
-      console.log(`[Diary] ✅ Created ${newCustomers.length} new customers from entry by ${staffName}`);
-    }
-
-    const finalEntry = await updateOne('diary', entryId, {
-      status: 'done',
-      aiEntries: resolvedEntries,
-      translatedContent: aiResult.translatedContent || null,
-      detectedLanguage: aiResult.detectedLanguage || null,
-      processedAt: new Date().toISOString(),
-    });
-
-    // 🔴 Real-time push — all connected browser tabs get this instantly
-    broadcast('diary:updated', finalEntry);
-
-  } catch (err) {
-    const errMsg = err?.message || String(err);
-    const errStatus = err?.status || err?.statusCode || 0;
-    console.error(`[Diary] ❌ API error (HTTP ${errStatus}): ${errMsg}`);
-    if (err?.error) console.error('[Diary] body:', JSON.stringify(err.error));
-
-    // For auth/model/rate-limit errors → silently fall back to local extraction
-    // so the diary entry always completes and never blocks the user.
-    const useLocalFallback = errStatus === 401 || errStatus === 403 ||
-      errStatus === 404 || errStatus === 429 ||
-      errMsg.toLowerCase().includes('model') ||
-      errMsg.toLowerCase().includes('api key') ||
-      errMsg.toLowerCase().includes('auth');
-
-    if (useLocalFallback) {
-      console.warn(`[Diary] Falling back to local extraction (${errStatus})`);
-      try {
-        const allCustomers = await readDB('customers');
-        return await runLocalFallback(entryId, content, staffId, staffName, allCustomers);
-      } catch (fallbackErr) {
-        console.error('[Diary] Even local fallback failed:', fallbackErr.message);
-      }
-    }
-
-    // Only set status=error for unexpected server/network failures
-    try {
-      const errEntry = await updateOne('diary', entryId, {
-        status: 'error',
-        error: errMsg.slice(0, 200),
-      });
-      broadcast('diary:updated', errEntry);
-    } catch {}
-  }
-}
-
-// POST /api/diary/:id/reanalyze — re-run AI analysis on an existing entry
+// POST /api/diary/:id/reanalyze
 router.post('/:id/reanalyze', async (req, res) => {
   try {
     const entries = await readDB('diary');
@@ -528,13 +298,269 @@ router.post('/:id/reanalyze', async (req, res) => {
     broadcast('diary:updated', updated);
     res.json(updated);
     processDiaryEntry(req.params.id, entry.content, entry.staffId, entry.staffName).catch(console.error);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-function titleCase(str) {
-  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+// ── Core processing ────────────────────────────────────────────────────────────
+
+/**
+ * Main diary processing function.
+ *
+ * PHASE 1 (always runs, always completes):
+ *   Built-in NLP → extract names, sentiment, actions → auto-create customers →
+ *   save entry as 'done' with English summary.
+ *
+ * PHASE 2 (optional, best-effort):
+ *   If ANTHROPIC_API_KEY is set AND credits are available, try AI for a richer
+ *   translation and better notes. If AI fails for ANY reason, the Phase-1 result
+ *   stands — the diary entry is never left in 'error' state.
+ */
+async function processDiaryEntry(entryId, content, staffId, staffName) {
+  // ── PHASE 1: Built-in NLP ──────────────────────────────────────────────────
+  let allCustomers = [];
+  try { allCustomers = await readDB('customers'); } catch {}
+
+  const lang        = detectLanguage(content);
+  const names       = extractNamesFromText(content);
+  const sentiment   = detectSentimentLocal(content);
+  const actions     = extractActionItemsLocal(content);
+  const summary     = buildEnglishSummary(names, lang, sentiment, actions, staffName);
+  const now         = new Date().toISOString();
+
+  const newCustomers = [];
+  const localEntries = [];
+
+  for (const name of names) {
+    let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...newCustomers], 0.78);
+
+    if (resolved) {
+      // Update lastContact timestamp on existing customer
+      try { await updateOne('customers', resolved.id, { lastContact: now }); } catch {}
+    } else {
+      // Auto-create new customer
+      try {
+        const newCust = {
+          id: uuidv4(), name: titleCase(name), phone: '', email: '',
+          assignedTo: staffId, status: 'lead', lastContact: now,
+          notes: `Auto-created from diary entry by ${staffName}`,
+          notesList: [], tags: ['diary-import'], dealValue: null, createdAt: now,
+        };
+        await insertOne('customers', newCust);
+        allCustomers.push(newCust);
+        newCustomers.push(newCust);
+        resolved = newCust;
+        broadcast('customer:created', newCust);
+        console.log(`[Diary NLP] ✅ Created customer: "${newCust.name}"`);
+      } catch (e) {
+        console.error('[Diary NLP] Customer create failed:', e.message);
+        continue;
+      }
+    }
+
+    const isNew = newCustomers.some(c => c.id === resolved.id);
+    const noteText = sentiment === 'positive'
+      ? 'Positive interaction logged.'
+      : sentiment === 'negative'
+      ? 'Interaction noted — follow up required.'
+      : 'Interaction logged from diary entry.';
+
+    localEntries.push({
+      spokenName:          name,
+      customerName:        resolved.name,
+      customerId:          resolved.id,
+      matchedCustomerName: resolved.name,
+      matchedCustomerId:   resolved.id,
+      isNewCustomer:       isNew,
+      autoCreatedId:       isNew ? resolved.id : null,
+      date:                null,
+      notes:               actions.length > 0 ? `${noteText} Next: ${actions[0]}.` : noteText,
+      originalNotes:       content.slice(0, 400),
+      actionItems:         actions,
+      sentiment,
+      confidence:          0.65,
+    });
+  }
+
+  // If no names found, still log the entry as a general note
+  if (localEntries.length === 0) {
+    localEntries.push({
+      spokenName: 'General', customerName: 'General', customerId: null,
+      matchedCustomerName: null, isNewCustomer: false, date: null,
+      notes: actions.length > 0
+        ? `General activity logged. Next: ${actions[0]}.`
+        : 'No specific customer names detected in this entry.',
+      originalNotes:  content.slice(0, 400),
+      actionItems:    actions,
+      sentiment,
+      confidence:     0.3,
+    });
+  }
+
+  // Save immediately — diary is DONE after Phase 1
+  const savedEntry = await updateOne('diary', entryId, {
+    status:           'done',
+    aiEntries:        localEntries,
+    translatedContent: summary,
+    detectedLanguage:  lang,
+    processedAt:       now,
+  });
+  broadcast('diary:updated', savedEntry);
+
+  if (newCustomers.length > 0) {
+    console.log(`[Diary NLP] Created ${newCustomers.length} new customer(s) for ${staffName}`);
+  }
+
+  // ── PHASE 2: Optional AI enhancement ──────────────────────────────────────
+  // Skipped entirely if no API key. On ANY error, local result stands.
+  const client = getClient();
+  if (!client) return;
+
+  try {
+    const customerRef = allCustomers.length > 0
+      ? allCustomers.map(c => `"${c.name}" [id:${c.id}]`).join('\n')
+      : '(none yet)';
+
+    const aiPrompt = `You are a bilingual sales CRM assistant fluent in Hindi, Hinglish, and English.
+
+DIARY ENTRY:
+"""
+${content.slice(0, 4000)}
+"""
+
+KNOWN CUSTOMERS:
+${customerRef}
+
+Provide a complete, natural English translation of the ENTIRE diary entry (not a summary — full translation sentence by sentence), then extract customer interactions.
+
+Respond ONLY with this JSON:
+{
+  "detectedLanguage": "hindi|english|hinglish",
+  "translatedContent": "Complete natural English translation in first person",
+  "entries": [
+    {
+      "spokenName": "name as written",
+      "matchedCustomerName": "exact name from known list or null",
+      "matchedCustomerId": "exact id from known list or null",
+      "isNewCustomer": false,
+      "date": null,
+      "notes": "1-2 sentence professional English summary",
+      "originalNotes": "original text about this person",
+      "actionItems": ["follow-up action"],
+      "sentiment": "positive|neutral|negative",
+      "confidence": 0.9
+    }
+  ]
+}`;
+
+    let aiResult;
+    try {
+      const res = await client.messages.create({
+        model: AI_MODEL, max_tokens: 3000,
+        messages: [{ role: 'user', content: aiPrompt }],
+      });
+      aiResult = extractJSON(res.content[0].text);
+    } catch (err) {
+      // Try fallback model on model-not-found errors
+      if ((err?.status === 404 || err?.status === 400) && AI_MODEL !== 'claude-3-5-haiku-20241022') {
+        const res2 = await client.messages.create({
+          model: 'claude-3-5-haiku-20241022', max_tokens: 3000,
+          messages: [{ role: 'user', content: aiPrompt }],
+        });
+        aiResult = extractJSON(res2.content[0].text);
+      } else {
+        throw err;
+      }
+    }
+
+    if (!aiResult || !Array.isArray(aiResult.entries) || aiResult.entries.length === 0) {
+      return; // Bad response — local result stands
+    }
+
+    // Re-run customer resolution with AI-detected names
+    const aiNewCustomers = [];
+    const aiEntries = [];
+    const nowAI = new Date().toISOString();
+
+    for (const e of aiResult.entries) {
+      const spokenName = (e.spokenName || '').trim();
+      const nameLower  = spokenName.toLowerCase();
+      if (!spokenName || STOP_WORDS.has(nameLower) || spokenName.length < 3) continue;
+
+      let resolved = null;
+      if (e.matchedCustomerId) {
+        resolved = allCustomers.find(c => c.id === e.matchedCustomerId) || null;
+      }
+      if (!resolved) {
+        resolved = fuzzyMatchCustomer(spokenName, [...allCustomers, ...aiNewCustomers]);
+      }
+      if (!resolved) {
+        try {
+          const newCust = {
+            id: uuidv4(), name: titleCase(spokenName), phone: '', email: '',
+            assignedTo: staffId, status: 'lead', lastContact: nowAI,
+            notes: `Auto-created from diary entry by ${staffName}`,
+            notesList: [], tags: ['diary-import'], dealValue: null, createdAt: nowAI,
+          };
+          await insertOne('customers', newCust);
+          allCustomers.push(newCust);
+          aiNewCustomers.push(newCust);
+          resolved = newCust;
+          broadcast('customer:created', newCust);
+          console.log(`[Diary AI] ✅ Created customer: "${newCust.name}"`);
+        } catch { continue; }
+      } else if (!aiNewCustomers.find(c => c.id === resolved.id)) {
+        try { await updateOne('customers', resolved.id, { lastContact: nowAI }); } catch {}
+      }
+
+      const isNew = aiNewCustomers.some(c => c.id === resolved.id);
+      aiEntries.push({
+        spokenName,
+        customerName:        resolved.name,
+        customerId:          resolved.id,
+        matchedCustomerName: resolved.name,
+        matchedCustomerId:   resolved.id,
+        isNewCustomer:       isNew,
+        autoCreatedId:       isNew ? resolved.id : null,
+        date:                e.date   || null,
+        notes:               e.notes  || '',
+        originalNotes:       e.originalNotes || '',
+        actionItems:         Array.isArray(e.actionItems) ? e.actionItems : [],
+        sentiment:           ['positive','neutral','negative'].includes(e.sentiment) ? e.sentiment : 'neutral',
+        confidence:          typeof e.confidence === 'number' ? e.confidence : 0.8,
+      });
+    }
+
+    if (aiEntries.length > 0) {
+      const enhanced = await updateOne('diary', entryId, {
+        aiEntries:         aiEntries,
+        translatedContent: aiResult.translatedContent || summary,
+        detectedLanguage:  aiResult.detectedLanguage  || lang,
+      });
+      broadcast('diary:updated', enhanced);
+      console.log(`[Diary AI] ✅ Enhanced entry ${entryId} with AI translation`);
+    }
+
+  } catch (err) {
+    // AI failed — local Phase-1 result already saved and broadcast. Just log it.
+    const msg = (err?.message || String(err)).slice(0, 120);
+    console.warn(`[Diary AI] Enhancement skipped (${err?.status || 'err'}): ${msg}`);
+  }
+}
+
+/**
+ * Robustly extract a JSON object from an AI response string.
+ */
+function extractJSON(text) {
+  let s = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  try { return JSON.parse(s); } catch {}
+  const start = s.indexOf('{');
+  const end   = s.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(s.slice(start, end + 1)); } catch {}
+  }
+  return null;
 }
 
 module.exports = router;
