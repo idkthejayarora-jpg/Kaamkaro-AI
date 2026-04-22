@@ -97,6 +97,13 @@ const STOP_WORDS = new Set([
   'the','nahi','nahin','haan','kya','kaise','kyun','kab',
   'yahan','wahan','kal','aaj','abhi','pehle','baad',
   'whatsapp','mobile','number','rupees','lakh','crore',
+  // Hindi verb/adjective forms (prevent "milega deepak", "bolega sharma" etc.)
+  'milega','milegi','milenge','bolta','bolega','bolegi','bolenge','bola','boli',
+  'karega','karegi','karenge','karna','karta','karti','karte','kiya','kiye',
+  'aayega','aayegi','aayenge','aaya','aayi','gaya','gayi','gaye',
+  'dega','degi','denge','lega','legi','lenge','hua','hui','hue',
+  'lagta','lagti','lagte','rehta','rehti','rehte','sakta','sakti','sakte',
+  'chahiye','chahta','chahti','chahte','batao','bataya','batai','dekho','dekha',
 ]);
 
 // ── Common Indian names dictionary ─────────────────────────────────────────────
