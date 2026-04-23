@@ -511,21 +511,22 @@ function extractNamesFromText(text) {
     i += locWords - 1; // skip location tokens on next iterations
   }
 
-  // ── Pass 2: INDIAN_NAMES dict scan — for names with no city context ────────
+  // ── Pass 2: INDIAN_NAMES + FOREIGN_NAMES dict scan ───────────────────────────
   //
-  // "rahul sharma", "priya ne call kiya", etc.
-  // Only starts a name group from a KNOWN first name/surname to prevent
-  // "Kumar Sunita" false positives when "vijay" precedes "kumar".
+  // Handles Indian names (rahul, priya, sharma) AND foreign names (alex, john, david)
+  // for voice text where all letters are lowercase.
   //
+  const ALL_NAMES = (t) => INDIAN_NAMES.has(t) || FOREIGN_NAMES.has(t);
+
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
-    if (!INDIAN_NAMES.has(t)) continue;
+    if (!ALL_NAMES(t)) continue;
 
     const parts = [t];
     let j = i + 1;
 
-    // Consume optional surname (next token also in INDIAN_NAMES)
-    if (j < tokens.length && INDIAN_NAMES.has(tokens[j]) && !STOP_WORDS.has(tokens[j])) {
+    // Consume optional surname (next token also in known names)
+    if (j < tokens.length && ALL_NAMES(tokens[j]) && !STOP_WORDS.has(tokens[j])) {
       parts.push(tokens[j]);
       j++;
     }
