@@ -28,8 +28,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/vendors (admin only)
-router.post('/', adminOnly, async (req, res) => {
+// POST /api/vendors (any authenticated user)
+router.post('/', async (req, res) => {
   try {
     const { name, company, phone, email, category, notes } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
