@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSSE } from '../hooks/useSSE';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
-  AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages,
+  AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages, Building2,
 } from 'lucide-react';
 import { diaryAPI } from '../lib/api';
 import type { DiaryEntry } from '../types';
