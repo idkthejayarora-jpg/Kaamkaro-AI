@@ -8,7 +8,17 @@ import type { Staff, Customer, Performance, Interaction, AttendanceRecord } from
 const GOLD = '#D4AF37';
 const DIM  = '#2A2A2A';
 
-const TYPE_LABELS: Record<string, string> = { call: '📞', message: '💬', email: '✉️', meeting: '🤝' };
+const TYPE_LABELS: Record<string, string> = { call: '📞', message: '💬', email: '✉️', meeting: '🤝', diary: '📓' };
+
+function fmt(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+function fmtHrs(h: number) {
+  if (!h) return '—';
+  const hrs = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+}
 
 export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +27,9 @@ export default function StaffProfile() {
   const [customers, setCustomers]     = useState<Customer[]>([]);
   const [performance, setPerformance] = useState<Performance[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [attendance, setAttendance]   = useState<AttendanceRecord[]>([]);
   const [loading, setLoading]         = useState(true);
+  const [activeTab, setActiveTab]     = useState<'activity' | 'attendance' | 'customers'>('activity');
 
   useEffect(() => {
     if (!id) return;
@@ -26,11 +38,13 @@ export default function StaffProfile() {
       customersAPI.list().catch(() => [] as Customer[]),
       staffAPI.getPerformance(id).catch(() => [] as Performance[]),
       interactionsAPI.list({ staffId: id }).catch(() => [] as Interaction[]),
-    ]).then(([s, c, p, i]) => {
+      attendanceAPI.list({ staffId: id }).catch(() => [] as AttendanceRecord[]),
+    ]).then(([s, c, p, i, a]) => {
       setStaff(s as Staff | null);
       setCustomers((c as Customer[]).filter(cu => cu.assignedTo === id));
       setPerformance((p as Performance[]).sort((a, b) => a.week.localeCompare(b.week)));
       setInteractions(i as Interaction[]);
+      setAttendance(a as AttendanceRecord[]);
     }).catch(() => { /* show "not found" below */ })
       .finally(() => setLoading(false));
   }, [id]);
