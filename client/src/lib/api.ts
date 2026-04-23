@@ -150,6 +150,12 @@ export const aiAPI = {
   resetLeaderboard: () => api.post('/ai/leaderboard/reset').then(r => r.data),
 };
 
+export const insightsAPI = {
+  queue:         () => api.get('/insights/queue').then(r => r.data),
+  staffBehavior: () => api.get('/insights/staff-behavior').then(r => r.data),
+  trends:        () => api.get('/insights/trends').then(r => r.data),
+};
+
 export const meritsAPI = {
   list: (params?: { staffId?: string; limit?: number }) =>
     api.get('/merits', { params }).then(r => r.data),
