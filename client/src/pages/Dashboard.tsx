@@ -10,7 +10,7 @@ import {
   MessageSquare, Mail, Target, Zap, Trophy, AlertCircle,
   Award, Plus, X, Star, TrendingDown,
 } from 'lucide-react';
-import { staffAPI, customersAPI, aiAPI, tasksAPI, interactionsAPI, meritsAPI } from '../lib/api';
+import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Staff, Customer, Performance, DashboardSummary, Task, MeritSummary, MeritGoal } from '../types';
 
