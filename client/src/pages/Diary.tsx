@@ -410,7 +410,7 @@ function useVoice(onFinalText: (text: string) => void) {
           fin += r[0].transcript + ' ';
           processedIdxRef.current = i; // mark committed
         } else {
-          intr += r[0].transcript;
+          intr += devanagariToRoman(r[0].transcript);
         }
       }
       setInterimText(intr);
