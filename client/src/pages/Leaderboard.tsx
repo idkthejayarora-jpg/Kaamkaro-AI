@@ -68,18 +68,31 @@ export default function Leaderboard() {
           </h1>
           <p className="text-white/30 text-sm mt-1">Weekly team rankings · resets every Monday</p>
         </div>
-        <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-xl p-1">
-          {(['week', 'month'] as const).map(p => (
+        <div className="flex items-center gap-2">
+          {isAdmin && (
             <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                period === p ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
-              }`}
+              onClick={handleReset}
+              disabled={resetting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-500/30 text-red-400/70 hover:text-red-400 hover:border-red-500/60 hover:bg-red-500/10 text-xs font-medium transition-all disabled:opacity-40"
+              title="Reset all scores and streaks"
             >
-              This {p}
+              <RotateCcw size={12} className={resetting ? 'animate-spin' : ''} />
+              {resetting ? 'Resetting…' : 'Reset'}
             </button>
-          ))}
+          )}
+          <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-xl p-1">
+            {(['week', 'month'] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                  period === p ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+                }`}
+              >
+                This {p}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
