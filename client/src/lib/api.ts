@@ -150,6 +150,18 @@ export const aiAPI = {
   resetLeaderboard: () => api.post('/ai/leaderboard/reset').then(r => r.data),
 };
 
+export const meritsAPI = {
+  list: (params?: { staffId?: string; limit?: number }) =>
+    api.get('/merits', { params }).then(r => r.data),
+  summary: () => api.get('/merits/summary').then(r => r.data),
+  award: (data: { staffId: string; points: number; reason: string }) =>
+    api.post('/merits/award', data).then(r => r.data),
+  goals: () => api.get('/merits/goals').then(r => r.data),
+  createGoal: (data: { staffId: string; targetPoints: number; period: string; reward?: string }) =>
+    api.post('/merits/goals', data).then(r => r.data),
+  deleteGoal: (id: string) => api.delete(`/merits/goals/${id}`).then(r => r.data),
+};
+
 export const attendanceAPI = {
   login:  () => api.post('/attendance/login').then(r => r.data),
   logout: () => api.post('/attendance/logout').then(r => r.data),
