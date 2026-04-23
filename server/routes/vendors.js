@@ -64,6 +64,19 @@ router.patch('/:id', adminOnly, async (req, res) => {
   }
 });
 
+// GET /api/vendors/:id/interactions — diary log entries for this vendor
+router.get('/:id/interactions', async (req, res) => {
+  try {
+    const all = await readDB('vendorInteractions');
+    const items = all
+      .filter(x => x.vendorId === req.params.id)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // DELETE /api/vendors/:id
 router.delete('/:id', adminOnly, async (req, res) => {
   try {
