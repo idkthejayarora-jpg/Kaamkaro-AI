@@ -5,6 +5,7 @@ const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
 const { calcHealthScore, healthLabel } = require('../utils/healthScore');
 const { broadcast } = require('../utils/sse');
+const { awardMerit } = require('../utils/merits');
 
 const router = express.Router();
 router.use(authMiddleware);
