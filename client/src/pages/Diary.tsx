@@ -40,6 +40,57 @@ declare global {
 // Hinglish (mixed) automatically in this locale. No manual selection needed.
 const VOICE_LANG = 'hi-IN';
 
+// ── Devanagari → Roman transliterator ────────────────────────────────────────
+// Chrome's hi-IN speech recognition sometimes returns pure Devanagari script
+// (e.g. "आज रहुल से बात की"). This converts it to readable Roman Hinglish so
+// the diary card previews are legible and the server can match customer names.
+// Fast-path: if no Devanagari Unicode present, returns text unchanged.
+function devanagariToRoman(text: string): string {
+  if (!/[\u0900-\u097F]/.test(text)) return text;
+
+  const MAP: [string, string][] = [
+    // Specials first
+    ['।', ' '], ['॥', ' '], ['्', ''], ['\u200b', ''],
+    // Multi-char conjuncts before single chars
+    ['क्ष', 'ksh'], ['त्र', 'tr'], ['ज्ञ', 'gya'],
+    // Independent vowels
+    ['अं', 'an'], ['अः', 'ah'],
+    ['अ', 'a'], ['आ', 'aa'], ['इ', 'i'], ['ई', 'ee'], ['उ', 'u'], ['ऊ', 'oo'],
+    ['ऋ', 'ri'], ['ए', 'e'], ['ऐ', 'ai'], ['ओ', 'o'], ['औ', 'au'],
+    // Matras (dependent vowel signs)
+    ['ा', 'a'], ['ि', 'i'], ['ी', 'ee'], ['ु', 'u'], ['ू', 'oo'],
+    ['ृ', 'ri'], ['े', 'e'], ['ै', 'ai'], ['ो', 'o'], ['ौ', 'au'],
+    ['ं', 'n'], ['ः', 'h'], ['ँ', 'n'],
+    // Nukta consonants
+    ['क़', 'q'], ['ख़', 'kh'], ['ग़', 'gh'], ['ज़', 'z'], ['ड़', 'r'], ['ढ़', 'rh'], ['फ़', 'f'],
+    // Standard consonants
+    ['क', 'k'], ['ख', 'kh'], ['ग', 'g'], ['घ', 'gh'], ['ङ', 'ng'],
+    ['च', 'ch'], ['छ', 'chh'], ['ज', 'j'], ['झ', 'jh'], ['ञ', 'ny'],
+    ['ट', 't'], ['ठ', 'th'], ['ड', 'd'], ['ढ', 'dh'], ['ण', 'n'],
+    ['त', 't'], ['थ', 'th'], ['द', 'd'], ['ध', 'dh'], ['न', 'n'],
+    ['प', 'p'], ['फ', 'ph'], ['ब', 'b'], ['भ', 'bh'], ['म', 'm'],
+    ['य', 'y'], ['र', 'r'], ['ल', 'l'], ['ळ', 'l'], ['व', 'v'],
+    ['श', 'sh'], ['ष', 'sh'], ['स', 's'], ['ह', 'h'],
+  ];
+
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    let matched = false;
+    for (const [src, tgt] of MAP) {
+      if (text.startsWith(src, i)) {
+        result += tgt;
+        i += src.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) { result += text[i]; i++; }
+  }
+  // Clean up spacing
+  return result.replace(/\s+/g, ' ').trim();
+}
+
 const SENTIMENT_STYLES: Record<string, string> = {
   positive: 'text-green-400 bg-green-500/10 border-green-500/20',
   neutral:  'text-white/40 bg-white/5 border-white/10',
