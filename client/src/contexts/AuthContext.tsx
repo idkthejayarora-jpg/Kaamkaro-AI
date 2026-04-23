@@ -85,6 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('kk_user', JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
+    // Record login time — fire and forget (non-blocking)
+    attendanceAPI.login().catch(() => {});
   };
 
   return (
