@@ -125,17 +125,33 @@ export interface DiaryEntry {
 
 export interface AIExtractedEntry {
   spokenName: string;           // name exactly as spoken/written in entry
-  customerName: string;         // resolved display name
+  customerName: string;         // resolved display name (or vendor name if isVendor)
   customerId?: string | null;
   matchedCustomerName?: string | null;
   isNewCustomer?: boolean;      // true = auto-created from this entry
   autoCreatedId?: string | null;// id of freshly created customer
+  // Vendor matching
+  isVendor?: boolean;           // true = matched a vendor, not a customer
+  vendorId?: string | null;
+  vendorName?: string | null;
   date?: string | null;
   notes: string;                // English summary
   originalNotes?: string;       // original Hinglish/Hindi text
   actionItems?: string[];
   sentiment?: 'positive' | 'neutral' | 'negative';
   confidence: number;
+}
+
+export interface VendorInteraction {
+  id: string;
+  vendorId: string;
+  vendorName: string;
+  staffId: string;
+  staffName: string;
+  notes: string;
+  diaryEntryId: string;
+  sentiment: 'positive' | 'neutral' | 'negative';
+  createdAt: string;
 }
 
 export interface AuditLog {
