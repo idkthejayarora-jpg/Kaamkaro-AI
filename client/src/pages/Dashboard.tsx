@@ -7,11 +7,12 @@ import {
 import {
   Flame, TrendingUp, Users, UserCheck, AlertTriangle,
   CheckCircle, Clock, ChevronRight, Phone, Calendar,
-  MessageSquare, Mail, Target, Zap,
+  MessageSquare, Mail, Target, Zap, Trophy, AlertCircle,
+  Award, Plus, X, Star, TrendingDown,
 } from 'lucide-react';
-import { staffAPI, customersAPI, aiAPI, tasksAPI, interactionsAPI } from '../lib/api';
+import { staffAPI, customersAPI, aiAPI, tasksAPI, interactionsAPI, meritsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Staff, Customer, Performance, DashboardSummary, Task } from '../types';
+import type { Staff, Customer, Performance, DashboardSummary, Task, MeritSummary, MeritGoal } from '../types';
 
 const GOLD = '#D4AF37';
 const DIM  = '#2A2A2A';
