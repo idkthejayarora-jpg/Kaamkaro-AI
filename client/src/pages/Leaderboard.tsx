@@ -14,9 +14,10 @@ const AVAILABILITY_CONFIG = {
 const MEDAL = ['🥇', '🥈', '🥉'];
 
 export default function Leaderboard() {
-  const [rows, setRows]       = useState<LeaderboardRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod]   = useState<'week' | 'month'>('week');
+  const [rows,      setRows]      = useState<LeaderboardRow[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [period,    setPeriod]    = useState<'week' | 'month'>('week');
+  const [resetting, setResetting] = useState(false);
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
