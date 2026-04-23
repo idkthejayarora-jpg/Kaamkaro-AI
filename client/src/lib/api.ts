@@ -148,6 +148,13 @@ export const aiAPI = {
   leaderboard: () => api.get('/ai/leaderboard').then(r => r.data),
 };
 
+export const attendanceAPI = {
+  login:  () => api.post('/attendance/login').then(r => r.data),
+  logout: () => api.post('/attendance/logout').then(r => r.data),
+  list: (params?: { staffId?: string; from?: string; to?: string }) =>
+    api.get('/attendance', { params }).then(r => r.data),
+};
+
 export const pdfAPI = {
   list: () => api.get('/pdf').then(r => r.data),
   upload: (file: File) => {
