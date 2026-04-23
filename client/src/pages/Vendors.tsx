@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Building2, Phone, Mail, X, Trash2 } from 'lucide-react';
+import { Plus, Search, Building2, Phone, Mail, X, Trash2, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { vendorsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Vendor } from '../types';
+import type { Vendor, VendorInteraction } from '../types';
 
 const CATEGORIES = ['General', 'Raw Materials', 'Logistics', 'Technology', 'Marketing', 'Finance', 'Operations', 'Other'];
 
