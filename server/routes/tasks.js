@@ -65,12 +65,26 @@ router.patch('/:id/complete', async (req, res) => {
     if (req.user.role === 'staff' && t.staffId !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    const completed = !t.completed;
-    const updated = await updateOne('tasks', req.params.id, {
-      completed,
-      completedAt: completed ? new Date().toISOString() : null,
-    });
+    const completed   = !t.completed;
+    const completedAt = completed ? new Date().toISOString() : null;
+    const updated = await updateOne('tasks', req.params.id, { completed, completedAt });
     broadcast('task:updated', updated);
+
+    // ── Merit points ──────────────────────────────────────────────────────────
+    if (completed) {
+      const staff = (await readDB('staff')).find(s => s.id === t.staffId)
+                    || await readDB('users').then(u => u.find(u => u.id === t.staffId)).catch(() => null);
+      const staffName = staff?.name || req.user.name;
+      const today     = new Date().toISOString().split('T')[0];
+      const isLate    = t.dueDate && t.dueDate < today;
+
+      if (isLate) {
+        // -1 for late, but still +1 for completing — net 0, but two separate events for transparency
+        await awardMerit(t.staffId, staffName, -1, `Late completion: ${t.title}`, 'overdue', t.id);
+      }
+      await awardMerit(t.staffId, staffName, 1, `Task completed: ${t.title}`, 'task', t.id);
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
