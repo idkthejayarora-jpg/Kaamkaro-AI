@@ -962,25 +962,48 @@ function detectTasks(text, customerName) {
 /**
  * Extract a rupee amount from text.
  * Handles: "50000 ka", "₹50000", "50k", "5 lakh", "Rs 50,000"
+ *
+ * Guards against grabbing numbers that are part of customer/party names:
+ *   "2001 australia" — the 2001 is a party identifier, not a price.
+ * Rule: bare numbers (no ₹/Rs prefix, no lakh/k suffix) are only treated as
+ * amounts when they have an explicit currency suffix (ka/ke/ki/rupees) OR an
+ * explicit currency prefix (₹/Rs). A bare number followed by a word that looks
+ * like a location or name is intentionally ignored.
  */
 function extractAmount(text) {
   const lower = text.toLowerCase();
   let m;
 
-  // "5 lakh", "5.5 lakh"
+  // "5 lakh", "5.5 lakh" — always currency
   m = lower.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lac)/);
   if (m) return Math.round(parseFloat(m[1]) * 100000);
 
-  // "50k"
+  // "50k" — always currency
   m = lower.match(/(\d+(?:\.\d+)?)\s*k\b/);
   if (m) return Math.round(parseFloat(m[1]) * 1000);
 
-  // "₹50000" / "rs 50000" / "50000 ka" / "50,000"
-  m = lower.match(/(?:₹|rs\.?\s*)?(\d[\d,]{2,})(?:\s*(?:ka|ke|ki|rupees?|ruppees?))?/);
+  // "₹50000" or "Rs 50000" — explicit currency symbol, always currency
+  m = lower.match(/(?:₹|rs\.?\s*)(\d[\d,]+)/);
   if (m) {
     const val = parseInt(m[1].replace(/,/g, ''), 10);
-    if (val >= 100) return val; // ignore tiny numbers like "50 ka chai"
+    if (val >= 100) return val;
   }
+
+  // "50000 ka/ke/ki/rupees" — explicit currency suffix, always currency
+  m = lower.match(/(\d[\d,]{2,})\s*(?:ka|ke|ki|rupees?|ruppees?)\b/);
+  if (m) {
+    const val = parseInt(m[1].replace(/,/g, ''), 10);
+    if (val >= 100) return val;
+  }
+
+  // Bare numbers (no prefix, no suffix) — ONLY if they are not followed immediately
+  // by an alphabetic word (which would indicate a name/location like "2001 Australia")
+  m = lower.match(/(\d[\d,]{3,})(?!\s*[a-z])/); // require 4+ digits and NOT followed by a letter
+  if (m) {
+    const val = parseInt(m[1].replace(/,/g, ''), 10);
+    if (val >= 1000) return val; // raise floor to avoid "500 designs" etc.
+  }
+
   return null;
 }
 
