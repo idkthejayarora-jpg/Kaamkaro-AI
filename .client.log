@@ -85,3 +85,4 @@
 4:58:39 pm [vite] hmr update /src/index.css, /src/contexts/AuthContext.tsx, /src/pages/WebhookSetup.tsx, /src/pages/Diary.tsx, /src/pages/Goals.tsx, /src/pages/Leaderboard.tsx, /src/pages/Templates.tsx, /src/pages/Staff.tsx, /src/pages/AuditLog.tsx, /src/pages/Tasks.tsx, /src/pages/FollowupQueue.tsx, /src/pages/Recommendations.tsx, /src/pages/Vendors.tsx, /src/pages/StaffProfile.tsx, /src/pages/Dashboard.tsx, /src/pages/Customers.tsx, /src/components/Sidebar.tsx, /src/components/KamalAssistant.tsx, /src/components/NotificationsBell.tsx
 4:58:47 pm [vite] page reload src/types/index.ts
 4:58:57 pm [vite] hmr update /src/pages/Dashboard.tsx, /src/index.css
+5:01:31 pm [vite] hmr update /src/pages/Dashboard.tsx, /src/index.css

@@ -59,34 +59,57 @@ const ChartTooltip = ({ active, payload, label }: { active?: boolean; payload?: 
 
 // ─── Admin Dashboard ──────────────────────────────────────────────────────────
 function AdminDashboard() {
-  const [staff, setStaff]       = useState<Staff[]>([]);
-  const [performance, setPerf]  = useState<Performance[]>([]);
-  const [summary, setSummary]   = useState<DashboardSummary | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [staff, setStaff]             = useState<Staff[]>([]);
+  const [performance, setPerf]        = useState<Performance[]>([]);
+  const [summary, setSummary]         = useState<DashboardSummary | null>(null);
+  const [meritSummary, setMeritSum]   = useState<MeritSummary[]>([]);
+  const [meritGoals, setMeritGoals]   = useState<MeritGoal[]>([]);
+  const [allTasks, setAllTasks]       = useState<Task[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [goalModal, setGoalModal]     = useState(false);
+  const [gStaffId, setGStaffId]       = useState('');
+  const [gTarget, setGTarget]         = useState('');
+  const [gPeriod, setGPeriod]         = useState<'weekly' | 'monthly'>('monthly');
+  const [gReward, setGReward]         = useState('');
+  const [savingGoal, setSavingGoal]   = useState(false);
+  const [awardModal, setAwardModal]   = useState(false);
+  const [aStaffId, setAStaffId]       = useState('');
+  const [aPoints, setAPoints]         = useState('');
+  const [aReason, setAReason]         = useState('');
+  const [savingAward, setSavingAward] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [s, sum] = await Promise.all([
-          staffAPI.list().catch(() => [] as Staff[]),
-          aiAPI.dashboardSummary().catch(() => null),
-        ]);
-        setStaff(s);
-        setSummary(sum);
-        if (s.length > 0) {
-          const allPerf = await Promise.all(
-            s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => []))
-          );
-          setPerf(allPerf.flat());
-        }
-      } catch {
-        // Non-fatal — show dashboard with empty state rather than blank page
-      } finally {
-        setLoading(false);
+  const loadData = useCallback(async () => {
+    try {
+      const [s, sum, ms, mg, tasks] = await Promise.all([
+        staffAPI.list().catch(() => [] as Staff[]),
+        aiAPI.dashboardSummary().catch(() => null),
+        meritsAPI.summary().catch(() => [] as MeritSummary[]),
+        meritsAPI.goals().catch(() => [] as MeritGoal[]),
+        tasksAPI.list().catch(() => [] as Task[]),
+      ]);
+      setStaff(s);
+      setSummary(sum);
+      setMeritSum(ms);
+      setMeritGoals(mg);
+      setAllTasks(tasks);
+      if (s.length > 0) {
+        const allPerf = await Promise.all(
+          s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => []))
+        );
+        setPerf(allPerf.flat());
       }
-    })();
+    } catch {
+      // Non-fatal
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Computed chart data ────────────────────────────────────────────────────
+  const today = new Date().toISOString().split('T')[0];
 
   const weeklyData = (() => {
     const weeks = [...new Set(performance.map(p => p.week))].sort().slice(-7);
@@ -111,17 +134,101 @@ function AdminDashboard() {
     };
   });
 
+  const meritChartData = meritSummary.map(m => ({
+    name: m.name.split(' ')[0],
+    allTime: m.total,
+    thisWeek: m.weekPts,
+  }));
+
+  const streakChartData = staff.map(s => ({
+    name: s.name.split(' ')[0],
+    streak: s.streakData?.currentStreak || 0,
+    longest: s.streakData?.longestStreak || 0,
+  }));
+
+  const taskRateData = staff.map(s => {
+    const staffTasks = allTasks.filter(t => t.staffId === s.id);
+    const completed = staffTasks.filter(t => t.completed).length;
+    const total = staffTasks.length;
+    const ms = meritSummary.find(m => m.staffId === s.id);
+    return {
+      name: s.name.split(' ')[0],
+      taskRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      conversions: Math.max(0, Math.floor((ms?.breakdown.conversion || 0) / 5)),
+    };
+  });
+
+  const overdueTasks = allTasks
+    .filter(t => !t.completed && t.dueDate < today)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+  // Red alert groups
+  const inactiveStaff = staff.filter(s => {
+    const last = s.streakData?.lastActivityDate;
+    if (!last) return true;
+    const daysSince = Math.floor((Date.now() - new Date(last).getTime()) / 86400000);
+    return daysSince >= 7;
+  });
+
+  const negativeStaff = meritSummary.filter(m => m.total < 0);
+
+  const overdueHeavy = staff
+    .map(s => ({
+      ...s,
+      overdueCount: allTasks.filter(t => t.staffId === s.id && !t.completed && t.dueDate < today).length,
+    }))
+    .filter(s => s.overdueCount >= 3);
+
+  // ── Goal handlers ──────────────────────────────────────────────────────────
+  const handleSaveGoal = async () => {
+    if (!gStaffId || !gTarget) return;
+    setSavingGoal(true);
+    try {
+      await meritsAPI.createGoal({ staffId: gStaffId, targetPoints: parseInt(gTarget), period: gPeriod, reward: gReward });
+      const goals = await meritsAPI.goals();
+      setMeritGoals(goals);
+      setGoalModal(false);
+      setGStaffId(''); setGTarget(''); setGPeriod('monthly'); setGReward('');
+    } finally {
+      setSavingGoal(false);
+    }
+  };
+
+  const handleDeleteGoal = async (id: string) => {
+    await meritsAPI.deleteGoal(id);
+    setMeritGoals(prev => prev.filter(g => g.id !== id));
+  };
+
+  const handleAward = async () => {
+    if (!aStaffId || !aPoints || !aReason) return;
+    setSavingAward(true);
+    try {
+      await meritsAPI.award({ staffId: aStaffId, points: parseInt(aPoints), reason: aReason });
+      const ms = await meritsAPI.summary();
+      setMeritSum(ms);
+      setAwardModal(false);
+      setAStaffId(''); setAPoints(''); setAReason('');
+    } finally {
+      setSavingAward(false);
+    }
+  };
+
   if (loading) return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array(4).fill(0).map((_, i) => <div key={i} className="card h-28 shimmer" />)}
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="card h-52 shimmer" /><div className="card h-52 shimmer" />
+      </div>
     </div>
   );
 
+  const totalRedAlerts = inactiveStaff.length + negativeStaff.length + overdueHeavy.length;
+
   return (
     <div className="space-y-6">
-      {/* Alert banners */}
+      {/* ── Alert banners ─────────────────────────────────────────────────── */}
       {(summary?.overdueCount ?? 0) > 0 && (
         <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 animate-fade-in">
           <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
@@ -145,21 +252,254 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* ── Stats ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Staff"       value={summary?.totalStaff ?? 0}           icon={Users}      accent />
         <StatCard label="Active Customers"  value={summary?.activeCustomers ?? 0}       icon={UserCheck}  accent />
         <StatCard label="Avg Response Rate" value={`${summary?.avgResponseRate ?? 0}%`} icon={TrendingUp}
           accent={Boolean(summary && summary.avgResponseRate >= 60)} />
         <StatCard
-          label="Top Streak"
-          value={summary?.topStreaker ? `${summary.topStreaker.streak}d` : '—'}
-          sub={summary?.topStreaker?.name}
-          icon={Flame} accent
+          label="Red Alerts"
+          value={totalRedAlerts}
+          sub={totalRedAlerts > 0 ? 'Needs attention' : 'All clear'}
+          icon={AlertCircle}
+          alert={totalRedAlerts > 0}
         />
       </div>
 
-      {/* Charts */}
+      {/* ── Merit Points chart ─────────────────────────────────────────────── */}
+      {meritChartData.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                <Trophy size={14} className="text-gold" /> Merit Points
+              </h3>
+              <p className="text-white/30 text-xs mt-0.5">All-time vs this week per staff member</p>
+            </div>
+            <button
+              onClick={() => setAwardModal(true)}
+              className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-1.5 rounded-lg hover:bg-gold/20 transition-colors"
+            >
+              <Award size={12} /> Award Points
+            </button>
+          </div>
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={meritChartData} barGap={4} barCategoryGap="30%">
+                <CartesianGrid vertical={false} stroke={DIM} />
+                <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
+                        <p className="text-white/50 mb-1">{label}</p>
+                        {payload.map((p, i) => (
+                          <p key={i} style={{ color: p.fill as string }} className="font-semibold">
+                            {p.dataKey === 'allTime' ? 'All-time' : 'This week'}: {p.value} pts
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }}
+                  cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+                />
+                <Bar dataKey="allTime" radius={[4, 4, 0, 0]}>
+                  {meritChartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.allTime >= 0 ? GOLD : '#f87171'} fillOpacity={0.85} />
+                  ))}
+                </Bar>
+                <Bar dataKey="thisWeek" radius={[4, 4, 0, 0]}>
+                  {meritChartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.thisWeek >= 0 ? '#a78bfa' : '#fb923c'} fillOpacity={0.7} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 mt-2 justify-end">
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/85" /><span className="text-white/30 text-[10px]">All-time</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-purple-400/70" /><span className="text-white/30 text-[10px]">This week</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Streak + Task Rate charts ──────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Streak chart */}
+        <div className="card">
+          <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+            <Flame size={14} className="text-gold" /> Current Streaks
+          </h3>
+          <p className="text-white/30 text-xs mb-4">Consecutive activity days</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={streakChartData} barSize={28}>
+              <CartesianGrid vertical={false} stroke={DIM} />
+              <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const entry = streakChartData.find(d => d.name === label);
+                  return (
+                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
+                      <p className="text-white/50 mb-1">{label}</p>
+                      <p className="text-gold font-semibold">Current: {entry?.streak}d</p>
+                      <p className="text-white/40">Longest: {entry?.longest}d</p>
+                    </div>
+                  );
+                }}
+                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+              />
+              <Bar dataKey="streak" radius={[4, 4, 0, 0]}>
+                {streakChartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.streak >= 7 ? GOLD : entry.streak >= 3 ? '#f97316' : entry.streak > 0 ? '#60a5fa' : '#2A2A2A'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Task rate + Conversions chart */}
+        <div className="card">
+          <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+            <TrendingUp size={14} className="text-gold" /> Task Rate & Conversions
+          </h3>
+          <p className="text-white/30 text-xs mb-4">% tasks completed · closures per staff</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
+              <CartesianGrid vertical={false} stroke={DIM} />
+              <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
+                      <p className="text-white/50 mb-1">{label}</p>
+                      {payload.map((p, i) => (
+                        <p key={i} style={{ color: p.fill as string }} className="font-semibold">
+                          {p.dataKey === 'taskRate' ? `Task completion: ${p.value}%` : `Conversions: ${p.value}`}
+                        </p>
+                      ))}
+                    </div>
+                  );
+                }}
+                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+              />
+              <Bar dataKey="taskRate" fill="#60a5fa" fillOpacity={0.8} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="conversions" fill={GOLD} fillOpacity={0.85} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2 justify-end">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/30 text-[10px]">Task Rate %</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/85" /><span className="text-white/30 text-[10px]">Conversions</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Red Alert section ─────────────────────────────────────────────── */}
+      {totalRedAlerts > 0 && (
+        <div className="card border-red-500/20">
+          <h3 className="text-red-400 font-semibold text-sm mb-4 flex items-center gap-2">
+            <AlertTriangle size={14} /> Red Alert Zone
+            <span className="ml-1 text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{totalRedAlerts} issue{totalRedAlerts !== 1 ? 's' : ''}</span>
+          </h3>
+          <div className="space-y-4">
+            {inactiveStaff.length > 0 && (
+              <div>
+                <p className="text-white/40 text-xs font-medium mb-2 flex items-center gap-1.5">
+                  <Clock size={11} className="text-red-400" /> Inactive 7+ days
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {inactiveStaff.map(s => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-red-500/20 transition-colors"
+                      onClick={() => navigate(`/staff/${s.id}`)}>
+                      <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[10px] font-bold">{s.avatar}</span>
+                      {s.name.split(' ')[0]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {negativeStaff.length > 0 && (
+              <div>
+                <p className="text-white/40 text-xs font-medium mb-2 flex items-center gap-1.5">
+                  <TrendingDown size={11} className="text-red-400" /> Negative merit balance
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {negativeStaff.map(m => (
+                    <span key={m.staffId} className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg">
+                      <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[10px] font-bold">{m.avatar}</span>
+                      {m.name.split(' ')[0]}
+                      <span className="text-red-400/70 font-semibold">{m.total} pts</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {overdueHeavy.length > 0 && (
+              <div>
+                <p className="text-white/40 text-xs font-medium mb-2 flex items-center gap-1.5">
+                  <AlertCircle size={11} className="text-red-400" /> 3+ overdue tasks
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {overdueHeavy.map(s => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-red-500/20 transition-colors"
+                      onClick={() => navigate('/tasks')}>
+                      <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[10px] font-bold">{s.avatar}</span>
+                      {s.name.split(' ')[0]}
+                      <span className="text-red-400/70 font-semibold">{s.overdueCount} overdue</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Overdue Tasks list ────────────────────────────────────────────── */}
+      {overdueTasks.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+              <Clock size={14} className="text-red-400" /> Overdue Tasks
+              <span className="text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{overdueTasks.length}</span>
+            </h3>
+            <button onClick={() => navigate('/tasks')} className="text-gold/60 text-xs hover:text-gold flex items-center gap-1 transition-colors">
+              All tasks <ChevronRight size={12} />
+            </button>
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {overdueTasks.slice(0, 20).map(t => {
+              const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
+              const staffMember = staff.find(s => s.id === t.staffId);
+              return (
+                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/15">
+                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-300 text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-xs font-medium truncate">{t.title}</p>
+                    <p className="text-white/30 text-[10px]">
+                      {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
+                      {t.customerName ? ` · ${t.customerName}` : ''}
+                    </p>
+                  </div>
+                  <span className="badge badge-red text-[10px] flex-shrink-0 whitespace-nowrap">
+                    {daysOverdue}d overdue
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Weekly Contacts + Response Rate ───────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card">
           <h3 className="text-white font-semibold text-sm mb-1">Weekly Contacts</h3>
@@ -178,7 +518,6 @@ function AdminDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
         <div className="card">
           <h3 className="text-white font-semibold text-sm mb-1">Response Rate Trend</h3>
           <p className="text-white/30 text-xs mb-4">% of customers who responded</p>
@@ -201,7 +540,7 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* Staff table */}
+      {/* ── Team Performance table ─────────────────────────────────────────── */}
       {staffPerfData.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -214,42 +553,231 @@ function AdminDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-dark-50">
-                  {['Staff', 'Response Rate', 'Streak', 'Contacts'].map(h => (
-                    <th key={h} className="text-left text-white/25 font-medium text-xs py-2 pr-4 first:pr-4">{h}</th>
+                  {['Staff', 'Merit Pts', 'Streak', 'Response Rate', 'Contacts'].map(h => (
+                    <th key={h} className="text-left text-white/25 font-medium text-xs py-2 pr-4">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {staffPerfData.map((s, i) => (
-                  <tr key={i} className="border-b border-dark-50/40 hover:bg-dark-200/40 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/staff/${staff[i]?.id}`)}>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0">
-                          <span className="text-gold text-[10px] font-bold">{staff[i]?.avatar}</span>
+                {staffPerfData.map((s, i) => {
+                  const ms = meritSummary.find(m => m.staffId === staff[i]?.id);
+                  return (
+                    <tr key={i} className="border-b border-dark-50/40 hover:bg-dark-200/40 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/staff/${staff[i]?.id}`)}>
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0">
+                            <span className="text-gold text-[10px] font-bold">{staff[i]?.avatar}</span>
+                          </div>
+                          <span className="text-white font-medium">{s.name}</span>
                         </div>
-                        <span className="text-white font-medium">{s.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 h-1.5 bg-dark-200 rounded-full">
-                          <div className="h-full bg-gold rounded-full" style={{ width: `${s.responseRate}%` }} />
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className={`text-xs font-semibold ${(ms?.total ?? 0) >= 0 ? 'text-gold' : 'text-red-400'}`}>
+                          {(ms?.total ?? 0) >= 0 ? '+' : ''}{ms?.total ?? 0}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-1">
+                          <Flame size={12} className={s.streak > 0 ? 'text-gold' : 'text-white/20'} />
+                          <span className="text-white/60 text-xs">{s.streak}d</span>
                         </div>
-                        <span className="text-white/50 text-xs">{s.responseRate}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-1">
-                        <Flame size={12} className={s.streak > 0 ? 'text-gold' : 'text-white/20'} />
-                        <span className="text-white/60 text-xs">{s.streak}d</span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-white/50 text-xs">{s.contacts}</td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-1.5 bg-dark-200 rounded-full">
+                            <div className="h-full bg-gold rounded-full" style={{ width: `${s.responseRate}%` }} />
+                          </div>
+                          <span className="text-white/50 text-xs">{s.responseRate}%</span>
+                        </div>
+                      </td>
+                      <td className="py-3 text-white/50 text-xs">{s.contacts}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Merit Goals ───────────────────────────────────────────────────── */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+            <Star size={14} className="text-gold" /> Merit Goals
+          </h3>
+          <button
+            onClick={() => setGoalModal(true)}
+            className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-1.5 rounded-lg hover:bg-gold/20 transition-colors"
+          >
+            <Plus size={12} /> Set Goal
+          </button>
+        </div>
+        {meritGoals.length === 0 ? (
+          <p className="text-white/25 text-sm text-center py-6">No goals set yet. Set a point target for your team.</p>
+        ) : (
+          <div className="space-y-2">
+            {meritGoals.map(g => {
+              const ms = meritSummary.find(m => m.staffId === g.staffId);
+              const current = g.period === 'weekly' ? (ms?.weekPts ?? 0) : (ms?.monthPts ?? 0);
+              const progress = Math.min(Math.max(Math.round((current / g.targetPoints) * 100), 0), 100);
+              return (
+                <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl bg-dark-200 border border-dark-50">
+                  <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gold text-[10px] font-bold">
+                      {staff.find(s => s.id === g.staffId)?.avatar ?? g.staffName[0]}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-xs font-medium">{g.staffName.split(' ')[0]}</p>
+                      <span className="text-[10px] text-white/30 capitalize">{g.period}</span>
+                      {g.reward && <span className="text-[10px] text-gold/60 truncate">🎁 {g.reward}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1.5 bg-dark-100 rounded-full">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${progress}%`, background: progress >= 100 ? '#4ade80' : GOLD }}
+                        />
+                      </div>
+                      <span className="text-white/40 text-[10px] whitespace-nowrap">
+                        {current}/{g.targetPoints} pts
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteGoal(g.id)}
+                    className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Goal Modal ────────────────────────────────────────────────────── */}
+      {goalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-dark-300 border border-dark-50 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-semibold flex items-center gap-2"><Star size={16} className="text-gold" /> Set Merit Goal</h3>
+              <button onClick={() => setGoalModal(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Staff Member</label>
+                <select
+                  value={gStaffId}
+                  onChange={e => setGStaffId(e.target.value)}
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50"
+                >
+                  <option value="">Select staff...</option>
+                  {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Target Points</label>
+                <input
+                  type="number"
+                  value={gTarget}
+                  onChange={e => setGTarget(e.target.value)}
+                  placeholder="e.g. 50"
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
+                />
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Period</label>
+                <div className="flex gap-2">
+                  {(['weekly', 'monthly'] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setGPeriod(p)}
+                      className={`flex-1 py-2 rounded-xl text-sm capitalize transition-colors ${
+                        gPeriod === p
+                          ? 'bg-gold text-black font-semibold'
+                          : 'bg-dark-200 border border-dark-50 text-white/40 hover:text-white'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Reward (optional)</label>
+                <input
+                  type="text"
+                  value={gReward}
+                  onChange={e => setGReward(e.target.value)}
+                  placeholder="e.g. Bonus ₹500, day off..."
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
+                />
+              </div>
+              <button
+                onClick={handleSaveGoal}
+                disabled={!gStaffId || !gTarget || savingGoal}
+                className="w-full bg-gold text-black font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-colors"
+              >
+                {savingGoal ? 'Saving...' : 'Save Goal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Award Points Modal ────────────────────────────────────────────── */}
+      {awardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-dark-300 border border-dark-50 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-semibold flex items-center gap-2"><Award size={16} className="text-gold" /> Award / Deduct Points</h3>
+              <button onClick={() => setAwardModal(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Staff Member</label>
+                <select
+                  value={aStaffId}
+                  onChange={e => setAStaffId(e.target.value)}
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50"
+                >
+                  <option value="">Select staff...</option>
+                  {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Points (use negative to deduct)</label>
+                <input
+                  type="number"
+                  value={aPoints}
+                  onChange={e => setAPoints(e.target.value)}
+                  placeholder="e.g. 10 or -5"
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
+                />
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Reason</label>
+                <input
+                  type="text"
+                  value={aReason}
+                  onChange={e => setAReason(e.target.value)}
+                  placeholder="e.g. Excellent client handling"
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
+                />
+              </div>
+              <button
+                onClick={handleAward}
+                disabled={!aStaffId || !aPoints || !aReason || savingAward}
+                className="w-full bg-gold text-black font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-colors"
+              >
+                {savingAward ? 'Saving...' : 'Confirm'}
+              </button>
+            </div>
           </div>
         </div>
       )}
