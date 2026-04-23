@@ -907,7 +907,6 @@ export default function Customers() {
                       <p className="text-white font-semibold">{c.name}</p>
                       {stageBadge(c.status)}
                       {isOverdue && <span className="badge badge-red">Overdue</span>}
-                      {healthBadge(c.healthColor, c.healthLabel)}
                       {(c.tags || []).map(t => <span key={t} className="badge badge-gold text-[10px]">{t}</span>)}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
