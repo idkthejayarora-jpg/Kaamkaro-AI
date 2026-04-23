@@ -161,72 +161,189 @@ export default function StaffProfile() {
         </div>
       </div>
 
-      {/* Recent interactions (activity log) */}
-      <div className="card">
-        <h3 className="text-white font-semibold mb-4">
-          Recent Activity
-          <span className="text-white/30 font-normal text-xs ml-2">({interactions.length} total interactions)</span>
-        </h3>
-        {recentInteractions.length === 0 ? (
-          <p className="text-white/25 text-sm">No interactions logged yet</p>
-        ) : (
-          <div className="space-y-2">
-            {recentInteractions.map(i => {
-              const c = customers.find(cu => cu.id === i.customerId);
-              const days = Math.round((Date.now() - new Date(i.createdAt).getTime()) / 86400000);
-              return (
-                <div key={i.id} className="flex items-center gap-3 py-2 border-b border-dark-50/40 last:border-0">
-                  <span className="text-base flex-shrink-0">{TYPE_LABELS[i.type] || '📞'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium">
-                      {c?.name || 'Customer'}{' '}
-                      <span className="text-white/30 font-normal text-xs capitalize">via {i.type}</span>
-                    </p>
-                    {i.notes && <p className="text-white/30 text-xs truncate">{i.notes}</p>}
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className={`text-xs font-medium ${i.responded ? 'text-green-400' : 'text-white/30'}`}>
-                      {i.responded ? '✓ Responded' : 'No response'}
-                    </span>
-                    <p className="text-white/20 text-[10px]">{days === 0 ? 'Today' : `${days}d ago`}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+      {/* ── Tab switcher ── */}
+      <div className="flex gap-1 border-b border-dark-50 pb-0">
+        {([
+          { key: 'activity',   label: `Activity (${interactions.length})` },
+          { key: 'attendance', label: `Attendance (${attendance.length} days)` },
+          { key: 'customers',  label: `Customers (${customers.length})` },
+        ] as const).map(({ key, label }) => (
+          <button key={key} onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 ${
+              activeTab === key
+                ? 'border-gold text-gold bg-gold/5'
+                : 'border-transparent text-white/30 hover:text-white'
+            }`}>
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Assigned customers */}
-      <div className="card">
-        <h3 className="text-white font-semibold mb-4">Assigned Customers ({customers.length})</h3>
-        {customers.length === 0 ? (
-          <p className="text-white/25 text-sm">No customers assigned</p>
-        ) : (
-          <div className="space-y-2">
-            {customers.map(c => {
-              const days = c.lastContact ? Math.round((Date.now() - new Date(c.lastContact).getTime()) / 86400000) : null;
-              return (
-                <div key={c.id} className="flex items-center justify-between py-2 border-b border-dark-50/50 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-dark-200 border border-dark-50 flex items-center justify-center">
-                      <span className="text-white/50 text-xs font-bold">{c.name[0]}</span>
+      {/* ── Activity tab ── */}
+      {activeTab === 'activity' && (
+        <div className="card">
+          <h3 className="text-white font-semibold mb-4">Recent Activity</h3>
+          {recentInteractions.length === 0 ? (
+            <p className="text-white/25 text-sm">No interactions logged yet</p>
+          ) : (
+            <div className="space-y-2">
+              {recentInteractions.map(i => {
+                const c = customers.find(cu => cu.id === i.customerId);
+                const days = Math.round((Date.now() - new Date(i.createdAt).getTime()) / 86400000);
+                return (
+                  <div key={i.id} className="flex items-center gap-3 py-2 border-b border-dark-50/40 last:border-0">
+                    <span className="text-base flex-shrink-0">{TYPE_LABELS[i.type] || '📞'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium">
+                        {c?.name || 'Customer'}{' '}
+                        <span className="text-white/30 font-normal text-xs capitalize">via {i.type}</span>
+                      </p>
+                      {i.notes && <p className="text-white/30 text-xs truncate">{i.notes}</p>}
                     </div>
-                    <div>
-                      <p className="text-white text-sm font-medium">{c.name}</p>
-                      <p className="text-white/25 text-xs">{c.phone}</p>
+                    <div className="text-right flex-shrink-0">
+                      <span className={`text-xs font-medium ${i.responded ? 'text-green-400' : 'text-white/30'}`}>
+                        {i.responded ? '✓ Responded' : 'No response'}
+                      </span>
+                      <p className="text-white/20 text-[10px]">{days === 0 ? 'Today' : `${days}d ago`}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="badge badge-gold text-[10px] capitalize">{c.status}</span>
-                    {days !== null && <p className="text-white/20 text-[10px] mt-1">{days === 0 ? 'Today' : `${days}d ago`}</p>}
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Attendance tab ── */}
+      {activeTab === 'attendance' && (
+        <div className="card">
+          {/* Summary stats */}
+          {attendance.length > 0 && (() => {
+            const last7 = attendance.slice(0, 7);
+            const totalHrs = last7.reduce((s, r) => s + (r.hoursWorked || 0), 0);
+            const avgHrs   = totalHrs / last7.length;
+            const daysPresent = last7.filter(r => r.loginAt).length;
+            return (
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {[
+                  { label: 'Days Present (7d)', value: `${daysPresent}/7`, icon: Calendar },
+                  { label: 'Total Hours (7d)',  value: fmtHrs(totalHrs),  icon: Timer },
+                  { label: 'Avg Hours/Day',     value: fmtHrs(avgHrs),    icon: Clock },
+                ].map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="bg-dark-200 rounded-xl p-3 text-center">
+                    <Icon size={14} className="text-gold mx-auto mb-1" />
+                    <p className="text-white font-bold text-sm">{value}</p>
+                    <p className="text-white/30 text-[10px]">{label}</p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          <h3 className="text-white font-semibold mb-3">Daily Login / Logout Log</h3>
+          {attendance.length === 0 ? (
+            <p className="text-white/25 text-sm text-center py-6">No attendance records yet. Recorded automatically on login/logout.</p>
+          ) : (
+            <div className="space-y-0">
+              {attendance.map(rec => {
+                const isToday = rec.date === new Date().toISOString().split('T')[0];
+                return (
+                  <div key={rec.id} className={`border-b border-dark-50/30 last:border-0 py-3 ${isToday ? 'bg-gold/3 rounded-xl px-2' : ''}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {/* Date */}
+                        <div className="w-12 text-center flex-shrink-0">
+                          <p className="text-white/70 text-xs font-bold">
+                            {new Date(rec.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </p>
+                          <p className="text-white/25 text-[10px]">
+                            {new Date(rec.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short' })}
+                          </p>
+                        </div>
+
+                        {/* Sessions */}
+                        <div className="space-y-1">
+                          {(rec.sessions || []).map((s, si) => (
+                            <div key={si} className="flex items-center gap-2">
+                              <span className="flex items-center gap-1 text-green-400 text-[10px]">
+                                <LogIn size={9} />{fmt(s.loginAt)}
+                              </span>
+                              {s.logoutAt ? (
+                                <span className="flex items-center gap-1 text-red-400/70 text-[10px]">
+                                  <LogOut size={9} />{fmt(s.logoutAt)}
+                                </span>
+                              ) : (
+                                <span className="text-gold text-[10px] animate-pulse">● Active</span>
+                              )}
+                            </div>
+                          ))}
+                          {(!rec.sessions || rec.sessions.length === 0) && rec.loginAt && (
+                            <span className="flex items-center gap-1 text-green-400 text-[10px]">
+                              <LogIn size={9} />{fmt(rec.loginAt)}
+                              {rec.logoutAt
+                                ? <><LogOut size={9} className="ml-1 text-red-400/70" />{fmt(rec.logoutAt)}</>
+                                : <span className="text-gold ml-1 animate-pulse">● Active</span>}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Hours badge */}
+                      <div className="text-right flex-shrink-0">
+                        {rec.hoursWorked > 0 ? (
+                          <span className="badge bg-gold/10 text-gold border-gold/20 text-xs font-bold">
+                            {fmtHrs(rec.hoursWorked)}
+                          </span>
+                        ) : rec.loginAt && !rec.logoutAt ? (
+                          <span className="badge bg-green-500/10 text-green-400 border-green-500/20 text-[10px]">
+                            In progress
+                          </span>
+                        ) : (
+                          <span className="text-white/20 text-xs">—</span>
+                        )}
+                        {isToday && <p className="text-gold/50 text-[9px] mt-0.5">Today</p>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Customers tab ── */}
+      {activeTab === 'customers' && (
+        <div className="card">
+          <h3 className="text-white font-semibold mb-4">Assigned Customers ({customers.length})</h3>
+          {customers.length === 0 ? (
+            <p className="text-white/25 text-sm">No customers assigned</p>
+          ) : (
+            <div className="space-y-2">
+              {customers.map(c => {
+                const days = c.lastContact ? Math.round((Date.now() - new Date(c.lastContact).getTime()) / 86400000) : null;
+                return (
+                  <div key={c.id} className="flex items-center justify-between py-2 border-b border-dark-50/50 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-dark-200 border border-dark-50 flex items-center justify-center">
+                        <span className="text-white/50 text-xs font-bold">{c.name[0]}</span>
+                      </div>
+                      <div>
+                        <p className="text-white text-sm font-medium">{c.name}</p>
+                        <p className="text-white/25 text-xs">{c.phone}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="badge badge-gold text-[10px] capitalize">{c.status}</span>
+                      {days !== null && <p className="text-white/20 text-[10px] mt-1">{days === 0 ? 'Today' : `${days}d ago`}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
