@@ -454,11 +454,15 @@ function extractNamesFromText(text) {
       parts = parts.slice(0, -1);
     }
     if (parts.length === 0) return;
-    // Reject if any word is a stop word
-    if (parts.some(p => STOP_WORDS.has(p))) return;
+    // Reject if any alphabetic word is a stop word (skip this check for numeric tokens like "1001")
+    if (parts.some(p => /^[a-z]+$/.test(p) && STOP_WORDS.has(p))) return;
     const name = titleCase(parts.join(' '));
-    const key  = normalizeName(name);
-    if (!key || key.length < 3) return;
+    // Key: use raw lowercase parts (not normalizeName) so "1001 Canada" and "1002 Canada"
+    // don't collapse to the same key (normalizeName strips digits → both become "canada")
+    const key = parts.join(' ');
+    if (!key || key.length < 2) return;
+    // Extra guard: reject keys that are purely numeric (bare numbers aren't customer names)
+    if (/^\d+$/.test(key)) return;
     if (!found.has(key)) found.set(key, name);
   };
 
