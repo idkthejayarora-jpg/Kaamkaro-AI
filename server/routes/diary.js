@@ -1184,10 +1184,33 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
     }
   }
 
+  // ── Vendor interaction logging ────────────────────────────────────────────
+  for (const { vendor } of resolvedVendors) {
+    const vi = {
+      id:           uuidv4(),
+      vendorId:     vendor.id,
+      vendorName:   vendor.name,
+      staffId,
+      staffName,
+      notes:        buildInteractionNote(content, sentiment, amount, actions),
+      diaryEntryId: entryId,
+      sentiment,
+      createdAt:    now,
+    };
+    sideEffects.push(
+      insertOne('vendorInteractions', vi)
+        .then(() => console.log(`[Diary NLP] 🏪 Vendor interaction logged: "${vendor.name}"`))
+        .catch(() => {})
+    );
+  }
+
   await Promise.allSettled(sideEffects);
 
   if (newCustomers.length > 0) {
     console.log(`[Diary NLP] Created ${newCustomers.length} new customer(s) for ${staffName}`);
+  }
+  if (resolvedVendors.length > 0) {
+    console.log(`[Diary NLP] Logged ${resolvedVendors.length} vendor interaction(s) for ${staffName}`);
   }
 
   // ── PHASE 2: Optional AI enhancement ──────────────────────────────────────
@@ -1199,6 +1222,9 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
     const customerRef = allCustomers.length > 0
       ? allCustomers.map(c => `"${c.name}" [id:${c.id}]`).join('\n')
       : '(none yet)';
+    const vendorRef = allVendors.length > 0
+      ? allVendors.map(v => `"${v.name}"${v.company ? ` / "${v.company}"` : ''} [vid:${v.id}]`).join('\n')
+      : '(none)';
 
     const aiPrompt = `You are a bilingual sales CRM assistant fluent in Hindi, Hinglish, and English.
 
