@@ -1020,8 +1020,39 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
   const newCustomers  = [];
   const localEntries  = [];
   const resolvedList  = []; // [{customer, isNew}] — used for post-broadcast side effects
+  const resolvedVendors = []; // [{vendor}]
+
+  const noteText = sentiment === 'positive'
+    ? 'Positive interaction logged.'
+    : sentiment === 'negative'
+    ? 'Interaction noted — follow up required.'
+    : 'Interaction logged from diary entry.';
 
   for (const name of names) {
+    // ── Vendor check first — if staff added this name as a vendor, log there instead ──
+    const vendorMatch = fuzzyMatchVendor(name, allVendors, 0.72);
+    if (vendorMatch) {
+      resolvedVendors.push({ vendor: vendorMatch });
+      localEntries.push({
+        spokenName:   name,
+        customerName: vendorMatch.name,  // reuse field for display label
+        customerId:   null,
+        isNewCustomer: false,
+        isVendor:     true,
+        vendorId:     vendorMatch.id,
+        vendorName:   vendorMatch.name,
+        date:         null,
+        notes:        actions.length > 0 ? `${noteText} Next: ${actions[0]}.` : noteText,
+        originalNotes: content.slice(0, 400),
+        actionItems:  actions,
+        sentiment,
+        confidence:   0.75,
+      });
+      console.log(`[Diary NLP] 🏪 Vendor match: "${name}" → "${vendorMatch.name}"`);
+      continue;
+    }
+
+    // ── Customer resolution (existing logic) ──────────────────────────────────
     let resolved = fuzzyMatchCustomer(name, [...allCustomers, ...newCustomers], 0.78);
     let isNew = false;
 
@@ -1050,12 +1081,6 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
 
     resolvedList.push({ customer: resolved, isNew });
 
-    const noteText = sentiment === 'positive'
-      ? 'Positive interaction logged.'
-      : sentiment === 'negative'
-      ? 'Interaction noted — follow up required.'
-      : 'Interaction logged from diary entry.';
-
     localEntries.push({
       spokenName:          name,
       customerName:        resolved.name,
@@ -1064,6 +1089,7 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
       matchedCustomerId:   resolved.id,
       isNewCustomer:       isNew,
       autoCreatedId:       isNew ? resolved.id : null,
+      isVendor:            false,
       date:                null,
       notes:               actions.length > 0 ? `${noteText} Next: ${actions[0]}.` : noteText,
       originalNotes:       content.slice(0, 400),
