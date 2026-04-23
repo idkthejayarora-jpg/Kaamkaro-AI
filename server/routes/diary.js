@@ -256,6 +256,60 @@ const INDIAN_NAMES = new Set([
   'yadav',
 ]);
 
+// ── Foreign / international names (common among non-Indian customers) ─────────
+// Needed because voice is all-lowercase and these won't appear in INDIAN_NAMES.
+const FOREIGN_NAMES = new Set([
+  // Western male
+  'alex','alexander','adam','andrew','anthony','austin',
+  'brian','brandon','ben','benjamin','bob','brad','brett','bruce',
+  'charles','chris','christian','christopher','craig','colin',
+  'daniel','david','dennis','derek','donald','douglas','dylan',
+  'edward','eric','ethan','evan',
+  'frank','fred','frederick',
+  'gary','george','greg','gregory',
+  'henry','howard',
+  'ian','ivan',
+  'jack','jacob','james','jason','jeff','jeffrey','jeremy','john','jonathan',
+  'joseph','josh','joshua','justin',
+  'kevin','keith','kenneth','kyle',
+  'larry','lawrence','lee','leonard','lewis','liam','louis','luke',
+  'mark','martin','matthew','michael','mike','mitchell',
+  'nathan','nicholas','nick','noah',
+  'oliver','oscar',
+  'patrick','paul','peter','philip',
+  'richard','robert','roger','ron','ronald','ross','ryan',
+  'sam','samuel','scott','sean','simon','stephen','steve','steven',
+  'thomas','tim','timothy','tom','tony','tyler',
+  'victor','vincent',
+  'walter','warren','wayne','william',
+  'zachary',
+  // Western female
+  'alice','amanda','amy','angela','anna','ashley',
+  'barbara','betty','brittany',
+  'carol','carolyn','catherine','charlotte','cheryl','christina','christine',
+  'deborah','debra','diana','donna','dorothy',
+  'elizabeth','emily','emma',
+  'frances','grace',
+  'hannah','helen','heather','holly','isabella',
+  'jane','janet','jennifer','jessica','joyce','julia','julie',
+  'karen','katherine','kathryn','kelly','kim','kimberly',
+  'laura','lauren','linda','lisa','lori','lucy',
+  'margaret','maria','marie','marilyn','mary','melissa','michelle','morgan',
+  'nancy','natalie','nicole','olivia',
+  'pamela','patricia','paula',
+  'rachel','rebecca','rose','ruth',
+  'sarah','sandra','sara','sharon','stephanie','susan',
+  'teresa','theresa','victoria',
+  // Middle Eastern
+  'amir','hassan','hussain','ibrahim','ismail','kareem','khalid',
+  'mohammed','muhammad','mustafa','omar','tariq','youssef',
+  'layla','noor','zainab',
+  // East / Southeast Asian
+  'wei','lei','ming','ying','jian','xiao','lin',
+  'nguyen','tran','pham','le','vo',
+  'chen','wong','tang','lim',
+]);
+
 // ── Indian locations — kept AS PART of the customer name ─────────────────────
 // Customers in this system are identified as "name place" (e.g. "Manish Agra",
 // "Mohit Lajpat Nagar", "Ansh Chauhan Kolkata", "Bittoo Fashion Chandigarh").
