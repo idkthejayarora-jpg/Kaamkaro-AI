@@ -325,14 +325,24 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
 }
 
 // ── Customer interaction timeline (with delete) ───────────────────────────────
-function CustomerTimeline({ customerId }: { customerId: string }) {
-  const [items, setItems]   = useState<Interaction[]>([]);
+function CustomerTimeline({ customerId, isAdmin }: { customerId: string; isAdmin: boolean }) {
+  const [items, setItems]     = useState<Interaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const TYPE_ICON: Record<string, React.ElementType> = { call: Phone, message: MessageSquare, email: Mail, meeting: Calendar };
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const TYPE_ICON: Record<string, React.ElementType> = {
+    call: Phone, message: MessageSquare, email: Mail, meeting: Calendar,
+    diary: BookOpen,
+  };
+  const TYPE_LABEL: Record<string, string> = {
+    call: 'Call', message: 'Message', email: 'Email', meeting: 'Meeting',
+    diary: 'Diary entry',
+  };
 
   useEffect(() => {
-    interactionsAPI.list({ customerId }).then(data => { setItems(data); setLoading(false); });
+    interactionsAPI.list({ customerId })
+      .then(data => { setItems(data); setLoading(false); });
   }, [customerId]);
 
   const handleDelete = async (id: string) => {
@@ -346,42 +356,100 @@ function CustomerTimeline({ customerId }: { customerId: string }) {
   };
 
   if (loading) return <div className="py-4 text-center text-white/25 text-xs">Loading…</div>;
-  if (items.length === 0) return <div className="py-4 text-center text-white/25 text-xs">No interactions logged yet</div>;
+  if (items.length === 0) return (
+    <div className="py-6 text-center text-white/25 text-xs">
+      No interactions logged yet — use the Log button or add diary entries.
+    </div>
+  );
 
   return (
-    <div className="space-y-1 mt-2">
+    <div className="space-y-0 mt-2">
       {items.map(i => {
         const Icon = TYPE_ICON[i.type] || Phone;
+        const isExpanded = expandedId === i.id;
+        const isDiary = i.type === 'diary';
+
         return (
-          <div key={i.id} className="flex gap-3 py-2 border-b border-dark-50/40 last:border-0 group">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${i.responded ? 'bg-green-500/15' : 'bg-dark-200'}`}>
-              <Icon size={11} className={i.responded ? 'text-green-400' : 'text-white/30'} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-white/70 text-xs font-medium capitalize">{i.type}</span>
-                <span className={`text-[10px] ${i.responded ? 'text-green-400' : 'text-white/25'}`}>
-                  {i.responded ? '✓ Responded' : '✗ No response'}
-                </span>
-                {i.source === 'webhook' && <span className="badge badge-gold text-[9px]">webhook</span>}
-                {i.source === 'kamal_ai' && <span className="badge bg-purple-500/10 text-purple-400 text-[9px]">Kamal</span>}
+          <div key={i.id} className="border-b border-dark-50/30 last:border-0 group">
+            <div className="flex gap-3 py-2.5">
+              {/* Type icon */}
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                isDiary     ? 'bg-purple-500/15'
+                : i.responded ? 'bg-green-500/15'
+                : 'bg-dark-200'
+              }`}>
+                <Icon size={12} className={
+                  isDiary     ? 'text-purple-400'
+                  : i.responded ? 'text-green-400'
+                  : 'text-white/30'
+                } />
               </div>
-              {i.notes && <p className="text-white/40 text-xs mt-0.5 line-clamp-2">{i.notes}</p>}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-white/20 text-[10px]">
-                {new Date(i.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              </span>
-              <button
-                onClick={() => handleDelete(i.id)}
-                disabled={deletingId === i.id}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-white/20 hover:text-red-400 p-0.5"
-                title="Delete this log"
-              >
-                {deletingId === i.id
-                  ? <div className="w-3 h-3 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />
-                  : <Trash2 size={11} />}
-              </button>
+
+              <div className="flex-1 min-w-0">
+                {/* Top row: type label + response + badges */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white/80 text-xs font-semibold">
+                    {TYPE_LABEL[i.type] || i.type}
+                  </span>
+                  {!isDiary && (
+                    <span className={`text-[10px] font-medium ${i.responded ? 'text-green-400' : 'text-red-400/60'}`}>
+                      {i.responded ? '✓ Responded' : '✗ No response'}
+                    </span>
+                  )}
+                  {i.source === 'webhook' && <span className="badge badge-gold text-[9px]">webhook</span>}
+                  {i.source === 'kamal_ai' && <span className="badge bg-purple-500/10 text-purple-400 text-[9px]">Kamal AI</span>}
+                </div>
+
+                {/* Staff name — crucial for admin to see who did what */}
+                {i.staffName && (
+                  <p className="text-white/30 text-[10px] mt-0.5">
+                    by <span className="text-gold/60 font-medium">{i.staffName}</span>
+                  </p>
+                )}
+
+                {/* Notes — expandable if long */}
+                {i.notes && (
+                  <div className="mt-1">
+                    <p className={`text-white/50 text-xs leading-relaxed ${!isExpanded && i.notes.length > 120 ? 'line-clamp-2' : ''}`}>
+                      {i.notes}
+                    </p>
+                    {i.notes.length > 120 && (
+                      <button
+                        onClick={() => setExpandedId(isExpanded ? null : i.id)}
+                        className="text-white/20 hover:text-white/50 text-[10px] mt-0.5 transition-colors"
+                      >
+                        {isExpanded ? 'Show less ↑' : 'Show more ↓'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Date + delete */}
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="text-white/25 text-[10px] whitespace-nowrap">
+                  {new Date(i.createdAt).toLocaleDateString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })}
+                </span>
+                <span className="text-white/15 text-[10px]">
+                  {new Date(i.createdAt).toLocaleTimeString('en-IN', {
+                    hour: '2-digit', minute: '2-digit',
+                  })}
+                </span>
+                {(isAdmin || true) && (
+                  <button
+                    onClick={() => handleDelete(i.id)}
+                    disabled={deletingId === i.id}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-white/20 hover:text-red-400 p-0.5 mt-0.5"
+                    title="Delete this log"
+                  >
+                    {deletingId === i.id
+                      ? <div className="w-3 h-3 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />
+                      : <Trash2 size={10} />}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         );
