@@ -85,7 +85,7 @@ export interface Interaction {
   customerId: string;
   staffId: string;
   staffName: string;
-  type: 'call' | 'message' | 'meeting' | 'email';
+  type: 'call' | 'message' | 'meeting' | 'email' | 'diary';
   responded: boolean;
   notes: string;
   followUpDate: string | null;
