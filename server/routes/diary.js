@@ -436,64 +436,123 @@ function detectLanguage(text) {
  * This is a best-effort transliteration — enough to produce recognisable Roman
  * approximations of Indian names (अमित → amit, सोनिया → soniya, etc.).
  */
+/**
+ * Transliterate Devanagari → Roman with correct inherent-vowel handling.
+ *
+ * Root cause of "Mneeesh Jypur": the old code mapped consonants directly to bare
+ * Roman forms (म→m, न→n) without adding the inherent 'a' vowel every Devanagari
+ * consonant carries. Correct rule: each consonant has an implicit 'a' UNLESS the
+ * next character is a matra (dependent vowel sign), a virama (् suppresses vowel),
+ * or a word boundary (final consonant in Hindi names is typically silent).
+ *
+ *  मनीष → m(a)n+ī+ṣ → maneesh  (fuzzy-normalises to "manis" = "manish" ✓)
+ *  जयपुर → j(a)y(a)p+u+r  → jayapur  (close enough to "jaipur" for fuzzy match ✓)
+ *  राहुल → r+ā+h+u+l      → raahul   (normalises aa→a → "rahul" ✓)
+ */
 function devanagariToRoman(text) {
   if (!/[\u0900-\u097F]/.test(text)) return text; // fast-path: no Devanagari present
 
-  // Consonants (full akshara)
-  const CONSONANTS = [
-    ['क्ष','ksh'],['त्र','tr'],['ज्ञ','gya'],
+  // Conjuncts — must be checked BEFORE individual consonants (longest-match)
+  const CONJUNCTS = [['क्ष','ksh'],['त्र','tr'],['ज्ञ','gya']];
+
+  // Single consonants → bare Roman (inherent 'a' is added algorithmically)
+  const CONSONANTS = new Map([
     ['क','k'],['ख','kh'],['ग','g'],['घ','gh'],['ङ','ng'],
     ['च','ch'],['छ','chh'],['ज','j'],['झ','jh'],['ञ','ny'],
     ['ट','t'],['ठ','th'],['ड','d'],['ढ','dh'],['ण','n'],
     ['त','t'],['थ','th'],['द','d'],['ध','dh'],['न','n'],
     ['प','p'],['फ','ph'],['ब','b'],['भ','bh'],['म','m'],
-    ['य','y'],['र','r'],['ल','l'],['व','v'],
+    ['य','y'],['र','r'],['ल','l'],['ळ','l'],['व','v'],
     ['श','sh'],['ष','sh'],['स','s'],['ह','h'],
-    ['ळ','l'],['क़','q'],['ख़','kh'],['ग़','gh'],['ज़','z'],['ड़','r'],['ढ़','rh'],['फ़','f'],
-  ];
+    // Nukta variants (may appear as 2-char sequence: base + ़ U+093C)
+    ['ड़','r'],['ढ़','rh'],['फ़','f'],['ज़','z'],['क़','q'],['ख़','kh'],['ग़','gh'],
+  ]);
 
-  // Independent vowels
-  const IND_VOWELS = [
-    ['अ','a'],['आ','aa'],['इ','i'],['ई','ee'],['उ','u'],['ऊ','oo'],
-    ['ऋ','ri'],['ए','e'],['ऐ','ai'],['ओ','o'],['औ','au'],
-    ['अं','an'],['अः','ah'],
-  ];
-
-  // Dependent vowel signs (matras)
-  const MATRAS = [
+  // Dependent vowel signs (matras) — cancel the consonant's inherent 'a' and
+  // supply their own vowel
+  const MATRAS = new Map([
     ['ा','a'],['ि','i'],['ी','ee'],['ु','u'],['ू','oo'],
     ['ृ','ri'],['े','e'],['ै','ai'],['ो','o'],['ौ','au'],
     ['ं','n'],['ः','h'],['ँ','n'],
-  ];
+  ]);
 
-  // Specials
-  const SPECIALS = [
-    ['।',' '],['॥',' '],['्',''],  // halant (virama) — remove vowel
-    ['\u200b',''],                   // zero-width space
-  ];
+  // Independent vowels (check 2-char entries first)
+  const IND_VOWELS_2 = [['अं','an'],['अः','ah']];
+  const IND_VOWELS_1 = new Map([
+    ['अ','a'],['आ','aa'],['इ','i'],['ई','ee'],['उ','u'],['ऊ','oo'],
+    ['ऋ','ri'],['ए','e'],['ऐ','ai'],['ओ','o'],['औ','au'],
+  ]);
 
-  // Build a single replacement pass using a map (longest-match style)
-  const ALL = [...SPECIALS, ...IND_VOWELS, ...MATRAS, ...CONSONANTS];
+  const VIRAMA = '्'; // U+094D — halant, suppresses inherent 'a'
 
   let result = '';
   let i = 0;
+  let pendingA = false; // true when last consonant has an unprovided inherent 'a'
+
+  const flushA = () => { if (pendingA) { result += 'a'; pendingA = false; } };
+
   while (i < text.length) {
-    let matched = false;
-    for (const [src, tgt] of ALL) {
+    // ── Virama: suppress the pending inherent 'a' ─────────────────────────────
+    if (text[i] === VIRAMA) { pendingA = false; i++; continue; }
+
+    // ── Conjuncts (multi-char, checked before single consonants) ──────────────
+    let found = false;
+    for (const [src, tgt] of CONJUNCTS) {
       if (text.startsWith(src, i)) {
-        result += tgt;
-        i += src.length;
-        matched = true;
-        break;
+        flushA(); result += tgt; pendingA = true; i += src.length; found = true; break;
       }
     }
-    if (!matched) {
-      // Pass through non-Devanagari characters unchanged
-      result += text[i];
-      i++;
+    if (found) continue;
+
+    // ── 2-char nukta consonants ──────────────────────────────────────────────
+    for (const [src, tgt] of CONSONANTS) {
+      if (src.length === 2 && text.startsWith(src, i)) {
+        flushA(); result += tgt; pendingA = true; i += src.length; found = true; break;
+      }
     }
+    if (found) continue;
+
+    // ── Single consonant ──────────────────────────────────────────────────────
+    if (CONSONANTS.has(text[i])) {
+      flushA(); result += CONSONANTS.get(text[i]); pendingA = true; i++; continue;
+    }
+
+    // ── Matra: replaces inherent 'a', no flushA needed ───────────────────────
+    if (MATRAS.has(text[i])) {
+      pendingA = false; result += MATRAS.get(text[i]); i++; continue;
+    }
+
+    // ── Independent vowels (2-char first) ────────────────────────────────────
+    found = false;
+    for (const [src, tgt] of IND_VOWELS_2) {
+      if (text.startsWith(src, i)) {
+        flushA(); result += tgt; pendingA = false; i += src.length; found = true; break;
+      }
+    }
+    if (found) continue;
+    if (IND_VOWELS_1.has(text[i])) {
+      flushA(); result += IND_VOWELS_1.get(text[i]); pendingA = false; i++; continue;
+    }
+
+    // ── Danda / special Devanagari punctuation ────────────────────────────────
+    if (text[i] === '।' || text[i] === '॥') {
+      pendingA = false; result += ' '; i++; continue; // word boundary: suppress final 'a'
+    }
+
+    // ── Non-Devanagari character (space, digit, Roman letter, punctuation) ────
+    // At a word boundary (space / punctuation) suppress the trailing inherent 'a'
+    // because final consonants in spoken Hindi names are typically silent.
+    if (/[\s.,!?;:\-"'()[\]{}]/.test(text[i])) {
+      pendingA = false; // suppress at word boundary
+    } else {
+      flushA(); // mid-word non-Devanagari: emit pending 'a' before it
+    }
+    result += text[i]; i++;
   }
-  return result;
+  // End of string: suppress trailing inherent 'a' (silent final consonant)
+  // pendingA is intentionally NOT flushed here
+
+  return result.replace(/\s+/g, ' ').trim();
 }
 
 /**
