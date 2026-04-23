@@ -15,8 +15,22 @@ router.get('/', async (req, res) => {
     const { customerId, staffId } = req.query;
 
     if (req.user.role === 'staff') {
-      interactions = interactions.filter(i => i.staffId === req.user.id);
+      if (customerId) {
+        // Staff viewing a specific customer's profile: show ALL staff interactions
+        // for that customer (full history visible to anyone who can access the customer)
+        const customers = await readDB('customers');
+        const cust = customers.find(c => c.id === customerId);
+        if (!cust || cust.assignedTo !== req.user.id) {
+          // Customer not assigned to this staff — restrict to own interactions only
+          interactions = interactions.filter(i => i.staffId === req.user.id);
+        }
+        // else: customer is assigned to them → they see all interactions for that customer
+      } else {
+        // No customerId filter — staff only sees their own interactions list
+        interactions = interactions.filter(i => i.staffId === req.user.id);
+      }
     }
+
     if (customerId) interactions = interactions.filter(i => i.customerId === customerId);
     if (staffId)   interactions = interactions.filter(i => i.staffId === staffId);
 
