@@ -484,43 +484,81 @@ router.get('/leaderboard', async (req, res) => {
     const interactions = await readDB('interactions');
     const customers    = await readDB('customers');
     const tasks        = await readDB('tasks');
-    const performance  = await readDB('performance');
 
-    const thisWeek  = getCurrentWeek();
-    const weekAgo   = Date.now() - 7 * 86400000;
-    const monthAgo  = Date.now() - 30 * 86400000;
-    const weekPerf  = performance.filter(p => p.week === thisWeek);
+    // Respect a manual reset date if admin has reset the leaderboard
+    let resetAt = 0;
+    try {
+      const cfg = await readDB('config');
+      const r = cfg.find(c => c.key === 'leaderboardResetAt');
+      if (r) resetAt = new Date(r.value).getTime();
+    } catch {}
+
+    const weekAgo  = Math.max(Date.now() - 7  * 86400000, resetAt);
+    const monthAgo = Math.max(Date.now() - 30 * 86400000, resetAt);
 
     const rows = staff.map(s => {
       const weekInteractions  = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekAgo);
       const monthInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > monthAgo);
       const responded         = weekInteractions.filter(i => i.responded).length;
       const responseRate      = weekInteractions.length > 0 ? Math.round(responded / weekInteractions.length * 100) : 0;
-      const closedCount       = customers.filter(c => c.assignedTo === s.id && c.status === 'closed').length;
+      const closedCount       = customers.filter(c => c.assignedTo === s.id && c.status === 'closed' && new Date(c.updatedAt || c.createdAt).getTime() > resetAt).length;
       const completedTasks    = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
-      const p = weekPerf.find(p => p.staffId === s.id);
-      const score = Math.round((responseRate * 0.35) + (Math.min(weekInteractions.length / 20, 1) * 100 * 0.30) + ((s.streakData?.currentStreak || 0) / 7 * 100 * 0.20) + (Math.min(closedCount / 5, 1) * 100 * 0.15));
+      const score = Math.round(
+        (responseRate * 0.35) +
+        (Math.min(weekInteractions.length / 20, 1) * 100 * 0.30) +
+        ((s.streakData?.currentStreak || 0) / 7 * 100 * 0.20) +
+        (Math.min(closedCount / 5, 1) * 100 * 0.15)
+      );
       return {
-        id: s.id,
-        name: s.name,
-        avatar: s.avatar,
+        id: s.id, name: s.name, avatar: s.avatar,
         availability: s.availability || 'available',
         weekInteractions: weekInteractions.length,
         monthInteractions: monthInteractions.length,
         responseRate,
         streak: s.streakData?.currentStreak || 0,
         longestStreak: s.streakData?.longestStreak || 0,
-        closedCount,
-        completedTasks,
-        score,
-        rank: 0, // set after sort
+        closedCount, completedTasks, score,
+        rank: 0,
       };
     });
 
     rows.sort((a, b) => b.score - a.score);
     rows.forEach((r, i) => { r.rank = i + 1; });
-
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/ai/leaderboard/reset (admin only) ────────────────────────────────
+// Resets all scores/streaks to zero while keeping staff, customers, tasks, diary.
+router.post('/leaderboard/reset', adminOnly, async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+
+    // 1. Clear performance collection
+    await writeDB('performance', []);
+
+    // 2. Reset streak data on all staff
+    const staff = await readDB('staff');
+    await Promise.all(staff.map(s =>
+      updateOne('staff', s.id, {
+        streakData: { currentStreak: 0, lastActivityDate: null, longestStreak: 0 },
+      }).catch(() => {})
+    ));
+
+    // 3. Store reset timestamp so leaderboard interaction counts start fresh
+    let config = [];
+    try { config = await readDB('config'); } catch {}
+    const existing = config.find(c => c.key === 'leaderboardResetAt');
+    if (existing) {
+      await updateOne('config', existing.id, { value: now });
+    } else {
+      await insertOne('config', { id: require('crypto').randomUUID(), key: 'leaderboardResetAt', value: now });
+    }
+
+    console.log(`[Leaderboard] ♻️  Reset by ${req.user.name} at ${now}`);
+    res.json({ message: 'Leaderboard reset. All scores and streaks cleared.', resetAt: now });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
