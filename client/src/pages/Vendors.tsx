@@ -191,7 +191,7 @@ export default function Vendors() {
         <div className="card flex flex-col items-center py-16 text-center">
           <Building2 size={40} className="text-white/10 mb-4" />
           <p className="text-white/40 font-medium">No vendors found</p>
-          {isAdmin && <button onClick={() => setShowAdd(true)} className="btn-primary mt-4">Add Vendor</button>}
+          <button onClick={() => setShowAdd(true)} className="btn-primary mt-4">Add Vendor</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
