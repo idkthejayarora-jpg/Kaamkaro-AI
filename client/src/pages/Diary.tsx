@@ -305,7 +305,11 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
                   {e.spokenName && e.spokenName !== e.customerName && (
                     <span className="text-white/25 text-xs">(said: "{e.spokenName}")</span>
                   )}
-                  {e.isNewCustomer ? (
+                  {e.isVendor ? (
+                    <span className="flex items-center gap-1 badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
+                      <Building2 size={9} /> Vendor
+                    </span>
+                  ) : e.isNewCustomer ? (
                     <span className="flex items-center gap-1 badge bg-green-500/10 text-green-400 border-green-500/20 text-[10px]">
                       <UserPlus size={9} /> New customer added
                     </span>
