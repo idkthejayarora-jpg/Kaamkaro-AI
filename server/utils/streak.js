@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const { readDB, updateOne, insertOne } = require('./db');
+const { awardMerit } = require('./merits');
 
 function getCurrentWeek() {
   const d = new Date();
