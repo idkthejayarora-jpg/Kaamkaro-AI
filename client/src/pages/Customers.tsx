@@ -914,11 +914,6 @@ export default function Customers() {
                       {c.email && <span className="text-white/30 text-xs flex items-center gap-1"><Mail size={10} />{c.email}</span>}
                       {isAdmin && c.assignedTo && <span className="text-gold/40 text-xs">→ {getStaffName(c.assignedTo)}</span>}
                       {c.dealValue && <span className="text-green-400/70 text-xs flex items-center gap-1"><DollarSign size={9} />₹{c.dealValue.toLocaleString('en-IN')}</span>}
-                      {c.healthScore !== undefined && (
-                        <span className="text-white/20 text-xs flex items-center gap-1">
-                          <Activity size={9} />health {c.healthScore}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
