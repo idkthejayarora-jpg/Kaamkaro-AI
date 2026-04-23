@@ -26,17 +26,6 @@ function stageBadge(status: PipelineStatus) {
   return <span className={`badge ${s.bg} ${s.color} border border-current/20`}>{s.label}</span>;
 }
 
-function healthBadge(color?: string, label?: string) {
-  if (!color || !label) return null;
-  const cfg = {
-    green:  'bg-green-500/10 text-green-400',
-    gold:   'bg-gold/10 text-gold',
-    orange: 'bg-orange-500/10 text-orange-400',
-    red:    'bg-red-500/10 text-red-400',
-  }[color] || 'bg-white/5 text-white/40';
-  return <span className={`badge ${cfg} border border-current/20`}>{label}</span>;
-}
-
 // ── Sentiment Trend ────────────────────────────────────────────────────────────
 function SentimentTrendView({ customerId }: { customerId: string }) {
   const [trend, setTrend] = useState<SentimentPoint[]>([]);

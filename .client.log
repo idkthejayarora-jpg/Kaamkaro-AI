@@ -59,3 +59,5 @@
 11:15:47 am [vite] hmr update /src/pages/StaffProfile.tsx, /src/index.css
 11:18:26 am [vite] hmr update /src/contexts/AuthContext.tsx, /src/index.css
 11:20:24 am [vite] page reload src/types/index.ts
+11:33:46 am [vite] hmr update /src/pages/Customers.tsx, /src/index.css
+11:36:14 am [vite] hmr update /src/pages/Customers.tsx, /src/index.css
