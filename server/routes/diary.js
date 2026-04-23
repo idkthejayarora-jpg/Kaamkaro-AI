@@ -785,17 +785,24 @@ function extractActionItemsLocal(text) {
  * This is shown as "English Summary" in the UI when no AI translation is available.
  */
 function buildEnglishSummary(names, lang, sentiment, actions, staffName) {
-  const langLabel = lang === 'hindi' ? 'Hindi' : lang === 'hinglish' ? 'Hindi/Hinglish' : 'English';
-  const nameStr   = names.length > 0 ? names.join(', ') : 'no specific customers identified';
-  const sentStr   = sentiment === 'positive'
-    ? 'Overall positive outcome.'
-    : sentiment === 'negative'
-    ? 'Some challenges or objections noted.'
-    : 'Standard interaction.';
-  const actStr = actions.length > 0
-    ? ` Next steps: ${actions.join('; ')}.`
-    : '';
-  return `Entry recorded in ${langLabel} by ${staffName}. Customers mentioned: ${nameStr}. ${sentStr}${actStr}`;
+  // Return clean context — no meta-text like "recorded in Hindi by..."
+  const parts = [];
+
+  if (names.length > 0) {
+    parts.push(`Interacted with: ${names.join(', ')}.`);
+  }
+
+  if (sentiment === 'positive') {
+    parts.push('Positive outcome.');
+  } else if (sentiment === 'negative') {
+    parts.push('Challenges or objections noted.');
+  }
+
+  if (actions.length > 0) {
+    parts.push(`Next steps: ${actions.join('; ')}.`);
+  }
+
+  return parts.length > 0 ? parts.join(' ') : 'Interaction logged.';
 }
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
