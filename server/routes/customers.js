@@ -150,12 +150,33 @@ router.patch('/:id', async (req, res) => {
       const c = customers.find(x => x.id === req.params.id);
       if (!c || c.assignedTo !== req.user.id) return res.status(403).json({ error: 'Access denied' });
     }
+    const customers = await readDB('customers');
+    const existing  = customers.find(x => x.id === req.params.id);
+
     const updates = { ...req.body };
     if (updates.status && !PIPELINE_STAGES.includes(updates.status)) delete updates.status;
     if (updates.dealValue !== undefined) updates.dealValue = Number(updates.dealValue) || null;
     const updated = await updateOne('customers', req.params.id, updates);
     if (!updated) return res.status(404).json({ error: 'Not found' });
     broadcast('customer:updated', updated);
+
+    // ── Merit: +5 for positive customer conversion ────────────────────────────
+    if (existing && updates.status && updates.status !== existing.status) {
+      const isConversion = updates.status === 'closed';
+      // Also detect if a previously churned/inactive customer is being revived (closed from churned)
+      const isRevival    = existing.status === 'churned' && updates.status !== 'churned' && updates.status !== 'lead';
+      if (isConversion || isRevival) {
+        const staffId   = existing.assignedTo || req.user.id;
+        const staffList = await readDB('staff');
+        const staff     = staffList.find(s => s.id === staffId);
+        const staffName = staff?.name || req.user.name;
+        const reason    = isRevival
+          ? `Customer revived: ${existing.name}`
+          : `Customer closed/converted: ${existing.name}`;
+        await awardMerit(staffId, staffName, 5, reason, 'conversion', existing.id);
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
