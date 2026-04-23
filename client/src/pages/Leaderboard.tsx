@@ -32,6 +32,16 @@ export default function Leaderboard() {
 
   useEffect(() => { load(); }, []);
 
+  const handleReset = async () => {
+    if (!confirm('Reset the leaderboard? All scores, streaks, and rankings will be cleared. Staff, customers, tasks, and diary entries are kept.')) return;
+    setResetting(true);
+    try {
+      await aiAPI.resetLeaderboard();
+      await load();
+    } catch {}
+    setResetting(false);
+  };
+
   const updateAvailability = async (id: string, availability: string) => {
     try {
       await staffAPI.setAvailability(id, availability);
