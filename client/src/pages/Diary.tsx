@@ -515,9 +515,12 @@ export default function Diary() {
   const [error,      setError]      = useState('');
   const [loading,    setLoading]    = useState(true);
 
-  // Append voice text to existing content
+  // Append voice text to existing content.
+  // Transliterate Devanagari → Roman first so that hi-IN voice input
+  // is stored as readable Hinglish, not Hindi script.
   const handleVoiceText = (text: string) => {
-    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + text : text);
+    const roman = devanagariToRoman(text);
+    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + roman : roman);
   };
 
   const voice = useVoice(handleVoiceText);
