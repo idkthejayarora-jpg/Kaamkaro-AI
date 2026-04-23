@@ -979,7 +979,7 @@ export default function Customers() {
                         </button>
                       ))}
                     </div>
-                    {expandedTab === 'timeline'  && <CustomerTimeline customerId={c.id} />}
+                    {expandedTab === 'timeline'  && <CustomerTimeline customerId={c.id} isAdmin={isAdmin} />}
                     {expandedTab === 'notes'     && <CustomerNotes customerId={c.id} />}
                     {expandedTab === 'sentiment' && <SentimentTrendView customerId={c.id} />}
                   </div>
