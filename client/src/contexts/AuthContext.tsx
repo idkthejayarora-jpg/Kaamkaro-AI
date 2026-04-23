@@ -18,7 +18,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Record logout time BEFORE clearing the token (needs auth)
+    try { await attendanceAPI.logout(); } catch {}
     localStorage.removeItem('kk_token');
     localStorage.removeItem('kk_user');
     localStorage.removeItem('kk_notif_read');
