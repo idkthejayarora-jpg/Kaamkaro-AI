@@ -495,10 +495,13 @@ function extractNamesFromText(text) {
     if (locWords === 0) continue; // not a location token
 
     // Look back up to 3 words for the name (stop at stop words or short words)
+    // Numeric tokens (e.g. "1001") are allowed — they form part of the customer ID
     const nameTokens = [];
     for (let k = i - 1; k >= 0 && i - k <= 3; k--) {
       const w = tokens[k];
-      if (STOP_WORDS.has(w) || w.length < 3 || FILLER.has(w)) break;
+      const isNumeric = /^\d+$/.test(w);
+      if (FILLER.has(w)) break;
+      if (!isNumeric && (STOP_WORDS.has(w) || w.length < 3)) break;
       nameTokens.unshift(w);
     }
 
