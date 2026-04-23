@@ -265,6 +265,69 @@ export interface AttendanceRecord {
   sessions: AttendanceSession[];
 }
 
+// ── Follow-up Queue & Insights ────────────────────────────────────────────────
+
+export interface CustomerInsight {
+  customerId: string;
+  customerName: string;
+  phone: string;
+  status: PipelineStatus;
+  assignedTo: string | null;
+  assignedStaffName: string;
+  assignedStaffAvatar: string;
+  dealValue: number | null;
+  lastContactDays: number | null;
+  priorityScore: number;
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+  patterns: {
+    responsiveness: 'responsive' | 'slow' | 'ignoring' | 'ghosting';
+    orderFrequency: 'frequent' | 'occasional' | 'rare';
+    sentimentTrend: 'improving' | 'stable' | 'declining' | 'unknown';
+    hasPaymentDelay: boolean;
+    avgOrderCycleDays: number | null;
+    staffConcern: boolean;
+  };
+  metrics: {
+    totalInteractions: number;
+    positiveRatio: number;
+    negativeRatio: number;
+    responseRate: number;
+    orderMentions: number;
+    totalDiaryMentions: number;
+  };
+  insight: string | null;
+  nextAction: string | null;
+}
+
+export interface StaffBehavior {
+  staffId: string;
+  staffName: string;
+  avatar: string;
+  customersAssigned: number;
+  totalInteractions: number;
+  recentInteractions: number;
+  coverage: number;
+  sentimentScore: number;
+  responseRate: number;
+  qualityScore: number;
+  qualityLabel: 'excellent' | 'good' | 'needs_attention';
+  concernedCustomers: { id: string; name: string }[];
+  overdueCount: number;
+  streak: number;
+}
+
+export interface InsightsTrends {
+  pipelineBreakdown: Record<string, number>;
+  pipelineValue: number;
+  closedValue: number;
+  sentimentByWeek: { week: string; responseRate: number; positiveRate: number; total: number }[];
+  topCustomers: { id: string; name: string; interactions: number; status: string; dealValue: number | null }[];
+  ghostCustomers: { id: string; name: string; daysSince: number | null }[];
+  topTags: { tag: string; count: number }[];
+  totalCustomers: number;
+  totalInteractions: number;
+}
+
 // ── Merit System ──────────────────────────────────────────────────────────────
 
 export interface Merit {
