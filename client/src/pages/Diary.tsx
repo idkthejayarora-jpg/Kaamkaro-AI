@@ -40,54 +40,78 @@ declare global {
 // Hinglish (mixed) automatically in this locale. No manual selection needed.
 const VOICE_LANG = 'hi-IN';
 
-// ── Devanagari → Roman transliterator ────────────────────────────────────────
-// Chrome's hi-IN speech recognition sometimes returns pure Devanagari script
-// (e.g. "आज रहुल से बात की"). This converts it to readable Roman Hinglish so
-// the diary card previews are legible and the server can match customer names.
-// Fast-path: if no Devanagari Unicode present, returns text unchanged.
+// ── Devanagari → Roman transliterator (with correct inherent-vowel handling) ──
+// Chrome hi-IN returns Devanagari: "मनीष जयपुर". Old code produced "Mneesh Jypur"
+// because it omitted the inherent 'a' every Devanagari consonant carries.
+// Rule: each consonant emits 'a' UNLESS followed by a matra, a virama (्), or
+// a word boundary (final consonant in Hindi names is typically silent).
+// Fast-path: returns unchanged if no Devanagari present.
 function devanagariToRoman(text: string): string {
   if (!/[\u0900-\u097F]/.test(text)) return text;
 
-  const MAP: [string, string][] = [
-    // Specials first
-    ['।', ' '], ['॥', ' '], ['्', ''], ['\u200b', ''],
-    // Multi-char conjuncts before single chars
-    ['क्ष', 'ksh'], ['त्र', 'tr'], ['ज्ञ', 'gya'],
-    // Independent vowels
-    ['अं', 'an'], ['अः', 'ah'],
-    ['अ', 'a'], ['आ', 'aa'], ['इ', 'i'], ['ई', 'ee'], ['उ', 'u'], ['ऊ', 'oo'],
-    ['ऋ', 'ri'], ['ए', 'e'], ['ऐ', 'ai'], ['ओ', 'o'], ['औ', 'au'],
-    // Matras (dependent vowel signs)
-    ['ा', 'a'], ['ि', 'i'], ['ी', 'ee'], ['ु', 'u'], ['ू', 'oo'],
-    ['ृ', 'ri'], ['े', 'e'], ['ै', 'ai'], ['ो', 'o'], ['ौ', 'au'],
-    ['ं', 'n'], ['ः', 'h'], ['ँ', 'n'],
-    // Nukta consonants
-    ['क़', 'q'], ['ख़', 'kh'], ['ग़', 'gh'], ['ज़', 'z'], ['ड़', 'r'], ['ढ़', 'rh'], ['फ़', 'f'],
-    // Standard consonants
-    ['क', 'k'], ['ख', 'kh'], ['ग', 'g'], ['घ', 'gh'], ['ङ', 'ng'],
-    ['च', 'ch'], ['छ', 'chh'], ['ज', 'j'], ['झ', 'jh'], ['ञ', 'ny'],
-    ['ट', 't'], ['ठ', 'th'], ['ड', 'd'], ['ढ', 'dh'], ['ण', 'n'],
-    ['त', 't'], ['थ', 'th'], ['द', 'd'], ['ध', 'dh'], ['न', 'n'],
-    ['प', 'p'], ['फ', 'ph'], ['ब', 'b'], ['भ', 'bh'], ['म', 'm'],
-    ['य', 'y'], ['र', 'r'], ['ल', 'l'], ['ळ', 'l'], ['व', 'v'],
-    ['श', 'sh'], ['ष', 'sh'], ['स', 's'], ['ह', 'h'],
-  ];
+  const CONJUNCTS: [string, string][] = [['क्ष','ksh'],['त्र','tr'],['ज्ञ','gya']];
 
+  const CONSONANTS = new Map<string, string>([
+    ['क','k'],['ख','kh'],['ग','g'],['घ','gh'],['ङ','ng'],
+    ['च','ch'],['छ','chh'],['ज','j'],['झ','jh'],['ञ','ny'],
+    ['ट','t'],['ठ','th'],['ड','d'],['ढ','dh'],['ण','n'],
+    ['त','t'],['थ','th'],['द','d'],['ध','dh'],['न','n'],
+    ['प','p'],['फ','ph'],['ब','b'],['भ','bh'],['म','m'],
+    ['य','y'],['र','r'],['ल','l'],['ळ','l'],['व','v'],
+    ['श','sh'],['ष','sh'],['स','s'],['ह','h'],
+    ['ड़','r'],['ढ़','rh'],['फ़','f'],['ज़','z'],['क़','q'],['ख़','kh'],['ग़','gh'],
+  ]);
+
+  const MATRAS = new Map<string, string>([
+    ['ा','a'],['ि','i'],['ी','ee'],['ु','u'],['ू','oo'],
+    ['ृ','ri'],['े','e'],['ै','ai'],['ो','o'],['ौ','au'],
+    ['ं','n'],['ः','h'],['ँ','n'],
+  ]);
+
+  const IND2: [string, string][] = [['अं','an'],['अः','ah']];
+  const IND1 = new Map<string, string>([
+    ['अ','a'],['आ','aa'],['इ','i'],['ई','ee'],['उ','u'],['ऊ','oo'],
+    ['ऋ','ri'],['ए','e'],['ऐ','ai'],['ओ','o'],['औ','au'],
+  ]);
+
+  const VIRAMA = '्';
   let result = '';
   let i = 0;
+  let pendingA = false;
+  const flushA = () => { if (pendingA) { result += 'a'; pendingA = false; } };
+
   while (i < text.length) {
-    let matched = false;
-    for (const [src, tgt] of MAP) {
-      if (text.startsWith(src, i)) {
-        result += tgt;
-        i += src.length;
-        matched = true;
-        break;
-      }
+    if (text[i] === VIRAMA) { pendingA = false; i++; continue; }
+
+    let found = false;
+    for (const [src, tgt] of CONJUNCTS) {
+      if (text.startsWith(src, i)) { flushA(); result += tgt; pendingA = true; i += src.length; found = true; break; }
     }
-    if (!matched) { result += text[i]; i++; }
+    if (found) continue;
+
+    for (const [src, tgt] of CONSONANTS) {
+      if (src.length === 2 && text.startsWith(src, i)) { flushA(); result += tgt; pendingA = true; i += src.length; found = true; break; }
+    }
+    if (found) continue;
+
+    if (CONSONANTS.has(text[i])) { flushA(); result += CONSONANTS.get(text[i])!; pendingA = true; i++; continue; }
+    if (MATRAS.has(text[i]))     { pendingA = false; result += MATRAS.get(text[i])!; i++; continue; }
+
+    for (const [src, tgt] of IND2) {
+      if (text.startsWith(src, i)) { flushA(); result += tgt; pendingA = false; i += src.length; found = true; break; }
+    }
+    if (found) continue;
+    if (IND1.has(text[i])) { flushA(); result += IND1.get(text[i])!; pendingA = false; i++; continue; }
+
+    if (text[i] === '।' || text[i] === '॥') { pendingA = false; result += ' '; i++; continue; }
+
+    // Non-Devanagari: suppress trailing 'a' at word boundaries
+    if (/[\s.,!?;:()\-[\]{}]/.test(text[i])) { pendingA = false; }
+    else { flushA(); }
+    result += text[i]; i++;
   }
-  // Clean up spacing
+  // Trailing consonant inherent 'a' is intentionally NOT emitted (silent in Hindi names)
+
   return result.replace(/\s+/g, ' ').trim();
 }
 
