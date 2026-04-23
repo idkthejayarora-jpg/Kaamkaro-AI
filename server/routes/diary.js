@@ -427,6 +427,76 @@ function detectLanguage(text) {
 }
 
 /**
+/**
+ * Transliterate Devanagari Unicode characters → approximate Latin/Roman equivalents.
+ * Chrome's hi-IN voice recognition returns pure Devanagari script. Without this step,
+ * `replace(/[^\w\s]/g, ' ')` silently strips every Devanagari character, leaving
+ * no tokens to match against the name dictionaries.
+ *
+ * This is a best-effort transliteration — enough to produce recognisable Roman
+ * approximations of Indian names (अमित → amit, सोनिया → soniya, etc.).
+ */
+function devanagariToRoman(text) {
+  if (!/[\u0900-\u097F]/.test(text)) return text; // fast-path: no Devanagari present
+
+  // Consonants (full akshara)
+  const CONSONANTS = [
+    ['क्ष','ksh'],['त्र','tr'],['ज्ञ','gya'],
+    ['क','k'],['ख','kh'],['ग','g'],['घ','gh'],['ङ','ng'],
+    ['च','ch'],['छ','chh'],['ज','j'],['झ','jh'],['ञ','ny'],
+    ['ट','t'],['ठ','th'],['ड','d'],['ढ','dh'],['ण','n'],
+    ['त','t'],['थ','th'],['द','d'],['ध','dh'],['न','n'],
+    ['प','p'],['फ','ph'],['ब','b'],['भ','bh'],['म','m'],
+    ['य','y'],['र','r'],['ल','l'],['व','v'],
+    ['श','sh'],['ष','sh'],['स','s'],['ह','h'],
+    ['ळ','l'],['क़','q'],['ख़','kh'],['ग़','gh'],['ज़','z'],['ड़','r'],['ढ़','rh'],['फ़','f'],
+  ];
+
+  // Independent vowels
+  const IND_VOWELS = [
+    ['अ','a'],['आ','aa'],['इ','i'],['ई','ee'],['उ','u'],['ऊ','oo'],
+    ['ऋ','ri'],['ए','e'],['ऐ','ai'],['ओ','o'],['औ','au'],
+    ['अं','an'],['अः','ah'],
+  ];
+
+  // Dependent vowel signs (matras)
+  const MATRAS = [
+    ['ा','a'],['ि','i'],['ी','ee'],['ु','u'],['ू','oo'],
+    ['ृ','ri'],['े','e'],['ै','ai'],['ो','o'],['ौ','au'],
+    ['ं','n'],['ः','h'],['ँ','n'],
+  ];
+
+  // Specials
+  const SPECIALS = [
+    ['।',' '],['॥',' '],['्',''],  // halant (virama) — remove vowel
+    ['\u200b',''],                   // zero-width space
+  ];
+
+  // Build a single replacement pass using a map (longest-match style)
+  const ALL = [...SPECIALS, ...IND_VOWELS, ...MATRAS, ...CONSONANTS];
+
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    let matched = false;
+    for (const [src, tgt] of ALL) {
+      if (text.startsWith(src, i)) {
+        result += tgt;
+        i += src.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      // Pass through non-Devanagari characters unchanged
+      result += text[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+/**
  * Extract person/customer names from diary text.
  *
  * Customer name format used by this team: "person [surname] [place]"
@@ -434,6 +504,7 @@ function detectLanguage(text) {
  *      "Bittoo Fashion Chandigarh" — name combinations can be anything.
  *
  * Works for BOTH typed text (proper casing) AND voice transcriptions (all lowercase).
+ * Also handles Devanagari script from Chrome hi-IN voice recognition via devanagariToRoman().
  *
  * Four passes — best to worst confidence:
  *   1. Location-anchored — finds ANY words before a known city (no dict needed)
@@ -442,6 +513,8 @@ function detectLanguage(text) {
  *   4. Capitalised words fallback — typed text only
  */
 function extractNamesFromText(text) {
+  // Pre-process: transliterate Devanagari → Roman so voice (hi-IN) input is parseable
+  text = devanagariToRoman(text);
   const found = new Map(); // normalizedKey → displayName (titleCase)
 
   // Grammatical fillers that appear after a name but aren't part of it
