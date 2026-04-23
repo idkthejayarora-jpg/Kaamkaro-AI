@@ -55,6 +55,75 @@ function AddVendorModal({ onClose, onCreated }: { onClose: () => void; onCreated
   );
 }
 
+const SENTIMENT_COLOR: Record<string, string> = {
+  positive: 'text-green-400',
+  negative: 'text-red-400',
+  neutral:  'text-white/30',
+};
+
+function VendorLog({ vendorId }: { vendorId: string }) {
+  const [logs,     setLogs]     = useState<VendorInteraction[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    vendorsAPI.interactions(vendorId)
+      .then(setLogs)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [vendorId]);
+
+  if (loading) return <div className="h-4 shimmer rounded mt-2" />;
+  if (logs.length === 0) return null;
+
+  const preview = logs[0];
+
+  return (
+    <div className="mt-3 pt-3 border-t border-dark-50/50">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="flex items-center justify-between w-full text-left group"
+      >
+        <span className="flex items-center gap-1.5 text-white/30 text-xs group-hover:text-white/50 transition-colors">
+          <BookOpen size={11} />
+          {logs.length} diary {logs.length === 1 ? 'entry' : 'entries'}
+        </span>
+        {expanded ? <ChevronUp size={12} className="text-white/20" /> : <ChevronDown size={12} className="text-white/20" />}
+      </button>
+
+      {!expanded && (
+        <p className="text-white/25 text-xs mt-1.5 line-clamp-2 italic">
+          "{preview.notes.slice(0, 120)}{preview.notes.length > 120 ? '…' : ''}"
+        </p>
+      )}
+
+      {expanded && (
+        <div className="mt-2 space-y-2">
+          {logs.map(log => (
+            <div key={log.id} className="bg-dark-200 rounded-xl px-3 py-2 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-white/25 text-[10px]">
+                  {new Date(log.createdAt).toLocaleDateString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-medium ${SENTIMENT_COLOR[log.sentiment] ?? 'text-white/30'}`}>
+                    {log.sentiment}
+                  </span>
+                  <span className="text-white/20 text-[10px]">by {log.staffName}</span>
+                </div>
+              </div>
+              <p className="text-white/50 text-xs leading-relaxed">{log.notes}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Vendors() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [search, setSearch]   = useState('');
