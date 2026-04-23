@@ -265,6 +265,48 @@ export interface AttendanceRecord {
   sessions: AttendanceSession[];
 }
 
+// ── Merit System ──────────────────────────────────────────────────────────────
+
+export interface Merit {
+  id: string;
+  staffId: string;
+  staffName: string;
+  points: number;
+  reason: string;
+  category: 'task' | 'streak' | 'conversion' | 'overdue' | 'manual';
+  relatedId: string | null;
+  createdAt: string;
+}
+
+export interface MeritBreakdown {
+  task: number;
+  streak: number;
+  conversion: number;
+  penalties: number;
+}
+
+export interface MeritSummary {
+  staffId: string;
+  name: string;
+  avatar: string;
+  total: number;
+  weekPts: number;
+  monthPts: number;
+  breakdown: MeritBreakdown;
+  weekBreak: MeritBreakdown;
+  recentEvents: Merit[];
+}
+
+export interface MeritGoal {
+  id: string;
+  staffId: string;
+  staffName: string;
+  targetPoints: number;
+  period: string;
+  reward: string;
+  createdAt: string;
+}
+
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
 
 export interface PDFExtractedEntry {
