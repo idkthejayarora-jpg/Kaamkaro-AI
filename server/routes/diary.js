@@ -976,10 +976,38 @@ function buildInteractionNote(content, sentiment, amount, actions) {
  *
  * PHASE 2 — optional AI enhancement (skipped when no API key / no credits).
  */
+/**
+ * Match a spoken/written name against the vendor list.
+ * Checks vendor.name and vendor.company since staff may refer to either.
+ */
+function fuzzyMatchVendor(spokenName, vendors, threshold = 0.72) {
+  if (!spokenName || !spokenName.trim() || !vendors.length) return null;
+  const normSpoken = normalizeName(spokenName);
+  let best = null, bestScore = 0;
+
+  for (const v of vendors) {
+    // Check against contact name AND company name
+    const candidates = [v.name, v.company].filter(Boolean);
+    for (const candidate of candidates) {
+      let score = nameSimilarity(spokenName, candidate);
+      const normCand = normalizeName(candidate);
+      if (normSpoken.length >= 4 && normCand.startsWith(normSpoken)) score = Math.max(score, 0.85);
+      const candFirst  = normCand.split(' ')[0];
+      const spokenFirst = normSpoken.split(' ')[0];
+      if (spokenFirst.length >= 4 && candFirst === spokenFirst) score = Math.max(score, 0.80);
+      if (candFirst.length  >= 4 && normSpoken.includes(candFirst)) score = Math.max(score, 0.80);
+      if (score > bestScore) { best = v; bestScore = score; }
+    }
+  }
+  return bestScore >= threshold ? best : null;
+}
+
 async function processDiaryEntry(entryId, content, staffId, staffName) {
   // ── PHASE 1: Local NLP — parallel reads ────────────────────────────────────
   let allCustomers = [];
+  let allVendors   = [];
   try { allCustomers = await readDB('customers'); } catch {}
+  try { allVendors   = await readDB('vendors');   } catch {}
 
   const lang      = detectLanguage(content);
   const names     = extractNamesFromText(content);
