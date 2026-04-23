@@ -166,11 +166,9 @@ export default function Vendors() {
           <h1 className="text-2xl font-bold text-white">Vendors</h1>
           <p className="text-white/40 text-sm mt-1">{vendors.length} vendors · {vendors.filter(v => v.status === 'active').length} active</p>
         </div>
-        {isAdmin && (
-          <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
-            <Plus size={16} /><span className="hidden sm:inline">Add Vendor</span>
-          </button>
-        )}
+        <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
+          <Plus size={16} /><span className="hidden sm:inline">Add Vendor</span>
+        </button>
       </div>
 
       {/* Filters */}
