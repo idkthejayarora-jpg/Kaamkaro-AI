@@ -127,6 +127,18 @@ const STOP_WORDS = new Set([
   'dega','degi','denge','lega','legi','lenge','hua','hui','hue',
   'lagta','lagti','lagte','rehta','rehti','rehte','sakta','sakti','sakte',
   'chahiye','chahta','chahti','chahte','batao','bataya','batai','dekho','dekha',
+  // Business/action words that appear after names (ne X / ko X) — must NOT be captured as names
+  'maal','order','payment','invoice','bill','deal','quote','sample','deliver',
+  'confirm','cancel','reject','call','visit','follow','followup','kaam','kaam',
+  // Hindi connector/filler words that slip through
+  'iska','uska','unka','inhe','unhe','mujhe','hume','tumhe','aapko','apko',
+  'isliye','kyunki','lekin','isliye','tabhi','jaise','waise','fir','phir',
+  // Common non-name words that look like names
+  'total','amount','price','rate','stock','item','unit','piece','box','kilo',
+  'today','tomorrow','tonight','weekly','monthly','daily','yearly',
+  'ache','theek','thik','sahi','galat','jaldi','late','jald',
+  // Short location words (prevent "nagar ne" → "Nagar" as a person)
+  'road','marg','lane','gali','bazar','market','chowk','nagar','vihar',
 ]);
 
 // ── Common Indian names dictionary ─────────────────────────────────────────────
