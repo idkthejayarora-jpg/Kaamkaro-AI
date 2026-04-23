@@ -461,15 +461,31 @@ function extractNamesFromText(text) {
   }
 
   // ── Pass 3: Context patterns (case-insensitive) ────────────────────────────
-  // Captures up to 3 words so "called manish agra" gives "Manish Agra".
-  // At least one captured word must be a known name or location (prevents generic captures).
+  //
+  // ROOT CAUSE FIX: removed the `isValid` gate that required names to be in
+  // INDIAN_NAMES or capitalized in original text. Voice transcriptions are ALL
+  // LOWERCASE so the capitalized check always failed, and names absent from the
+  // ~300-word dictionary were silently dropped — causing ~5% accuracy.
+  //
+  // Now we trust the GRAMMATICAL CONTEXT (postpositions, action verbs, honorifics)
+  // as the signal, and rely on STOP_WORDS to filter false positives.
+  // The only remaining guard: reject purely-location captures ("delhi ne" ≠ a person).
+  //
   const ctxPatterns = [
-    /(?:called|met|meeting with|visited|contacted|spoke with|talked to|baat ki|milne|milaa|mile|milke)\s+([a-zA-Z][a-z]{2,}(?:\s+[a-zA-Z][a-z]{2,}){0,2})/gi,
+    // Hindi postpositions — strongest signal in Hinglish: "rahul ne", "deepak ko", "priya se"
     /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ne|ko|se)\b/gi,
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ji|sahab|bhai)\b/gi,
-    /(?:Mr|Mrs|Ms|Dr|Shri|Smt)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
-    /(?:customer|client|party|buyer|prospect)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam)/gi,
+    // Action verbs before name: "called rahul", "met priya agra", "baat ki manish se"
+    /(?:called|met|meeting\s+with|visited|contacted|spoke(?:\s+with)?|talked(?:\s+to)?|baat\s+(?:ki|kiya|hui)|milne?|milaa?|mile?|milke|phoned|texted|messaged)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
+    // Honorifics after name: "rahul ji", "sharma sahab", "mohit bhai"
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ji|sahab|saab|bhai|didi|madam)\b/gi,
+    // Possessive + business noun: "rahul ka order", "priya ki payment", "deepak ke kaam"
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam|maal|sample|visit|followup|follow)/gi,
+    // Title prefix
+    /(?:Mr|Mrs|Ms|Dr|Shri|Smt|Sri)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
+    // "customer/party/dealer X": "customer ramesh", "dealer sunil agra"
+    /(?:customer|client|party|buyer|prospect|dealer)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
+    // Extended verb phrases: "X ne maal liya", "X ko call kiya", "X ka invoice"
+    /\b([a-zA-Z]{4,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ne\s+(?:bataya|kaha|manga|diya|liya|bola|confirm|cancel|reject|call|maal|order)|ko\s+(?:diya|bheja|call|quote|maal|deliver)|ka\s+(?:maal|order|payment|bill|deal|invoice))/gi,
   ];
 
   for (const pattern of ctxPatterns) {
@@ -477,22 +493,19 @@ function extractNamesFromText(text) {
     while ((m = pattern.exec(text)) !== null) {
       const candidate = m[1].trim();
       const parts = candidate.toLowerCase().split(/\s+/);
+      // Reject if any part is a stop word or too short
       if (!parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) continue;
-      // Require at least one word to be a KNOWN PERSON NAME or capitalized in original
-      // (INDIAN_LOCATIONS alone is not enough — "delhi wale ne" shouldn't produce "Delhi")
-      const isValid = parts.some(p =>
-        INDIAN_NAMES.has(p) ||
-        new RegExp('\\b' + p.charAt(0).toUpperCase() + p.slice(1) + '\\b').test(text)
-      );
-      if (isValid) addName(candidate);
+      // Reject purely-location captures ("delhi ne" → "Delhi" is not a person name)
+      if (parts.every(p => INDIAN_LOCATIONS.has(p))) continue;
+      addName(candidate);
     }
   }
 
-  // ── Pass 3: Capitalised bigrams / single words (typed text fallback) ─────────
+  // ── Pass 4: Capitalised bigrams / single words (typed text fallback) ─────────
   (text.match(/\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/g) || []).forEach(n => addName(n));
 
   if (found.size === 0) {
-    // Last resort: any single capitalised word
+    // Last resort: any single capitalised word (typed text only)
     (text.match(/\b[A-Z][a-z]{2,}\b/g) || []).forEach(w => addName(w));
   }
 
