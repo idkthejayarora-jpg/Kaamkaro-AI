@@ -4,6 +4,7 @@ const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
 const { broadcast } = require('../utils/sse');
+const { awardMerit } = require('../utils/merits');
 
 const router = express.Router();
 router.use(authMiddleware);
