@@ -1295,11 +1295,56 @@ Respond ONLY with this JSON:
     const aiEntries = [];
     const nowAI = new Date().toISOString();
 
+    const aiSideEffects = [];
+
     for (const e of aiResult.entries) {
       const spokenName = (e.spokenName || '').trim();
       const nameLower  = spokenName.toLowerCase();
       if (!spokenName || STOP_WORDS.has(nameLower) || spokenName.length < 3) continue;
 
+      // ── Vendor path — AI flagged this as a vendor match ───────────────────
+      const isVendorEntry = e.isVendor === true || !!e.matchedVendorId;
+      if (isVendorEntry) {
+        let vendor = null;
+        if (e.matchedVendorId) {
+          vendor = allVendors.find(v => v.id === e.matchedVendorId) || null;
+        }
+        if (!vendor) {
+          vendor = fuzzyMatchVendor(spokenName, allVendors, 0.72);
+        }
+        if (!vendor) continue; // do NOT auto-create vendors
+
+        aiEntries.push({
+          spokenName,
+          customerName: vendor.name,
+          customerId:   null,
+          isVendor:     true,
+          vendorId:     vendor.id,
+          vendorName:   vendor.name,
+          isNewCustomer: false,
+          date:         e.date || null,
+          notes:        e.notes || '',
+          originalNotes: e.originalNotes || '',
+          actionItems:  Array.isArray(e.actionItems) ? e.actionItems : [],
+          sentiment:    ['positive','neutral','negative'].includes(e.sentiment) ? e.sentiment : 'neutral',
+          confidence:   typeof e.confidence === 'number' ? e.confidence : 0.8,
+        });
+
+        // Log vendor interaction
+        const vi = {
+          id: uuidv4(), vendorId: vendor.id, vendorName: vendor.name,
+          staffId, staffName,
+          notes: e.notes || buildInteractionNote(content, e.sentiment || sentiment, amount, Array.isArray(e.actionItems) ? e.actionItems : actions),
+          diaryEntryId: entryId,
+          sentiment: ['positive','neutral','negative'].includes(e.sentiment) ? e.sentiment : 'neutral',
+          createdAt: nowAI,
+        };
+        aiSideEffects.push(insertOne('vendorInteractions', vi).catch(() => {}));
+        console.log(`[Diary AI] 🏪 Vendor interaction logged: "${vendor.name}"`);
+        continue;
+      }
+
+      // ── Customer path ─────────────────────────────────────────────────────
       let resolved = null;
       if (e.matchedCustomerId) {
         resolved = allCustomers.find(c => c.id === e.matchedCustomerId) || null;
@@ -1308,6 +1353,29 @@ Respond ONLY with this JSON:
         resolved = fuzzyMatchCustomer(spokenName, [...allCustomers, ...aiNewCustomers]);
       }
       if (!resolved) {
+        // Last guard: check if this name is actually a vendor before creating a customer
+        const vendorGuard = fuzzyMatchVendor(spokenName, allVendors, 0.72);
+        if (vendorGuard) {
+          // AI missed the vendor flag — treat it as vendor silently
+          aiEntries.push({
+            spokenName,
+            customerName: vendorGuard.name, customerId: null,
+            isVendor: true, vendorId: vendorGuard.id, vendorName: vendorGuard.name,
+            isNewCustomer: false, date: e.date || null,
+            notes: e.notes || '', originalNotes: e.originalNotes || '',
+            actionItems: Array.isArray(e.actionItems) ? e.actionItems : [],
+            sentiment: ['positive','neutral','negative'].includes(e.sentiment) ? e.sentiment : 'neutral',
+            confidence: 0.75,
+          });
+          const vi = {
+            id: uuidv4(), vendorId: vendorGuard.id, vendorName: vendorGuard.name,
+            staffId, staffName, notes: e.notes || '',
+            diaryEntryId: entryId, sentiment: 'neutral', createdAt: nowAI,
+          };
+          aiSideEffects.push(insertOne('vendorInteractions', vi).catch(() => {}));
+          continue;
+        }
+
         try {
           const newCust = {
             id: uuidv4(), name: titleCase(spokenName), phone: '', email: '',
@@ -1335,6 +1403,7 @@ Respond ONLY with this JSON:
         matchedCustomerId:   resolved.id,
         isNewCustomer:       isNew,
         autoCreatedId:       isNew ? resolved.id : null,
+        isVendor:            false,
         date:                e.date   || null,
         notes:               e.notes  || '',
         originalNotes:       e.originalNotes || '',
@@ -1343,6 +1412,8 @@ Respond ONLY with this JSON:
         confidence:          typeof e.confidence === 'number' ? e.confidence : 0.8,
       });
     }
+
+    await Promise.allSettled(aiSideEffects);
 
     if (aiEntries.length > 0) {
       const enhanced = await updateOne('diary', entryId, {
