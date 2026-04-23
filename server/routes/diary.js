@@ -379,6 +379,26 @@ const INDIAN_LOCATIONS = new Set([
   // Generic locality suffixes — kept in location set so dictionary scan includes them
   'nagar','vihar','enclave','colony','sector','block','phase','extension',
   'market','chowk','crossing','road','marg','place','garden','park','puri',
+  // ── International / foreign locations (customers abroad or from abroad) ────
+  'canada','toronto','vancouver','montreal','calgary','ottawa','edmonton',
+  'usa','america','newyork','new york','losangeles','los angeles','chicago',
+  'houston','dallas','seattle','boston','miami','sanfrancisco','san francisco',
+  'uk','london','manchester','birmingham','leeds','glasgow',
+  'australia','sydney','melbourne','brisbane','perth','adelaide',
+  'dubai','abudhabi','abu dhabi','sharjah','ajman','uae',
+  'singapore','malaysia','kualalumpur','kuala lumpur',
+  'canada','newzealand','new zealand','ireland','netherlands',
+  'germany','berlin','munich','frankfurt',
+  'france','paris',
+  'italy','rome','milan',
+  'spain','madrid','barcelona',
+  'nepal','kathmandu','pokhara',
+  'bangladesh','dhaka','chittagong',
+  'srilanka','colombo',
+  'pakistan','karachi','lahore','islamabad',
+  'africa','kenya','nairobi','nigeria','lagos',
+  'gulf','bahrain','kuwait','oman','qatar','riyadh','jeddah',
+  'muscat','doha','manama',
 ]);
 
 // ── Built-in NLP functions — zero external dependencies ───────────────────────
