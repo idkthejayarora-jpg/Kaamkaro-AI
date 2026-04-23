@@ -1236,7 +1236,12 @@ ${content.slice(0, 4000)}
 KNOWN CUSTOMERS:
 ${customerRef}
 
-Provide a complete, natural English translation of the ENTIRE diary entry (not a summary — full translation sentence by sentence), then extract customer interactions.
+KNOWN VENDORS (suppliers/manufacturers the team deals with — NOT customers):
+${vendorRef}
+
+Provide a complete, natural English translation of the ENTIRE diary entry (not a summary — full translation sentence by sentence), then extract all interactions.
+
+IMPORTANT: If a name matches a KNOWN VENDOR, set isVendor=true and fill matchedVendorId/matchedVendorName. Do NOT create new vendors — staff add vendors manually. Only create new customers for names that match neither list.
 
 Respond ONLY with this JSON:
 {
@@ -1245,8 +1250,11 @@ Respond ONLY with this JSON:
   "entries": [
     {
       "spokenName": "name as written",
-      "matchedCustomerName": "exact name from known list or null",
-      "matchedCustomerId": "exact id from known list or null",
+      "isVendor": false,
+      "matchedCustomerName": "exact name from customer list or null",
+      "matchedCustomerId": "exact id from customer list or null",
+      "matchedVendorName": "exact name from vendor list or null",
+      "matchedVendorId": "exact vid from vendor list or null",
       "isNewCustomer": false,
       "date": null,
       "notes": "1-2 sentence professional English summary",
