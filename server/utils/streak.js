@@ -30,10 +30,20 @@ async function updateStaffStreak(staffId) {
 
   if (streakData.lastActivityDate === today) return; // Already counted today
 
+  const previousStreak = streakData.currentStreak;
+
   if (streakData.lastActivityDate === yesterday) {
     streakData.currentStreak += 1;
+    // +2 merit for every streak day maintained
+    await awardMerit(staffId, s.name, 2,
+      `Streak day ${streakData.currentStreak}: activity logged`, 'streak', null);
   } else {
-    streakData.currentStreak = 1; // Gap — reset
+    // Streak broken — penalise if they had a streak going
+    if (previousStreak > 0) {
+      await awardMerit(staffId, s.name, -2,
+        `Streak lost (was ${previousStreak}d)`, 'streak', null);
+    }
+    streakData.currentStreak = 1; // Gap — reset to 1 for today
   }
 
   streakData.lastActivityDate = today;
