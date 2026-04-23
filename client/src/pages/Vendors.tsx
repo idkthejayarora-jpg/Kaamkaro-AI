@@ -234,6 +234,7 @@ export default function Vendors() {
               </div>
 
               {v.notes && <p className="text-white/25 text-xs mt-2 line-clamp-2">{v.notes}</p>}
+              <VendorLog vendorId={v.id} />
             </div>
           ))}
         </div>
