@@ -778,6 +778,21 @@ export default function Customers() {
     }
   };
 
+  // Admin-only: inline rename a customer
+  const handleNameSave = async (id: string) => {
+    const name = editNameValue.trim();
+    if (!name) return;
+    setSavingName(true);
+    try {
+      const updated = await customersAPI.update(id, { name });
+      setCustomers(prev => prev.map(c => c.id === id ? { ...c, name: updated.name } : c));
+      setEditingNameId(null);
+      setEditNameValue('');
+    } catch {
+      /* keep edit open so admin can retry */
+    } finally { setSavingName(false); }
+  };
+
   if (loading) return <div className="space-y-3">{Array(5).fill(0).map((_, i) => <div key={i} className="card h-16 shimmer" />)}</div>;
 
   return (
