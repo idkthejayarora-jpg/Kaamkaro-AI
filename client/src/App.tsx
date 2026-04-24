@@ -48,6 +48,7 @@ function AppRoutes() {
         <Route path="/vendors"         element={<Vendors />} />
         <Route path="/diary"           element={<Diary />} />
         <Route path="/tasks"           element={<Tasks />} />
+        <Route path="/chat"            element={<Chat />} />
         <Route path="/leaderboard"     element={<Leaderboard />} />
         <Route path="/followup"        element={<FollowupQueue />} />
         <Route path="/goals"           element={<Goals />} />
