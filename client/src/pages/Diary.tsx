@@ -544,11 +544,45 @@ export default function Diary() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Diary</h1>
-        <p className="text-white/30 text-sm mt-1">
-          Hindi, English, ya Hinglish — kuch bhi likho ya bolo. Kamal AI customers automatically detect aur add karega.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Diary</h1>
+          <p className="text-white/30 text-sm mt-1">
+            Hindi, English, ya Hinglish — kuch bhi likho ya bolo. Kamal AI customers automatically detect aur add karega.
+          </p>
+        </div>
+
+        {/* Admin-only filters */}
+        {isAdmin && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter size={13} className="text-white/30 flex-shrink-0" />
+            {/* Staff filter */}
+            <div className="relative">
+              <Users size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+              <select
+                value={staffFilter}
+                onChange={e => setStaffFilter(e.target.value)}
+                className="input pl-7 py-1.5 text-xs h-8 pr-8 min-w-[140px]"
+              >
+                <option value="all">All Staff</option>
+                {staff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            {/* Status filter */}
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="input py-1.5 text-xs h-8 min-w-[120px]"
+            >
+              <option value="all">All Entries</option>
+              <option value="done">Saved ✓</option>
+              <option value="processing">Processing…</option>
+              <option value="error">Errors</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* ── Composer ─────────────────────────────────────────────────────── */}
