@@ -46,7 +46,7 @@ export default {
           '100%': { transform: 'translateY(0)',    opacity: '1' },
         },
         pulseGold: {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(212,175,55,0.4)' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(201,168,76,0.4)' },
           '50%':      { boxShadow: '0 0 0 12px rgba(212,175,55,0)' },
         },
       },
