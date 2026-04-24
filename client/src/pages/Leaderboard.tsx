@@ -192,12 +192,6 @@ export default function Leaderboard() {
                       <p className="text-white/25 text-[10px]">response</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-gold font-bold text-sm flex items-center gap-1">
-                        <Flame size={11} />{row.streak}d
-                      </p>
-                      <p className="text-white/25 text-[10px]">streak</p>
-                    </div>
-                    <div className="text-center">
                       <p className="text-green-400 font-bold text-sm">{row.closedCount}</p>
                       <p className="text-white/25 text-[10px]">closed</p>
                     </div>
@@ -214,10 +208,16 @@ export default function Leaderboard() {
                     </div>
                   </div>
 
-                  {/* Score */}
+                  {/* Merit pts — primary rank driver */}
                   <div className="text-right flex-shrink-0">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border-2 border-gold/30 bg-gold/5">
-                      <span className="text-gold font-black text-sm">{row.score}</span>
+                    <div className={`inline-flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 ${
+                      row.meritTotal >= 0 ? 'border-gold/40 bg-gold/5' : 'border-red-500/30 bg-red-500/5'
+                    }`}>
+                      <Award size={10} className={row.meritTotal >= 0 ? 'text-gold/60' : 'text-red-400/60'} />
+                      <span className={`font-black text-sm leading-none ${row.meritTotal >= 0 ? 'text-gold' : 'text-red-400'}`}>
+                        {row.meritTotal >= 0 ? '+' : ''}{row.meritTotal}
+                      </span>
+                      <span className="text-white/20 text-[8px]">pts</span>
                     </div>
                   </div>
                 </div>
