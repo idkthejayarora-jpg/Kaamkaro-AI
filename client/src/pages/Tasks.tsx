@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Check, Trash2, X, Calendar, User, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Check, Trash2, X, Calendar, User, Clock, CheckCircle, Filter } from 'lucide-react';
 import { tasksAPI, staffAPI, customersAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Task, Staff, Customer } from '../types';
