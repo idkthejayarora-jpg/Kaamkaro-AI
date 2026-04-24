@@ -405,10 +405,10 @@ function useVoice(onFinalText: (text: string) => void) {
     if (!SR) return null;
     processedIdxRef.current = -1;
 
+    committedRef.current.clear();
+
     const rec = new SR();
     rec.lang            = VOICE_LANG;  // hi-IN handles Hindi + English + Hinglish
-    // continuous=true: one uninterrupted session — no mid-sentence restart flicker.
-    // Chrome delivers isFinal results for each pause; interim updates smoothly.
     rec.continuous      = true;
     rec.interimResults  = true;
     rec.maxAlternatives = 1;
@@ -416,19 +416,20 @@ function useVoice(onFinalText: (text: string) => void) {
     rec.onresult = (ev: SpeechRecognitionEvent) => {
       let fin = '', intr = '';
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        // Skip any index we already committed (Chrome occasionally re-fires old finals)
-        if (i <= processedIdxRef.current) continue;
         const r = ev.results[i];
         if (r.isFinal) {
-          fin += r[0].transcript + ' ';
-          processedIdxRef.current = i; // mark committed
+          const t = r[0].transcript.trim();
+          // Content-based dedup: Chrome sometimes replays the same final result
+          // across multiple onresult events; comparing transcript text is immune
+          // to the index reset bug that affects processedIdxRef approaches.
+          if (t && !committedRef.current.has(t)) {
+            committedRef.current.add(t);
+            fin += t + ' ';
+          }
         } else {
           intr += r[0].transcript;
         }
       }
-      // Interim: keep it raw — no transliteration here.
-      // Transliteration only runs on the final committed text (handleVoiceText).
-      // Raw interim is stable for both Hindi (Devanagari) and Hinglish (Roman/mixed).
       setInterimText(intr);
       if (fin.trim()) onFinalRef.current(fin.trim());
     };
