@@ -407,7 +407,9 @@ function useVoice(onFinalText: (text: string) => void) {
 
     const rec = new SR();
     rec.lang            = VOICE_LANG;  // hi-IN handles Hindi + English + Hinglish
-    rec.continuous      = false;
+    // continuous=true: one uninterrupted session — no mid-sentence restart flicker.
+    // Chrome delivers isFinal results for each pause; interim updates smoothly.
+    rec.continuous      = true;
     rec.interimResults  = true;
     rec.maxAlternatives = 1;
 
@@ -424,8 +426,10 @@ function useVoice(onFinalText: (text: string) => void) {
           intr += r[0].transcript;
         }
       }
+      // Interim: keep it raw — no transliteration here.
+      // Transliteration only runs on the final committed text (handleVoiceText).
+      // Raw interim is stable for both Hindi (Devanagari) and Hinglish (Roman/mixed).
       setInterimText(intr);
-      // Commit immediately — no accumRef needed, avoids all duplication
       if (fin.trim()) onFinalRef.current(fin.trim());
     };
 
