@@ -242,6 +242,7 @@ export interface LeaderboardRow {
   completedTasks: number;
   totalTasks: number;
   taskCompletionRate: number;
+  meritTotal: number;
 }
 
 export interface SentimentPoint {
