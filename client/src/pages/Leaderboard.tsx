@@ -103,7 +103,7 @@ export default function Leaderboard() {
             <span className="text-2xl font-black text-gold">#{myRow.displayRank}</span>
             <div className="flex-1">
               <p className="text-white font-semibold text-sm">Your ranking</p>
-              <p className="text-white/30 text-xs">{myRow.weekInteractions} interactions this week · {myRow.responseRate}% response rate</p>
+              <p className="text-white/30 text-xs">{myRow.weekInteractions} interactions · {myRow.responseRate}% response · {myRow.totalTasks > 0 ? `${myRow.taskCompletionRate}% tasks done` : 'no tasks yet'}</p>
             </div>
             <div className="text-right">
               <p className="text-gold font-bold">{myRow.score}</p>
