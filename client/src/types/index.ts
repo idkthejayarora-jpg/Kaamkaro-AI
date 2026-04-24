@@ -375,6 +375,28 @@ export interface MeritGoal {
   createdAt: string;
 }
 
+// ── Chat ──────────────────────────────────────────────────────────────────────
+export interface ChatConversation {
+  id: string;
+  type: 'direct' | 'group';
+  name: string | null;
+  members: string[];
+  createdBy: string;
+  createdAt: string;
+  lastMessageAt: string;
+  lastMessageText: string | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  text: string;
+  sentAt: string;
+}
+
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
 
 export interface PDFExtractedEntry {
