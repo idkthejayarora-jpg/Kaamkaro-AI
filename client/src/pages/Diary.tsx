@@ -556,7 +556,9 @@ export default function Diary() {
             </div>
             <span className="text-red-400 text-xs font-medium">Recording…</span>
             {voice.interimText && (
-              <span className="text-white/40 text-xs italic truncate">{voice.interimText}</span>
+              <span className="text-white/40 text-xs italic truncate">
+                {devanagariToRoman(voice.interimText)}
+              </span>
             )}
           </div>
         )}
