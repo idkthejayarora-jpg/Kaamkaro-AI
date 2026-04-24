@@ -4,7 +4,8 @@ import Sidebar, { MobileMenuButton } from './Sidebar';
 import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
 import { useSSE } from '../hooks/useSSE';
-import { X, Radio } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { X, Radio, CheckCheck } from 'lucide-react';
 
 // ── Admin broadcast chime — three ascending sine tones ────────────────────────
 function playChime() {
