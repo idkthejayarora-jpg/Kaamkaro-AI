@@ -466,9 +466,10 @@ export default function Diary() {
   const [error,      setError]      = useState('');
   const [loading,    setLoading]    = useState(true);
 
-  // Append voice text to existing content
+  // Append voice text to existing content — transliterate Devanagari → Roman first
   const handleVoiceText = (text: string) => {
-    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + text : text);
+    const roman = devanagariToRoman(text);
+    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + roman : roman);
   };
 
   const voice = useVoice(handleVoiceText);
