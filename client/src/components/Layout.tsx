@@ -31,27 +31,39 @@ function playChime() {
   } catch { /* audio not available */ }
 }
 
-interface BroadcastMsg { message: string; sentBy: string; }
+interface BroadcastMsg { id: string; message: string; sentBy: string; }
+
+function getReadBroadcasts(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem('kk_broadcasts_read') || '[]')); }
+  catch { return new Set(); }
+}
+function markBroadcastRead(id: string) {
+  const s = getReadBroadcasts();
+  s.add(id);
+  localStorage.setItem('kk_broadcasts_read', JSON.stringify([...s]));
+}
 
 export default function Layout() {
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [broadcast,   setBroadcast]   = useState<BroadcastMsg | null>(null);
+  const { isAdmin } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [broadcast,  setBroadcast]  = useState<BroadcastMsg | null>(null);
 
-  // Listen for admin broadcasts over SSE
+  // Admins never see the broadcast popup — they sent it and have their own alert system.
+  // Staff see it until they explicitly click "Mark as Read".
   useSSE({
     'admin:broadcast': (data) => {
+      if (isAdmin) return;
       const d = data as BroadcastMsg;
-      setBroadcast({ message: d.message, sentBy: d.sentBy });
+      // Skip if already acknowledged in a previous session
+      if (getReadBroadcasts().has(d.id)) return;
+      setBroadcast({ id: d.id, message: d.message, sentBy: d.sentBy });
       playChime();
     },
   });
 
-  // Auto-dismiss after 12 s; reset timer whenever a new broadcast arrives
-  useEffect(() => {
-    if (!broadcast) return;
-    const t = setTimeout(() => setBroadcast(null), 12000);
-    return () => clearTimeout(t);
-  }, [broadcast]);
+  // No auto-dismiss — broadcast stays until staff clicks "Mark as Read"
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _unused = useEffect;
 
   return (
     <div className="flex h-screen bg-dark-500 overflow-hidden">
