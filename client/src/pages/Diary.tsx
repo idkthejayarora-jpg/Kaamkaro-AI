@@ -469,11 +469,17 @@ function useVoice(onFinalText: (text: string) => void) {
 
 // ── Main Diary page ───────────────────────────────────────────────────────────
 export default function Diary() {
-  const [entries,    setEntries]    = useState<DiaryEntry[]>([]);
-  const [content,    setContent]    = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState('');
-  const [loading,    setLoading]    = useState(true);
+  const [entries,      setEntries]      = useState<DiaryEntry[]>([]);
+  const [content,      setContent]      = useState('');
+  const [submitting,   setSubmitting]   = useState(false);
+  const [error,        setError]        = useState('');
+  const [loading,      setLoading]      = useState(true);
+  const [staff,        setStaff]        = useState<Staff[]>([]);
+  // Admin filters
+  const [staffFilter,  setStaffFilter]  = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const { isAdmin } = useAuth();
 
   // Append voice text to existing content — transliterate Devanagari → Roman first
   const handleVoiceText = (text: string) => {
@@ -485,11 +491,16 @@ export default function Diary() {
 
   // Initial load
   useEffect(() => {
-    diaryAPI.list()
-      .then(d => { setEntries(d); })
-      .catch(() => { /* show empty state — not a crash */ })
-      .finally(() => setLoading(false));
-  }, []);
+    const tasks: Promise<unknown>[] = [
+      diaryAPI.list()
+        .then(d => setEntries(d))
+        .catch(() => {}),
+    ];
+    if (isAdmin) {
+      tasks.push(staffAPI.list().then(s => setStaff(s)).catch(() => {}));
+    }
+    Promise.all(tasks).finally(() => setLoading(false));
+  }, [isAdmin]);
 
   // Real-time updates via SSE (replaces 4-second polling)
   useSSE({
