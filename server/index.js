@@ -55,6 +55,7 @@ app.use('/api/templates',    require('./routes/templates'));
 app.use('/api/webhook',      require('./routes/webhook'));
 app.use('/api/events',       require('./routes/events'));
 app.use('/api/broadcast',    require('./routes/broadcast'));
+app.use('/api/chat',         require('./routes/chat'));
 app.use('/api/merits',       require('./routes/merits'));
 app.use('/api/attendance',   require('./routes/attendance'));
 app.use('/api/insights',     require('./routes/insights'));
