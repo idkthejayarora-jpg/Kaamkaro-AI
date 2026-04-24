@@ -101,9 +101,13 @@ export default function Tasks() {
   useEffect(() => { load(); }, []);
 
   const today = new Date().toISOString().split('T')[0];
-  const pending = tasks.filter(t => !t.completed);
-  const done    = tasks.filter(t => t.completed);
-  const shown   = filter === 'pending' ? pending : done;
+
+  const staffFiltered = isAdmin && staffFilter !== 'all'
+    ? tasks.filter(t => t.staffId === staffFilter)
+    : tasks;
+
+  const pending = staffFiltered.filter(t => !t.completed);
+  const done    = staffFiltered.filter(t => t.completed);
 
   const overdue  = pending.filter(t => t.dueDate < today);
   const dueToday = pending.filter(t => t.dueDate === today);
