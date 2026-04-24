@@ -688,20 +688,40 @@ export default function Diary() {
       {/* ── Entry history ─────────────────────────────────────────────────── */}
       {!loading && (
         <div>
-          <h2 className="text-white font-semibold mb-3">
-            Entry History
-            {entries.length > 0 && <span className="text-white/25 font-normal text-sm ml-2">({entries.length})</span>}
-          </h2>
-          {entries.length === 0 ? (
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white font-semibold">
+              Entry History
+              {filteredEntries.length > 0 && (
+                <span className="text-white/25 font-normal text-sm ml-2">
+                  ({filteredEntries.length}{filteredEntries.length !== entries.length ? ` of ${entries.length}` : ''})
+                </span>
+              )}
+            </h2>
+            {/* Clear filters badge */}
+            {isAdmin && (staffFilter !== 'all' || statusFilter !== 'all') && (
+              <button
+                onClick={() => { setStaffFilter('all'); setStatusFilter('all'); }}
+                className="text-xs text-gold/60 hover:text-gold transition-colors"
+              >
+                Clear filters ✕
+              </button>
+            )}
+          </div>
+          {filteredEntries.length === 0 ? (
             <div className="card text-center py-12">
-              <p className="text-white/25 text-sm">Koi entry nahi abhi. Upar likhen ya bolein.</p>
+              <p className="text-white/25 text-sm">
+                {staffFilter !== 'all' || statusFilter !== 'all'
+                  ? 'No entries match the selected filters.'
+                  : 'Koi entry nahi abhi. Upar likhen ya bolein.'}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {entries.map(e => (
+              {filteredEntries.map(e => (
                 <DiaryCard
                   key={e.id}
                   entry={e}
+                  showAuthor={isAdmin && staffFilter === 'all'}
                   onDelete={id => setEntries(prev => prev.filter(x => x.id !== id))}
                   onReanalyzed={updated => setEntries(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x))}
                 />
