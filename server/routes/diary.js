@@ -484,6 +484,10 @@ function devanagariToRoman(text) {
   const IND_VOWELS_1 = new Map([
     ['अ','a'],['आ','aa'],['इ','i'],['ई','ee'],['उ','u'],['ऊ','oo'],
     ['ऋ','ri'],['ए','e'],['ऐ','ai'],['ओ','o'],['औ','au'],
+    // ── English-loanword independent vowels ──
+    ['ऑ','o'],   // U+0911 short-O — ऑर्डर (order), ऑफिस (office)
+    ['ऎ','e'],   // U+090E short-E (rare)
+    ['ऒ','o'],   // U+0912 short-O alternate (rare)
   ]);
 
   const VIRAMA = '्'; // U+094D — halant, suppresses inherent 'a'
