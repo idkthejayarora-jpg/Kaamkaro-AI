@@ -178,6 +178,12 @@ html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
   animation: shimmer 1.5s infinite;
 }
 
+/* ── Broadcast progress bar ───────────────────────────────────────────────────*/
+@keyframes shrink-x {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
 /* ── Voice pulse animation ─────────────────────────────────────────────────────*/
 @keyframes voicePulse {
   0%, 100% { transform: scaleY(0.3); }
