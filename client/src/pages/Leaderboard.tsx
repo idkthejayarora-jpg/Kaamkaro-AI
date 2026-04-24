@@ -199,6 +199,17 @@ export default function Leaderboard() {
                       <p className="text-green-400 font-bold text-sm">{row.closedCount}</p>
                       <p className="text-white/25 text-[10px]">closed</p>
                     </div>
+                    <div className="text-center">
+                      <p className={`font-bold text-sm ${
+                        row.taskCompletionRate >= 80 ? 'text-green-400' :
+                        row.taskCompletionRate >= 50 ? 'text-yellow-400' :
+                        row.taskCompletionRate > 0   ? 'text-orange-400' :
+                        'text-white/30'
+                      }`}>
+                        {row.totalTasks > 0 ? `${row.taskCompletionRate}%` : '—'}
+                      </p>
+                      <p className="text-white/25 text-[10px]">tasks done</p>
+                    </div>
                   </div>
 
                   {/* Score */}
