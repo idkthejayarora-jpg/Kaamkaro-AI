@@ -1,8 +1,36 @@
 import { Outlet } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar, { MobileMenuButton } from './Sidebar';
 import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
+import { useSSE } from '../hooks/useSSE';
+import { X, Radio } from 'lucide-react';
+
+// ── Admin broadcast chime — three ascending sine tones ────────────────────────
+function playChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    const notes = [523.25, 659.25, 783.99]; // C5 → E5 → G5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type           = 'sine';
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * 0.2;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.28, t0 + 0.025);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.65);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.65);
+    });
+    setTimeout(() => ctx.close(), 2500);
+  } catch { /* audio not available */ }
+}
+
+interface BroadcastMsg { message: string; sentBy: string; }
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
