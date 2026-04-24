@@ -109,11 +109,10 @@ export default function Layout() {
       {/* Kamal floating AI assistant */}
       <KamalAssistant />
 
-      {/* ── Admin broadcast popup ──────────────────────────────────────── */}
-      {broadcast && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
+      {/* ── Broadcast popup — staff only, persists until "Mark as Read" ── */}
+      {!isAdmin && broadcast && (
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4 pointer-events-none">
           <div className="pointer-events-auto w-full max-w-sm animate-fade-in">
-            {/* Gold glow ring */}
             <div className="rounded-2xl shadow-2xl shadow-gold/20 border border-gold/40 bg-dark-300 overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3.5 bg-gold/5 border-b border-gold/20">
                 <div className="flex items-center gap-2">
@@ -124,6 +123,7 @@ export default function Layout() {
                 <button
                   onClick={() => setBroadcast(null)}
                   className="text-white/30 hover:text-white transition-colors p-0.5"
+                  title="Dismiss temporarily"
                 >
                   <X size={15} />
                 </button>
@@ -131,12 +131,17 @@ export default function Layout() {
               <div className="px-5 py-4">
                 <p className="text-white text-sm leading-relaxed">{broadcast.message}</p>
               </div>
-              {/* 12-second auto-dismiss progress bar */}
-              <div className="h-0.5 bg-dark-100">
-                <div
-                  className="h-full bg-gold/60 origin-left"
-                  style={{ animation: 'shrink-x 12s linear forwards' }}
-                />
+              <div className="px-5 pb-4">
+                <button
+                  onClick={() => {
+                    markBroadcastRead(broadcast.id);
+                    setBroadcast(null);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gold/10 border border-gold/20 text-gold text-sm font-medium hover:bg-gold/20 transition-colors"
+                >
+                  <CheckCheck size={14} />
+                  Mark as Read
+                </button>
               </div>
             </div>
           </div>
