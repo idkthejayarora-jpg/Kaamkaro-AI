@@ -474,6 +474,9 @@ function devanagariToRoman(text) {
     ['ा','a'],['ि','i'],['ी','ee'],['ु','u'],['ू','oo'],
     ['ृ','ri'],['े','e'],['ै','ai'],['ो','o'],['ौ','au'],
     ['ं','n'],['ः','h'],['ँ','n'],
+    // ── English-loanword matras (Chrome hi-IN uses these for transliterated words)
+    ['\u0949','o'],  // ॉ short-O — कॉल (call), डॉक्टर (doctor), ऑर्डर (order)
+    ['\u0945','e'],  // ॅ short-E — rare but present in some loanwords
   ]);
 
   // Independent vowels (check 2-char entries first)
