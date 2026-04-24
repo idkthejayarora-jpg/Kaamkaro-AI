@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Sidebar, { MobileMenuButton } from './Sidebar';
 import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
