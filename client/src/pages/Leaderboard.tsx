@@ -49,8 +49,10 @@ export default function Leaderboard() {
     } catch {}
   };
 
+  // Primary sort: merit points (all-time); secondary: period interactions
   const sorted = [...rows].sort((a, b) =>
-    period === 'week' ? b.weekInteractions - a.weekInteractions : b.monthInteractions - a.monthInteractions
+    b.meritTotal - a.meritTotal ||
+    (period === 'week' ? b.weekInteractions - a.weekInteractions : b.monthInteractions - a.monthInteractions)
   ).map((r, i) => ({ ...r, displayRank: i + 1 }));
 
   const myRow = sorted.find(r => r.id === user?.id);
