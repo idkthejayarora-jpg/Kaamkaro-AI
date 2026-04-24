@@ -719,8 +719,12 @@ export default function Customers() {
     return db - da;
   });
 
+  // Stage counts respect the active staff filter so pill numbers stay accurate
+  const staffFiltered = isAdmin && staffFilter !== 'all'
+    ? customers.filter(c => staffFilter === 'unassigned' ? !c.assignedTo : c.assignedTo === staffFilter)
+    : customers;
   const stageCounts = STAGES.reduce((acc, s) => {
-    acc[s.key] = customers.filter(c => c.status === s.key).length;
+    acc[s.key] = staffFiltered.filter(c => c.status === s.key).length;
     return acc;
   }, {} as Record<string, number>);
 
