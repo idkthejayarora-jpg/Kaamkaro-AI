@@ -182,6 +182,20 @@ export const attendanceAPI = {
     api.get('/attendance', { params }).then(r => r.data),
 };
 
+export const chatAPI = {
+  conversations: () => api.get('/chat/conversations').then(r => r.data),
+  createConversation: (data: { type: 'direct' | 'group'; name?: string; members: string[] }) =>
+    api.post('/chat/conversations', data).then(r => r.data),
+  updateConversation: (id: string, data: Record<string, unknown>) =>
+    api.patch(`/chat/conversations/${id}`, data).then(r => r.data),
+  deleteConversation: (id: string) =>
+    api.delete(`/chat/conversations/${id}`).then(r => r.data),
+  messages: (conversationId: string) =>
+    api.get(`/chat/conversations/${conversationId}/messages`).then(r => r.data),
+  sendMessage: (conversationId: string, text: string) =>
+    api.post(`/chat/conversations/${conversationId}/messages`, { text }).then(r => r.data),
+};
+
 export const pdfAPI = {
   list: () => api.get('/pdf').then(r => r.data),
   upload: (file: File) => {
