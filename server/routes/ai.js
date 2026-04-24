@@ -480,10 +480,13 @@ router.get('/sentiment-trend/:customerId', async (req, res) => {
 // ── GET /api/ai/leaderboard ────────────────────────────────────────────────────
 router.get('/leaderboard', async (req, res) => {
   try {
-    const staff        = await readDB('staff');
-    const interactions = await readDB('interactions');
-    const customers    = await readDB('customers');
-    const tasks        = await readDB('tasks');
+    const [staff, interactions, customers, tasks, merits] = await Promise.all([
+      readDB('staff'),
+      readDB('interactions'),
+      readDB('customers'),
+      readDB('tasks'),
+      readDB('merits').catch(() => []),
+    ]);
 
     // Respect a manual reset date if admin has reset the leaderboard
     let resetAt = 0;
@@ -496,20 +499,26 @@ router.get('/leaderboard', async (req, res) => {
     const weekAgo  = Math.max(Date.now() - 7  * 86400000, resetAt);
     const monthAgo = Math.max(Date.now() - 30 * 86400000, resetAt);
 
+    // Response rate: interactions involving productive actions (payment/parcel/billing context)
+    const RESPONSE_KEYWORDS = /payment|paid|billed|bill|invoice|parcel|delivery|advance|balance|collected|received|planned|follow.?up/i;
+
     const rows = staff.map(s => {
       const weekInteractions  = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekAgo);
       const monthInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > monthAgo);
-      const responded         = weekInteractions.filter(i => i.responded).length;
+      const responded         = weekInteractions.filter(i =>
+        i.responded || (i.notes && RESPONSE_KEYWORDS.test(i.notes))
+      ).length;
       const responseRate      = weekInteractions.length > 0 ? Math.round(responded / weekInteractions.length * 100) : 0;
       const closedCount       = customers.filter(c => c.assignedTo === s.id && c.status === 'closed' && new Date(c.updatedAt || c.createdAt).getTime() > resetAt).length;
       const completedTasks    = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
       const totalTasks        = tasks.filter(t => t.staffId === s.id).length;
       const taskCompletionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
+      const meritTotal        = merits.filter(m => m.staffId === s.id).reduce((sum, m) => sum + (m.points || 0), 0);
       const score = Math.round(
         (responseRate * 0.35) +
         (Math.min(weekInteractions.length / 20, 1) * 100 * 0.30) +
-        ((s.streakData?.currentStreak || 0) / 7 * 100 * 0.20) +
-        (Math.min(closedCount / 5, 1) * 100 * 0.15)
+        (Math.min(closedCount / 5, 1) * 100 * 0.20) +
+        (taskCompletionRate * 0.15)
       );
       return {
         id: s.id, name: s.name, avatar: s.avatar,
@@ -519,12 +528,14 @@ router.get('/leaderboard', async (req, res) => {
         responseRate,
         streak: s.streakData?.currentStreak || 0,
         longestStreak: s.streakData?.longestStreak || 0,
-        closedCount, completedTasks, totalTasks, taskCompletionRate, score,
+        closedCount, completedTasks, totalTasks, taskCompletionRate,
+        meritTotal, score,
         rank: 0,
       };
     });
 
-    rows.sort((a, b) => b.score - a.score);
+    // Primary sort: merit points; secondary: score
+    rows.sort((a, b) => b.meritTotal - a.meritTotal || b.score - a.score);
     rows.forEach((r, i) => { r.rank = i + 1; });
     res.json(rows);
   } catch (err) {
