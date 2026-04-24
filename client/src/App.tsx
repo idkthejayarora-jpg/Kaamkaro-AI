@@ -17,6 +17,7 @@ import FollowupQueue from './pages/FollowupQueue';
 import Goals from './pages/Goals';
 import Templates from './pages/Templates';
 import WebhookSetup from './pages/WebhookSetup';
+import Chat from './pages/Chat';
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
