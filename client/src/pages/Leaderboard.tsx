@@ -261,12 +261,13 @@ export default function Leaderboard() {
       {/* Score legend */}
       <div className="card border-dark-50/50">
         <p className="text-white/30 text-xs font-medium uppercase tracking-wider mb-3">How score is calculated</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
             { label: 'Response rate', weight: '35%', icon: Target },
             { label: 'Interactions', weight: '30%', icon: TrendingUp },
             { label: 'Streak', weight: '20%', icon: Flame },
             { label: 'Deals closed', weight: '15%', icon: CheckCircle },
+            { label: 'Task completion', weight: 'display', icon: CheckCircle },
           ].map(({ label, weight, icon: Icon }) => (
             <div key={label} className="flex items-center gap-2 p-2.5 rounded-lg bg-dark-200">
               <Icon size={12} className="text-gold flex-shrink-0" />
