@@ -1293,6 +1293,42 @@ async function processDiaryEntry(entryId, content, staffId, staffName) {
     }
   }
 
+  // ── General tasks: future-intent with NO specific customer resolved ──────────
+  // If the diary entry has no resolved customers but mentions a future action,
+  // create a staff-level task without a customer ID.
+  if (resolvedList.length === 0) {
+    const generalDetected = detectTasks(content, null);
+    for (const { title, dueDate } of generalDetected) {
+      // Replace placeholder "Customer" in title with nothing meaningful
+      const cleanTitle = title
+        .replace(/ with Customer$/, '')
+        .replace(/ — Customer$/, '')
+        .replace(/ for Customer$/, '')
+        .replace(/ Customer$/, '')
+        .trim();
+      const task = {
+        id: uuidv4(),
+        staffId,
+        customerId:   null,
+        customerName: null,
+        title:        cleanTitle || title,
+        notes:        `Auto-created from diary entry: "${content.slice(0, 120)}${content.length > 120 ? '…' : ''}"`,
+        dueDate,
+        completed:    false,
+        completedAt:  null,
+        createdAt:    now,
+      };
+      sideEffects.push(
+        insertOne('tasks', task)
+          .then(() => {
+            broadcast('task:created', task);
+            console.log(`[Diary NLP] 📋 General task: "${task.title}" due ${dueDate}`);
+          })
+          .catch(() => {})
+      );
+    }
+  }
+
   // ── Vendor interaction logging ────────────────────────────────────────────
   for (const { vendor } of resolvedVendors) {
     const vi = {
