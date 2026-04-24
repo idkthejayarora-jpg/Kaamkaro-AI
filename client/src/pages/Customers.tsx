@@ -848,14 +848,29 @@ export default function Customers() {
         ))}
       </div>
 
-      {/* Search + Tag filter */}
+      {/* Search + Tag + Staff filter */}
       <div className="space-y-2">
-        <div className="flex gap-3">
-          <div className="relative flex-1">
+        <div className="flex gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[160px]">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
             <input type="text" placeholder="Search by name, phone, or email…" value={search}
               onChange={e => setSearch(e.target.value)} className="input pl-10" />
           </div>
+          {/* Admin-only: filter by assigned staff */}
+          {isAdmin && staff.length > 0 && (
+            <div className="relative">
+              <Filter size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+              <select
+                className="input pl-8 w-auto"
+                value={staffFilter}
+                onChange={e => { setStaffFilter(e.target.value); setSelected([]); }}
+              >
+                <option value="all">All Staff</option>
+                <option value="unassigned">Unassigned</option>
+                {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          )}
           {allTags.length > 0 && (
             <div className="relative">
               <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
