@@ -365,21 +365,23 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
 }
 
 // ── Voice hook ────────────────────────────────────────────────────────────────
-// Content-based dedup via committedRef Set prevents Chrome's duplicate onresult
-// replays from causing repeated words. Fatal errors (not-allowed, audio-capture)
-// are never restarted; cleanup uses abort() not stop().
+// Uses continuous=false + auto-restart on onend so each Chrome session is fresh
+// (no replay bug). committedRef persists across restarts within one recording
+// session to prevent double-committing the same phrase on rapid-fire onresult.
+// interimText is NOT cleared on restart — prevents the "flicker" that made
+// the preview look jumpy between sentences.
 function useVoice(onFinalText: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interimText, setInterimText] = useState('');
   const [hasVoice,    setHasVoice]    = useState(false);
   const [voiceError,  setVoiceError]  = useState('');
 
-  const recRef          = useRef<ISpeechRecognition | null>(null);
-  const listeningRef    = useRef(false);
-  const stoppingRef     = useRef(false);
-  const fatalErrorRef   = useRef(false); // set on errors where restart would be pointless
-  const onFinalRef      = useRef(onFinalText);
-  const committedRef    = useRef<Set<string>>(new Set());
+  const recRef        = useRef<ISpeechRecognition | null>(null);
+  const listeningRef  = useRef(false);
+  const stoppingRef   = useRef(false);
+  const fatalErrorRef = useRef(false);
+  const onFinalRef    = useRef(onFinalText);
+  const committedRef  = useRef<Set<string>>(new Set());
 
   useEffect(() => { onFinalRef.current = onFinalText; }, [onFinalText]);
 
@@ -388,7 +390,6 @@ function useVoice(onFinalText: (text: string) => void) {
     setHasVoice(!!SR);
   }, []);
 
-  // Cleanup on unmount — always abort to free mic
   useEffect(() => {
     return () => {
       listeningRef.current = false;
@@ -399,14 +400,15 @@ function useVoice(onFinalText: (text: string) => void) {
 
   const getSR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
 
+  // buildRecognition does NOT clear committedRef — that only happens in start().
+  // This lets auto-restarts inherit the dedup state from the previous session.
   const buildRecognition = () => {
     const SR = getSR();
     if (!SR) return null;
-    committedRef.current.clear();
 
     const rec = new SR();
-    rec.lang            = VOICE_LANG;  // hi-IN handles Hindi + English + Hinglish
-    rec.continuous      = true;
+    rec.lang            = VOICE_LANG;
+    rec.continuous      = false; // fresh session per sentence — no Chrome replay bug
     rec.interimResults  = true;
     rec.maxAlternatives = 1;
 
@@ -416,9 +418,6 @@ function useVoice(onFinalText: (text: string) => void) {
         const r = ev.results[i];
         if (r.isFinal) {
           const t = r[0].transcript.trim();
-          // Content-based dedup: Chrome sometimes replays the same final result
-          // across multiple onresult events; comparing transcript text is immune
-          // to the index reset bug that affects processedIdxRef approaches.
           if (t && !committedRef.current.has(t)) {
             committedRef.current.add(t);
             fin += t + ' ';
@@ -427,21 +426,19 @@ function useVoice(onFinalText: (text: string) => void) {
           intr += r[0].transcript;
         }
       }
-      setInterimText(intr);
+      // Keep interim live; clear only when final arrives so there's no blank gap
+      if (fin) setInterimText('');
+      else if (intr) setInterimText(intr);
       if (fin.trim()) onFinalRef.current(fin.trim());
     };
 
     rec.onerror = (e: { error: string }) => {
       switch (e.error) {
         case 'no-speech':
-          // Silence — ignore, let onend restart as normal
-          break;
         case 'aborted':
-          // We triggered this — ignore
-          break;
+          break; // non-fatal — onend will auto-restart
         case 'not-allowed':
         case 'audio-capture':
-          // Fatal: mic denied or unavailable — stop and tell the user
           fatalErrorRef.current = true;
           listeningRef.current  = false;
           stoppingRef.current   = true;
@@ -454,7 +451,6 @@ function useVoice(onFinalText: (text: string) => void) {
           try { rec.abort(); } catch {}
           break;
         case 'network':
-          // Network error with speech API — stop and tell user
           fatalErrorRef.current = true;
           listeningRef.current  = false;
           stoppingRef.current   = true;
@@ -468,13 +464,26 @@ function useVoice(onFinalText: (text: string) => void) {
     };
 
     rec.onend = () => {
-      // With continuous=true, onend only fires when we call abort() / stop(),
-      // or on a fatal error. No restart needed.
-      setInterimText('');
       if (fatalErrorRef.current) {
         fatalErrorRef.current = false;
+        setInterimText('');
+        listeningRef.current = false;
+        setListening(false);
+        stoppingRef.current  = false;
         return;
       }
+      // Auto-restart if the user hasn't clicked stop — keeps listening continuously
+      // without the Chrome continuous-mode replay bug.
+      if (listeningRef.current && !stoppingRef.current) {
+        recRef.current = buildRecognition();
+        try { recRef.current?.start(); } catch {
+          listeningRef.current = false;
+          setListening(false);
+          setInterimText('');
+        }
+        return;
+      }
+      setInterimText('');
       listeningRef.current = false;
       setListening(false);
       stoppingRef.current  = false;
@@ -487,10 +496,11 @@ function useVoice(onFinalText: (text: string) => void) {
     if (!getSR() || listeningRef.current) return;
     setVoiceError('');
     fatalErrorRef.current = false;
-    stoppingRef.current  = false;
-    listeningRef.current = true;
+    stoppingRef.current   = false;
+    listeningRef.current  = true;
     setListening(true);
     setInterimText('');
+    committedRef.current.clear(); // fresh dedup set for this recording session
     recRef.current = buildRecognition();
     try { recRef.current?.start(); }
     catch { listeningRef.current = false; setListening(false); }
@@ -499,7 +509,6 @@ function useVoice(onFinalText: (text: string) => void) {
   const stop = () => {
     stoppingRef.current  = true;
     listeningRef.current = false;
-    // abort() immediately releases mic; stop() waits for final result (can hang)
     try { recRef.current?.abort(); } catch {}
   };
 
