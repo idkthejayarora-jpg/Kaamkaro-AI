@@ -49,24 +49,45 @@ const VOICE_LANG = 'hi-IN';
 // flushed before the next consonant, suppressed by VIRAMA (्), and dropped
 // silently at word boundaries (mimicking how Hindi is actually pronounced).
 const _CONS: Record<string, string> = {
+  // Core consonants
   'क':'k','ख':'kh','ग':'g','घ':'gh','ङ':'ng',
   'च':'ch','छ':'chh','ज':'j','झ':'jh','ञ':'ny',
   'ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n',
   'त':'t','थ':'th','द':'d','ध':'dh','न':'n',
-  'प':'p','फ':'f','ब':'b','भ':'bh','म':'m',
-  'य':'y','र':'r','ल':'l','व':'v','श':'sh',
-  'ष':'sh','स':'s','ह':'h','ळ':'l',
+  'प':'p','फ':'ph','ब':'b','भ':'bh','म':'m',
+  'य':'y','र':'r','ल':'l','ळ':'l','व':'v',
+  'श':'sh','ष':'sh','स':'s','ह':'h',
+  // Nukta variants — crucial for English loanwords
+  // Chrome uses these for sounds like "call" (कॉल), "file" (फ़ाइल), "zone" (ज़ोन)
+  'ड़':'r','ढ़':'rh','फ़':'f','ज़':'z','क़':'q','ख़':'kh','ग़':'gh',
 };
 const _MATR: Record<string, string> = {
-  '\u093E':'aa','\u093F':'i','\u0940':'ee',
-  '\u0941':'u', '\u0942':'oo','\u0943':'ri',
-  '\u0947':'e', '\u0948':'ai','\u094B':'o',
-  '\u094C':'au','\u0902':'n', '\u0903':'h',
-  '\u0901':'n',
+  // Standard matras
+  '\u093E':'a',   // ा  aa-matra  → single 'a' is more natural in Hinglish
+  '\u093F':'i',   // ि
+  '\u0940':'ee',  // ी
+  '\u0941':'u',   // ु
+  '\u0942':'oo',  // ू
+  '\u0943':'ri',  // ृ
+  '\u0947':'e',   // े
+  '\u0948':'ai',  // ै
+  '\u094B':'o',   // ो
+  '\u094C':'au',  // ौ
+  '\u0902':'n',   // ं  anusvara
+  '\u0903':'h',   // ः  visarga
+  '\u0901':'n',   // ँ  chandrabindu
+  // ── English-loanword matras (previously missing → caused garbled output) ──
+  '\u0949':'o',   // ॉ  short-O  e.g. कॉल → "kol" (call), डॉक्टर → "doctor"
+  '\u0945':'e',   // ॅ  short-E  rare but present in some loanwords
+  '\u0904':'a',   // ॄ  (rare, completeness)
 };
 const _IVOW: Record<string, string> = {
   'अ':'a','आ':'aa','इ':'i','ई':'ee','उ':'u','ऊ':'oo',
   'ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au',
+  // ── English-loanword independent vowels (previously missing) ──
+  'ऑ':'o',   // U+0911 — short-O, used for "order", "off", "officer" etc.
+  'ऎ':'e',   // U+090E — short-E (rare)
+  'ऒ':'o',   // U+0912 — short-O alternate (rare)
 };
 const _VIR = '\u094D'; // VIRAMA / halant
 
@@ -75,24 +96,54 @@ function devanagariToRoman(text: string): string {
   let out = '';
   let pA  = false; // pendingA — inherent vowel after a consonant
 
-  for (const ch of text) {
+  for (let i = 0; i < text.length; ) {
+    const ch   = text[i];
     const deva = /[\u0900-\u097F]/.test(ch);
 
     if (!deva) {
-      // Non-Devanagari (space / Latin / punctuation) — flush & pass through
-      if (pA) { out += 'a'; pA = false; }
-      out += ch;
-      continue;
+      // Non-Devanagari (space / Latin / punctuation) — at word boundary
+      // suppress the trailing inherent 'a' (final consonant in Hindi is silent)
+      if (/\s/.test(ch)) { pA = false; }
+      else if (pA) { out += 'a'; pA = false; }
+      out += ch; i++; continue;
     }
-    if (ch === _VIR)          { pA = false; continue; }          // halant → suppress
-    if (_MATR[ch] !== undefined){ pA = false; out += _MATR[ch]; continue; } // matra
-    if (_IVOW[ch] !== undefined){ if (pA) { out += 'a'; pA = false; } out += _IVOW[ch]; continue; }
-    if (_CONS[ch] !== undefined){ if (pA) { out += 'a'; pA = false; } out += _CONS[ch]; pA = true; continue; }
-    // Unknown Devanagari — flush & skip
+
+    // Virama — suppresses inherent 'a', silent
+    if (ch === _VIR) { pA = false; i++; continue; }
+
+    // ── Nukta two-char sequences (base consonant + ़ U+093C) ─────────────
+    // Must be checked before single-char consonant lookup
+    const nxt = text[i + 1];
+    if (nxt === '\u093C') {
+      const pair = ch + nxt;
+      if (_CONS[pair] !== undefined) {
+        if (pA) { out += 'a'; pA = false; }
+        out += _CONS[pair]; pA = true; i += 2; continue;
+      }
+    }
+
+    // Matra
+    if (_MATR[ch] !== undefined) { pA = false; out += _MATR[ch]; i++; continue; }
+
+    // Independent vowel
+    if (_IVOW[ch] !== undefined) {
+      if (pA) { out += 'a'; pA = false; }
+      out += _IVOW[ch]; i++; continue;
+    }
+
+    // Consonant
+    if (_CONS[ch] !== undefined) {
+      if (pA) { out += 'a'; pA = false; }
+      out += _CONS[ch]; pA = true; i++; continue;
+    }
+
+    // Unknown Devanagari codepoint — flush pending 'a' and skip
     if (pA) { out += 'a'; pA = false; }
+    i++;
   }
-  // Suppress trailing inherent 'a' (Hindi word-final consonants are silent)
-  return out;
+  // End of string: final consonant in Hindi is typically silent — do NOT flush pA
+
+  return out.replace(/\s+/g, ' ').trim();
 }
 
 const SENTIMENT_STYLES: Record<string, string> = {
