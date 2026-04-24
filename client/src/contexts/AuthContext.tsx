@@ -19,6 +19,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const updateUser = useCallback((u: User) => {
+    setUser(u);
+    localStorage.setItem('kk_user', JSON.stringify(u));
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('kk_token');
     localStorage.removeItem('kk_user');
