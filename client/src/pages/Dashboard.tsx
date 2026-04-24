@@ -543,12 +543,6 @@ function AdminDashboard() {
                         </span>
                       </td>
                       <td className="py-3 pr-4">
-                        <div className="flex items-center gap-1">
-                          <Flame size={12} className={s.streak > 0 ? 'text-gold' : 'text-white/20'} />
-                          <span className="text-white/60 text-xs">{s.streak}d</span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-1.5 bg-dark-200 rounded-full">
                             <div className="h-full bg-gold rounded-full" style={{ width: `${s.responseRate}%` }} />
