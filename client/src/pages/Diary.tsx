@@ -40,6 +40,59 @@ declare global {
 // Hinglish (mixed) automatically in this locale. No manual selection needed.
 const VOICE_LANG = 'hi-IN';
 
+// ── Devanagari → Hinglish (Roman) transliterator ─────────────────────────────
+// Chrome's hi-IN speech engine returns Devanagari script. This converts it to
+// a readable Roman/Hinglish form so staff can see their words as they speak.
+// Algorithm: iterate codepoints; consonants carry an inherent 'a' vowel that is
+// flushed before the next consonant, suppressed by VIRAMA (्), and dropped
+// silently at word boundaries (mimicking how Hindi is actually pronounced).
+const _CONS: Record<string, string> = {
+  'क':'k','ख':'kh','ग':'g','घ':'gh','ङ':'ng',
+  'च':'ch','छ':'chh','ज':'j','झ':'jh','ञ':'ny',
+  'ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n',
+  'त':'t','थ':'th','द':'d','ध':'dh','न':'n',
+  'प':'p','फ':'f','ब':'b','भ':'bh','म':'m',
+  'य':'y','र':'r','ल':'l','व':'v','श':'sh',
+  'ष':'sh','स':'s','ह':'h','ळ':'l',
+};
+const _MATR: Record<string, string> = {
+  '\u093E':'aa','\u093F':'i','\u0940':'ee',
+  '\u0941':'u', '\u0942':'oo','\u0943':'ri',
+  '\u0947':'e', '\u0948':'ai','\u094B':'o',
+  '\u094C':'au','\u0902':'n', '\u0903':'h',
+  '\u0901':'n',
+};
+const _IVOW: Record<string, string> = {
+  'अ':'a','आ':'aa','इ':'i','ई':'ee','उ':'u','ऊ':'oo',
+  'ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au',
+};
+const _VIR = '\u094D'; // VIRAMA / halant
+
+function devanagariToRoman(text: string): string {
+  if (!text || !/[\u0900-\u097F]/.test(text)) return text;
+  let out = '';
+  let pA  = false; // pendingA — inherent vowel after a consonant
+
+  for (const ch of text) {
+    const deva = /[\u0900-\u097F]/.test(ch);
+
+    if (!deva) {
+      // Non-Devanagari (space / Latin / punctuation) — flush & pass through
+      if (pA) { out += 'a'; pA = false; }
+      out += ch;
+      continue;
+    }
+    if (ch === _VIR)          { pA = false; continue; }          // halant → suppress
+    if (_MATR[ch] !== undefined){ pA = false; out += _MATR[ch]; continue; } // matra
+    if (_IVOW[ch] !== undefined){ if (pA) { out += 'a'; pA = false; } out += _IVOW[ch]; continue; }
+    if (_CONS[ch] !== undefined){ if (pA) { out += 'a'; pA = false; } out += _CONS[ch]; pA = true; continue; }
+    // Unknown Devanagari — flush & skip
+    if (pA) { out += 'a'; pA = false; }
+  }
+  // Suppress trailing inherent 'a' (Hindi word-final consonants are silent)
+  return out;
+}
+
 const SENTIMENT_STYLES: Record<string, string> = {
   positive: 'text-green-400 bg-green-500/10 border-green-500/20',
   neutral:  'text-white/40 bg-white/5 border-white/10',
