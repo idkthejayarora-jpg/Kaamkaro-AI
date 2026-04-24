@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (phone: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (u: User) => void;
   isAdmin: boolean;
 }
 
