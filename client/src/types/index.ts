@@ -11,6 +11,9 @@ export interface User {
   createdAt?: string;
   streakData?: StreakData;
   availability?: 'available' | 'on_call' | 'out_of_office';
+  attendanceStatus?: 'active' | 'inactive';
+  lastCheckinAt?: string;
+  lastCheckoutAt?: string;
 }
 
 export interface StreakData {

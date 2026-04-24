@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSSE } from '../hooks/useSSE';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
-  AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages, Building2,
+  AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages,
 } from 'lucide-react';
 import { diaryAPI } from '../lib/api';
 import type { DiaryEntry } from '../types';
@@ -40,85 +40,68 @@ declare global {
 // Hinglish (mixed) automatically in this locale. No manual selection needed.
 const VOICE_LANG = 'hi-IN';
 
-// ── Devanagari → Roman transliterator (with correct inherent-vowel handling) ──
-// Chrome hi-IN returns Devanagari: "मनीष जयपुर". Old code produced "Mneesh Jypur"
-// because it omitted the inherent 'a' every Devanagari consonant carries.
-// Rule: each consonant emits 'a' UNLESS followed by a matra, a virama (्), or
-// a word boundary (final consonant in Hindi names is typically silent).
-// Fast-path: returns unchanged if no Devanagari present.
+// ── Devanagari → Hinglish (Roman) transliterator ─────────────────────────────
+// Chrome's hi-IN speech engine returns Devanagari script. This converts it to
+// a readable Roman/Hinglish form so staff can see their words as they speak.
+// Algorithm: iterate codepoints; consonants carry an inherent 'a' vowel that is
+// flushed before the next consonant, suppressed by VIRAMA (्), and dropped
+// silently at word boundaries (mimicking how Hindi is actually pronounced).
+const _CONS: Record<string, string> = {
+  'क':'k','ख':'kh','ग':'g','घ':'gh','ङ':'ng',
+  'च':'ch','छ':'chh','ज':'j','झ':'jh','ञ':'ny',
+  'ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n',
+  'त':'t','थ':'th','द':'d','ध':'dh','न':'n',
+  'प':'p','फ':'f','ब':'b','भ':'bh','म':'m',
+  'य':'y','र':'r','ल':'l','व':'v','श':'sh',
+  'ष':'sh','स':'s','ह':'h','ळ':'l',
+};
+const _MATR: Record<string, string> = {
+  '\u093E':'aa','\u093F':'i','\u0940':'ee',
+  '\u0941':'u', '\u0942':'oo','\u0943':'ri',
+  '\u0947':'e', '\u0948':'ai','\u094B':'o',
+  '\u094C':'au','\u0902':'n', '\u0903':'h',
+  '\u0901':'n',
+};
+const _IVOW: Record<string, string> = {
+  'अ':'a','आ':'aa','इ':'i','ई':'ee','उ':'u','ऊ':'oo',
+  'ऋ':'ri','ए':'e','ऐ':'ai','ओ':'o','औ':'au',
+};
+const _VIR = '\u094D'; // VIRAMA / halant
+
 function devanagariToRoman(text: string): string {
-  if (!/[\u0900-\u097F]/.test(text)) return text;
+  if (!text || !/[\u0900-\u097F]/.test(text)) return text;
+  let out = '';
+  let pA  = false; // pendingA — inherent vowel after a consonant
 
-  const CONJUNCTS: [string, string][] = [['क्ष','ksh'],['त्र','tr'],['ज्ञ','gya']];
+  for (const ch of text) {
+    const deva = /[\u0900-\u097F]/.test(ch);
 
-  const CONSONANTS = new Map<string, string>([
-    ['क','k'],['ख','kh'],['ग','g'],['घ','gh'],['ङ','ng'],
-    ['च','ch'],['छ','chh'],['ज','j'],['झ','jh'],['ञ','ny'],
-    ['ट','t'],['ठ','th'],['ड','d'],['ढ','dh'],['ण','n'],
-    ['त','t'],['थ','th'],['द','d'],['ध','dh'],['न','n'],
-    ['प','p'],['फ','ph'],['ब','b'],['भ','bh'],['म','m'],
-    ['य','y'],['र','r'],['ल','l'],['ळ','l'],['व','v'],
-    ['श','sh'],['ष','sh'],['स','s'],['ह','h'],
-    ['ड़','r'],['ढ़','rh'],['फ़','f'],['ज़','z'],['क़','q'],['ख़','kh'],['ग़','gh'],
-  ]);
-
-  const MATRAS = new Map<string, string>([
-    ['ा','a'],['ि','i'],['ी','ee'],['ु','u'],['ू','oo'],
-    ['ृ','ri'],['े','e'],['ै','ai'],['ो','o'],['ौ','au'],
-    ['ं','n'],['ः','h'],['ँ','n'],
-  ]);
-
-  const IND2: [string, string][] = [['अं','an'],['अः','ah']];
-  const IND1 = new Map<string, string>([
-    ['अ','a'],['आ','aa'],['इ','i'],['ई','ee'],['उ','u'],['ऊ','oo'],
-    ['ऋ','ri'],['ए','e'],['ऐ','ai'],['ओ','o'],['औ','au'],
-  ]);
-
-  const VIRAMA = '्';
-  let result = '';
-  let i = 0;
-  let pendingA = false;
-  const flushA = () => { if (pendingA) { result += 'a'; pendingA = false; } };
-
-  while (i < text.length) {
-    if (text[i] === VIRAMA) { pendingA = false; i++; continue; }
-
-    let found = false;
-    for (const [src, tgt] of CONJUNCTS) {
-      if (text.startsWith(src, i)) { flushA(); result += tgt; pendingA = true; i += src.length; found = true; break; }
+    if (!deva) {
+      // Non-Devanagari (space / Latin / punctuation) — flush & pass through
+      if (pA) { out += 'a'; pA = false; }
+      out += ch;
+      continue;
     }
-    if (found) continue;
-
-    for (const [src, tgt] of CONSONANTS) {
-      if (src.length === 2 && text.startsWith(src, i)) { flushA(); result += tgt; pendingA = true; i += src.length; found = true; break; }
-    }
-    if (found) continue;
-
-    if (CONSONANTS.has(text[i])) { flushA(); result += CONSONANTS.get(text[i])!; pendingA = true; i++; continue; }
-    if (MATRAS.has(text[i]))     { pendingA = false; result += MATRAS.get(text[i])!; i++; continue; }
-
-    for (const [src, tgt] of IND2) {
-      if (text.startsWith(src, i)) { flushA(); result += tgt; pendingA = false; i += src.length; found = true; break; }
-    }
-    if (found) continue;
-    if (IND1.has(text[i])) { flushA(); result += IND1.get(text[i])!; pendingA = false; i++; continue; }
-
-    if (text[i] === '।' || text[i] === '॥') { pendingA = false; result += ' '; i++; continue; }
-
-    // Non-Devanagari: suppress trailing 'a' at word boundaries
-    if (/[\s.,!?;:()\-[\]{}]/.test(text[i])) { pendingA = false; }
-    else { flushA(); }
-    result += text[i]; i++;
+    if (ch === _VIR)          { pA = false; continue; }          // halant → suppress
+    if (_MATR[ch] !== undefined){ pA = false; out += _MATR[ch]; continue; } // matra
+    if (_IVOW[ch] !== undefined){ if (pA) { out += 'a'; pA = false; } out += _IVOW[ch]; continue; }
+    if (_CONS[ch] !== undefined){ if (pA) { out += 'a'; pA = false; } out += _CONS[ch]; pA = true; continue; }
+    // Unknown Devanagari — flush & skip
+    if (pA) { out += 'a'; pA = false; }
   }
-  // Trailing consonant inherent 'a' is intentionally NOT emitted (silent in Hindi names)
-
-  return result.replace(/\s+/g, ' ').trim();
+  // Suppress trailing inherent 'a' (Hindi word-final consonants are silent)
+  return out;
 }
 
 const SENTIMENT_STYLES: Record<string, string> = {
   positive: 'text-green-400 bg-green-500/10 border-green-500/20',
   neutral:  'text-white/40 bg-white/5 border-white/10',
   negative: 'text-red-400 bg-red-500/10 border-red-500/20',
+};
+const LANG_BADGE: Record<string, string> = {
+  hindi:    'हिं · Hindi',
+  english:  'EN · English',
+  hinglish: 'HG · Hinglish',
 };
 
 // ── Diary card ────────────────────────────────────────────────────────────────
@@ -127,34 +110,27 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
   onDelete: (id: string) => void;
   onReanalyzed: (updated: DiaryEntry) => void;
 }) {
-  const [expanded,    setExpanded]    = useState(entry.status === 'done' && entry.aiEntries.length > 0);
-  const [showOrig,    setShowOrig]    = useState(false);
-  const [deleting,    setDeleting]    = useState(false);
-  const [deleteError, setDeleteError] = useState('');
-  const [reanalyzing, setReanalyzing] = useState(false);
+  const [expanded,      setExpanded]      = useState(entry.status === 'done' && entry.aiEntries.length > 0);
+  const [showOrig,      setShowOrig]      = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+  const [deleteError,   setDeleteError]   = useState('');
+  const [reanalyzing,   setReanalyzing]   = useState(false);
 
-  // A translation exists and is meaningfully different from the raw entry
-  const hasTranslation = !!(
-    entry.translatedContent &&
-    entry.translatedContent.trim().length > 10 &&
-    entry.translatedContent.trim() !== entry.content.trim()
-  );
-
-  // Non-English entries that got translated
-  const wasTranslated = hasTranslation &&
-    entry.detectedLanguage &&
-    entry.detectedLanguage !== 'english';
+  const hasTranslation =
+    entry.translatedContent && entry.translatedContent.trim() !== entry.content.trim();
 
   const handleDelete = async () => {
     if (!confirm('Delete this diary entry? This cannot be undone.')) return;
-    setDeleting(true); setDeleteError('');
+    setDeleting(true);
+    setDeleteError('');
     try {
       await diaryAPI.delete(entry.id);
       onDelete(entry.id);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })
         ?.response?.data?.error || 'Delete failed — please try again.';
-      setDeleteError(msg); setDeleting(false);
+      setDeleteError(msg);
+      setDeleting(false);
     }
   };
 
@@ -163,12 +139,8 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
     try {
       const updated = await diaryAPI.reanalyze(entry.id);
       onReanalyzed(updated);
-    } catch { /* SSE will push the updated entry */ }
+    } catch { /* server will set status=processing; SSE will push the result */ }
     finally { setReanalyzing(false); }
-  };
-
-  const LANG_LABEL: Record<string, string> = {
-    hindi: 'Hindi', hinglish: 'Hinglish', english: 'English',
   };
 
   return (
@@ -176,8 +148,6 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
       {/* ── Header row ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-
-          {/* Meta row: date + badges */}
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="text-white/25 text-xs">
               {new Date(entry.createdAt).toLocaleDateString('en-IN', {
@@ -185,22 +155,12 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
                 hour: '2-digit', minute: '2-digit',
               })}
             </span>
-
-            {/* Language detected badge */}
             {entry.detectedLanguage && (
               <span className="badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
                 <Globe size={8} className="mr-0.5 inline" />
-                {LANG_LABEL[entry.detectedLanguage] ?? entry.detectedLanguage}
+                {LANG_BADGE[entry.detectedLanguage] ?? entry.detectedLanguage}
               </span>
             )}
-
-            {/* Summary badge — shown for non-English entries */}
-            {wasTranslated && (
-              <span className="badge bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">
-                <Languages size={8} className="mr-0.5 inline" /> Summarised
-              </span>
-            )}
-
             {entry.status === 'processing' && (
               <span className="badge badge-gold text-[10px] flex items-center gap-1">
                 <Clock size={9} className="animate-pulse" /> Analysing…
@@ -208,61 +168,32 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
             )}
             {entry.status === 'done' && (
               <span className="badge badge-green text-[10px]">
-                {entry.aiEntries.length} {entry.aiEntries.length === 1 ? 'customer' : 'customers'} extracted
+                {entry.aiEntries.length} {entry.aiEntries.length === 1 ? 'entry' : 'entries'} extracted
               </span>
             )}
             {entry.status === 'error' && (
-              <span className="badge badge-red text-[10px] flex items-center gap-1">
-                <AlertCircle size={9} /> Analysis failed
-              </span>
+              <span className="badge badge-red text-[10px]">AI error</span>
             )}
           </div>
 
-          {/* ── Content block ── */}
+          {/* Content — show translation by default, toggle to original */}
           {hasTranslation ? (
-            <div className="space-y-2">
-              {/* Original Hinglish/Hindi text — always visible as the primary preview */}
-              <div>
-                {wasTranslated && (
-                  <p className="text-purple-400/60 text-[10px] uppercase tracking-wider font-medium mb-1 flex items-center gap-1">
-                    <Globe size={9} /> {LANG_LABEL[entry.detectedLanguage ?? ''] ?? entry.detectedLanguage}
-                  </p>
-                )}
-                <p className="text-white/80 text-sm leading-relaxed">{entry.content}</p>
-              </div>
-
-              {/* English summary — collapsible, shown by default */}
-              {wasTranslated && (
-                <div className="border-t border-dark-50/40 pt-2">
-                  <button
-                    onClick={() => setShowOrig(s => !s)}
-                    className="flex items-center gap-1 text-blue-400/50 hover:text-blue-400/80 text-[10px] transition-colors mb-1"
-                  >
-                    <Languages size={9} />
-                    {showOrig ? 'Hide English summary' : 'Show English summary'}
-                  </button>
-                  {showOrig && (
-                    <p className="text-white/45 text-xs leading-relaxed italic">
-                      {entry.translatedContent}
-                    </p>
-                  )}
-                </div>
-              )}
+            <div>
+              <p className="text-white/60 text-sm leading-relaxed line-clamp-3">
+                {showOrig ? entry.content : entry.translatedContent}
+              </p>
+              <button
+                onClick={() => setShowOrig(s => !s)}
+                className="flex items-center gap-1 text-gold/50 hover:text-gold text-[10px] mt-1.5 transition-colors"
+              >
+                <Languages size={10} />
+                {showOrig ? 'Show translated' : 'Show original'}
+              </button>
             </div>
           ) : (
-            /* No translation — just show content (already English or still processing) */
-            <p className="text-white/60 text-sm leading-relaxed">
-              {entry.content}
-            </p>
+            <p className="text-white/60 text-sm leading-relaxed line-clamp-3">{entry.content}</p>
           )}
 
-          {/* Error reason */}
-          {entry.status === 'error' && entry.error && (
-            <div className="mt-2 flex items-start gap-2 bg-red-500/8 border border-red-500/20 rounded-lg px-3 py-2">
-              <AlertCircle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-red-300 text-xs leading-relaxed">{entry.error}</p>
-            </div>
-          )}
           {deleteError && (
             <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
               <AlertCircle size={11} />{deleteError}
@@ -280,21 +211,17 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
               {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
-          {/* Re-analyze — highlighted when failed so user knows to tap it */}
+          {/* Re-analyze — always available so staff can fix bad extractions */}
           <button
             onClick={handleReanalyze}
             disabled={reanalyzing || entry.status === 'processing'}
             title="Re-run AI analysis"
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border transition-all text-xs font-medium disabled:opacity-40 ${
-              entry.status === 'error'
-                ? 'border-gold/60 bg-gold/15 text-gold hover:bg-gold/25 hover:border-gold animate-pulse-slow'
-                : 'border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40'
-            }`}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40 transition-all text-xs font-medium disabled:opacity-40"
           >
             {reanalyzing
               ? <div className="w-3 h-3 border border-gold/40 border-t-gold rounded-full animate-spin" />
               : <RefreshCw size={11} />}
-            <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : entry.status === 'error' ? 'Retry AI' : 'Re-run'}</span>
+            <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : 'Re-run'}</span>
           </button>
           <button
             onClick={handleDelete}
@@ -329,11 +256,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed }: {
                   {e.spokenName && e.spokenName !== e.customerName && (
                     <span className="text-white/25 text-xs">(said: "{e.spokenName}")</span>
                   )}
-                  {e.isVendor ? (
-                    <span className="flex items-center gap-1 badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
-                      <Building2 size={9} /> Vendor
-                    </span>
-                  ) : e.isNewCustomer ? (
+                  {e.isNewCustomer ? (
                     <span className="flex items-center gap-1 badge bg-green-500/10 text-green-400 border-green-500/20 text-[10px]">
                       <UserPlus size={9} /> New customer added
                     </span>
@@ -438,7 +361,7 @@ function useVoice(onFinalText: (text: string) => void) {
           fin += r[0].transcript + ' ';
           processedIdxRef.current = i; // mark committed
         } else {
-          intr += devanagariToRoman(r[0].transcript);
+          intr += r[0].transcript;
         }
       }
       setInterimText(intr);
@@ -543,9 +466,7 @@ export default function Diary() {
   const [error,      setError]      = useState('');
   const [loading,    setLoading]    = useState(true);
 
-  // Append voice text to existing content.
-  // Transliterate Devanagari → Roman first so that hi-IN voice input
-  // is stored as readable Hinglish, not Hindi script.
+  // Append voice text to existing content — transliterate Devanagari → Roman first
   const handleVoiceText = (text: string) => {
     const roman = devanagariToRoman(text);
     setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + roman : roman);
@@ -635,7 +556,9 @@ export default function Diary() {
             </div>
             <span className="text-red-400 text-xs font-medium">Recording…</span>
             {voice.interimText && (
-              <span className="text-white/40 text-xs italic truncate">{voice.interimText}</span>
+              <span className="text-white/40 text-xs italic truncate">
+                {devanagariToRoman(voice.interimText)}
+              </span>
             )}
           </div>
         )}

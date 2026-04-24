@@ -54,9 +54,7 @@ app.use('/api/goals',        require('./routes/goals'));
 app.use('/api/templates',    require('./routes/templates'));
 app.use('/api/webhook',      require('./routes/webhook'));
 app.use('/api/events',       require('./routes/events'));
-app.use('/api/attendance',   require('./routes/attendance'));
-app.use('/api/merits',       require('./routes/merits'));
-app.use('/api/insights',     require('./routes/insights'));
+app.use('/api/broadcast',    require('./routes/broadcast'));
 
 // ── Static frontend serving ────────────────────────────────────────────────────
 // Serve React app whenever the dist folder exists — works on Railway regardless
@@ -110,7 +108,7 @@ async function seed() {
   }
 
   // Ensure all other collections exist (never overwrite existing data)
-  const collections = ['staff', 'customers', 'vendors', 'performance', 'interactions', 'tasks', 'diary', 'auditLog', 'goals', 'templates', 'broadcasts', 'attendance', 'vendorInteractions', 'config', 'merits', 'meritGoals'];
+  const collections = ['staff', 'customers', 'vendors', 'performance', 'interactions', 'tasks', 'diary', 'auditLog', 'goals', 'templates', 'broadcasts', 'merits', 'meritGoals', 'vendorInteractions', 'config'];
   for (const col of collections) {
     const filePath = path.join(dataDir, `${col}.json`);
     const exists = await fs.pathExists(filePath);
@@ -137,7 +135,7 @@ function startServer() {
   app.listen(PORT, () => {
     console.log(`\n🚀 Kaamkaro AI → http://localhost:${PORT}`);
     if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here') {
-      console.log(`🤖 Kamal AI   → active (claude-haiku-4-5)`);
+      console.log(`🤖 Kamal AI   → active (claude-sonnet-4-6)`);
     } else {
       console.log(`⚠️  Kamal AI   → NO API KEY — set ANTHROPIC_API_KEY in Railway env vars`);
       console.log(`   Diary analysis and Kamal AI chat will use fallback mode until key is set.\n`);

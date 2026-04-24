@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
+const { broadcast } = require('../utils/sse');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -13,6 +14,39 @@ router.get('/', async (req, res) => {
   try {
     const staff = await readDB('staff');
     res.json(staff.map(({ password: _, ...s }) => s));
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/staff/checkin — staff marks themselves active (must be before /:id)
+router.post('/checkin', async (req, res) => {
+  try {
+    const updated = await updateOne('staff', req.user.id, {
+      attendanceStatus: 'active',
+      availability:     'available',
+      lastCheckinAt:    new Date().toISOString(),
+    });
+    if (!updated) return res.status(404).json({ error: 'Not found' });
+    broadcast('staff:status-changed', { staffId: req.user.id, attendanceStatus: 'active' });
+    const { password: _, ...safe } = updated;
+    res.json(safe);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/staff/checkout — staff marks themselves inactive
+router.post('/checkout', async (req, res) => {
+  try {
+    const updated = await updateOne('staff', req.user.id, {
+      attendanceStatus: 'inactive',
+      lastCheckoutAt:   new Date().toISOString(),
+    });
+    if (!updated) return res.status(404).json({ error: 'Not found' });
+    broadcast('staff:status-changed', { staffId: req.user.id, attendanceStatus: 'inactive' });
+    const { password: _, ...safe } = updated;
+    res.json(safe);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

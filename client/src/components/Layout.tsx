@@ -1,111 +1,56 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar, { MobileMenuButton } from './Sidebar';
 import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
-import { tasksAPI } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
-import { CheckCircle, X, Calendar, AlertTriangle } from 'lucide-react';
-import type { Task } from '../types';
+import { useSSE } from '../hooks/useSSE';
+import { X, Radio } from 'lucide-react';
 
-// ── Task reminder popup shown once per session on login ───────────────────────
-function TaskReminderModal({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
-  const navigate  = useNavigate();
-  const today     = new Date().toISOString().split('T')[0];
-  const overdue   = tasks.filter(t => t.dueDate < today);
-  const dueToday  = tasks.filter(t => t.dueDate === today);
-
-  const go = () => { onClose(); navigate('/tasks'); };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in">
-      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
-          <div className="flex items-center gap-2">
-            {overdue.length > 0
-              ? <AlertTriangle size={16} className="text-red-400" />
-              : <Calendar size={16} className="text-gold" />}
-            <span className="text-white font-semibold text-sm">
-              {overdue.length > 0 ? 'Overdue Tasks' : 'Tasks Due Today'}
-            </span>
-          </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Task list */}
-        <div className="px-5 py-4 space-y-2 max-h-64 overflow-y-auto">
-          {overdue.length > 0 && (
-            <p className="text-red-400/70 text-[10px] uppercase tracking-wider font-medium mb-2">
-              {overdue.length} overdue
-            </p>
-          )}
-          {overdue.map(t => (
-            <div key={t.id} className="flex items-start gap-2 p-2.5 rounded-xl bg-red-500/8 border border-red-500/20">
-              <AlertTriangle size={11} className="text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-white text-xs font-medium leading-snug">{t.title}</p>
-                {t.customerName && <p className="text-white/30 text-[10px]">{t.customerName}</p>}
-                <p className="text-red-400/60 text-[10px]">Due: {new Date(t.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
-              </div>
-            </div>
-          ))}
-          {dueToday.length > 0 && (
-            <p className="text-gold/60 text-[10px] uppercase tracking-wider font-medium mt-3 mb-2">
-              {dueToday.length} due today
-            </p>
-          )}
-          {dueToday.map(t => (
-            <div key={t.id} className="flex items-start gap-2 p-2.5 rounded-xl bg-gold/5 border border-gold/20">
-              <Calendar size={11} className="text-gold flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-white text-xs font-medium leading-snug">{t.title}</p>
-                {t.customerName && <p className="text-white/30 text-[10px]">{t.customerName}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="flex gap-2 px-5 pb-5">
-          <button onClick={onClose} className="btn-ghost flex-1 text-sm py-2">Dismiss</button>
-          <button onClick={go} className="btn-primary flex-1 flex items-center justify-center gap-1.5 text-sm py-2">
-            <CheckCircle size={13} /> View Tasks
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+// ── Admin broadcast chime — three ascending sine tones ────────────────────────
+function playChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    const notes = [523.25, 659.25, 783.99]; // C5 → E5 → G5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type           = 'sine';
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * 0.2;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.28, t0 + 0.025);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.65);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.65);
+    });
+    setTimeout(() => ctx.close(), 2500);
+  } catch { /* audio not available */ }
 }
 
+interface BroadcastMsg { message: string; sentBy: string; }
+
 export default function Layout() {
-  const [mobileOpen,   setMobileOpen]   = useState(false);
-  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
-  const [showReminder, setShowReminder] = useState(false);
-  const { user } = useAuth();
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const [broadcast,   setBroadcast]   = useState<BroadcastMsg | null>(null);
 
-  // Show task reminder once per browser session (sessionStorage flag prevents re-show on navigation)
+  // Listen for admin broadcasts over SSE
+  useSSE({
+    'admin:broadcast': (data) => {
+      const d = data as BroadcastMsg;
+      setBroadcast({ message: d.message, sentBy: d.sentBy });
+      playChime();
+    },
+  });
+
+  // Auto-dismiss after 12 s; reset timer whenever a new broadcast arrives
   useEffect(() => {
-    if (!user) return;
-    const key = `kk_tasknotif_${user.id}`;
-    if (sessionStorage.getItem(key)) return; // already shown this session
-    sessionStorage.setItem(key, '1');
-
-    const today = new Date().toISOString().split('T')[0];
-    tasksAPI.list({ staffId: user.role === 'staff' ? user.id : undefined })
-      .then((tasks: Task[]) => {
-        const pending = tasks.filter(t =>
-          !t.completed && t.dueDate && t.dueDate <= today
-        );
-        if (pending.length > 0) {
-          setPendingTasks(pending);
-          setShowReminder(true);
-        }
-      })
-      .catch(() => {});
-  }, [user?.id]);
+    if (!broadcast) return;
+    const t = setTimeout(() => setBroadcast(null), 12000);
+    return () => clearTimeout(t);
+  }, [broadcast]);
 
   return (
     <div className="flex h-screen bg-dark-500 overflow-hidden">
@@ -141,12 +86,38 @@ export default function Layout() {
       {/* Kamal floating AI assistant */}
       <KamalAssistant />
 
-      {/* Task reminder modal — shown once per session if there are due/overdue tasks */}
-      {showReminder && (
-        <TaskReminderModal
-          tasks={pendingTasks}
-          onClose={() => setShowReminder(false)}
-        />
+      {/* ── Admin broadcast popup ──────────────────────────────────────── */}
+      {broadcast && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-sm animate-fade-in">
+            {/* Gold glow ring */}
+            <div className="rounded-2xl shadow-2xl shadow-gold/20 border border-gold/40 bg-dark-300 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 bg-gold/5 border-b border-gold/20">
+                <div className="flex items-center gap-2">
+                  <Radio size={14} className="text-gold animate-pulse" />
+                  <span className="text-gold text-sm font-semibold tracking-wide">Broadcast</span>
+                  <span className="text-white/30 text-xs">· from {broadcast.sentBy}</span>
+                </div>
+                <button
+                  onClick={() => setBroadcast(null)}
+                  className="text-white/30 hover:text-white transition-colors p-0.5"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-white text-sm leading-relaxed">{broadcast.message}</p>
+              </div>
+              {/* 12-second auto-dismiss progress bar */}
+              <div className="h-0.5 bg-dark-100">
+                <div
+                  className="h-full bg-gold/60 origin-left"
+                  style={{ animation: 'shrink-x 12s linear forwards' }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

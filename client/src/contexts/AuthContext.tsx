@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI, attendanceAPI } from '../lib/api';
+import { authAPI } from '../lib/api';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -7,7 +7,8 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (phone: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
+  updateUser: (u: User) => void;
   isAdmin: boolean;
 }
 
@@ -18,9 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(async () => {
-    // Record logout time BEFORE clearing the token (needs auth)
-    try { await attendanceAPI.logout(); } catch {}
+  const updateUser = useCallback((u: User) => {
+    setUser(u);
+    localStorage.setItem('kk_user', JSON.stringify(u));
+  }, []);
+
+  const logout = useCallback(() => {
     localStorage.removeItem('kk_token');
     localStorage.removeItem('kk_user');
     localStorage.removeItem('kk_notif_read');
@@ -85,13 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('kk_user', JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
-    // Record login time — fire and forget (non-blocking)
-    attendanceAPI.login().catch(() => {});
   };
 
   return (
     <AuthContext.Provider value={{
-      user, token, loading, login, logout,
+      user, token, loading, login, logout, updateUser,
       isAdmin: user?.role === 'admin',
     }}>
       {children}
