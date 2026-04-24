@@ -185,16 +185,42 @@ export default function Tasks() {
         </button>
       </div>
 
-      {/* Toggle */}
-      <div className="flex rounded-xl border border-dark-50 overflow-hidden w-fit">
-        {(['pending', 'done'] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`px-5 py-2 text-xs font-medium capitalize transition-colors ${
-              filter === f ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
-            }`}>
-            {f === 'pending' ? `Pending (${pending.length})` : `Done (${done.length})`}
-          </button>
-        ))}
+      {/* Toggle + staff filter */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex rounded-xl border border-dark-50 overflow-hidden w-fit">
+          {(['pending', 'done'] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-5 py-2 text-xs font-medium capitalize transition-colors ${
+                filter === f ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+              }`}>
+              {f === 'pending' ? `Pending (${pending.length})` : `Done (${done.length})`}
+            </button>
+          ))}
+        </div>
+
+        {isAdmin && staff.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Filter size={13} className="text-white/30" />
+            <select
+              value={staffFilter}
+              onChange={e => setStaffFilter(e.target.value)}
+              className="input py-1.5 text-xs pr-7 w-auto"
+            >
+              <option value="all">All Staff</option>
+              {staff.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            {staffFilter !== 'all' && (
+              <button
+                onClick={() => setStaffFilter('all')}
+                className="text-white/30 hover:text-white transition-colors"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {filter === 'pending' ? (
