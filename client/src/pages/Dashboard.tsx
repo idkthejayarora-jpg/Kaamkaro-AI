@@ -518,7 +518,7 @@ function AdminDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-dark-50">
-                  {['Staff', 'Merit Pts', 'Streak', 'Response Rate', 'Contacts'].map(h => (
+                  {['Staff', 'Merit Pts', 'Response Rate', 'Contacts'].map(h => (
                     <th key={h} className="text-left text-white/25 font-medium text-xs py-2 pr-4">{h}</th>
                   ))}
                 </tr>
