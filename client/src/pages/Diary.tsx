@@ -365,10 +365,9 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
 }
 
 // ── Voice hook ────────────────────────────────────────────────────────────────
-// Fixed: each isFinal committed once immediately. processedIdxRef prevents
-// Chrome's duplicate onresult events from causing repeated words.
-// Production: handles all SpeechRecognition error types; never restarts on
-// fatal errors (not-allowed, audio-capture); cleans up with abort() not stop().
+// Content-based dedup via committedRef Set prevents Chrome's duplicate onresult
+// replays from causing repeated words. Fatal errors (not-allowed, audio-capture)
+// are never restarted; cleanup uses abort() not stop().
 function useVoice(onFinalText: (text: string) => void) {
   const [listening,   setListening]   = useState(false);
   const [interimText, setInterimText] = useState('');
