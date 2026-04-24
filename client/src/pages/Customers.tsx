@@ -709,7 +709,9 @@ export default function Customers() {
       || c.phone.includes(search) || c.email.toLowerCase().includes(search.toLowerCase());
     const matchStage  = stageFilter === 'all' || c.status === stageFilter;
     const matchTag    = !tagFilter || (c.tags || []).includes(tagFilter);
-    return matchSearch && matchStage && matchTag;
+    const matchStaff  = !isAdmin || staffFilter === 'all'
+      || (staffFilter === 'unassigned' ? !c.assignedTo : c.assignedTo === staffFilter);
+    return matchSearch && matchStage && matchTag && matchStaff;
   }).sort((a, b) => {
     // Overdue first, then by health score descending
     const da = a.lastContact ? Date.now() - new Date(a.lastContact).getTime() : Infinity;
