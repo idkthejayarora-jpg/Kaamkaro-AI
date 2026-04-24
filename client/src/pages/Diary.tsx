@@ -3,9 +3,11 @@ import { useSSE } from '../hooks/useSSE';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
   AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages,
+  Filter, Users,
 } from 'lucide-react';
-import { diaryAPI } from '../lib/api';
-import type { DiaryEntry } from '../types';
+import { diaryAPI, staffAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
+import type { DiaryEntry, Staff } from '../types';
 
 // ── Web Speech API types (not always in TS DOM lib) ───────────────────────────
 interface SpeechRecognitionResult {
