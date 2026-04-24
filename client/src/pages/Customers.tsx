@@ -3,7 +3,7 @@ import {
   Plus, Search, Phone, Mail, X, Check, ChevronDown, ChevronUp,
   Upload, Clock, MessageSquare, Calendar, TrendingUp, TrendingDown,
   Minus, DollarSign, Trash2, Users, Tag, UserPlus, StickyNote, Send,
-  BookOpen,
+  BookOpen, Pencil,
 } from 'lucide-react';
 import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
