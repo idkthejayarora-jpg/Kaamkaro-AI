@@ -158,6 +158,12 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
                 hour: '2-digit', minute: '2-digit',
               })}
             </span>
+            {showAuthor && entry.staffName && (
+              <span className="badge bg-gold/10 text-gold border-gold/20 text-[10px]">
+                <Users size={8} className="mr-0.5 inline" />
+                {entry.staffName}
+              </span>
+            )}
             {entry.detectedLanguage && (
               <span className="badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
                 <Globe size={8} className="mr-0.5 inline" />
