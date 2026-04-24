@@ -1386,7 +1386,19 @@ ${vendorRef}
 
 Provide a complete, natural English translation of the ENTIRE diary entry (not a summary — full translation sentence by sentence), then extract all interactions.
 
-IMPORTANT: If a name matches a KNOWN VENDOR, set isVendor=true and fill matchedVendorId/matchedVendorName. Do NOT create new vendors — staff add vendors manually. Only create new customers for names that match neither list.
+━━━ CRITICAL NAMING RULES ━━━
+1. CITY IS PART OF THE NAME. Customer names ALWAYS include their city/location as a suffix.
+   Examples: "Bhumika Kolkata", "Manish Agra", "Mohit Lajpat Nagar", "Ansh Chauhan Delhi".
+   When you see "X [city] ko / ne / ka / se …" — the customer name is "X [city]".
+   NEVER strip the city and return just the first name.
+
+2. DB-FIRST. Before marking isNewCustomer=true, search KNOWN CUSTOMERS aggressively using
+   fuzzy/phonetic equivalence: ph≈f, bh≈b, kh≈k, aa≈a, ee≈i, oo≈u, v≈w.
+   If any known customer sounds similar or shares the first name + city, match them instead
+   of creating a duplicate. Only use isNewCustomer=true if no reasonable match exists.
+
+3. VENDOR CHECK. If a name matches a KNOWN VENDOR, set isVendor=true and fill
+   matchedVendorId/matchedVendorName. Do NOT create new vendors — staff add them manually.
 
 Respond ONLY with this JSON:
 {
