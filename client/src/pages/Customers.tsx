@@ -922,7 +922,51 @@ export default function Customers() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white font-semibold">{c.name}</p>
+                      {/* Inline name editor — admin only */}
+                      {isAdmin && editingNameId === c.id ? (
+                        <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                          <input
+                            autoFocus
+                            className="bg-dark-200 border border-gold/50 text-white font-semibold rounded-lg px-2 py-0.5 text-sm focus:outline-none focus:border-gold w-44"
+                            value={editNameValue}
+                            onChange={e => setEditNameValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleNameSave(c.id);
+                              if (e.key === 'Escape') { setEditingNameId(null); setEditNameValue(''); }
+                            }}
+                          />
+                          <button
+                            onClick={() => handleNameSave(c.id)}
+                            disabled={savingName || !editNameValue.trim()}
+                            className="text-green-400 hover:text-green-300 p-0.5 disabled:opacity-40"
+                            title="Save name"
+                          >
+                            {savingName
+                              ? <div className="w-3 h-3 border border-green-400/40 border-t-green-400 rounded-full animate-spin" />
+                              : <Check size={13} />}
+                          </button>
+                          <button
+                            onClick={() => { setEditingNameId(null); setEditNameValue(''); }}
+                            className="text-white/30 hover:text-white p-0.5"
+                            title="Cancel"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 group/name">
+                          <p className="text-white font-semibold">{c.name}</p>
+                          {isAdmin && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setEditingNameId(c.id); setEditNameValue(c.name); }}
+                              className="text-white/20 hover:text-gold transition-colors p-0.5 opacity-0 group-hover/name:opacity-100"
+                              title="Rename customer"
+                            >
+                              <Pencil size={11} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                       {stageBadge(c.status)}
                       {isOverdue && <span className="badge badge-red">Overdue</span>}
                       {(c.tags || []).map(t => <span key={t} className="badge badge-gold text-[10px]">{t}</span>)}
