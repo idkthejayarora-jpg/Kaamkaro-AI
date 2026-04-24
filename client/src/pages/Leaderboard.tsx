@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Flame, TrendingUp, CheckCircle, Target, Wifi, Phone, Home, RotateCcw } from 'lucide-react';
+import { Trophy, Flame, TrendingUp, CheckCircle, Target, Wifi, Phone, Home, RotateCcw, Award } from 'lucide-react';
 import { aiAPI, staffAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { LeaderboardRow } from '../types';
