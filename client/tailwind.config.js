@@ -5,17 +5,17 @@ export default {
     extend: {
       colors: {
         gold: {
-          DEFAULT: '#D4AF37',
+          DEFAULT: '#C9A84C',
           50:  '#FBF6E3',
-          100: '#F7EDCA',
-          200: '#EFDB95',
-          300: '#E8C85F',
-          400: '#E0B72A',
-          500: '#D4AF37',
-          600: '#B8961E',
-          700: '#8C7216',
-          800: '#604E0E',
-          900: '#342B06',
+          100: '#F5EACC',
+          200: '#EDD899',
+          300: '#E4C566',
+          400: '#DCB24F',
+          500: '#C9A84C',
+          600: '#A8872A',
+          700: '#7E6520',
+          800: '#544315',
+          900: '#2A210B',
         },
         dark: {
           DEFAULT: 'rgb(var(--color-dark) / <alpha-value>)',
