@@ -535,6 +535,13 @@ export default function Diary() {
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
 
+  // Admin filter: apply staff + status filters client-side
+  const filteredEntries = entries.filter(e => {
+    if (isAdmin && staffFilter !== 'all' && e.staffId !== staffFilter) return false;
+    if (statusFilter !== 'all' && e.status !== statusFilter) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
