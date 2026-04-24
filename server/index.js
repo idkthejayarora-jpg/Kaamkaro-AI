@@ -57,6 +57,8 @@ app.use('/api/events',       require('./routes/events'));
 app.use('/api/broadcast',    require('./routes/broadcast'));
 app.use('/api/merits',       require('./routes/merits'));
 app.use('/api/attendance',   require('./routes/attendance'));
+app.use('/api/insights',     require('./routes/insights'));
+app.use('/api/pdf',          require('./routes/pdf'));
 
 // ── Static frontend serving ────────────────────────────────────────────────────
 // Serve React app whenever the dist folder exists — works on Railway regardless
