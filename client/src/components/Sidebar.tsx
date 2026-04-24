@@ -17,6 +17,7 @@ const adminNav = [
   { to: '/vendors',         icon: Building2,       label: 'Vendors' },
   { to: '/tasks',           icon: ClipboardList,   label: 'Tasks' },
   { to: '/diary',           icon: BookOpen,        label: 'Diary' },
+  { to: '/chat',            icon: MessageSquare,   label: 'Chat' },
   { to: '/leaderboard',     icon: Trophy,          label: 'Leaderboard' },
   { to: '/followup',        icon: Clock,           label: 'Follow-up Queue' },
   { to: '/goals',           icon: Target,          label: 'Goals' },
