@@ -82,6 +82,7 @@ export default function Tasks() {
   const [staff, setStaff]       = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filter, setFilter]     = useState<'pending' | 'done'>('pending');
+  const [staffFilter, setStaffFilter] = useState<string>('all');
   const [showAdd, setShowAdd]   = useState(false);
   const [loading, setLoading]   = useState(true);
   const { isAdmin } = useAuth();
