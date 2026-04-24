@@ -62,8 +62,6 @@ export default function Layout() {
   });
 
   // No auto-dismiss — broadcast stays until staff clicks "Mark as Read"
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _unused = useEffect;
 
   return (
     <div className="flex h-screen bg-dark-500 overflow-hidden">
