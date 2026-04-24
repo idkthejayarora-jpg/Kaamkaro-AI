@@ -470,26 +470,16 @@ function useVoice(onFinalText: (text: string) => void) {
     };
 
     rec.onend = () => {
+      // With continuous=true, onend only fires when we call abort() / stop(),
+      // or on a fatal error. No restart needed.
       setInterimText('');
       if (fatalErrorRef.current) {
-        // Fatal error already handled in onerror — do not restart
         fatalErrorRef.current = false;
-        return;
-      }
-      if (listeningRef.current && !stoppingRef.current) {
-        // Unexpected stop — wait 200 ms to clear audio buffer, then restart
-        setTimeout(() => {
-          if (!listeningRef.current || stoppingRef.current) return;
-          try {
-            recRef.current = buildRecognition();
-            recRef.current?.start();
-          } catch { /* ignore DOMException if already running */ }
-        }, 200);
         return;
       }
       listeningRef.current = false;
       setListening(false);
-      stoppingRef.current = false;
+      stoppingRef.current  = false;
     };
 
     return rec;
