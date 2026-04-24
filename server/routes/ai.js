@@ -519,7 +519,7 @@ router.get('/leaderboard', async (req, res) => {
         responseRate,
         streak: s.streakData?.currentStreak || 0,
         longestStreak: s.streakData?.longestStreak || 0,
-        closedCount, completedTasks, score,
+        closedCount, completedTasks, totalTasks, taskCompletionRate, score,
         rank: 0,
       };
     });
