@@ -633,10 +633,11 @@ function extractNamesFromText(text) {
 
     if (locWords === 0) continue; // not a location token
 
-    // Look back up to 3 words for the name (stop at stop words or short words)
+    // Look back up to 4 words for the name (stop at stop words or short words)
+    // 4 allows "Bittoo Fashion House Chandigarh" (3 name tokens before city)
     // Numeric tokens (e.g. "1001") are allowed — they form part of the customer ID
     const nameTokens = [];
-    for (let k = i - 1; k >= 0 && i - k <= 3; k--) {
+    for (let k = i - 1; k >= 0 && i - k <= 4; k--) {
       const w = tokens[k];
       const isNumeric = /^\d+$/.test(w);
       if (FILLER.has(w)) break;
