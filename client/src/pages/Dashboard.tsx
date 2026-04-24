@@ -143,12 +143,6 @@ function AdminDashboard() {
     thisWeek: m.weekPts,
   }));
 
-  const streakChartData = staff.map(s => ({
-    name: s.name.split(' ')[0],
-    streak: s.streakData?.currentStreak || 0,
-    longest: s.streakData?.longestStreak || 0,
-  }));
-
   const taskRateData = staff.map(s => {
     const staffTasks = allTasks.filter(t => t.staffId === s.id);
     const completed = staffTasks.filter(t => t.completed).length;
