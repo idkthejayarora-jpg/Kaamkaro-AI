@@ -328,77 +328,40 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Streak + Task Rate charts ──────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Streak chart */}
-        <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-            <Flame size={14} className="text-gold" /> Current Streaks
-          </h3>
-          <p className="text-white/30 text-xs mb-4">Consecutive activity days</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={streakChartData} barSize={28}>
-              <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  const entry = streakChartData.find(d => d.name === label);
-                  return (
-                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-                      <p className="text-white/50 mb-1">{label}</p>
-                      <p className="text-gold font-semibold">Current: {entry?.streak}d</p>
-                      <p className="text-white/40">Longest: {entry?.longest}d</p>
-                    </div>
-                  );
-                }}
-                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
-              />
-              <Bar dataKey="streak" radius={[4, 4, 0, 0]}>
-                {streakChartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.streak >= 7 ? GOLD : entry.streak >= 3 ? '#f97316' : entry.streak > 0 ? '#60a5fa' : '#2A2A2A'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Task rate + Conversions chart */}
-        <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-            <TrendingUp size={14} className="text-gold" /> Task Rate & Conversions
-          </h3>
-          <p className="text-white/30 text-xs mb-4">% tasks completed · closures per staff</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
-              <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  return (
-                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-                      <p className="text-white/50 mb-1">{label}</p>
-                      {payload.map((p, i) => (
-                        <p key={i} style={{ color: p.fill as string }} className="font-semibold">
-                          {p.dataKey === 'taskRate' ? `Task completion: ${p.value}%` : `Conversions: ${p.value}`}
-                        </p>
-                      ))}
-                    </div>
-                  );
-                }}
-                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
-              />
-              <Bar dataKey="taskRate" fill="#60a5fa" fillOpacity={0.8} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="conversions" fill={GOLD} fillOpacity={0.85} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex items-center gap-4 mt-2 justify-end">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/30 text-[10px]">Task Rate %</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/85" /><span className="text-white/30 text-[10px]">Conversions</span></div>
-          </div>
+      {/* ── Task Rate & Conversions chart ─────────────────────────────────── */}
+      <div className="card">
+        <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+          <TrendingUp size={14} className="text-gold" /> Task Rate & Conversions
+        </h3>
+        <p className="text-white/30 text-xs mb-4">% tasks completed · closures per staff</p>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
+            <CartesianGrid vertical={false} stroke={DIM} />
+            <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
+                    <p className="text-white/50 mb-1">{label}</p>
+                    {payload.map((p, i) => (
+                      <p key={i} style={{ color: p.fill as string }} className="font-semibold">
+                        {p.dataKey === 'taskRate' ? `Task completion: ${p.value}%` : `Conversions: ${p.value}`}
+                      </p>
+                    ))}
+                  </div>
+                );
+              }}
+              cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+            />
+            <Bar dataKey="taskRate" fill="#60a5fa" fillOpacity={0.8} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="conversions" fill={GOLD} fillOpacity={0.85} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="flex items-center gap-4 mt-2 justify-end">
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/30 text-[10px]">Task Rate %</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/85" /><span className="text-white/30 text-[10px]">Conversions</span></div>
         </div>
       </div>
 
