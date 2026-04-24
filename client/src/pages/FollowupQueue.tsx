@@ -593,7 +593,7 @@ export default function FollowupQueue() {
     setLoading(true);
     try {
       const data = await insightsAPI.queue();
-      setQueue(data);
+      setQueue(Array.isArray(data) ? data : []);
     } catch { /* show empty */ }
     finally { setLoading(false); }
   }, []);
