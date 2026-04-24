@@ -380,7 +380,7 @@ function useVoice(onFinalText: (text: string) => void) {
   const stoppingRef     = useRef(false);
   const fatalErrorRef   = useRef(false); // set on errors where restart would be pointless
   const onFinalRef      = useRef(onFinalText);
-  const processedIdxRef = useRef(-1);
+  const committedRef    = useRef<Set<string>>(new Set());
 
   useEffect(() => { onFinalRef.current = onFinalText; }, [onFinalText]);
 

@@ -50,7 +50,16 @@
       "Bash(node -e \"const deps=require\\('./package.json'\\).dependencies; console.log\\(Object.keys\\(deps\\).sort\\(\\).join\\('\\\\n'\\)\\)\")",
       "Bash(npm --version)",
       "Bash(python3 -c ' *)",
-      "Bash(railway --version)"
+      "Bash(railway --version)",
+      "Bash(node -e \"require\\('canvas'\\)\")",
+      "Bash(node -e \"const { createCanvas } = require\\('canvas'\\); console.log\\('ok'\\)\")",
+      "Bash(npm list *)",
+      "Bash(python3 -c \"from PIL import Image; print\\('pillow ok'\\)\")",
+      "Bash(python3 -c \"import cairosvg; print\\('cairosvg ok'\\)\")",
+      "Bash(python3 -c \"import svglib; print\\('svglib ok'\\)\")",
+      "Bash(node -e \"const sharp=require\\('sharp'\\);console.log\\('sharp ok'\\)\")",
+      "Bash(sips --help)",
+      "Bash(sips -s format png \"/Users/jaigopalarora/Kaamkaro AI/client/public/favicon.svg\" --out /tmp/test-icon.png)"
     ]
   }
 }
