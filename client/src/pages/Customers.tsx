@@ -804,8 +804,19 @@ export default function Customers() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Customers</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <p className="text-white/30 text-sm">{customers.length} total</p>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <p className="text-white/30 text-sm">
+              {isAdmin && staffFilter !== 'all'
+                ? `${filtered.length} of ${customers.length} customers`
+                : `${customers.length} total`}
+            </p>
+            {isAdmin && staffFilter !== 'all' && (
+              <span className="badge bg-gold/10 text-gold border-gold/20 text-[10px]">
+                {staffFilter === 'unassigned'
+                  ? 'Unassigned'
+                  : staff.find(s => s.id === staffFilter)?.name || 'Staff'}
+              </span>
+            )}
             {pipelineValue > 0 && (
               <span className="flex items-center gap-1 text-gold text-sm">
                 <DollarSign size={12} />₹{pipelineValue.toLocaleString('en-IN')} pipeline
