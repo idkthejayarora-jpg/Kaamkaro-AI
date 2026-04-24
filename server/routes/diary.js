@@ -707,19 +707,23 @@ function extractNamesFromText(text) {
   //
   const ctxPatterns = [
     // Hindi postpositions — strongest signal in Hinglish: "rahul ne", "deepak ko", "priya se"
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ne|ko|se)\b/gi,
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,3})\s+(?:ne|ko|se)\b/gi,
+    // "mila X" / "mile X" — "aaj mila deepak se" captures "deepak"
+    /(?:mila|mile|milaa|milne|milke)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,3})/gi,
     // Action verbs before name: "called rahul", "met priya agra", "baat ki manish se"
-    /(?:called|met|meeting\s+with|visited|contacted|spoke(?:\s+with)?|talked(?:\s+to)?|baat\s+(?:ki|kiya|hui)|milne?|milaa?|mile?|milke|phoned|texted|messaged)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
+    /(?:called|met|meeting\s+with|visited|contacted|spoke(?:\s+with)?|talked(?:\s+to)?|baat\s+(?:ki|kiya|hui)|phoned|texted|messaged|milne?\s+gaya|milne?\s+aaya)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,3})/gi,
+    // "X ke saath" / "X ke paas" — "deepak ke saath meeting" → deepak
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,3})\s+ke\s+(?:saath|paas|yahan|wahan|office|dukaan|ghar)\b/gi,
     // Honorifics after name: "rahul ji", "sharma sahab", "mohit bhai"
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ji|sahab|saab|bhai|didi|madam)\b/gi,
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ji|sahab|saab|bhai|didi|madam|sir)\b/gi,
     // Possessive + business noun: "rahul ka order", "priya ki payment", "deepak ke kaam"
-    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam|maal|sample|visit|followup|follow)/gi,
+    /\b([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,3})\s+(?:ka|ki|ke)\s+(?:order|payment|bill|deal|number|phone|call|meeting|kaam|maal|sample|visit|followup|follow|invoice|quotation|parcel|delivery|advance|balance)/gi,
     // Title prefix
-    /(?:Mr|Mrs|Ms|Dr|Shri|Smt|Sri)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,})?)/gi,
+    /(?:Mr|Mrs|Ms|Dr|Shri|Smt|Sri)\.?\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
     // "customer/party/dealer X": "customer ramesh", "dealer sunil agra"
-    /(?:customer|client|party|buyer|prospect|dealer)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,2})/gi,
+    /(?:customer|client|party|buyer|prospect|dealer|party)\s+([a-zA-Z]{3,}(?:\s+[a-zA-Z]{3,}){0,3})/gi,
     // Extended verb phrases: "X ne maal liya", "X ko call kiya", "X ka invoice"
-    /\b([a-zA-Z]{4,}(?:\s+[a-zA-Z]{3,}){0,1})\s+(?:ne\s+(?:bataya|kaha|manga|diya|liya|bola|confirm|cancel|reject|call|maal|order)|ko\s+(?:diya|bheja|call|quote|maal|deliver)|ka\s+(?:maal|order|payment|bill|deal|invoice))/gi,
+    /\b([a-zA-Z]{4,}(?:\s+[a-zA-Z]{3,}){0,2})\s+(?:ne\s+(?:bataya|kaha|manga|diya|liya|bola|confirm|cancel|reject|call|maal|order|mana|agree|refuse)|ko\s+(?:diya|bheja|call|quote|maal|deliver|bataya|samjhaya)|ka\s+(?:maal|order|payment|bill|deal|invoice|parcel|advance))/gi,
   ];
 
   for (const pattern of ctxPatterns) {
