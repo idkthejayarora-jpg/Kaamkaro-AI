@@ -107,10 +107,11 @@ const LANG_BADGE: Record<string, string> = {
 };
 
 // ── Diary card ────────────────────────────────────────────────────────────────
-function DiaryCard({ entry, onDelete, onReanalyzed }: {
+function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
   entry: DiaryEntry;
   onDelete: (id: string) => void;
   onReanalyzed: (updated: DiaryEntry) => void;
+  showAuthor?: boolean;
 }) {
   const [expanded,      setExpanded]      = useState(entry.status === 'done' && entry.aiEntries.length > 0);
   const [showOrig,      setShowOrig]      = useState(false);
