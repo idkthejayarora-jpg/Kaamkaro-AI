@@ -503,6 +503,8 @@ router.get('/leaderboard', async (req, res) => {
       const responseRate      = weekInteractions.length > 0 ? Math.round(responded / weekInteractions.length * 100) : 0;
       const closedCount       = customers.filter(c => c.assignedTo === s.id && c.status === 'closed' && new Date(c.updatedAt || c.createdAt).getTime() > resetAt).length;
       const completedTasks    = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
+      const totalTasks        = tasks.filter(t => t.staffId === s.id).length;
+      const taskCompletionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
       const score = Math.round(
         (responseRate * 0.35) +
         (Math.min(weekInteractions.length / 20, 1) * 100 * 0.30) +
