@@ -22,12 +22,15 @@ const PIPELINE_COLORS: Record<string, string> = {
   negotiating: '#f97316', closed: '#4ade80', churned: '#f87171',
 };
 
-function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false }: {
+function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false, onClick }: {
   label: string; value: string | number; sub?: string;
-  icon: React.ElementType; accent?: boolean; alert?: boolean;
+  icon: React.ElementType; accent?: boolean; alert?: boolean; onClick?: () => void;
 }) {
   return (
-    <div className={`stat-card ${alert ? 'border-red-500/30' : ''}`}>
+    <div
+      className={`stat-card ${alert ? 'border-red-500/30' : ''} ${onClick ? 'cursor-pointer hover:border-gold/30 transition-colors' : ''}`}
+      onClick={onClick}
+    >
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
         alert ? 'bg-red-500/10 border border-red-500/20' :
         accent ? 'bg-gold/15 border border-gold/25' : 'bg-dark-200 border border-dark-50'
