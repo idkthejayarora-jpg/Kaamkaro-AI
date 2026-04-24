@@ -85,6 +85,40 @@ export default function Layout() {
 
       {/* Kamal floating AI assistant */}
       <KamalAssistant />
+
+      {/* ── Admin broadcast popup ──────────────────────────────────────── */}
+      {broadcast && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-sm animate-fade-in">
+            {/* Gold glow ring */}
+            <div className="rounded-2xl shadow-2xl shadow-gold/20 border border-gold/40 bg-dark-300 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 bg-gold/5 border-b border-gold/20">
+                <div className="flex items-center gap-2">
+                  <Radio size={14} className="text-gold animate-pulse" />
+                  <span className="text-gold text-sm font-semibold tracking-wide">Broadcast</span>
+                  <span className="text-white/30 text-xs">· from {broadcast.sentBy}</span>
+                </div>
+                <button
+                  onClick={() => setBroadcast(null)}
+                  className="text-white/30 hover:text-white transition-colors p-0.5"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-white text-sm leading-relaxed">{broadcast.message}</p>
+              </div>
+              {/* 12-second auto-dismiss progress bar */}
+              <div className="h-0.5 bg-dark-100">
+                <div
+                  className="h-full bg-gold/60 origin-left"
+                  style={{ animation: 'shrink-x 12s linear forwards' }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
