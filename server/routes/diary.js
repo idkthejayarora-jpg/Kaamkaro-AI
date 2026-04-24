@@ -1400,17 +1400,33 @@ Provide a complete, natural English translation of the ENTIRE diary entry (not a
 
 ━━━ CRITICAL NAMING RULES ━━━
 1. CITY IS PART OF THE NAME. Customer names ALWAYS include their city/location as a suffix.
-   Examples: "Bhumika Kolkata", "Manish Agra", "Mohit Lajpat Nagar", "Ansh Chauhan Delhi".
+   Examples: "Bhumika Kolkata", "Manish Agra", "Mohit Lajpat Nagar", "Ansh Chauhan Delhi",
+   "Bittoo Fashion Chandigarh", "Royal Traders Noida".
    When you see "X [city] ko / ne / ka / se …" — the customer name is "X [city]".
    NEVER strip the city and return just the first name.
 
-2. DB-FIRST. Before marking isNewCustomer=true, search KNOWN CUSTOMERS aggressively using
+2. BUSINESS NAMES. Customer names can include business-type words between the person name
+   and city: "Deepak Fashion Agra", "Vijay Traders Noida", "Ravi Brothers Delhi",
+   "Sunita Store Lajpat Nagar". Include ALL these words as part of the customer name.
+
+3. CONTEXT CLUES identify customers correctly:
+   - "X ne order diya" → X placed an order (X is customer)
+   - "X ko call kiya / X se mila" → called/met X (X is customer)
+   - "X ke saath meeting" → meeting with X (X is customer)
+   - "X ka maal aaya / X ka payment" → X's goods/payment (X is customer)
+   - "X ji / X sahab / X bhai" → honorific confirms X is a person name
+   Use ALL surrounding context to confirm who the customer is.
+
+4. DB-FIRST. Before marking isNewCustomer=true, search KNOWN CUSTOMERS aggressively using
    fuzzy/phonetic equivalence: ph≈f, bh≈b, kh≈k, aa≈a, ee≈i, oo≈u, v≈w.
    If any known customer sounds similar or shares the first name + city, match them instead
    of creating a duplicate. Only use isNewCustomer=true if no reasonable match exists.
 
-3. VENDOR CHECK. If a name matches a KNOWN VENDOR, set isVendor=true and fill
+5. VENDOR CHECK. If a name matches a KNOWN VENDOR, set isVendor=true and fill
    matchedVendorId/matchedVendorName. Do NOT create new vendors — staff add them manually.
+
+6. EXTRACT ALL CUSTOMERS. One diary entry may mention multiple customers. Extract each
+   person/business separately with their own entry object.
 
 Respond ONLY with this JSON:
 {
