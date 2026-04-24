@@ -673,6 +673,9 @@ export default function Customers() {
   const [selected, setSelected]         = useState<string[]>([]);
   const [quickCreating, setQuickCreating] = useState(false);
   const [deletingId, setDeletingId]     = useState<string | null>(null);
+  const [editingNameId,  setEditingNameId]  = useState<string | null>(null);
+  const [editNameValue,  setEditNameValue]  = useState('');
+  const [savingName,     setSavingName]     = useState(false);
   const { isAdmin, user } = useAuth();
 
   const load = async () => {
