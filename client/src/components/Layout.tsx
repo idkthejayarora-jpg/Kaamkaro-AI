@@ -33,7 +33,24 @@ function playChime() {
 interface BroadcastMsg { message: string; sentBy: string; }
 
 export default function Layout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const [broadcast,   setBroadcast]   = useState<BroadcastMsg | null>(null);
+
+  // Listen for admin broadcasts over SSE
+  useSSE({
+    'admin:broadcast': (data) => {
+      const d = data as BroadcastMsg;
+      setBroadcast({ message: d.message, sentBy: d.sentBy });
+      playChime();
+    },
+  });
+
+  // Auto-dismiss after 12 s; reset timer whenever a new broadcast arrives
+  useEffect(() => {
+    if (!broadcast) return;
+    const t = setTimeout(() => setBroadcast(null), 12000);
+    return () => clearTimeout(t);
+  }, [broadcast]);
 
   return (
     <div className="flex h-screen bg-dark-500 overflow-hidden">
