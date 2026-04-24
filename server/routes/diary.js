@@ -1507,7 +1507,7 @@ Respond ONLY with this JSON:
         resolved = allCustomers.find(c => c.id === e.matchedCustomerId) || null;
       }
       if (!resolved) {
-        resolved = fuzzyMatchCustomer(spokenName, [...allCustomers, ...aiNewCustomers]);
+        resolved = fuzzyMatchCustomer(spokenName, [...allCustomers, ...aiNewCustomers], 0.65);
       }
       if (!resolved) {
         // Last guard: check if this name is actually a vendor before creating a customer
