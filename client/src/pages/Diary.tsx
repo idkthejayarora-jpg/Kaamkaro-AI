@@ -403,8 +403,6 @@ function useVoice(onFinalText: (text: string) => void) {
   const buildRecognition = () => {
     const SR = getSR();
     if (!SR) return null;
-    processedIdxRef.current = -1;
-
     committedRef.current.clear();
 
     const rec = new SR();
