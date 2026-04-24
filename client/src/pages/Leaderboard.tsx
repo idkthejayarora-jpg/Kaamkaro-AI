@@ -221,11 +221,14 @@ export default function Leaderboard() {
                 </div>
 
                 {/* Mini stats bar on mobile */}
-                <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t border-dark-50/50 text-xs text-white/40">
+                <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t border-dark-50/50 text-xs text-white/40 flex-wrap">
                   <span className="flex items-center gap-1"><TrendingUp size={10} />{row.weekInteractions} interactions</span>
                   <span>{row.responseRate}% response</span>
                   <span className="flex items-center gap-1 text-gold/70"><Flame size={10} />{row.streak}d</span>
-                  <span className="flex items-center gap-1 text-green-400/70"><CheckCircle size={10} />{row.closedCount}</span>
+                  <span className="flex items-center gap-1 text-green-400/70"><CheckCircle size={10} />{row.closedCount} closed</span>
+                  {row.totalTasks > 0 && (
+                    <span className="flex items-center gap-1 text-blue-400/70"><Target size={10} />{row.taskCompletionRate}% tasks</span>
+                  )}
                 </div>
 
                 {/* Availability changer (admin only) */}
