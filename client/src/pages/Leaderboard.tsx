@@ -108,8 +108,8 @@ export default function Leaderboard() {
               <p className="text-white/30 text-xs">{myRow.weekInteractions} interactions · {myRow.responseRate}% response · {myRow.totalTasks > 0 ? `${myRow.taskCompletionRate}% tasks done` : 'no tasks yet'}</p>
             </div>
             <div className="text-right">
-              <p className="text-gold font-bold">{myRow.score}</p>
-              <p className="text-white/20 text-xs">score</p>
+              <p className={`font-bold text-lg ${myRow.meritTotal >= 0 ? 'text-gold' : 'text-red-400'}`}>{myRow.meritTotal >= 0 ? '+' : ''}{myRow.meritTotal}</p>
+              <p className="text-white/20 text-xs">merit pts</p>
             </div>
           </div>
           {/* Availability selector (self) */}
