@@ -4,9 +4,9 @@
 
 /* ── Color tokens (dark mode = default) ───────────────────────────────────────*/
 :root {
-  --gold: #D4AF37;
-  --gold-light: #E8C84B;
-  --gold-dark: #B8961E;
+  --gold: #C9A84C;
+  --gold-light: #DCB24F;
+  --gold-dark: #A8872A;
 
   /* Dark theme (default) */
   --color-dark:     10  10  10;   /* #0A0A0A */
