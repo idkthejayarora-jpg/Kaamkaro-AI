@@ -660,10 +660,14 @@ export default function Diary() {
                 />
               ))}
             </div>
-            <span className="text-red-400 text-xs font-medium">Recording…</span>
+            <span className="text-red-400 text-xs font-medium flex-shrink-0">Recording…</span>
             {voice.interimText && (
-              <span className="text-white/40 text-xs italic truncate">
-                {devanagariToRoman(voice.interimText)}
+              // Show raw interim — no transliteration here.
+              // Chrome's interim for Hindi is Devanagari (readable), for Hinglish
+              // it's mostly Roman already. Applying devanagariToRoman() to unstable
+              // interim was the main source of the "glitchy preview" issue.
+              <span className="text-white/35 text-xs italic truncate min-w-0">
+                {voice.interimText.slice(-80)}
               </span>
             )}
           </div>
