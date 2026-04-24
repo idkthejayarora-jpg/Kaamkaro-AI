@@ -240,6 +240,8 @@ export interface LeaderboardRow {
   longestStreak: number;
   closedCount: number;
   completedTasks: number;
+  totalTasks: number;
+  taskCompletionRate: number;
 }
 
 export interface SentimentPoint {
