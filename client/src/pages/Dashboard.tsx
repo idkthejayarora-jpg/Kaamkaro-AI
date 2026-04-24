@@ -133,7 +133,6 @@ function AdminDashboard() {
       name: s.name.split(' ')[0],
       responseRate: latest?.responseRate || 0,
       contacts: latest?.customersContacted || 0,
-      streak: s.streakData?.currentStreak || 0,
     };
   });
 
