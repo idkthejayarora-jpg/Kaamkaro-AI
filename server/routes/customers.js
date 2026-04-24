@@ -156,6 +156,8 @@ router.patch('/:id', async (req, res) => {
     const updates = { ...req.body };
     if (updates.status && !PIPELINE_STAGES.includes(updates.status)) delete updates.status;
     if (updates.dealValue !== undefined) updates.dealValue = Number(updates.dealValue) || null;
+    // Only admins may rename a customer
+    if (req.user.role === 'staff') delete updates.name;
     const updated = await updateOne('customers', req.params.id, updates);
     if (!updated) return res.status(404).json({ error: 'Not found' });
     broadcast('customer:updated', updated);
