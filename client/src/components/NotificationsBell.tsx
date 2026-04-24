@@ -1,115 +1,232 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, AlertTriangle, Clock, Flame, CheckCircle, X } from 'lucide-react';
-import { aiAPI } from '../lib/api';
+import {
+  Bell, AlertTriangle, Clock, Flame, CheckCircle, X,
+  UserMinus, Users, TrendingDown, ShieldAlert,
+} from 'lucide-react';
+import { aiAPI, customersAPI, staffAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useSSE } from '../hooks/useSSE';
 import { useNavigate } from 'react-router-dom';
 
 interface Notification {
   id: string;
-  type: 'overdue' | 'task_due' | 'streak_at_risk' | 'well_done';
+  type: 'overdue' | 'task_due' | 'streak_at_risk' | 'well_done' | 'critical' | 'warning' | 'info';
   title: string;
   body: string;
   href?: string;
   read: boolean;
 }
 
-const TYPE_CONFIG = {
-  overdue:       { icon: AlertTriangle, color: 'text-red-400',    bg: 'bg-red-500/10' },
-  task_due:      { icon: Clock,         color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  streak_at_risk:{ icon: Flame,         color: 'text-gold',       bg: 'bg-gold/10' },
-  well_done:     { icon: CheckCircle,   color: 'text-green-400',  bg: 'bg-green-500/10' },
+const TYPE_CONFIG: Record<Notification['type'], { icon: React.ElementType; color: string; bg: string }> = {
+  critical:       { icon: ShieldAlert,   color: 'text-red-400',    bg: 'bg-red-500/10'    },
+  overdue:        { icon: AlertTriangle, color: 'text-red-400',    bg: 'bg-red-500/10'    },
+  warning:        { icon: TrendingDown,  color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  task_due:       { icon: Clock,         color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  streak_at_risk: { icon: Flame,         color: 'text-gold',       bg: 'bg-gold/10'       },
+  info:           { icon: Users,         color: 'text-blue-400',   bg: 'bg-blue-500/10'   },
+  well_done:      { icon: CheckCircle,   color: 'text-green-400',  bg: 'bg-green-500/10'  },
 };
 
+const LS_KEY = 'kk_notif_read';
+function getReadSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
 export default function NotificationsBell() {
-  const [open, setOpen]       = useState(false);
-  const [notifs, setNotifs]   = useState<Notification[]>([]);
-  const [loaded, setLoaded]   = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const ref      = useRef<HTMLDivElement>(null);
+  const [open, setOpen]     = useState(false);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const { user, isAdmin }   = useAuth();
+  const navigate            = useNavigate();
+  const ref                 = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
   useEffect(() => {
-    if (!loaded) {
-      buildNotifications();
-      setLoaded(true);
-    }
+    if (!loaded) { buildNotifications(); setLoaded(true); }
   }, []);
+
+  // Admin: refresh critical alerts when customer or interaction changes via SSE
+  useSSE(isAdmin ? {
+    'customer:created': () => buildNotifications(),
+    'interaction:created': () => buildNotifications(),
+  } : {});
+
+  // ── Admin alert builder ──────────────────────────────────────────────────────
+  const buildAdminNotifications = async () => {
+    const [summary, customers, staff] = await Promise.all([
+      aiAPI.dashboardSummary(),
+      customersAPI.list().catch(() => []),
+      staffAPI.list().catch(() => []),
+    ]);
+
+    const now    = Date.now();
+    const items: Notification[] = [];
+
+    // Very overdue customers: 30+ days no contact (critical — red)
+    const veryOverdue = (customers as { lastContact: string | null; status: string }[]).filter(c => {
+      if (!c.lastContact || c.status === 'closed' || c.status === 'churned') return false;
+      return now - new Date(c.lastContact).getTime() > 30 * 86400000;
+    });
+    if (veryOverdue.length > 0) {
+      items.push({
+        id: 'very_overdue',
+        type: 'critical',
+        title: `${veryOverdue.length} customer${veryOverdue.length > 1 ? 's' : ''} silent 30+ days`,
+        body: 'These customers have had zero contact for over a month — at serious risk of churning.',
+        href: '/followup',
+        read: false,
+      });
+    }
+
+    // Churned customers
+    const churned = (customers as { status: string }[]).filter(c => c.status === 'churned');
+    if (churned.length > 0) {
+      items.push({
+        id: 'churned',
+        type: 'critical',
+        title: `${churned.length} churned customer${churned.length > 1 ? 's' : ''}`,
+        body: 'Customers marked as churned. Review and consider win-back actions.',
+        href: '/customers',
+        read: false,
+      });
+    }
+
+    // Standard overdue (7–30 days)
+    const stdOverdue = summary.overdueCount - veryOverdue.length;
+    if (stdOverdue > 0) {
+      items.push({
+        id: 'overdue_7',
+        type: 'overdue',
+        title: `${stdOverdue} customer${stdOverdue > 1 ? 's' : ''} overdue 7+ days`,
+        body: 'Assign follow-ups or escalate to prevent further churn.',
+        href: '/followup',
+        read: false,
+      });
+    }
+
+    // Inactive staff: no attendance check-in today AND no recent interaction
+    const today = new Date().toISOString().split('T')[0];
+    const inactiveStaff = (staff as { name: string; attendanceStatus?: string; lastCheckinAt?: string }[]).filter(s => {
+      if (s.attendanceStatus === 'active') return false;
+      if (!s.lastCheckinAt) return true;
+      return s.lastCheckinAt.split('T')[0] < today;
+    });
+    if (inactiveStaff.length > 0) {
+      items.push({
+        id: 'inactive_staff',
+        type: 'warning',
+        title: `${inactiveStaff.length} staff not checked in today`,
+        body: inactiveStaff.map(s => s.name).join(', '),
+        href: '/staff',
+        read: false,
+      });
+    }
+
+    // Overdue tasks across all staff
+    if (summary.dueTasksCount > 0) {
+      items.push({
+        id: 'tasks_overdue',
+        type: 'task_due',
+        title: `${summary.dueTasksCount} task${summary.dueTasksCount > 1 ? 's' : ''} due or overdue`,
+        body: 'Pending tasks across all staff. Use the staff filter in Tasks to review.',
+        href: '/tasks',
+        read: false,
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        id: 'admin_all_good',
+        type: 'well_done',
+        title: 'No critical alerts',
+        body: 'All customers are being followed up and staff are active.',
+        read: true,
+      });
+    }
+
+    // Merge with read state
+    const readSet = getReadSet();
+    setNotifs(items.map(n => ({ ...n, read: readSet.has(n.id) })));
+  };
+
+  // ── Staff alert builder ──────────────────────────────────────────────────────
+  const buildStaffNotifications = async () => {
+    const summary = await aiAPI.dashboardSummary();
+    const items: Notification[] = [];
+
+    if (summary.overdueCount > 0) {
+      items.push({
+        id: 'overdue',
+        type: 'overdue',
+        title: `${summary.overdueCount} overdue customer${summary.overdueCount > 1 ? 's' : ''}`,
+        body: `${summary.overdueCount} customer${summary.overdueCount > 1 ? 's haven\'t' : ' hasn\'t'} been contacted in 7+ days.`,
+        href: '/followup',
+        read: false,
+      });
+    }
+
+    if (summary.dueTasksCount > 0) {
+      items.push({
+        id: 'tasks',
+        type: 'task_due',
+        title: `${summary.dueTasksCount} task${summary.dueTasksCount > 1 ? 's' : ''} due`,
+        body: 'You have pending tasks due today or overdue.',
+        href: '/tasks',
+        read: false,
+      });
+    }
+
+    if (summary.topStreaker?.name === user?.name && summary.topStreaker.streak > 0) {
+      items.push({
+        id: 'streak',
+        type: 'well_done',
+        title: `${summary.topStreaker.streak}-day streak 🔥`,
+        body: 'You\'re top of the leaderboard! Keep it up.',
+        href: '/leaderboard',
+        read: false,
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        id: 'all_good',
+        type: 'well_done',
+        title: 'All caught up!',
+        body: 'No overdue customers or tasks. Great work.',
+        read: true,
+      });
+    }
+
+    const readSet = getReadSet();
+    setNotifs(items.map(n => ({ ...n, read: readSet.has(n.id) })));
+  };
 
   const buildNotifications = async () => {
     try {
-      const summary = await aiAPI.dashboardSummary();
-      const items: Notification[] = [];
-
-      if (summary.overdueCount > 0) {
-        items.push({
-          id: 'overdue',
-          type: 'overdue',
-          title: `${summary.overdueCount} overdue customers`,
-          body: `${summary.overdueCount} customer${summary.overdueCount > 1 ? 's haven\'t' : ' hasn\'t'} been contacted in 7+ days.`,
-          href: '/followup',
-          read: false,
-        });
-      }
-
-      if (summary.dueTasksCount > 0) {
-        items.push({
-          id: 'tasks',
-          type: 'task_due',
-          title: `${summary.dueTasksCount} task${summary.dueTasksCount > 1 ? 's' : ''} due`,
-          body: `You have pending tasks due today or overdue. Stay on top of them!`,
-          href: '/tasks',
-          read: false,
-        });
-      }
-
-      if (summary.topStreaker && summary.topStreaker.streak > 0) {
-        if (summary.topStreaker.name === user?.name) {
-          items.push({
-            id: 'streak',
-            type: 'well_done',
-            title: `${summary.topStreaker.streak}-day streak 🔥`,
-            body: 'You\'re on top of the leaderboard! Keep going.',
-            href: '/leaderboard',
-            read: false,
-          });
-        }
-      }
-
-      if (items.length === 0) {
-        items.push({
-          id: 'all_good',
-          type: 'well_done',
-          title: 'All caught up!',
-          body: 'No overdue customers or tasks. Great work.',
-          read: true,
-        });
-      }
-
-      // Merge with read state from localStorage
-      const readSet = new Set<string>(JSON.parse(localStorage.getItem('kk_notif_read') || '[]'));
-      setNotifs(items.map(n => ({ ...n, read: readSet.has(n.id) })));
-    } catch {}
+      if (isAdmin) await buildAdminNotifications();
+      else         await buildStaffNotifications();
+    } catch { /* non-fatal */ }
   };
 
   const markRead = (id: string) => {
-    const readSet = new Set<string>(JSON.parse(localStorage.getItem('kk_notif_read') || '[]'));
-    readSet.add(id);
-    localStorage.setItem('kk_notif_read', JSON.stringify([...readSet]));
+    const s = getReadSet();
+    s.add(id);
+    localStorage.setItem(LS_KEY, JSON.stringify([...s]));
     setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   const markAllRead = () => {
     const ids = notifs.map(n => n.id);
-    localStorage.setItem('kk_notif_read', JSON.stringify(ids));
+    localStorage.setItem(LS_KEY, JSON.stringify(ids));
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
   };
 
@@ -118,13 +235,15 @@ export default function NotificationsBell() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => { setOpen(o => !o); if (!loaded) { buildNotifications(); setLoaded(true); } }}
         className="relative p-2 rounded-lg hover:bg-dark-50 text-white/40 hover:text-white transition-colors"
-        title="Notifications"
+        title={isAdmin ? 'Critical alerts' : 'Notifications'}
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-[9px] font-bold text-white">
+          <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white ${
+            isAdmin && notifs.some(n => !n.read && n.type === 'critical') ? 'bg-red-500 animate-pulse' : 'bg-red-500'
+          }`}>
             {unread > 9 ? '9+' : unread}
           </span>
         )}
@@ -133,11 +252,18 @@ export default function NotificationsBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-dark-300 border border-dark-50 rounded-2xl shadow-2xl z-50 overflow-hidden animate-slide-up">
           <div className="flex items-center justify-between px-4 py-3 border-b border-dark-50">
-            <p className="text-white font-semibold text-sm">Notifications</p>
+            <div>
+              <p className="text-white font-semibold text-sm">
+                {isAdmin ? 'Critical Alerts' : 'Notifications'}
+              </p>
+              {isAdmin && (
+                <p className="text-white/30 text-[10px] mt-0.5">Admin-level alerts only</p>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               {unread > 0 && (
                 <button onClick={markAllRead} className="text-white/30 hover:text-white text-xs transition-colors">
-                  Mark all read
+                  Clear all
                 </button>
               )}
               <button onClick={() => setOpen(false)} className="text-white/30 hover:text-white">
@@ -148,7 +274,7 @@ export default function NotificationsBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifs.length === 0 ? (
-              <div className="py-8 text-center text-white/25 text-sm">No notifications</div>
+              <div className="py-8 text-center text-white/25 text-sm">No alerts</div>
             ) : (
               notifs.map(n => {
                 const cfg  = TYPE_CONFIG[n.type];
@@ -166,17 +292,30 @@ export default function NotificationsBell() {
                       <Icon size={13} className={cfg.color} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${n.read ? 'text-white/40' : 'text-white'}`}>{n.title}</p>
+                      <p className={`text-sm font-medium leading-snug ${n.read ? 'text-white/40' : 'text-white'}`}>{n.title}</p>
                       <p className="text-white/30 text-xs mt-0.5 leading-relaxed">{n.body}</p>
                     </div>
                     {!n.read && (
-                      <div className="w-2 h-2 rounded-full bg-gold flex-shrink-0 mt-1.5" />
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
+                        n.type === 'critical' ? 'bg-red-500' : 'bg-gold'
+                      }`} />
                     )}
                   </div>
                 );
               })
             )}
           </div>
+
+          {isAdmin && (
+            <div className="px-4 py-2.5 border-t border-dark-50 bg-dark-400/50">
+              <button
+                onClick={() => { buildNotifications(); }}
+                className="text-white/30 hover:text-white text-xs transition-colors"
+              >
+                Refresh alerts
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
