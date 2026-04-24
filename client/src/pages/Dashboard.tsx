@@ -84,8 +84,8 @@ function AdminDashboard() {
       const [s, sum, ms, mg, tasks] = await Promise.all([
         staffAPI.list().catch(() => [] as Staff[]),
         aiAPI.dashboardSummary().catch(() => null),
-        meritsAPI.summary().catch(() => [] as MeritSummary[]),
-        meritsAPI.goals().catch(() => [] as MeritGoal[]),
+        meritsAPI.summary().then(r => Array.isArray(r) ? r : []).catch(() => [] as MeritSummary[]),
+        meritsAPI.goals().then(r => Array.isArray(r) ? r : []).catch(() => [] as MeritGoal[]),
         tasksAPI.list().catch(() => [] as Task[]),
       ]);
       setStaff(s);
