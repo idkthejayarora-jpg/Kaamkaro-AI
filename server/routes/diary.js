@@ -938,22 +938,42 @@ function detectTasks(text, customerName) {
   const cName = customerName || 'Customer';
 
   const patterns = [
-    // Video call / call
+    // Video call
     { r: /video\s*call/i,                                      t: `Video call with ${cName}`    },
-    { r: /(?:call back|call karega|call karein|phone karega|ring karega|call karna)/i,
+    // Call / phone — English + Hindi future tense
+    { r: /(?:call back|call karega|call karein|phone karega|ring karega|call karna|call karunga|call karenge|call kar dunga|call kar denge|phone karunga|phone karenge|will call)\b/i,
                                                                t: `Call ${cName}`               },
-    // Meeting
-    { r: /(?:milenge|milna hai|meeting|appointment)/i,         t: `Meeting with ${cName}`       },
-    // Quote / proposal
-    { r: /(?:quote|proposal|estimate|quotation|bhejega|bhejna)/i, t: `Send quote to ${cName}`  },
+    // Meeting / visit
+    { r: /(?:milenge|milna hai|meeting|appointment|milne aaunga|milne ayenge|milne jaaunga|aaunga|aayenge|milne aate hain)\b/i,
+                                                               t: `Meeting with ${cName}`       },
+    // Quote / proposal / send
+    { r: /(?:quote|proposal|estimate|quotation|bhejunga|bhejenge|bhej dunga|bhej denge|bhejega|bhejna|will send|send karunga|send karenge)\b/i,
+                                                               t: `Send quote to ${cName}`  },
     // Payment follow-up
-    { r: /(?:payment|invoice|bill|baaki|dues)/i,               t: `Follow up on payment — ${cName}` },
-    // Delivery
-    { r: /(?:deliver|dispatch|courier|bhejna|mal bhejega)/i,   t: `Arrange delivery for ${cName}` },
+    { r: /(?:payment|invoice|bill|baaki|dues)\b/i,             t: `Follow up on payment — ${cName}` },
+    // Delivery / dispatch
+    { r: /(?:deliver|dispatch|courier|mal bhejega|maal bhejunga|maal bhejenge|will deliver|deliver karunga|deliver karenge)\b/i,
+                                                               t: `Arrange delivery for ${cName}` },
     // Follow up (generic)
     { r: /follow.?up/i,                                        t: `Follow up with ${cName}`    },
-    // Demo
-    { r: /(?:demo|demonstration|dikhana|dikhayenge)/i,         t: `Product demo for ${cName}`  },
+    // Demo / show
+    { r: /(?:demo|demonstration|dikhaunga|dikhayenge|dikhana hai|will show|show karunga|dikha dunga)\b/i,
+                                                               t: `Product demo for ${cName}`  },
+    // Will do / general future intent (Hindi)
+    { r: /(?:karunga|karenge|kar dunga|kar denge|karne wala|karne wali|karne waala)\b/i,
+                                                               t: `Follow up with ${cName}`    },
+    // Will tell / inform
+    { r: /(?:bolunga|bolenge|bol dunga|bol denge|bataunga|batayenge|bata dunga|inform karunga|will tell|will inform)\b/i,
+                                                               t: `Update ${cName}`             },
+    // Will give / share
+    { r: /(?:dega|degi|denge|de dunga|de denge|dunga|dungi|share karunga|will give|will share)\b/i,
+                                                               t: `Share details with ${cName}` },
+    // Check / verify
+    { r: /(?:check karunga|check karenge|check kar dunga|will check|dekhta hoon|dekhunga|dekhenge)\b/i,
+                                                               t: `Check and update ${cName}`   },
+    // Visit / go
+    { r: /(?:jaaunga|jayenge|ja dunga|ja denge|visit karunga|visit karenge|will visit|will go)\b/i,
+                                                               t: `Visit ${cName}`              },
   ];
 
   const tasks = [];
