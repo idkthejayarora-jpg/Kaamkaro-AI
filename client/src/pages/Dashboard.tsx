@@ -256,17 +256,16 @@ function AdminDashboard() {
       )}
 
       {/* ── Stats ─────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Staff"       value={summary?.totalStaff ?? 0}           icon={Users}      accent />
-        <StatCard label="Active Customers"  value={summary?.activeCustomers ?? 0}       icon={UserCheck}  accent />
-        <StatCard label="Avg Response Rate" value={`${summary?.avgResponseRate ?? 0}%`} icon={TrendingUp}
-          accent={Boolean(summary && summary.avgResponseRate >= 60)} />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard label="Total Staff"      value={summary?.totalStaff ?? 0}     icon={Users}       accent onClick={() => navigate('/staff')} />
+        <StatCard label="Active Customers" value={summary?.activeCustomers ?? 0} icon={UserCheck}   accent onClick={() => navigate('/customers')} />
         <StatCard
           label="Red Alerts"
           value={totalRedAlerts}
           sub={totalRedAlerts > 0 ? 'Needs attention' : 'All clear'}
           icon={AlertCircle}
           alert={totalRedAlerts > 0}
+          onClick={() => navigate('/followup')}
         />
       </div>
 
