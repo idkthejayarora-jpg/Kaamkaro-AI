@@ -835,10 +835,16 @@ function extractActionItemsLocal(text) {
     { r: /(?:schedule|appointment|milenge|milna\s+hai|meeting\s+karni|meeting\s+hai|milne\s+aana|milne\s+aaunga)/i, a: 'Schedule meeting' },
     // Payment follow-up
     { r: /(?:payment|invoice|bill|dues|baaki|paise\s+lene|paisa\s+lena|paisa\s+milega|payment\s+aana)/i, a: 'Follow up on payment' },
-    { r: /(?:demo|demonstration|presentation|dikhana)/i,     a: 'Arrange product demo'      },
-    { r: /(?:deliver|delivery|dispatch|courier|bhejna)/i,    a: 'Arrange delivery'          },
+    { r: /(?:demo|demonstration|presentation|dikhana|dikhaunga|dikha\s+dunga)/i, a: 'Arrange product demo' },
+    { r: /(?:deliver|delivery|dispatch|courier|bhejna|maal\s+bhejunga|parcel\s+bhejunga)/i, a: 'Arrange delivery' },
+    // Sample
+    { r: /(?:sample|sampal)\s+(?:bhejna|bhejunga|dena|dunga|bhejenge)/i, a: 'Send sample' },
+    // Collect advance
+    { r: /(?:advance|advanss)\s+(?:lena|lenge|milega|chahiye)/i,          a: 'Collect advance payment' },
+    // Parcel dispatch
+    { r: /(?:parcel|parsal)\s+(?:nikalana|nikalna|bhejna|bhejunga)/i,     a: 'Dispatch parcel' },
   ];
-  return [...new Set(checks.filter(c => c.r.test(text)).map(c => c.a))].slice(0, 4);
+  return [...new Set(checks.filter(c => c.r.test(text)).map(c => c.a))].slice(0, 5);
 }
 
 /**
