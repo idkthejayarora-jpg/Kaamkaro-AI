@@ -342,8 +342,82 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
         </div>
       </div>
 
+      {/* ── Edit panel ── */}
+      {editing && (
+        <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-4 animate-fade-in">
+          <p className="text-white/40 text-xs font-medium flex items-center gap-1.5">
+            <Pencil size={10} className="text-gold" /> Editing entry
+          </p>
+
+          {/* Editable content textarea */}
+          <textarea
+            value={editContent}
+            onChange={e => setEditContent(e.target.value)}
+            rows={4}
+            className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 resize-none leading-relaxed"
+          />
+
+          {/* Detected customer links — removable */}
+          {editEntries.length > 0 && (
+            <div>
+              <p className="text-white/30 text-xs mb-2">Detected customers — remove wrong ones:</p>
+              <div className="space-y-1.5">
+                {editEntries.map((e, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 bg-dark-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-5 h-5 rounded-full bg-dark-100 border border-dark-50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white/40 text-[9px] font-bold">{(e.customerName || '?')[0].toUpperCase()}</span>
+                      </div>
+                      <span className="text-white text-xs font-medium truncate">{e.customerName}</span>
+                      {e.spokenName && e.spokenName !== e.customerName && (
+                        <span className="text-white/25 text-[10px] truncate">← "{e.spokenName}"</span>
+                      )}
+                      {e.isNewCustomer && (
+                        <span className="badge bg-green-500/10 text-green-400 border-green-500/20 text-[9px] flex-shrink-0">new</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeAiEntry(i)}
+                      className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 p-0.5"
+                      title="Remove this customer link"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => handleSaveEdit(true)}
+              disabled={saving || !editContent.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gold text-black text-xs font-semibold hover:bg-gold/90 transition-colors disabled:opacity-40"
+            >
+              {saving ? <div className="w-3 h-3 border border-black/30 border-t-black rounded-full animate-spin" /> : <RefreshCw size={11} />}
+              Save & Re-analyze
+            </button>
+            <button
+              onClick={() => handleSaveEdit(false)}
+              disabled={saving || !editContent.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white text-xs font-medium hover:bg-white/10 transition-colors disabled:opacity-40"
+            >
+              <Check size={11} /> Save only
+            </button>
+            <button
+              onClick={() => { setEditing(false); setEditContent(entry.content); setEditEntries(entry.aiEntries); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white/30 hover:text-white text-xs transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── AI-extracted entries ── */}
-      {expanded && entry.aiEntries.length > 0 && (
+      {!editing && expanded && entry.aiEntries.length > 0 && (
         <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-3 animate-fade-in">
           <p className="text-white/30 text-xs flex items-center gap-1.5">
             <Sparkles size={11} className="text-gold" />
