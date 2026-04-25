@@ -41,14 +41,16 @@ function normalizeName(name) {
     .replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-// Generic honorific tokens (post-normalization) that must never be the sole match between two names.
-// e.g. "bhaiya" normalises → "baiya"; sharing this token alone should not count as a name match.
+// Generic honorific/connector tokens (post-normalization) that must never drive name matching.
+// e.g. "bhaiya" → "baiya"; "wale" → "wale" — sharing these alone ≠ same person.
 const GENERIC_HONORIFIC_NORM = new Set([
-  'baiya','baiyya','baia',    // bhaiya variants
-  'bai',                      // bhai
-  'didi','behan','bababi',    // sister/bhabhi
-  'saab','saib',              // sahab
+  'baiya','baiyya','baia',            // bhaiya variants
+  'bai',                              // bhai
+  'didi','behan','bababi',            // sister/bhabhi
+  'saab','saib',                      // sahab
   'uncle','aunty',
+  'wale','wali','waale','waali',      // locative connectors: "X wale bhaiya"
+  'vale','vali',
 ]);
 
 function nameSimilarity(a, b) {
@@ -57,11 +59,20 @@ function nameSimilarity(a, b) {
   if (na === nb) return 1.0;
   const ta = na.split(' ');
   const tb = nb.split(' ');
-  // Shared-token boost — but only when the shared token is NOT a generic honorific
-  const sharedMeaningful = ta.some(t =>
-    tb.some(t2 => t === t2 && t.length > 2 && !GENERIC_HONORIFIC_NORM.has(t))
-  );
-  if (sharedMeaningful) return 0.9;
+
+  // Meaningful tokens: length > 2, not a generic honorific/connector
+  const mta = ta.filter(t => t.length > 2 && !GENERIC_HONORIFIC_NORM.has(t));
+  const mtb = tb.filter(t => t.length > 2 && !GENERIC_HONORIFIC_NORM.has(t));
+  const sharedCount = mta.filter(t => mtb.includes(t)).length;
+  const minMeaningful = Math.min(mta.length, mtb.length);
+
+  // KEY RULE: a shared first name alone is NOT enough to call two people the same.
+  // "aman jadau" vs "aman canada" → sharedCount=1, minMeaningful=2 → no boost (correct).
+  // "aman jadau" vs "aman jadau wala" → sharedCount=2, minMeaningful=2 → boost (correct).
+  // "aman" vs "aman jadau" → minMeaningful=1, sharedCount=1 → small boost (correct).
+  if (minMeaningful >= 2 && sharedCount >= 2) return 0.9;
+  if (minMeaningful === 1 && sharedCount === 1) return 0.82; // single-token name match
+
   const dist = levenshtein(na, nb);
   const maxLen = Math.max(na.length, nb.length);
   return maxLen === 0 ? 1 : 1 - dist / maxLen;
