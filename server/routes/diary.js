@@ -1123,7 +1123,52 @@ function fuzzyMatchVendor(spokenName, vendors, threshold = 0.72) {
   return bestScore >= threshold ? best : null;
 }
 
-async function processDiaryEntry(entryId, content, staffId, staffName) {
+// ── Speech-to-text correction ─────────────────────────────────────────────────
+// Cleans up phonetic garbage from Chrome's hi-IN engine before anything touches
+// the DB. Uses Haiku for speed. Falls back to original on any error.
+async function correctSpeechText(raw) {
+  const client = getClient();
+  if (!client) return raw;
+  try {
+    const msg = await client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 600,
+      messages: [{
+        role: 'user',
+        content: `You are a speech-to-text correction assistant for Hinglish (Hindi+English mix) business diary entries.
+
+Fix ONLY obvious speech recognition errors. Rules:
+- Correct phonetically misspelled English words spoken in a Hindi sentence (e.g. "veediyo kol" → "video call", "karanee" → "karni", "delivari" → "delivery", "paymant" → "payment")
+- Correct misheard Hindi business words using surrounding context (e.g. "ka man liya" → "ka maal liya" when talking about stock/goods, "noeda" → "Noida", "noyda" → "Noida")
+- Preserve all person names, place names, and numbers exactly — do NOT invent or guess names
+- Do NOT rephrase, summarize, translate, or add any information
+- Do NOT change words that are already correct
+- Return ONLY the corrected text, no explanation, no quotes
+
+Text: ${raw}`,
+      }],
+    });
+    const fixed = msg.content[0]?.text?.trim();
+    if (fixed && fixed.length > 0) {
+      if (fixed !== raw) console.log(`[Diary STT] Corrected: "${raw}" → "${fixed}"`);
+      return fixed;
+    }
+  } catch (err) {
+    console.warn('[Diary STT] correction failed, using raw:', err.message);
+  }
+  return raw;
+}
+
+async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
+  // ── PHASE 0: Correct speech-to-text errors before anything hits the DB ──────
+  const content = await correctSpeechText(rawContent);
+  if (content !== rawContent) {
+    try {
+      await updateOne('diary', entryId, { content });
+      broadcast('diary:updated', { id: entryId, content });
+    } catch { /* non-fatal — NLP still runs on corrected content below */ }
+  }
+
   // ── PHASE 1: Local NLP — parallel reads ────────────────────────────────────
   let allCustomers = [];
   let allVendors   = [];
