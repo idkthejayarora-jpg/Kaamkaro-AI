@@ -1088,6 +1088,7 @@ export default function Customers() {
                         { key: 'timeline',  label: '📋 History' },
                         { key: 'notes',     label: '📝 Notes'   },
                         { key: 'sentiment', label: '📈 Sentiment' },
+                        ...(isAdmin ? [{ key: 'staff', label: '👥 Staff' }] : []),
                       ].map(({ key, label }) => (
                         <button key={key} onClick={() => setExpandedTab(key as typeof expandedTab)}
                           className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${
@@ -1100,6 +1101,13 @@ export default function Customers() {
                     {expandedTab === 'timeline'  && <CustomerTimeline customerId={c.id} isAdmin={isAdmin} />}
                     {expandedTab === 'notes'     && <CustomerNotes customerId={c.id} />}
                     {expandedTab === 'sentiment' && <SentimentTrendView customerId={c.id} />}
+                    {expandedTab === 'staff' && isAdmin && (
+                      <StaffAssignPanel
+                        customer={c}
+                        allStaff={staff}
+                        onChange={updated => setCustomers(prev => prev.map(x => x.id === updated.id ? updated : x))}
+                      />
+                    )}
                   </div>
                 )}
               </div>
