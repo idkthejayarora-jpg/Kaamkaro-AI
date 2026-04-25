@@ -118,6 +118,8 @@ export const diaryAPI = {
   get:  (id: string) => api.get(`/diary/${id}`).then(r => r.data),
   create: (content: string, date?: string) =>
     api.post('/diary', { content, date }).then(r => r.data),
+  edit: (id: string, data: { content?: string; aiEntries?: unknown[]; reanalyze?: boolean }) =>
+    api.patch(`/diary/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/diary/${id}`).then(r => r.data),
   reanalyze: (id: string) => api.post(`/diary/${id}/reanalyze`).then(r => r.data),
 };
