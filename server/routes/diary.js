@@ -81,25 +81,32 @@ function nameSimilarity(a, b) {
 function fuzzyMatchCustomer(spokenName, customers, threshold = 0.72) {
   if (!spokenName || !spokenName.trim()) return null;
   const normSpoken = normalizeName(spokenName);
+  const spokenTokens = normSpoken.split(' ').filter(t => t.length > 0);
   let best = null, bestScore = 0;
 
   for (const c of customers) {
     let score = nameSimilarity(spokenName, c.name);
 
-    // Boost: if extracted name is a prefix of the customer's name
-    // e.g. spoken "Bittoo" matches stored "Bittoo Fashion Chandigarh"
+    // Boost: extracted name is a prefix of the customer's name
+    // e.g. spoken "Bittoo" → stored "Bittoo Fashion Chandigarh"
     const normCust = normalizeName(c.name);
+    const custTokens = normCust.split(' ').filter(t => t.length > 0);
     if (normSpoken.length >= 4 && normCust.startsWith(normSpoken)) {
       score = Math.max(score, 0.85);
     }
-    // Boost: customer name starts with what was spoken (first word match)
-    const custFirstWord = normCust.split(' ')[0];
-    const spokenFirstWord = normSpoken.split(' ')[0];
-    if (spokenFirstWord.length >= 4 && custFirstWord === spokenFirstWord) {
+
+    const custFirstWord   = custTokens[0]   || '';
+    const spokenFirstWord = spokenTokens[0] || '';
+
+    // Boost: first-word match — ONLY when spoken is a single token.
+    // Guards against "aman canada" boosting against "aman jadau" on the shared "aman".
+    if (spokenTokens.length === 1 && spokenFirstWord.length >= 4 && custFirstWord === spokenFirstWord) {
       score = Math.max(score, 0.80);
     }
-    // Boost: spoken name contains customer's first word (e.g. "manish agra" contains "manish")
-    if (custFirstWord.length >= 4 && normSpoken.includes(custFirstWord)) {
+
+    // Boost: spoken name contains customer's first word — ONLY when customer is single-token.
+    // e.g. "manish agra wala" spoken, customer stored as just "manish".
+    if (custTokens.length === 1 && custFirstWord.length >= 4 && normSpoken.includes(custFirstWord)) {
       score = Math.max(score, 0.80);
     }
 
