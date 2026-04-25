@@ -631,8 +631,47 @@ function fixTranscript(raw: string): string {
   // quotation
   t = t.replace(/\bkote(?:shan|than)\b/gi, 'quotation');
 
+  // ── STAGE 5b (CATEGORY D continued): more business words ────────────────────
+  // balance
+  t = t.replace(/\bbal[ae]ns\b/gi,       'balance');
+  // order
+  t = t.replace(/\bordar\b/gi,           'order');
+  // feedback
+  t = t.replace(/\bfeeadback\b/gi,       'feedback');
+  // follow (when Chrome splits or garbles it before "up")
+  t = t.replace(/\bfoolow\b/gi,          'follow');
+  // paise (money)
+  t = t.replace(/\bpayse\b/gi,           'paise');
+  // report
+  t = t.replace(/\bripor[dt]\b/gi,       'report');
+  // stock
+  t = t.replace(/\bstaak\b/gi,           'stock');
+  // cheque / check
+  t = t.replace(/\bchek\b/gi,            'cheque');
+  t = t.replace(/\bchekka\b/gi,          'cheque');
+  // account
+  t = t.replace(/\bakaaunt\b/gi,         'account');
+  t = t.replace(/\bakaunt\b/gi,          'account');
+  // transfer
+  t = t.replace(/\btransefar\b/gi,       'transfer');
+  // problem
+  t = t.replace(/\bprabalam\b/gi,        'problem');
+  t = t.replace(/\bprobalam\b/gi,        'problem');
+
+  // ── STAGE 5c (CATEGORY C continued): more -ana infinitives ──────────────────
+  t = t.replace(/\bjodana\b/gi,          'jodna');
+  t = t.replace(/\bkhodana\b/gi,         'khodna');
+  t = t.replace(/\bchadana\b/gi,         'chadhna');    // upload / climb
+  t = t.replace(/\bsunana\b(?!\s+do)/gi, 'sunna');      // listen — "sunana do" = let them hear
+  t = t.replace(/\bbatana\b(?!\s+do)/gi, 'batana');     // keep — "batana do" = keep it (valid)
+  t = t.replace(/\bbhejwana\b/gi,        'bhijwana');   // get sent (causative)
+  t = t.replace(/\bmanawana\b/gi,        'manwana');    // get agreed
+
   // ── STAGE 6 (CATEGORY E): Date / time words ───────────────────────────────
   t = t.replace(/\bpara?so+n?s?\b/gi,   'parson');   // day after tomorrow
+  t = t.replace(/\bparsoo\b/gi,         'parson');
+  t = t.replace(/\bkal\s+tak\b/gi,      'kal tak');  // normalise no-op guard
+  t = t.replace(/\baaj\s+tak\b/gi,      'aaj tak');
 
   // ── STAGE 7 (CATEGORY F): City and place names ────────────────────────────
   t = t.replace(/\bnoeda\b/gi,          'Noida');
@@ -641,6 +680,7 @@ function fixTranscript(raw: string): string {
   t = t.replace(/\bgurg[oa]n\b/gi,      'Gurgaon');
   t = t.replace(/\bfar[ai]d?abad\b/gi,  'Faridabad');
   t = t.replace(/\bgaziabad\b/gi,       'Ghaziabad');
+  t = t.replace(/\bghaziyabad\b/gi,     'Ghaziabad');
   t = t.replace(/\bhaidrabad\b/gi,      'Hyderabad');
   t = t.replace(/\bhydrabad\b/gi,       'Hyderabad');
   t = t.replace(/\bahmadabad\b/gi,      'Ahmedabad');
@@ -653,6 +693,13 @@ function fixTranscript(raw: string): string {
   t = t.replace(/\bindor\b/gi,          'Indore');
   t = t.replace(/\bkanpoor\b/gi,        'Kanpur');
   t = t.replace(/\bjayp[ou][ou]r\b/gi,  'Jaipur');
+  t = t.replace(/\bnaagpur\b/gi,        'Nagpur');
+  t = t.replace(/\bnagpoor\b/gi,        'Nagpur');
+  t = t.replace(/\bsoorat\b/gi,         'Surat');
+  t = t.replace(/\bpuuna\b/gi,          'Pune');
+  t = t.replace(/\bpuna\b/gi,           'Pune');
+  t = t.replace(/\bdilli\b/gi,          'Delhi');
+  t = t.replace(/\bdehlee\b/gi,         'Delhi');
 
   return t;
 }
