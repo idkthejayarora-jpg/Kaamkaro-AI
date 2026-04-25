@@ -1004,20 +1004,18 @@ router.post('/:id/reanalyze', async (req, res) => {
 
 // ── Task / interaction helpers ─────────────────────────────────────────────────
 
-/**
- * Parse a due date from diary text.
- * Handles: kal/tomorrow, parso/day after tomorrow, aaj/today, next week, agle hafte.
- * Falls back to tomorrow if a future-intent phrase is found but no date is specified.
- */
-/**
- * If a computed due-date lands on Sunday (day 0), push it to Monday.
- * Sundays are non-working days; tasks should always fall Mon–Sat.
- */
+/** If a computed due-date lands on Sunday (day 0), push it to Monday. */
 function skipSunday(dt) {
   if (dt.getDay() === 0) dt.setDate(dt.getDate() + 1); // Sunday → Monday
   return dt;
 }
 
+/**
+ * Parse a due date from diary text.
+ * Handles: kal/tomorrow, parso/day after tomorrow, aaj/today, next week, agle hafte.
+ * Falls back to tomorrow if a future-intent phrase is found but no date is specified.
+ * Sundays are automatically bumped to Monday (non-working day).
+ */
 function parseDueDateFromText(text) {
   const lower = text.toLowerCase();
   const d = new Date();
