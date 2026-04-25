@@ -1594,61 +1594,70 @@ DIARY ENTRY:
 ${content.slice(0, 4000)}
 """
 
-KNOWN CUSTOMERS:
+KNOWN CUSTOMERS (search these FIRST before creating new ones):
 ${customerRef}
 
-KNOWN VENDORS (suppliers/manufacturers the team deals with — NOT customers):
+KNOWN VENDORS (suppliers/manufacturers — NOT customers):
 ${vendorRef}
 
-Provide a complete, natural English translation of the ENTIRE diary entry (not a summary — full translation sentence by sentence), then extract all interactions.
+Provide a complete natural English translation (sentence by sentence, not a summary), then extract all customer interactions.
 
-━━━ CRITICAL NAMING RULES ━━━
-1. CITY IS PART OF THE NAME. Customer names ALWAYS include their city/location as a suffix.
-   Examples: "Bhumika Kolkata", "Manish Agra", "Mohit Lajpat Nagar", "Ansh Chauhan Delhi",
-   "Bittoo Fashion Chandigarh", "Royal Traders Noida".
-   When you see "X [city] ko / ne / ka / se …" — the customer name is "X [city]".
+━━━ NAMING RULES (read carefully) ━━━
+1. CITY = PART OF NAME. Customer names always include their city/location.
+   "manish agra ne call kiya" → spokenName = "Manish Agra"
+   "bittoo fashion chandigarh ka order" → spokenName = "Bittoo Fashion Chandigarh"
+   "deepak ko maal bheja delhi" → spokenName = "Deepak Delhi"
    NEVER strip the city and return just the first name.
 
-2. BUSINESS NAMES. Customer names can include business-type words between the person name
-   and city: "Deepak Fashion Agra", "Vijay Traders Noida", "Ravi Brothers Delhi",
-   "Sunita Store Lajpat Nagar". Include ALL these words as part of the customer name.
+2. BUSINESS WORDS IN NAMES: Include trader/shop words.
+   "vijay traders noida", "ravi brothers delhi", "sunita store lajpat nagar" — ALL are valid customer names.
 
-3. CONTEXT CLUES identify customers correctly:
-   - "X ne order diya" → X placed an order (X is customer)
-   - "X ko call kiya / X se mila" → called/met X (X is customer)
-   - "X ke saath meeting" → meeting with X (X is customer)
-   - "X ka maal aaya / X ka payment" → X's goods/payment (X is customer)
-   - "X ji / X sahab / X bhai" → honorific confirms X is a person name
-   Use ALL surrounding context to confirm who the customer is.
+3. DIFFERENT PEOPLE WITH SAME FIRST NAME = DIFFERENT CUSTOMERS.
+   "aman jadau" and "aman canada" are TWO different customers even though both start with "aman".
+   Match by full name + city, not just first name.
 
-4. DB-FIRST. Before marking isNewCustomer=true, search KNOWN CUSTOMERS aggressively using
-   fuzzy/phonetic equivalence: ph≈f, bh≈b, kh≈k, aa≈a, ee≈i, oo≈u, v≈w.
-   If any known customer sounds similar or shares the first name + city, match them instead
-   of creating a duplicate. Only use isNewCustomer=true if no reasonable match exists.
+4. HINGLISH CONTEXT CLUES — all of these mean the person is a customer:
+   "X ne order diya / maal liya / call kiya / confirm kiya"
+   "X ko maal bheja / call kiya / quote diya"
+   "X se mila / baat hui / payment li"
+   "X ka payment / order / maal / parcel / invoice"
+   "X ke saath meeting / baat / deal"
+   "X ji / X sahab / X bhai / X didi" (honorific = person name)
 
-5. VENDOR CHECK. If a name matches a KNOWN VENDOR, set isVendor=true and fill
-   matchedVendorId/matchedVendorName. Do NOT create new vendors — staff add them manually.
+5. DB-FIRST MATCHING — before setting isNewCustomer=true, search KNOWN CUSTOMERS with phonetic equivalence:
+   ph≈f, bh≈b, kh≈k, sh≈s, aa≈a, ee≈i, oo≈u, v≈w, th≈t, dh≈d
+   If any customer matches the spoken name AND the city/location, use their exact id/name.
+   Only mark isNewCustomer=true if genuinely no match exists.
 
-6. EXTRACT ALL CUSTOMERS. One diary entry may mention multiple customers. Extract each
-   person/business separately with their own entry object.
+6. VENDORS: If name matches KNOWN VENDOR, set isVendor=true. Do NOT create new vendors.
 
-Respond ONLY with this JSON:
+7. EXTRACT ALL customers mentioned — one entry per customer.
+
+━━━ ACTION ITEMS RULES ━━━
+- List ONLY future actions the staff member still needs to do (not things already done)
+- "usne payment de diya" = done (past) → no payment action item
+- "kal call karna hai" = future → add "Call customer tomorrow"
+- "parcel nikalna hai" = future → add "Dispatch parcel"
+- Be specific: "Send sample to Manish Agra" not just "Send sample"
+- Maximum 3 action items per entry
+
+Respond ONLY with this JSON (no markdown, no text outside the JSON):
 {
   "detectedLanguage": "hindi|english|hinglish",
   "translatedContent": "Complete natural English translation in first person",
   "entries": [
     {
-      "spokenName": "name as written",
+      "spokenName": "Full name including city e.g. Manish Agra",
       "isVendor": false,
-      "matchedCustomerName": "exact name from customer list or null",
-      "matchedCustomerId": "exact id from customer list or null",
-      "matchedVendorName": "exact name from vendor list or null",
-      "matchedVendorId": "exact vid from vendor list or null",
+      "matchedCustomerName": "exact name from KNOWN CUSTOMERS list or null",
+      "matchedCustomerId": "exact id from KNOWN CUSTOMERS list or null",
+      "matchedVendorName": null,
+      "matchedVendorId": null,
       "isNewCustomer": false,
       "date": null,
-      "notes": "1-2 sentence professional English summary",
-      "originalNotes": "original text about this person",
-      "actionItems": ["follow-up action"],
+      "notes": "1-2 sentence professional English summary of this specific interaction",
+      "originalNotes": "verbatim original text about this person",
+      "actionItems": ["Specific future action with customer name"],
       "sentiment": "positive|neutral|negative",
       "confidence": 0.9
     }
