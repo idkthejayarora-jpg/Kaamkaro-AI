@@ -41,7 +41,9 @@ export default function StaffProfile() {
       attendanceAPI.list({ staffId: id }).catch(() => [] as AttendanceRecord[]),
     ]).then(([s, c, p, i, a]) => {
       setStaff(s as Staff | null);
-      setCustomers((c as Customer[]).filter(cu => cu.assignedTo === id));
+      setCustomers((c as Customer[]).filter(cu =>
+        cu.assignedTo === id || (cu.assignedStaff || []).includes(id!)
+      ));
       setPerformance((p as Performance[]).sort((a, b) => a.week.localeCompare(b.week)));
       setInteractions(i as Interaction[]);
       setAttendance(a as AttendanceRecord[]);
