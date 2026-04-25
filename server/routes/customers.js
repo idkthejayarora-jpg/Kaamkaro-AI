@@ -60,7 +60,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/customers — single create (admin OR staff)
 router.post('/', async (req, res) => {
   try {
-    const { name, phone, email, status, notes, tags, dealValue } = req.body;
+    const { name, phone, email, status, notes, tags, dealValue, assignedStaff: reqStaff } = req.body;
     let { assignedTo } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
 
@@ -70,11 +70,15 @@ router.post('/', async (req, res) => {
     }
 
     const validStatus = PIPELINE_STAGES.includes(status) ? status : 'lead';
-    const primaryAssignee = assignedTo || null;
+    // Build multi-staff list: prefer explicit assignedStaff array, fall back to assignedTo
+    const staffList = Array.isArray(reqStaff) && reqStaff.length > 0
+      ? reqStaff
+      : (assignedTo ? [assignedTo] : []);
+    const primaryAssignee = staffList[0] || assignedTo || null;
     const customer = {
       id: uuidv4(), name, phone: phone || '', email: email || '',
       assignedTo: primaryAssignee, status: validStatus,
-      assignedStaff: primaryAssignee ? [primaryAssignee] : [],  // multi-staff list
+      assignedStaff: staffList,
       lastContact: null, notes: notes || '', tags: tags || [],
       dealValue: dealValue ? Number(dealValue) : null,
       createdAt: new Date().toISOString(),
