@@ -1177,37 +1177,74 @@ function fuzzyMatchVendor(spokenName, vendors, threshold = 0.72) {
 }
 
 // ── Speech-to-text correction ─────────────────────────────────────────────────
-// Cleans up phonetic garbage from Chrome's hi-IN engine before anything touches
-// the DB. Uses Haiku for speed. Falls back to original on any error.
+// Safety-net pass AFTER the client already ran fixTranscript + devanagariToRoman.
+// Catches anything that slipped through the regex layer. Uses Haiku for speed.
+// Falls back to original on any error.
 async function correctSpeechText(raw) {
   const client = getClient();
   if (!client) return raw;
   try {
     const msg = await client.messages.create({
       model: AI_MODEL,
-      max_tokens: 600,
+      max_tokens: 800,
       messages: [{
         role: 'user',
-        content: `You are a speech-to-text error corrector for Hinglish (Hindi+English mix) business notes recorded via voice. Chrome's hi-IN speech engine produces predictable errors — fix them exactly as shown below.
+        content: `You are a Hinglish (Hindi+English) speech-to-text post-processor. The client has already attempted regex-based fixes. Your job is to catch anything that slipped through.
 
-KNOWN CHROME HI-IN PATTERNS TO FIX:
-• Pronoun expansion: usaka→uska, usakee→uski, unaka→unka, unakee→unki, isaka→iska, isakee→iski, apaka→apka, apakee→apki
-• Verb expansion: huee→hui, nikalana→nikalna, bhejana→bhejna, bolana→bolna
-• Date words: parason→parson, parsoon→parson
-• City names: noeda→Noida, noyda→Noida, gurgoan→Gurgaon, fardabad→Faridabad, hydrabad→Hyderabad
-• English business words: parsal→parcel, parsel→parcel, karanee→karni, karnee→karni, veediyo→video, vidiyo→video, kol→call (only when "video kol"), paymant→payment, delivari→delivery, sampal→sample, advanse→advance, confarm→confirm
-• Goods/stock: "ka man liya"→"ka maal liya", "man bheja"→"maal bheja", "man aaya"→"maal aaya"
-• Multi-word: "veediyo kol"→"video call", "bat huee"→"baat hui", "whats app"→"WhatsApp"
+Chrome's hi-IN engine produces these systematic error categories — fix them, leave everything else untouched:
 
-RULES:
-1. Fix ONLY speech recognition errors — do NOT rephrase or rewrite
-2. Preserve all person names and numbers EXACTLY as given
-3. If a word looks correct already, leave it untouched
-4. Return ONLY the corrected text — no quotes, no explanation
+A. PRONOUN EXPANSION — Chrome inserts extra 'a':
+   usaka→uska  usakee/usaki→uski  unaka→unka  unakee/unaki→unki
+   isaka→iska  isakee/isaki→iski  apaka→apka  apakee/apaki→apki
+   mujhaka→mujhko  humaka→humko  tumhaka→tumhara
 
-Example:
-Input:  raghav chaddha noeda se bat huee kal usaka parsal nikalana hai aur parason usakee veediyo kol karanee hai
-Output: raghav chaddha Noida se baat hui kal uska parcel nikalna hai aur parson uski video call karni hai
+B. FEMININE PAST -ee SUFFIX:
+   huee→hui  gayee→gayi  aayee→aayi  bolee→boli
+   karee→kari  milee→mili  bhejee→bheji  payee→payi
+
+C. INFINITIVE -ana EXPANSION (Chrome adds extra vowel):
+   nikalana→nikalna  bhejana→bhejna  dekhana→dekhna  bolana→bolna
+   pahunchana→pahunchna  likhana→likhna  pakadana→pakadna
+   jodana→jodna  kharidana→kharidna  bechana→bechna
+
+D. ENGLISH WORDS IN HINDI PHONETICS:
+   parsal/parsel/parcal→parcel  paymant/paimant→payment
+   delivari/delivary→delivery  karanee/karnee→karni
+   veediyo/vidiyo kol→video call  veediyo/vidiyo→video
+   sampal/sampel→sample  advanse/advanss→advance
+   confarm/conferm→confirm  dispach/disipach→dispatch
+   risipt/receet→receipt  meating→meeting  koteshan→quotation
+   balanss/balanse→balance  ordar→order  feeadback→feedback
+   tansport→transport  komission→commission  kourier→courier
+
+E. DATE WORDS:
+   parason/parsoon/parasson→parson (day after tomorrow)
+
+F. CITY NAMES:
+   noeda/noyda→Noida  gurgoan/gurgan→Gurgaon  fardabad→Faridabad
+   gaziabad/ghaziyabad→Ghaziabad  hydrabad→Hyderabad  ahmadabad→Ahmedabad
+   laknow/lucnow→Lucknow  baranasi→Varanasi  bangalor→Bangalore
+   amritasar→Amritsar  indor→Indore  kanpoor→Kanpur  dehlee→Delhi
+
+G. GOODS/STOCK:
+   "ka man liya"→"ka maal liya"  "man bheja"→"maal bheja"  "man aaya"→"maal aaya"
+   "man nahi"→"maal nahi"  "man ready"→"maal ready"
+
+RULES (non-negotiable):
+1. Fix ONLY speech recognition errors — do NOT rephrase, reorder, or add words
+2. Preserve ALL person names, company names, and numbers EXACTLY as given
+3. Words that already look correct must not be changed
+4. Return ONLY the corrected text — no quotes, no explanation, no preamble
+
+Examples:
+Input:  usaka parsal nikalana hai aur parason usakee veediyo kol karanee hai
+Output: uska parcel nikalna hai aur parson uski video call karni hai
+
+Input:  raghav chaddha noeda se bat huee kal unaka 50000 ka man liya
+Output: raghav chaddha Noida se baat hui kal unka 50000 ka maal liya
+
+Input:  deepak ne bola aayega aur paymant ka balanss bhi dega
+Output: deepak ne bola aayega aur payment ka balance bhi dega
 
 Text: ${raw}`,
       }],
