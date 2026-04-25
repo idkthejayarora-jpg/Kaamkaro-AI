@@ -819,14 +819,22 @@ function detectSentimentLocal(text) {
 
 /**
  * Extract actionable follow-up items using keyword pattern matching.
+ * Covers English, Hindi, and Hinglish future-intent phrases.
  */
 function extractActionItemsLocal(text) {
   const checks = [
-    { r: /follow.?up|followup/i,                             a: 'Follow up with customer'  },
-    { r: /(?:send|quote|proposal|estimate|quotation|bhej)/i, a: 'Send quote/proposal'      },
-    { r: /(?:call back|callback|phone back|ring)/i,          a: 'Call back customer'        },
-    { r: /(?:schedule|appointment|milenge|milna hai)/i,      a: 'Schedule meeting'          },
-    { r: /(?:payment|invoice|bill|dues|baaki)/i,             a: 'Follow up on payment'      },
+    // Video call
+    { r: /video\s*call/i,                                    a: 'Video call with customer'  },
+    // Follow-up (English + Hindi)
+    { r: /follow.?up|followup|follow\s+karna|follow\s+karunga|follow\s+karenge/i, a: 'Follow up with customer' },
+    // Quote / proposal / send
+    { r: /(?:send|quote|proposal|estimate|quotation|bhej|bhejunga|bhejenge|bhejna\s+hai)/i, a: 'Send quote/proposal' },
+    // Call back (English + Hindi future)
+    { r: /(?:call\s+back|callback|phone\s+back|ring|call\s+karna\s+hai|call\s+karunga|call\s+karenge|wapas\s+call)/i, a: 'Call back customer' },
+    // Meeting / visit
+    { r: /(?:schedule|appointment|milenge|milna\s+hai|meeting\s+karni|meeting\s+hai|milne\s+aana|milne\s+aaunga)/i, a: 'Schedule meeting' },
+    // Payment follow-up
+    { r: /(?:payment|invoice|bill|dues|baaki|paise\s+lene|paisa\s+lena|paisa\s+milega|payment\s+aana)/i, a: 'Follow up on payment' },
     { r: /(?:demo|demonstration|presentation|dikhana)/i,     a: 'Arrange product demo'      },
     { r: /(?:deliver|delivery|dispatch|courier|bhejna)/i,    a: 'Arrange delivery'          },
   ];
