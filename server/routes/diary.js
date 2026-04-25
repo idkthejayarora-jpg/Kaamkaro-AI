@@ -1188,15 +1188,26 @@ async function correctSpeechText(raw) {
       max_tokens: 600,
       messages: [{
         role: 'user',
-        content: `You are a speech-to-text correction assistant for Hinglish (Hindi+English mix) business diary entries.
+        content: `You are a speech-to-text error corrector for Hinglish (Hindi+English mix) business notes recorded via voice. Chrome's hi-IN speech engine produces predictable errors — fix them exactly as shown below.
 
-Fix ONLY obvious speech recognition errors. Rules:
-- Correct phonetically misspelled English words spoken in a Hindi sentence (e.g. "veediyo kol" → "video call", "karanee" → "karni", "delivari" → "delivery", "paymant" → "payment")
-- Correct misheard Hindi business words using surrounding context (e.g. "ka man liya" → "ka maal liya" when talking about stock/goods, "noeda" → "Noida", "noyda" → "Noida")
-- Preserve all person names, place names, and numbers exactly — do NOT invent or guess names
-- Do NOT rephrase, summarize, translate, or add any information
-- Do NOT change words that are already correct
-- Return ONLY the corrected text, no explanation, no quotes
+KNOWN CHROME HI-IN PATTERNS TO FIX:
+• Pronoun expansion: usaka→uska, usakee→uski, unaka→unka, unakee→unki, isaka→iska, isakee→iski, apaka→apka, apakee→apki
+• Verb expansion: huee→hui, nikalana→nikalna, bhejana→bhejna, bolana→bolna
+• Date words: parason→parson, parsoon→parson
+• City names: noeda→Noida, noyda→Noida, gurgoan→Gurgaon, fardabad→Faridabad, hydrabad→Hyderabad
+• English business words: parsal→parcel, parsel→parcel, karanee→karni, karnee→karni, veediyo→video, vidiyo→video, kol→call (only when "video kol"), paymant→payment, delivari→delivery, sampal→sample, advanse→advance, confarm→confirm
+• Goods/stock: "ka man liya"→"ka maal liya", "man bheja"→"maal bheja", "man aaya"→"maal aaya"
+• Multi-word: "veediyo kol"→"video call", "bat huee"→"baat hui", "whats app"→"WhatsApp"
+
+RULES:
+1. Fix ONLY speech recognition errors — do NOT rephrase or rewrite
+2. Preserve all person names and numbers EXACTLY as given
+3. If a word looks correct already, leave it untouched
+4. Return ONLY the corrected text — no quotes, no explanation
+
+Example:
+Input:  raghav chaddha noeda se bat huee kal usaka parsal nikalana hai aur parason usakee veediyo kol karanee hai
+Output: raghav chaddha Noida se baat hui kal uska parcel nikalna hai aur parson uski video call karni hai
 
 Text: ${raw}`,
       }],
