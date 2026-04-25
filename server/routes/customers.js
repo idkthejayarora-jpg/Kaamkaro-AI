@@ -12,12 +12,19 @@ router.use(authMiddleware);
 
 const PIPELINE_STAGES = ['lead', 'contacted', 'interested', 'negotiating', 'closed', 'churned'];
 
+// Helper: check if a staff member has access to a customer
+// A customer is accessible if: assignedTo === staffId  OR staffId is in assignedStaff[]
+function staffCanAccess(customer, staffId) {
+  if (customer.assignedTo === staffId) return true;
+  return Array.isArray(customer.assignedStaff) && customer.assignedStaff.includes(staffId);
+}
+
 // GET /api/customers
 router.get('/', async (req, res) => {
   try {
     let customers = await readDB('customers');
     if (req.user.role === 'staff') {
-      customers = customers.filter(c => c.assignedTo === req.user.id);
+      customers = customers.filter(c => staffCanAccess(c, req.user.id));
     }
     // Attach health score
     const interactions = await readDB('interactions');
