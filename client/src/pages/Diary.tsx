@@ -368,50 +368,79 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
 // Chrome's hi-IN model often mangles English words spoken in a Hindi sentence.
 // These replacements fix the most common patterns without changing real words.
 const HINGLISH_FIXES: [RegExp, string][] = [
-  // Multi-word phrases — apply first so single-word rules don't break them
-  [/\bveediyo\s+kol\b/gi,  'video call'],
-  [/\bvidiyo\s+kol\b/gi,   'video call'],
-  [/\bvideo\s+kol\b/gi,    'video call'],
-  [/\bvideo\s+kawl\b/gi,   'video call'],
+  // ── Multi-word phrases first — highest priority ───────────────────────────
+  [/\bveediyo\s+kol\b/gi,       'video call'],
+  [/\bvidiyo\s+kol\b/gi,        'video call'],
+  [/\bveedeo\s+kol\b/gi,        'video call'],
+  [/\bvideo\s+kol\b/gi,         'video call'],
+  [/\bvideo\s+kawl\b/gi,        'video call'],
+  [/\bwhats\s+app\b/gi,         'WhatsApp'],
+  [/\bwhat\s+sap\b/gi,          'WhatsApp'],
 
-  // maal (goods/stock) — Chrome hears "man" / "mall" / "mal" in context
-  [/\b(\d[\d,]*\s+ka)\s+man\s+liya\b/gi,  '$1 maal liya'],
-  [/\b(\d[\d,]*\s+ka)\s+mal\s+liya\b/gi,  '$1 maal liya'],
-  [/\b(\d[\d,]*\s+ka)\s+mall\s+liya\b/gi, '$1 maal liya'],
-  [/\bka\s+man\s+liya\b/gi,  'ka maal liya'],
-  [/\bka\s+mal\s+liya\b/gi,  'ka maal liya'],
-  [/\bka\s+mall\s+liya\b/gi, 'ka maal liya'],
-  [/\bman\s+bheja\b/gi,  'maal bheja'],
-  [/\bman\s+aaya\b/gi,   'maal aaya'],
-  [/\bman\s+diya\b/gi,   'maal diya'],
-  [/\bman\s+gaya\b/gi,   'maal gaya'],
-  [/\bman\s+milaa\b/gi,  'maal mila'],
-  [/\bman\s+manga\b/gi,  'maal manga'],
+  // maal (goods/stock) — Chrome mishears as "man" / "mall" / "mal"
+  [/\bka\s+man\s+liya\b/gi,     'ka maal liya'],
+  [/\bka\s+mal\s+liya\b/gi,     'ka maal liya'],
+  [/\bka\s+mall\s+liya\b/gi,    'ka maal liya'],
+  [/\bman\s+bheja\b/gi,         'maal bheja'],
+  [/\bman\s+aaya\b/gi,          'maal aaya'],
+  [/\bman\s+diya\b/gi,          'maal diya'],
+  [/\bman\s+gaya\b/gi,          'maal gaya'],
+  [/\bman\s+mila\b/gi,          'maal mila'],
+  [/\bman\s+manga\b/gi,         'maal manga'],
+  [/\bman\s+nahi\b/gi,          'maal nahi'],
+  [/\bman\s+ready\b/gi,         'maal ready'],
+  [/\bman\s+deliver\b/gi,       'maal deliver'],
+  [/\bka\s+man\b(?=\s+(?:aaya|gaya|milaa?|bheja|ready|deliver|nahi))/gi, 'ka maal'],
 
-  // Single word fixes
-  [/\bveediyo\b/gi,  'video'],
-  [/\bvidiyo\b/gi,   'video'],
-  [/\bveedeo\b/gi,   'video'],
-  [/\bkaranee\b/gi,  'karni'],
-  [/\bkarani\b/gi,   'karni'],
-  [/\bkarnee\b/gi,   'karni'],
-  [/\bnoeda\b/gi,    'Noida'],
-  [/\bnoyda\b/gi,    'Noida'],
-  [/\bnoda\b/gi,     'Noida'],
-  [/\bgurgaon\b/gi,  'Gurgaon'],
-  [/\bgurgoan\b/gi,  'Gurgaon'],
-  [/\bdelhi\b/gi,    'Delhi'],
-  [/\bmumbai\b/gi,   'Mumbai'],
-  [/\bhydrabad\b/gi, 'Hyderabad'],
-  [/\brupaye\b/gi,   'rupaye'],
-  [/\brupaiye\b/gi,  'rupaye'],
-  [/\bdelivari\b/gi, 'delivery'],
-  [/\bdelivery\b/gi, 'delivery'],  // already correct, keep
-  [/\bpayment\b/gi,  'payment'],   // already correct, keep
-  [/\bpaymant\b/gi,  'payment'],
-  [/\binvoice\b/gi,  'invoice'],   // already correct
-  [/\bwhatsapp\b/gi, 'WhatsApp'],
-  [/\bwhats app\b/gi,'WhatsApp'],
+  // paise / money collocations
+  [/\bpi\s+se\b/gi,             'paise'],
+  [/\bpai\s+se\b/gi,            'paise'],
+  [/\bpay\s+se\b/gi,            'paise'],
+
+  // ── City / place names ────────────────────────────────────────────────────
+  [/\bnoeda\b/gi,               'Noida'],
+  [/\bnoyda\b/gi,               'Noida'],
+  [/\bnoda\b(?!\s*(?:l|lem))/gi,'Noida'],  // "nodal" stays
+  [/\bgurgoan\b/gi,             'Gurgaon'],
+  [/\bgurgon\b/gi,              'Gurgaon'],
+  [/\bfardabad\b/gi,            'Faridabad'],
+  [/\bfaridbad\b/gi,            'Faridabad'],
+  [/\bghaziabad\b/gi,           'Ghaziabad'],
+  [/\bgaziabad\b/gi,            'Ghaziabad'],
+  [/\bhydrabad\b/gi,            'Hyderabad'],
+  [/\bhaidrabad\b/gi,           'Hyderabad'],
+  [/\bahmadabad\b/gi,           'Ahmedabad'],
+  [/\bahmedabad\b/gi,           'Ahmedabad'],
+  [/\bbangalor\b/gi,            'Bangalore'],
+  [/\bchennai\b/gi,             'Chennai'],    // usually correct
+
+  // ── Business terms phonetically mangled ───────────────────────────────────
+  [/\bveediyo\b/gi,             'video'],
+  [/\bvidiyo\b/gi,              'video'],
+  [/\bveedeo\b/gi,              'video'],
+  [/\bkaranee\b/gi,             'karni'],
+  [/\bkarnee\b/gi,              'karni'],
+  [/\bkarani\b(?!\s*mata)/gi,   'karni'],  // "Karani mata" (temple) stays
+  [/\bpaymant\b/gi,             'payment'],
+  [/\bpaimant\b/gi,             'payment'],
+  [/\bdelivari\b/gi,            'delivery'],
+  [/\bdelievery\b/gi,           'delivery'],
+  [/\brupaiye\b/gi,             'rupaye'],
+  [/\brupaee\b/gi,              'rupaye'],
+  [/\binvoic\b/gi,              'invoice'],
+  [/\bwhatsapp\b/gi,            'WhatsApp'],
+  [/\bquotation\b/gi,           'quotation'],  // usually fine
+  [/\bapointment\b/gi,          'appointment'],
+  [/\bapointmant\b/gi,          'appointment'],
+  [/\bmeeting\b/gi,             'meeting'],    // usually fine
+  [/\bfollowup\b/gi,            'follow-up'],
+  [/\bfollo\s+up\b/gi,          'follow-up'],
+  [/\bconfarm\b/gi,             'confirm'],
+  [/\bconferm\b/gi,             'confirm'],
+  [/\bsampal\b/gi,              'sample'],
+  [/\bsampel\b/gi,              'sample'],
+  [/\badvanse\b/gi,             'advance'],
+  [/\badvans\b/gi,              'advance'],
 ];
 
 function fixTranscript(text: string): string {
