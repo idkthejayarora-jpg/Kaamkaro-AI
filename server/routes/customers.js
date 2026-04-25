@@ -45,7 +45,7 @@ router.get('/:id', async (req, res) => {
     const customers = await readDB('customers');
     const c = customers.find(x => x.id === req.params.id);
     if (!c) return res.status(404).json({ error: 'Not found' });
-    if (req.user.role === 'staff' && c.assignedTo !== req.user.id) {
+    if (req.user.role === 'staff' && !staffCanAccess(c, req.user.id)) {
       return res.status(403).json({ error: 'Access denied' });
     }
     const interactions = await readDB('interactions');
