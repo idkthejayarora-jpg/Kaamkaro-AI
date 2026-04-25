@@ -231,6 +231,63 @@ function LogInteractionModal({ customer, onClose, onLogged }: {
   );
 }
 
+// ── Staff Assignment Panel (inside expanded card) ─────────────────────────────
+function StaffAssignPanel({ customer, allStaff, onChange }: {
+  customer: Customer; allStaff: Staff[];
+  onChange: (updated: Customer) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const current = customer.assignedStaff?.length
+    ? customer.assignedStaff
+    : (customer.assignedTo ? [customer.assignedTo] : []);
+
+  const toggle = async (staffId: string) => {
+    const next = current.includes(staffId)
+      ? current.filter(id => id !== staffId)
+      : [...current, staffId];
+    setSaving(true);
+    try {
+      const updated = await customersAPI.update(customer.id, {
+        assignedStaff: next,
+        assignedTo: next[0] || null,
+      });
+      onChange(updated);
+    } catch { /* silent */ }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-white/30 text-[10px] uppercase tracking-wider font-medium">
+        Assigned Staff — click to add or remove
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {allStaff.map(s => {
+          const active = current.includes(s.id);
+          return (
+            <button
+              key={s.id}
+              onClick={() => toggle(s.id)}
+              disabled={saving}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border disabled:opacity-50 ${
+                active
+                  ? 'border-gold/50 bg-gold/10 text-gold'
+                  : 'border-dark-50 text-white/30 hover:text-white hover:border-white/20'
+              }`}
+            >
+              {active && <span>✓</span>}
+              {s.name}
+            </button>
+          );
+        })}
+      </div>
+      {current.length === 0 && (
+        <p className="text-white/20 text-xs">No staff assigned — customer is unassigned</p>
+      )}
+    </div>
+  );
+}
+
 // ── Add Customer Modal ────────────────────────────────────────────────────────
 function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
   staff: Staff[]; isAdmin: boolean; selfId: string;
