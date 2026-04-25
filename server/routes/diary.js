@@ -139,6 +139,15 @@ const STOP_WORDS = new Set([
   'ache','theek','thik','sahi','galat','jaldi','late','jald',
   // Short location words (prevent "nagar ne" → "Nagar" as a person)
   'road','marg','lane','gali','bazar','market','chowk','nagar','vihar',
+  // Honorifics/relationship words that appear AFTER a name — must NOT be extracted as the name itself
+  // "sanjana meerut wale bhaiya ko" → bhaiya is NOT a name anchor; sanjana is
+  'bhaiya','bhaia','bhaiyya','bhiya',           // "brother" — very common in North Indian business talk
+  'didi','behan','bhabhi',                       // "sister" / "sister-in-law"
+  'sahab','saab','sahib',                        // "sir/boss"
+  'chacha','mama','nana','taya','fufa',          // family relations used as address
+  'uncle','aunty','aunti',
+  // Filler/locative connectors — "X wale bhaiya" → "wale" links X to a location, not a name part
+  'wale','wali','waale','waali','vale','vali',
 ]);
 
 // ── Common Indian names dictionary ─────────────────────────────────────────────
