@@ -1766,7 +1766,19 @@ Respond ONLY with this JSON:
           console.log(`[Diary AI] ✅ Created customer: "${newCust.name}"`);
         } catch { continue; }
       } else if (!aiNewCustomers.find(c => c.id === resolved.id)) {
-        try { await updateOne('customers', resolved.id, { lastContact: nowAI }); } catch {}
+        // Existing customer matched by AI — also link this staff if not already linked
+        const existingStaff = Array.isArray(resolved.assignedStaff)
+          ? resolved.assignedStaff
+          : [resolved.assignedTo].filter(Boolean);
+        const patch = { lastContact: nowAI };
+        if (!existingStaff.includes(staffId)) {
+          patch.assignedStaff = [...existingStaff, staffId];
+          console.log(`[Diary AI] 🔗 Shared customer "${resolved.name}" now also with ${staffName}`);
+        }
+        try {
+          const updated = await updateOne('customers', resolved.id, patch);
+          if (patch.assignedStaff) broadcast('customer:updated', updated);
+        } catch {}
       }
 
       const isNew = aiNewCustomers.some(c => c.id === resolved.id);
