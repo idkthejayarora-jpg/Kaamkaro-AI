@@ -1009,10 +1009,19 @@ router.post('/:id/reanalyze', async (req, res) => {
  * Handles: kal/tomorrow, parso/day after tomorrow, aaj/today, next week, agle hafte.
  * Falls back to tomorrow if a future-intent phrase is found but no date is specified.
  */
+/**
+ * If a computed due-date lands on Sunday (day 0), push it to Monday.
+ * Sundays are non-working days; tasks should always fall Mon–Sat.
+ */
+function skipSunday(dt) {
+  if (dt.getDay() === 0) dt.setDate(dt.getDate() + 1); // Sunday → Monday
+  return dt;
+}
+
 function parseDueDateFromText(text) {
   const lower = text.toLowerCase();
   const d = new Date();
-  const fmt = (dt) => dt.toISOString().split('T')[0];
+  const fmt = (dt) => skipSunday(dt).toISOString().split('T')[0];
 
   if (/\bparso\b|\bparson\b|\bday after tomorrow\b/.test(lower)) { d.setDate(d.getDate() + 2); return fmt(d); }
   if (/\bkal\b|\btomorrow\b/.test(lower))              { d.setDate(d.getDate() + 1); return fmt(d); }
