@@ -44,7 +44,8 @@ export interface Customer {
   name: string;
   phone: string;
   email: string;
-  assignedTo: string | null;
+  assignedTo: string | null;          // primary assignee (backward compat)
+  assignedStaff?: string[];           // all staff who handle this customer
   status: PipelineStatus;
   lastContact: string | null;
   notes: string;
