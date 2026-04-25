@@ -933,7 +933,7 @@ router.patch('/:id', async (req, res) => {
     if (typeof content === 'string' && content.trim()) patch.content = content.trim();
     if (Array.isArray(aiEntries)) patch.aiEntries = aiEntries;
 
-    const updated = await updateOne('diary', req.params.id, patch);
+    await updateOne('diary', req.params.id, patch);
     broadcast('diary:updated', { ...entry, ...patch });
     res.json({ ...entry, ...patch });
 
