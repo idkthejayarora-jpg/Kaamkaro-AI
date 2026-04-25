@@ -830,10 +830,11 @@ export default function Diary() {
 
   const { isAdmin } = useAuth();
 
-  // Append voice text to existing content — transliterate Devanagari → Roman first
+  // Append voice text to existing content.
+  // By the time text reaches here it is already Roman + fixTranscript-corrected
+  // (devanagariToRoman + fixTranscript are applied in the onresult handler above).
   const handleVoiceText = (text: string) => {
-    const roman = devanagariToRoman(text);
-    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + roman : roman);
+    setContent(prev => prev.trim() ? prev.trimEnd() + ' ' + text : text);
   };
 
   const voice = useVoice(handleVoiceText);
