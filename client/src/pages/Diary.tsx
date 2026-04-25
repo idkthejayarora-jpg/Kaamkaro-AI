@@ -487,131 +487,174 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
 // ── Hinglish phonetic correction ─────────────────────────────────────────────
 // Chrome's hi-IN model often mangles English words spoken in a Hindi sentence.
 // These replacements fix the most common patterns without changing real words.
-// Chrome hi-IN consistently expands short Hindi words and phonetically misspells
-// English ones. Every pattern here is reproducible — not guesswork.
-const HINGLISH_FIXES: [RegExp, string][] = [
+// ── Chrome hi-IN Speech Recognition Error Corrector ──────────────────────────
+//
+// Chrome's hi-IN engine has FOUR systematic error categories. Fixing by category
+// means every new word in that category is automatically covered — not just the
+// ones we've seen before.
+//
+// CATEGORY A — PRONOUN EXPANSION
+//   Chrome inserts 'a' between the pronoun stem and the -ka/-ki possessive suffix.
+//   Rule: (stem)aka → (stem)ka  and  (stem)akee/(stem)aki → (stem)ki
+//   Covers: usaka→uska, unaka→unka, isaka→iska, inaka→inka,
+//            jinaka→jinka, kinaka→kinka, kisaka→kiska, apaka→apka, etc.
+//
+// CATEGORY B — FEMININE PAST TENSE -ee SUFFIX
+//   Chrome adds a trailing 'e' to feminine past forms ending in -i.
+//   e.g. hui→huee, gayi→gayee, aayi→aayee, boli→bolee, mili→milee
+//
+// CATEGORY C — INFINITIVE -ana EXPANSION
+//   Chrome inserts 'a' before the -na suffix of Hindi infinitives.
+//   e.g. nikalna→nikalana, bhejna→bhejana, dekhna→dekhana, bolna→bolana
+//   Only business/conversation verbs listed — omit words that are also valid
+//   names or have different meanings in -ana form (e.g. milana, sunana).
+//
+// CATEGORY D — ENGLISH BUSINESS WORDS IN HINDI PHONETICS
+//   English words in a Hindi sentence get phonetically transliterated.
+//   e.g. parcel→parsal, video call→veediyo kol, payment→paymant
+//
+// CATEGORY E — HINDI DATE / TIME WORDS
+//   parson (day after tomorrow) → parason/parsoon
+//
+// CATEGORY F — CITY AND PLACE NAME MISSPELLINGS
+//   Noida→noeda, Gurgaon→gurgoan, etc.
+//
+function fixTranscript(raw: string): string {
+  let t = raw;
 
-  // ── Multi-word phrases — apply first ─────────────────────────────────────
-  [/\bveediyo\s+kol\b/gi,          'video call'],
-  [/\bvidiyo\s+kol\b/gi,           'video call'],
-  [/\bveedeo\s+kol\b/gi,           'video call'],
-  [/\bvideo\s+kol\b/gi,            'video call'],
-  [/\bvideo\s+kawl\b/gi,           'video call'],
-  [/\bwhats\s+app\b/gi,            'WhatsApp'],
-  [/\bwhat\s+sap\b/gi,             'WhatsApp'],
-  [/\bbat\s+huee\b/gi,             'baat hui'],
-  [/\bbaat\s+huee\b/gi,            'baat hui'],
+  // ── STAGE 1: Multi-word phrases — must run before single-word rules ───────
+  t = t.replace(/\b(?:veediyo|vidiyo|veedeo|video)\s+(?:kol|kawl)\b/gi, 'video call');
+  t = t.replace(/\bvideo\s+call\b/gi,          'video call');     // already correct — keep
+  t = t.replace(/\bwhats?\s+app\b/gi,          'WhatsApp');
+  t = t.replace(/\bwhat\s+sap\b/gi,            'WhatsApp');
+  t = t.replace(/\bbaat?\s+huee\b/gi,          'baat hui');
+  t = t.replace(/\bfollo\s+up\b/gi,            'follow-up');
+  t = t.replace(/\bpa[yi]\s+se\b/gi,           'paise');
+  // maal: "ka man/mal/mall liya/bheja/diya/gaya/mila/aaya/nahi/ready/deliver/nikala"
+  t = t.replace(/\bka\s+ma(?:n|l{1,2})\s+(liya|bheja|diya|gaya|mila|aaya|nahi|ready|deliver|nikala(?:na)?)\b/gi,
+    (_m, verb) => `ka maal ${verb.replace('nikalana', 'nikalna')}`);
+  t = t.replace(/\bma(?:n|l{1,2})\s+(bheja|aaya|diya|gaya|mila|manga|nahi|ready|deliver|nikala(?:na)?)\b/gi,
+    (_m, verb) => `maal ${verb.replace('nikalana', 'nikalna')}`);
 
-  // maal (goods/stock) — Chrome hears "man" / "mall" / "mal"
-  [/\bka\s+man\s+liya\b/gi,        'ka maal liya'],
-  [/\bka\s+mal\s+liya\b/gi,        'ka maal liya'],
-  [/\bka\s+mall\s+liya\b/gi,       'ka maal liya'],
-  [/\bman\s+bheja\b/gi,            'maal bheja'],
-  [/\bman\s+aaya\b/gi,             'maal aaya'],
-  [/\bman\s+diya\b/gi,             'maal diya'],
-  [/\bman\s+gaya\b/gi,             'maal gaya'],
-  [/\bman\s+mila\b/gi,             'maal mila'],
-  [/\bman\s+manga\b/gi,            'maal manga'],
-  [/\bman\s+nahi\b/gi,             'maal nahi'],
-  [/\bman\s+ready\b/gi,            'maal ready'],
-  [/\bman\s+deliver\b/gi,          'maal deliver'],
-  [/\bman\s+nikalna\b/gi,          'maal nikalna'],
-  [/\bman\s+nikalana\b/gi,         'maal nikalna'],
+  // ── STAGE 2 (CATEGORY A): Pronoun expansion — systematic regex ───────────
+  // All Hindi possessives whose stem ends before -ka/-ki get an extra 'a' inserted.
+  // Single rule covers: us, un, is, in, jin, kin, kis, ap, hab, tum, inhe, unhe
+  t = t.replace(/\b(us|un|is|in|jin|kin|kis|ap|hab|tum)aka\b/gi,  '$1ka');
+  t = t.replace(/\b(us|un|is|in|jin|kin|kis|ap|hab|tum)akee\b/gi, '$1ki');
+  t = t.replace(/\b(us|un|is|in|jin|kin|kis|ap|hab|tum)aki\b/gi,  '$1ki');
+  // Extended forms Chrome also produces
+  t = t.replace(/\bmujhaka\b/gi,   'mujhko');
+  t = t.replace(/\bhumaka\b/gi,    'humko');
+  t = t.replace(/\btumhaka\b/gi,   'tumhara');
 
-  // paise
-  [/\bpi\s+se\b/gi,                'paise'],
-  [/\bpai\s+se\b/gi,               'paise'],
-  [/\bpay\s+se\b/gi,               'paise'],
+  // ── STAGE 3 (CATEGORY B): Feminine past tense -ee suffix ─────────────────
+  // Only unambiguous words — avoid "dee", "lee", "dee" which are also names.
+  t = t.replace(/\bhuee\b/gi,      'hui');
+  t = t.replace(/\bgayee\b/gi,     'gayi');
+  t = t.replace(/\baayee\b/gi,     'aayi');
+  t = t.replace(/\baaee\b/gi,      'aayi');
+  t = t.replace(/\bbolee\b/gi,     'boli');
+  t = t.replace(/\bkaree\b/gi,     'kari');
+  t = t.replace(/\bmilee\b/gi,     'mili');
+  t = t.replace(/\bbhejee\b/gi,    'bheji');
+  t = t.replace(/\bpayee\b/gi,     'payi');
+  t = t.replace(/\bdikee\b/gi,     'diki');
 
-  // ── Chrome pronoun expansions — VERY consistent pattern ──────────────────
-  // Chrome hi-IN always expands short pronouns to their full form
-  [/\busaka\b/gi,                  'uska'],
-  [/\busakee\b/gi,                 'uski'],
-  [/\busaki\b/gi,                  'uski'],
-  [/\bunaka\b/gi,                  'unka'],
-  [/\bunakee\b/gi,                 'unki'],
-  [/\bunaki\b/gi,                  'unki'],
-  [/\bisaka\b/gi,                  'iska'],
-  [/\bisakee\b/gi,                 'iski'],
-  [/\bisaki\b/gi,                  'iski'],
-  [/\bapaka\b/gi,                  'apka'],
-  [/\bapakee\b/gi,                 'apki'],
-  [/\bapaki\b/gi,                  'apki'],
-  [/\bmujhaka\b/gi,                'mujhko'],
-  [/\btumhaka\b/gi,                'tumhara'],
-  [/\bhamara\b/gi,                 'hamara'],   // usually fine
-  [/\bhumaka\b/gi,                 'humka'],
+  // ── STAGE 4 (CATEGORY C): Hindi infinitive -ana expansion ────────────────
+  // Only business/conversation verbs where -ana form is not an independent word.
+  t = t.replace(/\bnikalana\b/gi,    'nikalna');
+  t = t.replace(/\bnikalane\b/gi,    'nikalne');
+  t = t.replace(/\bbhejana\b/gi,     'bhejna');
+  t = t.replace(/\bdekhana\b/gi,     'dekhna');
+  t = t.replace(/\bbolana\b/gi,      'bolna');
+  t = t.replace(/\blikhana\b/gi,     'likhna');
+  t = t.replace(/\bpadhana\b/gi,     'padhna');
+  t = t.replace(/\bkhelana\b/gi,     'khelna');
+  t = t.replace(/\bpahunchana\b/gi,  'pahunchna');
+  t = t.replace(/\bbechana\b/gi,     'bechna');
+  t = t.replace(/\bkharidana\b/gi,   'kharidna');
+  t = t.replace(/\bdikhana\b(?!\s+(?:do|dena))/gi, 'dikhna'); // "dikhana do" = show it
+  t = t.replace(/\bsikhaana\b/gi,    'sikhna');
+  t = t.replace(/\bchalaana\b/gi,    'chalana');   // chalana = drive/run (correct form)
+  t = t.replace(/\bpakadana\b/gi,    'pakadna');
 
-  // ── Chrome verb/tense expansions ─────────────────────────────────────────
-  // "hui" (happened, f.) → "huee"; "nikalana" → "nikalna" etc.
-  [/\bhuee\b/gi,                   'hui'],
-  [/\bnikalana\b/gi,               'nikalna'],
-  [/\bnikalane\b/gi,               'nikalne'],
-  [/\bbhejana\b/gi,                'bhejna'],
-  [/\bkhelana\b/gi,                'khelna'],
-  [/\bbolana\b/gi,                 'bolna'],
-  [/\bbanana\b(?!\s+republic|\s+split|\s+bread)/gi, 'banana'], // keep food "banana"
-  [/\bchalna\b/gi,                 'chalna'],   // usually correct
-  [/\bdena\b/gi,                   'dena'],     // usually correct
-  [/\blena\b/gi,                   'lena'],     // usually correct
+  // ── STAGE 5 (CATEGORY D): English business words in Hindi phonetics ───────
+  // video
+  t = t.replace(/\bveediyo\b/gi,        'video');
+  t = t.replace(/\bvidiyo\b/gi,         'video');
+  t = t.replace(/\bveedeo\b/gi,         'video');
+  // karni (do/make — infinitive used in future context)
+  t = t.replace(/\bkaranee\b/gi,        'karni');
+  t = t.replace(/\bkarnee\b/gi,         'karni');
+  t = t.replace(/\bkarani\b(?!\s*mata)/gi, 'karni');
+  // parcel
+  t = t.replace(/\bpar(?:sal|sel|cal)\b/gi, 'parcel');
+  // payment
+  t = t.replace(/\bpai?mant\b/gi,       'payment');
+  // delivery
+  t = t.replace(/\bdeli(?:vari|vary|every|ievery)\b/gi, 'delivery');
+  // dispatch
+  t = t.replace(/\bdis?pach\b/gi,       'dispatch');
+  t = t.replace(/\bdespatch\b/gi,       'dispatch');
+  // receipt
+  t = t.replace(/\bri?sipt\b/gi,        'receipt');
+  t = t.replace(/\breceet\b/gi,         'receipt');
+  // sample
+  t = t.replace(/\bsam(?:pal|pel)\b/gi, 'sample');
+  // advance
+  t = t.replace(/\badvans[ae]?\b/gi,    'advance');
+  // confirm
+  t = t.replace(/\bcon(?:farm|ferm)\b/gi, 'confirm');
+  // appointment
+  t = t.replace(/\bapointmant?\b/gi,    'appointment');
+  // invoice
+  t = t.replace(/\binvoic\b/gi,         'invoice');
+  t = t.replace(/\binwoise\b/gi,        'invoice');
+  // WhatsApp
+  t = t.replace(/\bwhatsapp\b/gi,       'WhatsApp');
+  // follow-up
+  t = t.replace(/\bfollowup\b/gi,       'follow-up');
+  // rupaye
+  t = t.replace(/\brupaiy?e\b/gi,       'rupaye');
+  t = t.replace(/\brupaee\b/gi,         'rupaye');
+  // installment
+  t = t.replace(/\binstallemant\b/gi,   'installment');
+  t = t.replace(/\binstallmant\b/gi,    'installment');
+  // commission
+  t = t.replace(/\bcomis+ion\b/gi,      'commission');
+  // courier
+  t = t.replace(/\bk[ou]+rier\b/gi,     'courier');
+  // transport
+  t = t.replace(/\btansport\b/gi,       'transport');
+  // meeting
+  t = t.replace(/\bmeating\b/gi,        'meeting');
+  // quotation
+  t = t.replace(/\bkote(?:shan|than)\b/gi, 'quotation');
 
-  // ── Date / time words ─────────────────────────────────────────────────────
-  [/\bparason\b/gi,                'parson'],   // day after tomorrow
-  [/\bparsoon\b/gi,                'parson'],
-  [/\bparasos\b/gi,                'parson'],
-  [/\bparsons\b(?!\s+(?:nose|problem))/gi, 'parson'], // not English "parsons"
+  // ── STAGE 6 (CATEGORY E): Date / time words ───────────────────────────────
+  t = t.replace(/\bpara?so+n?s?\b/gi,   'parson');   // day after tomorrow
 
-  // ── City / place names ────────────────────────────────────────────────────
-  [/\bnoeda\b/gi,                  'Noida'],
-  [/\bnoyda\b/gi,                  'Noida'],
-  [/\bnoda\b(?!l)/gi,              'Noida'],
-  [/\bgurgoan\b/gi,                'Gurgaon'],
-  [/\bgurgon\b/gi,                 'Gurgaon'],
-  [/\bfardabad\b/gi,               'Faridabad'],
-  [/\bfaridbad\b/gi,               'Faridabad'],
-  [/\bghaziabad\b/gi,              'Ghaziabad'],
-  [/\bgaziabad\b/gi,               'Ghaziabad'],
-  [/\bhydrabad\b/gi,               'Hyderabad'],
-  [/\bhaidrabad\b/gi,              'Hyderabad'],
-  [/\bahmadabad\b/gi,              'Ahmedabad'],
-  [/\bbangalor\b/gi,               'Bangalore'],
+  // ── STAGE 7 (CATEGORY F): City and place names ────────────────────────────
+  t = t.replace(/\bnoeda\b/gi,          'Noida');
+  t = t.replace(/\bnoyda\b/gi,          'Noida');
+  t = t.replace(/\bnoda\b(?!l)/gi,      'Noida');
+  t = t.replace(/\bgurg[oa]n\b/gi,      'Gurgaon');
+  t = t.replace(/\bfar[ai]d?abad\b/gi,  'Faridabad');
+  t = t.replace(/\bgaziabad\b/gi,       'Ghaziabad');
+  t = t.replace(/\bhaidrabad\b/gi,      'Hyderabad');
+  t = t.replace(/\bhydrabad\b/gi,       'Hyderabad');
+  t = t.replace(/\bahmadabad\b/gi,      'Ahmedabad');
+  t = t.replace(/\bbangalor\b/gi,       'Bangalore');
+  t = t.replace(/\blaknow\b/gi,         'Lucknow');
+  t = t.replace(/\blucnow\b/gi,         'Lucknow');
+  t = t.replace(/\bbaranasi\b/gi,       'Varanasi');
+  t = t.replace(/\bvaransi\b/gi,        'Varanasi');
+  t = t.replace(/\bamri?ta?sar\b/gi,    'Amritsar');
+  t = t.replace(/\bindor\b/gi,          'Indore');
+  t = t.replace(/\bkanpoor\b/gi,        'Kanpur');
+  t = t.replace(/\bjayp[ou][ou]r\b/gi,  'Jaipur');
 
-  // ── Business / English terms phonetically spelled in Hindi ────────────────
-  [/\bveediyo\b/gi,                'video'],
-  [/\bvidiyo\b/gi,                 'video'],
-  [/\bveedeo\b/gi,                 'video'],
-  [/\bkaranee\b/gi,                'karni'],
-  [/\bkarnee\b/gi,                 'karni'],
-  [/\bkarani\b(?!\s*mata)/gi,      'karni'],
-  [/\bparsal\b/gi,                 'parcel'],
-  [/\bparsel\b/gi,                 'parcel'],
-  [/\bparcal\b/gi,                 'parcel'],
-  [/\bpaymant\b/gi,                'payment'],
-  [/\bpaimant\b/gi,                'payment'],
-  [/\bdelivari\b/gi,               'delivery'],
-  [/\bdelievery\b/gi,              'delivery'],
-  [/\brupaiye\b/gi,                'rupaye'],
-  [/\brupaee\b/gi,                 'rupaye'],
-  [/\bwhatsapp\b/gi,               'WhatsApp'],
-  [/\bapointment\b/gi,             'appointment'],
-  [/\bapointmant\b/gi,             'appointment'],
-  [/\bfollowup\b/gi,               'follow-up'],
-  [/\bfollo\s+up\b/gi,             'follow-up'],
-  [/\bconfarm\b/gi,                'confirm'],
-  [/\bconferm\b/gi,                'confirm'],
-  [/\bsampal\b/gi,                 'sample'],
-  [/\bsampel\b/gi,                 'sample'],
-  [/\badvanse\b/gi,                'advance'],
-  [/\badvans\b/gi,                 'advance'],
-  [/\binvoic\b/gi,                 'invoice'],
-];
-
-function fixTranscript(text: string): string {
-  let out = text;
-  for (const [pattern, replacement] of HINGLISH_FIXES) {
-    out = out.replace(pattern, replacement);
-  }
-  return out;
+  return t;
 }
 
 // ── Voice hook ────────────────────────────────────────────────────────────────
