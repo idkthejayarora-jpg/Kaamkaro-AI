@@ -3,7 +3,7 @@ import { useSSE } from '../hooks/useSSE';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
   AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages,
-  Filter, Users,
+  Filter, Users, Pencil, X, Check,
 } from 'lucide-react';
 import { diaryAPI, staffAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
