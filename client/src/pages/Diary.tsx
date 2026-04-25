@@ -475,9 +475,10 @@ function useVoice(onFinalText: (text: string) => void) {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         const r = ev.results[i];
         if (r.isFinal) {
-          const t = r[0].transcript.trim();
-          if (t && !committedRef.current.has(t)) {
-            committedRef.current.add(t);
+          const raw = r[0].transcript.trim();
+          const t   = fixTranscript(raw);
+          if (t && !committedRef.current.has(raw)) {
+            committedRef.current.add(raw); // dedup on raw so fixes don't break set membership
             fin += t + ' ';
           }
         } else {
@@ -486,7 +487,7 @@ function useVoice(onFinalText: (text: string) => void) {
       }
       // Keep interim live; clear only when final arrives so there's no blank gap
       if (fin) setInterimText('');
-      else if (intr) setInterimText(intr);
+      else if (intr) setInterimText(fixTranscript(intr));
       if (fin.trim()) onFinalRef.current(fin.trim());
     };
 
