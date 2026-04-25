@@ -70,9 +70,11 @@ router.post('/', async (req, res) => {
     }
 
     const validStatus = PIPELINE_STAGES.includes(status) ? status : 'lead';
+    const primaryAssignee = assignedTo || null;
     const customer = {
       id: uuidv4(), name, phone: phone || '', email: email || '',
-      assignedTo: assignedTo || null, status: validStatus,
+      assignedTo: primaryAssignee, status: validStatus,
+      assignedStaff: primaryAssignee ? [primaryAssignee] : [],  // multi-staff list
       lastContact: null, notes: notes || '', tags: tags || [],
       dealValue: dealValue ? Number(dealValue) : null,
       createdAt: new Date().toISOString(),
