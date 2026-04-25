@@ -38,9 +38,13 @@ declare global {
   }
 }
 
-// hi-IN is used for all recording — Chrome's engine handles Hindi, English and
-// Hinglish (mixed) automatically in this locale. No manual selection needed.
-const VOICE_LANG = 'hi-IN';
+// en-IN is used for all recording.
+// Advantages over hi-IN:
+//   • Always returns Roman script — no Devanagari conversion needed
+//   • Handles English business words (parcel, payment, video call) correctly
+//   • Still recognises Hindi/Hinglish words phonetically in Roman
+//   • Eliminates the Devanagari-vs-Roman inconsistency that caused vocab errors
+const VOICE_LANG = 'en-IN';
 
 // ── Devanagari → Hinglish (Roman) transliterator ─────────────────────────────
 // Chrome's hi-IN speech engine returns Devanagari script. This converts it to
