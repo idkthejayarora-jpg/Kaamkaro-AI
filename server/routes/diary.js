@@ -1014,7 +1014,7 @@ function parseDueDateFromText(text) {
   const d = new Date();
   const fmt = (dt) => dt.toISOString().split('T')[0];
 
-  if (/\bparso\b|\bday after tomorrow\b/.test(lower)) { d.setDate(d.getDate() + 2); return fmt(d); }
+  if (/\bparso\b|\bparson\b|\bday after tomorrow\b/.test(lower)) { d.setDate(d.getDate() + 2); return fmt(d); }
   if (/\bkal\b|\btomorrow\b/.test(lower))              { d.setDate(d.getDate() + 1); return fmt(d); }
   if (/\baaj\b|\btoday\b/.test(lower))                 { return fmt(d); }
   if (/\bnext week\b|\bagle hafte\b|\bis hafte\b/.test(lower)) { d.setDate(d.getDate() + 7); return fmt(d); }
