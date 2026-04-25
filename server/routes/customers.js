@@ -159,7 +159,7 @@ router.patch('/:id', async (req, res) => {
     if (req.user.role === 'staff') {
       const customers = await readDB('customers');
       const c = customers.find(x => x.id === req.params.id);
-      if (!c || c.assignedTo !== req.user.id) return res.status(403).json({ error: 'Access denied' });
+      if (!c || !staffCanAccess(c, req.user.id)) return res.status(403).json({ error: 'Access denied' });
     }
     const customers = await readDB('customers');
     const existing  = customers.find(x => x.id === req.params.id);
