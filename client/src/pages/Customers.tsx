@@ -238,12 +238,21 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
 }) {
   const [form, setForm] = useState({
     name: '', phone: '', email: '',
-    // Staff auto-assign to themselves; admin starts unassigned
-    assignedTo: isAdmin ? '' : selfId,
+    // Multi-staff: admin starts empty, staff auto-assigns themselves
+    assignedStaff: isAdmin ? [] as string[] : [selfId],
     notes: '', tags: '', status: 'lead' as PipelineStatus, dealValue: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+
+  const toggleStaff = (id: string) => {
+    setForm(f => ({
+      ...f,
+      assignedStaff: f.assignedStaff.includes(id)
+        ? f.assignedStaff.filter(s => s !== id)
+        : [...f.assignedStaff, id],
+    }));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,8 +260,10 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
     setLoading(true);
     try {
       const c = await customersAPI.create({
-        ...form,
-        assignedTo: form.assignedTo || null,
+        name: form.name, phone: form.phone, email: form.email,
+        notes: form.notes, status: form.status,
+        assignedTo: form.assignedStaff[0] || null,   // primary = first selected
+        assignedStaff: form.assignedStaff,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         dealValue: form.dealValue ? Number(form.dealValue) : null,
       });
@@ -291,14 +302,32 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
               <input className="input" type="number" min="0" placeholder="e.g. 50000" value={form.dealValue} onChange={e => setForm(f => ({ ...f, dealValue: e.target.value }))} />
             </div>
           </div>
-          {/* Only admins can assign to any staff member */}
-          {isAdmin && (
+          {/* Multi-staff assignment — admin only */}
+          {isAdmin && staff.length > 0 && (
             <div>
-              <label className="label">Assign to Staff</label>
-              <select className="input" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))}>
-                <option value="">Unassigned</option>
-                {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <label className="label">Assign to Staff <span className="text-white/20 font-normal">(select multiple)</span></label>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {staff.map(s => {
+                  const selected = form.assignedStaff.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleStaff(s.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
+                        selected
+                          ? 'border-gold/50 bg-gold/10 text-gold'
+                          : 'border-dark-50 text-white/40 hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      {selected && <span className="mr-1">✓</span>}{s.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {form.assignedStaff.length === 0 && (
+                <p className="text-white/20 text-xs mt-1.5">No staff selected — customer will be unassigned</p>
+              )}
             </div>
           )}
           <div><label className="label">Tags (comma-separated)</label><input className="input" placeholder="hot-lead, follow-up, priority" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} /></div>
