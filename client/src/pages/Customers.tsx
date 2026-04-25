@@ -1039,7 +1039,15 @@ export default function Customers() {
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                       {c.phone && <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={10} />{c.phone}</span>}
                       {c.email && <span className="text-white/30 text-xs flex items-center gap-1"><Mail size={10} />{c.email}</span>}
-                      {isAdmin && c.assignedTo && <span className="text-gold/40 text-xs">→ {getStaffName(c.assignedTo)}</span>}
+                      {isAdmin && (() => {
+                        const ids = c.assignedStaff?.length ? c.assignedStaff : (c.assignedTo ? [c.assignedTo] : []);
+                        if (!ids.length) return null;
+                        return (
+                          <span className="text-gold/40 text-xs">
+                            → {ids.map(id => getStaffName(id)).filter(Boolean).join(', ')}
+                          </span>
+                        );
+                      })()}
                       {c.dealValue && <span className="text-green-400/70 text-xs flex items-center gap-1"><DollarSign size={9} />₹{c.dealValue.toLocaleString('en-IN')}</span>}
                     </div>
                   </div>
