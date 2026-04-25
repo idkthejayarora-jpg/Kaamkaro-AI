@@ -754,7 +754,7 @@ export default function Customers() {
   const [showCSV, setShowCSV]         = useState(false);
   const [logging, setLogging]         = useState<Customer | null>(null);
   const [expanded, setExpanded]       = useState<string | null>(null);
-  const [expandedTab, setExpandedTab] = useState<'timeline' | 'sentiment' | 'notes'>('timeline');
+  const [expandedTab, setExpandedTab] = useState<'timeline' | 'sentiment' | 'notes' | 'staff'>('timeline');
   const [loading, setLoading]         = useState(true);
   const [selected, setSelected]         = useState<string[]>([]);
   const [quickCreating, setQuickCreating] = useState(false);
