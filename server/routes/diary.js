@@ -41,13 +41,27 @@ function normalizeName(name) {
     .replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
 }
 
+// Generic honorific tokens (post-normalization) that must never be the sole match between two names.
+// e.g. "bhaiya" normalises → "baiya"; sharing this token alone should not count as a name match.
+const GENERIC_HONORIFIC_NORM = new Set([
+  'baiya','baiyya','baia',    // bhaiya variants
+  'bai',                      // bhai
+  'didi','behan','bababi',    // sister/bhabhi
+  'saab','saib',              // sahab
+  'uncle','aunty',
+]);
+
 function nameSimilarity(a, b) {
   const na = normalizeName(a);
   const nb = normalizeName(b);
   if (na === nb) return 1.0;
   const ta = na.split(' ');
   const tb = nb.split(' ');
-  if (ta.some(t => tb.some(t2 => t === t2 && t.length > 2))) return 0.9;
+  // Shared-token boost — but only when the shared token is NOT a generic honorific
+  const sharedMeaningful = ta.some(t =>
+    tb.some(t2 => t === t2 && t.length > 2 && !GENERIC_HONORIFIC_NORM.has(t))
+  );
+  if (sharedMeaningful) return 0.9;
   const dist = levenshtein(na, nb);
   const maxLen = Math.max(na.length, nb.length);
   return maxLen === 0 ? 1 : 1 - dist / maxLen;
