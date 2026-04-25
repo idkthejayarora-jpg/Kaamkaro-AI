@@ -97,9 +97,11 @@ router.post('/bulk-import', adminOnly, async (req, res) => {
     const created = [];
     for (const row of incoming.slice(0, 500)) {
       if (!row.name) continue;
+      const rowAssignee = row.assignedTo || null;
       const customer = {
         id: uuidv4(), name: row.name, phone: row.phone || '',
-        email: row.email || '', assignedTo: row.assignedTo || null,
+        email: row.email || '', assignedTo: rowAssignee,
+        assignedStaff: rowAssignee ? [rowAssignee] : [],
         status: PIPELINE_STAGES.includes(row.status) ? row.status : 'lead',
         lastContact: null, notes: row.notes || '', tags: [],
         dealValue: row.dealValue ? Number(row.dealValue) : null,
