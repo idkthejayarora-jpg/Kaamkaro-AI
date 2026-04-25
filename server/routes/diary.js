@@ -1754,7 +1754,9 @@ Respond ONLY with this JSON:
         try {
           const newCust = {
             id: uuidv4(), name: titleCase(spokenName), phone: '', email: '',
-            assignedTo: staffId, status: 'lead', lastContact: nowAI,
+            assignedTo: staffId,
+            assignedStaff: [staffId],
+            status: 'lead', lastContact: nowAI,
             notes: `Auto-created from diary entry by ${staffName}`,
             notesList: [], tags: ['diary-import'], dealValue: null, createdAt: nowAI,
           };
