@@ -710,10 +710,13 @@ function useVoice(onFinalText: (text: string) => void) {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         const r = ev.results[i];
         if (r.isFinal) {
-          const raw = r[0].transcript.trim();
-          const t   = fixTranscript(raw);
+          const raw   = r[0].transcript.trim();
+          // Step 1: convert Devanagari → Roman (no-op when Chrome already returns Roman)
+          // Step 2: fix systematic hi-IN phonetic errors on guaranteed-Roman text
+          const roman = devanagariToRoman(raw);
+          const t     = fixTranscript(roman);
           if (t && !committedRef.current.has(raw)) {
-            committedRef.current.add(raw); // dedup on raw so fixes don't break set membership
+            committedRef.current.add(raw); // dedup keyed on raw — before any fixes
             fin += t + ' ';
           }
         } else {
@@ -722,7 +725,7 @@ function useVoice(onFinalText: (text: string) => void) {
       }
       // Keep interim live; clear only when final arrives so there's no blank gap
       if (fin) setInterimText('');
-      else if (intr) setInterimText(fixTranscript(intr));
+      else if (intr) setInterimText(fixTranscript(devanagariToRoman(intr)));
       if (fin.trim()) onFinalRef.current(fin.trim());
     };
 
