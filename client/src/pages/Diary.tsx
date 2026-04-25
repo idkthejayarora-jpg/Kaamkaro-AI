@@ -169,6 +169,18 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
   const [deleting,      setDeleting]      = useState(false);
   const [deleteError,   setDeleteError]   = useState('');
   const [reanalyzing,   setReanalyzing]   = useState(false);
+  const [editing,       setEditing]       = useState(false);
+  const [editContent,   setEditContent]   = useState(entry.content);
+  const [editEntries,   setEditEntries]   = useState(entry.aiEntries);
+  const [saving,        setSaving]        = useState(false);
+
+  // Keep edit state in sync if SSE pushes an update while not editing
+  useEffect(() => {
+    if (!editing) {
+      setEditContent(entry.content);
+      setEditEntries(entry.aiEntries);
+    }
+  }, [entry.content, entry.aiEntries, editing]);
 
   const hasTranslation =
     entry.translatedContent && entry.translatedContent.trim() !== entry.content.trim();
@@ -195,6 +207,25 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
       onReanalyzed(updated);
     } catch { /* server will set status=processing; SSE will push the result */ }
     finally { setReanalyzing(false); }
+  };
+
+  const handleSaveEdit = async (reanalyze = false) => {
+    setSaving(true);
+    try {
+      await diaryAPI.edit(entry.id, {
+        content: editContent,
+        aiEntries: reanalyze ? undefined : editEntries,
+        reanalyze,
+      });
+      setEditing(false);
+      // SSE will push the final update; optimistic update for content
+      onReanalyzed({ ...entry, content: editContent, aiEntries: reanalyze ? [] : editEntries });
+    } catch { /* non-fatal */ }
+    finally { setSaving(false); }
+  };
+
+  const removeAiEntry = (idx: number) => {
+    setEditEntries(prev => prev.filter((_, i) => i !== idx));
   };
 
   return (
