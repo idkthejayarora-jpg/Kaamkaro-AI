@@ -294,7 +294,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-          {entry.status === 'done' && entry.aiEntries.length > 0 && (
+          {entry.status === 'done' && entry.aiEntries.length > 0 && !editing && (
             <button
               onClick={() => setExpanded(e => !e)}
               className="p-1.5 text-white/30 hover:text-gold transition-colors rounded-lg"
@@ -302,28 +302,43 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
               {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
+          {/* Edit button */}
+          {!editing && (
+            <button
+              onClick={() => { setEditing(true); setExpanded(false); }}
+              title="Edit entry"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all text-xs font-medium"
+            >
+              <Pencil size={11} />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          )}
           {/* Re-analyze — always available so staff can fix bad extractions */}
-          <button
-            onClick={handleReanalyze}
-            disabled={reanalyzing || entry.status === 'processing'}
-            title="Re-run AI analysis"
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40 transition-all text-xs font-medium disabled:opacity-40"
-          >
-            {reanalyzing
-              ? <div className="w-3 h-3 border border-gold/40 border-t-gold rounded-full animate-spin" />
-              : <RefreshCw size={11} />}
-            <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : 'Re-run'}</span>
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all text-xs font-medium disabled:opacity-50"
-          >
-            {deleting
-              ? <div className="w-3 h-3 border border-red-400/50 border-t-red-400 rounded-full animate-spin" />
-              : <Trash2 size={11} />}
-            <span className="hidden sm:inline">{deleting ? 'Deleting…' : 'Delete'}</span>
-          </button>
+          {!editing && (
+            <button
+              onClick={handleReanalyze}
+              disabled={reanalyzing || entry.status === 'processing'}
+              title="Re-run AI analysis"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40 transition-all text-xs font-medium disabled:opacity-40"
+            >
+              {reanalyzing
+                ? <div className="w-3 h-3 border border-gold/40 border-t-gold rounded-full animate-spin" />
+                : <RefreshCw size={11} />}
+              <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : 'Re-run'}</span>
+            </button>
+          )}
+          {!editing && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all text-xs font-medium disabled:opacity-50"
+            >
+              {deleting
+                ? <div className="w-3 h-3 border border-red-400/50 border-t-red-400 rounded-full animate-spin" />
+                : <Trash2 size={11} />}
+              <span className="hidden sm:inline">{deleting ? 'Deleting…' : 'Delete'}</span>
+            </button>
+          )}
         </div>
       </div>
 
