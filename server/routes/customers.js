@@ -130,11 +130,24 @@ router.post('/bulk-actions', adminOnly, async (req, res) => {
     }
     let updated = 0;
     if (action === 'assign') {
+      const allCustomers = await readDB('customers');
       for (const id of ids) {
-        await updateOne('customers', id, { assignedTo: value || null });
+        const existing = allCustomers.find(c => c.id === id);
+        if (!existing) continue;
+        const currentStaff = Array.isArray(existing.assignedStaff)
+          ? existing.assignedStaff
+          : (existing.assignedTo ? [existing.assignedTo] : []);
+        const newStaffId = value || null;
+        const updatedStaff = newStaffId && !currentStaff.includes(newStaffId)
+          ? [...currentStaff, newStaffId]
+          : currentStaff;
+        await updateOne('customers', id, {
+          assignedTo: existing.assignedTo || newStaffId,  // keep primary unless unset
+          assignedStaff: updatedStaff,
+        });
         updated++;
       }
-      await logAudit(req.user.id, req.user.name, 'update', 'customer', null, `Bulk assigned ${updated} customers to staff ${value}`);
+      await logAudit(req.user.id, req.user.name, 'update', 'customer', null, `Bulk assigned ${updated} customers to also include staff ${value}`);
     } else if (action === 'stage') {
       if (!PIPELINE_STAGES.includes(value)) return res.status(400).json({ error: 'Invalid stage' });
       for (const id of ids) {
