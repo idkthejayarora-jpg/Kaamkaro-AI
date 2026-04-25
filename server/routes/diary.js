@@ -1174,7 +1174,8 @@ function buildInteractionNote(content, sentiment, amount, actions) {
  */
 function fuzzyMatchVendor(spokenName, vendors, threshold = 0.72) {
   if (!spokenName || !spokenName.trim() || !vendors.length) return null;
-  const normSpoken = normalizeName(spokenName);
+  const normSpoken    = normalizeName(spokenName);
+  const spokenTokens  = normSpoken.split(' ').filter(t => t.length > 0);
   let best = null, bestScore = 0;
 
   for (const v of vendors) {
@@ -1182,12 +1183,20 @@ function fuzzyMatchVendor(spokenName, vendors, threshold = 0.72) {
     const candidates = [v.name, v.company].filter(Boolean);
     for (const candidate of candidates) {
       let score = nameSimilarity(spokenName, candidate);
-      const normCand = normalizeName(candidate);
+      const normCand   = normalizeName(candidate);
+      const candTokens = normCand.split(' ').filter(t => t.length > 0);
       if (normSpoken.length >= 4 && normCand.startsWith(normSpoken)) score = Math.max(score, 0.85);
-      const candFirst  = normCand.split(' ')[0];
-      const spokenFirst = normSpoken.split(' ')[0];
-      if (spokenFirst.length >= 4 && candFirst === spokenFirst) score = Math.max(score, 0.80);
-      if (candFirst.length  >= 4 && normSpoken.includes(candFirst)) score = Math.max(score, 0.80);
+
+      const candFirst   = candTokens[0]   || '';
+      const spokenFirst = spokenTokens[0] || '';
+      // First-word-to-first-word boost — only when spoken is a single token (same guard as customers)
+      if (spokenTokens.length === 1 && spokenFirst.length >= 4 && candFirst === spokenFirst) {
+        score = Math.max(score, 0.80);
+      }
+      // Candidate first-word-in-spoken boost — only when candidate is single-token
+      if (candTokens.length === 1 && candFirst.length >= 4 && normSpoken.includes(candFirst)) {
+        score = Math.max(score, 0.80);
+      }
       if (score > bestScore) { best = v; bestScore = score; }
     }
   }
