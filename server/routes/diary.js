@@ -918,6 +918,36 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PATCH /api/diary/:id — edit content and/or customer links
+router.patch('/:id', async (req, res) => {
+  try {
+    const entries = await readDB('diary');
+    const entry = entries.find(e => e.id === req.params.id);
+    if (!entry) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && entry.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { content, aiEntries, reanalyze } = req.body;
+    const patch = {};
+    if (typeof content === 'string' && content.trim()) patch.content = content.trim();
+    if (Array.isArray(aiEntries)) patch.aiEntries = aiEntries;
+
+    const updated = await updateOne('diary', req.params.id, patch);
+    broadcast('diary:updated', { ...entry, ...patch });
+    res.json({ ...entry, ...patch });
+
+    // Optional re-analysis on updated content
+    if (reanalyze) {
+      await updateOne('diary', req.params.id, { status: 'processing', aiEntries: [], translatedContent: null, detectedLanguage: null, error: null });
+      broadcast('diary:updated', { ...entry, ...patch, status: 'processing', aiEntries: [] });
+      processDiaryEntry(req.params.id, patch.content || entry.content, entry.staffId, entry.staffName).catch(console.error);
+    }
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // POST /api/diary/:id/reanalyze
 router.post('/:id/reanalyze', async (req, res) => {
   try {
