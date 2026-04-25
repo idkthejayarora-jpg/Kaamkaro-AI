@@ -1351,12 +1351,29 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     let isNew = false;
 
     if (resolved) {
+      // ── Multi-staff: if this staff isn't already linked, add them ─────────────
+      const existingStaff = Array.isArray(resolved.assignedStaff)
+        ? resolved.assignedStaff
+        : [resolved.assignedTo].filter(Boolean);
+      if (!existingStaff.includes(staffId)) {
+        const updatedStaff = [...existingStaff, staffId];
+        const staffUpdated = await updateOne('customers', resolved.id, {
+          assignedStaff: updatedStaff,
+          lastContact: now,
+        }).catch(() => null);
+        if (staffUpdated) {
+          broadcast('customer:updated', staffUpdated);
+          console.log(`[Diary NLP] 🔗 Shared customer "${resolved.name}" now also with ${staffName}`);
+        }
+      }
       allCustomers = allCustomers.map(c => c.id === resolved.id ? { ...c, lastContact: now } : c);
     } else {
       try {
         const newCust = {
           id: uuidv4(), name: titleCase(name), phone: '', email: '',
-          assignedTo: staffId, status: 'lead', lastContact: now,
+          assignedTo: staffId,
+          assignedStaff: [staffId],          // multi-staff from the start
+          status: 'lead', lastContact: now,
           notes: `Auto-created from diary entry by ${staffName}`,
           notesList: [], tags: ['diary-import'], dealValue: null, createdAt: now,
         };
