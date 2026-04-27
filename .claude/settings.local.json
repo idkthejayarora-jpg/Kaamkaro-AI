@@ -63,7 +63,12 @@
       "Bash(sips -s format png \"/Users/jaigopalarora/Kaamkaro AI/client/public/favicon.svg\" --resampleHeightWidth 192 192 --out \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-192.png\")",
       "Bash(sips -s format png \"/Users/jaigopalarora/Kaamkaro AI/client/public/favicon.svg\" --resampleHeightWidth 512 512 --out \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-512.png\")",
       "Bash(sips -g pixelWidth -g pixelHeight \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-192.png\" \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-512.png\")",
-      "Bash(sips -g pixelWidth -g pixelHeight -g hasAlpha \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-192.png\")"
+      "Bash(sips -g pixelWidth -g pixelHeight -g hasAlpha \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-192.png\")",
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(xargs ls *)",
+      "Bash(python3 -c \"import pptx; print\\('pptx ok', pptx.__version__\\)\")",
+      "Bash(pip3 install *)",
+      "Bash(python3 -c \"import pptx; print\\('ok'\\)\")"
     ]
   }
 }
