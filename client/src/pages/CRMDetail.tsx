@@ -37,6 +37,11 @@ export default function CRMDetail() {
   const [followUpEdit, setFollowUpEdit] = useState('');
   const [visitEdit,    setVisitEdit]    = useState('');
 
+  // Voice input — appends spoken text to the note textarea
+  const voice = useVoice((text: string) => {
+    setNoteText(prev => prev.trim() ? prev.trimEnd() + ' ' + text : text);
+  });
+
   const today = new Date().toISOString().split('T')[0];
 
   const load = async () => {
