@@ -1,13 +1,15 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSSE } from '../hooks/useSSE';
 import {
   Mic, MicOff, Send, Sparkles, ChevronDown, ChevronUp,
   AlertCircle, Clock, UserPlus, Globe, Trash2, RefreshCw, Languages,
-  Filter, Users, Pencil, X, Check,
+  Filter, Users, Pencil, X, Check, ListTodo, CheckCircle2, Circle,
+  ArrowRight,
 } from 'lucide-react';
-import { diaryAPI, staffAPI } from '../lib/api';
+import { diaryAPI, staffAPI, tasksAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { DiaryEntry, Staff } from '../types';
+import type { DiaryEntry, Staff, Task } from '../types';
 
 // ── Web Speech API types (not always in TS DOM lib) ───────────────────────────
 interface SpeechRecognitionResult {
