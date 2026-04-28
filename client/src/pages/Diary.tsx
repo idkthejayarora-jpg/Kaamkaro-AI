@@ -315,7 +315,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor, entryTasks, onTa
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-          {entry.status === 'done' && entry.aiEntries.length > 0 && !editing && (
+          {(entry.status === 'done' && entry.aiEntries.length > 0 || entryTasks.length > 0) && !editing && (
             <button
               onClick={() => setExpanded(e => !e)}
               className="p-1.5 text-white/30 hover:text-gold transition-colors rounded-lg"
