@@ -99,6 +99,11 @@ function LeadCard({ lead, today, isAdmin }: { lead: Lead; today: string; isAdmin
                 No pickup ×{lead.noPickupCount}
               </span>
             )}
+            {isAdmin && lead.staffName && (
+              <span className="text-white/20 text-[10px] flex items-center gap-0.5">
+                <User size={8} />{lead.staffName}
+              </span>
+            )}
           </div>
 
           {lastNote && (
