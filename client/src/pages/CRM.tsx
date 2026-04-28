@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Phone, MapPin, Clock, AlertTriangle, CalendarDays,
-  Filter as Funnel,
+  Filter as Funnel, User,
 } from 'lucide-react';
-import { leadsAPI } from '../lib/api';
-import type { Lead, LeadStage } from '../types';
+import { leadsAPI, staffAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
+import type { Lead, LeadStage, Staff } from '../types';
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
