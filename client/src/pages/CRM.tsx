@@ -119,20 +119,29 @@ function LeadCard({ lead, today, isAdmin }: { lead: Lead; today: string; isAdmin
 
 // ── Main CRM list page ─────────────────────────────────────────────────────────
 export default function CRM() {
-  const [leads,   setLeads]   = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab,     setTab]     = useState<'today' | 'all' | LeadStage>('today');
+  const [leads,       setLeads]       = useState<Lead[]>([]);
+  const [staffList,   setStaffList]   = useState<Staff[]>([]);
+  const [staffFilter, setStaffFilter] = useState<string>('all');
+  const [loading,     setLoading]     = useState(true);
+  const [tab,         setTab]         = useState<'today' | 'all' | LeadStage>('today');
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await leadsAPI.list();
+      const params: Record<string, string> = {};
+      if (isAdmin && staffFilter !== 'all') params.staffId = staffFilter;
+      const [data, staffData] = await Promise.all([
+        leadsAPI.list(params),
+        isAdmin ? staffAPI.list().catch(() => []) : Promise.resolve([]),
+      ]);
       setLeads(data);
+      setStaffList(staffData as Staff[]);
     } catch {}
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [staffFilter]);
 
   const today = new Date().toISOString().split('T')[0];
 
