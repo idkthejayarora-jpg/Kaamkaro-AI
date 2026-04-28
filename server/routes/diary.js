@@ -1433,8 +1433,14 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
   // ── PHASE 1: Local NLP — parallel reads ────────────────────────────────────
   let allCustomers = [];
   let allVendors   = [];
+  let pooledTeamId = null; // non-null if this staff is in a team with pooledTasks=true
   try { allCustomers = await readDB('customers'); } catch {}
   try { allVendors   = await readDB('vendors');   } catch {}
+  try {
+    const teams = await readDB('teams');
+    const myTeam = teams.find(t => Array.isArray(t.members) && t.members.includes(staffId));
+    if (myTeam?.pooledTasks === true) pooledTeamId = myTeam.id;
+  } catch {}
 
   const lang      = detectLanguage(content);
   const names     = extractNamesFromText(content);
