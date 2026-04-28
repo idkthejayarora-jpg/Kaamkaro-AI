@@ -23,19 +23,22 @@ interface FormState {
 const EMPTY: FormState = {
   name: '', phone: '', place: '',
   source: 'other', stage: 'new',
+  assignedTo: '',
   nextFollowUp: '', visitDate: '', note: '',
 };
 
 export default function CRMForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const isEdit = !!id;
 
-  const [form,    setForm]    = useState<FormState>(EMPTY);
-  const [loading, setLoading] = useState(isEdit);
-  const [saving,  setSaving]  = useState(false);
-  const [error,   setError]   = useState('');
-  const [dirty,   setDirty]   = useState(false);
+  const [form,      setForm]      = useState<FormState>(EMPTY);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading,   setLoading]   = useState(isEdit);
+  const [saving,    setSaving]    = useState(false);
+  const [error,     setError]     = useState('');
+  const [dirty,     setDirty]     = useState(false);
 
   // Load existing lead when editing
   useEffect(() => {
