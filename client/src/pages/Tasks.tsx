@@ -403,7 +403,7 @@ export default function Tasks() {
         <div>
           <h1 className="text-2xl font-bold text-white">Tasks</h1>
           <p className="text-white/30 text-sm mt-1">
-            {pending.length} pending ·{' '}
+            {pendingPersonal.length} personal · {pendingPool.length > 0 && <span className="text-indigo-300">{pendingPool.length} pool · </span>}
             {overdue.length > 0
               ? <span className="text-red-400">{overdue.length} overdue</span>
               : '0 overdue'}
