@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
+import OverdueTaskAlert from './components/OverdueTaskAlert';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Staff from './pages/Staff';
@@ -18,6 +19,7 @@ import Goals from './pages/Goals';
 import Templates from './pages/Templates';
 import WebhookSetup from './pages/WebhookSetup';
 import Chat from './pages/Chat';
+import Teams from './pages/Teams';
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
