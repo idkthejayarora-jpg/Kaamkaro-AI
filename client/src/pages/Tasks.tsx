@@ -273,13 +273,15 @@ export default function Tasks() {
   const getStaffName = (id: string) => staff.find(s => s.id === id)?.name || '';
 
   // ── Task row ─────────────────────────────────────────────────────────────────
-  function TaskItem({ task }: { task: Task }) {
+  function TaskItem({ task, poolMode }: { task: Task; poolMode?: boolean }) {
     const isOverdueTask = !task.completed && task.dueDate < today;
     const isDueToday    = !task.completed && task.dueDate === today;
     const fromDiary     = task.source === 'diary' && task.diaryEntryId;
+    const isPool        = !!task.teamId;
 
     return (
       <div className={`card group transition-all ${
+        isPool        ? 'border-indigo-500/25 bg-indigo-500/3' :
         isOverdueTask ? 'border-red-500/20' :
         isDueToday    ? 'border-gold/20'    : ''
       }`}>
