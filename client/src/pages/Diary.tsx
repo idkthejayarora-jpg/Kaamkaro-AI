@@ -238,6 +238,17 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor, entryTasks, onTa
     setEditEntries(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const handleCompleteTask = async (taskId: string) => {
+    setCompletingId(taskId);
+    try {
+      await tasksAPI.complete(taskId);
+      onTaskCompleted(taskId);
+    } catch { /* non-fatal */ }
+    finally { setCompletingId(null); }
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <div className="card">
       {/* ── Header row ── */}
