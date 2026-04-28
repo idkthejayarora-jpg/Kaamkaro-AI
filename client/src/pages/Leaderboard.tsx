@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, TrendingUp, CheckCircle, Target, Wifi, Phone, Home, RotateCcw, Award } from 'lucide-react';
+import { Trophy, TrendingUp, CheckCircle, Target, Wifi, Phone, Home, RotateCcw, Award, Users } from 'lucide-react';
 import { aiAPI, staffAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { LeaderboardRow } from '../types';
@@ -13,19 +13,26 @@ const AVAILABILITY_CONFIG = {
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
+interface LeaderboardData {
+  rows: LeaderboardRow[];
+  scopedTeamId:   string | null;
+  scopedTeamName: string | null;
+  teams: { id: string; name: string }[];
+}
+
 export default function Leaderboard() {
-  const [rows,      setRows]      = useState<LeaderboardRow[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [period,    setPeriod]    = useState<'week' | 'month'>('week');
-  const [resetting, setResetting] = useState(false);
+  const [data,       setData]       = useState<LeaderboardData>({ rows: [], scopedTeamId: null, scopedTeamName: null, teams: [] });
+  const [loading,    setLoading]    = useState(true);
+  const [resetting,  setResetting]  = useState(false);
+  const [teamFilter, setTeamFilter] = useState<string>('');   // admin only
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  const load = async () => {
+  const load = async (tId?: string) => {
     setLoading(true);
     try {
-      const data = await aiAPI.leaderboard();
-      setRows(data);
+      const d = await aiAPI.leaderboard(tId || teamFilter || undefined);
+      setData(d);
     } catch {}
     setLoading(false);
   };
@@ -42,35 +49,66 @@ export default function Leaderboard() {
     setResetting(false);
   };
 
+  const handleTeamFilter = (tId: string) => {
+    setTeamFilter(tId);
+    load(tId);
+  };
+
   const updateAvailability = async (id: string, availability: string) => {
     try {
       await staffAPI.setAvailability(id, availability);
-      setRows(prev => prev.map(r => r.id === id ? { ...r, availability: availability as LeaderboardRow['availability'] } : r));
+      setData(prev => ({ ...prev, rows: prev.rows.map(r => r.id === id ? { ...r, availability: availability as LeaderboardRow['availability'] } : r) }));
     } catch {}
   };
 
-  // Primary sort: merit points (all-time); secondary: period interactions
-  const sorted = [...rows].sort((a, b) =>
-    b.meritTotal - a.meritTotal ||
-    (period === 'week' ? b.weekInteractions - a.weekInteractions : b.monthInteractions - a.monthInteractions)
-  ).map((r, i) => ({ ...r, displayRank: i + 1 }));
+  // Sort by THIS WEEK's merit points (weekPts); secondary: score
+  const sorted = [...data.rows]
+    .sort((a, b) => b.weekPts - a.weekPts || b.score - a.score)
+    .map((r, i) => ({ ...r, displayRank: i + 1 }));
 
   const myRow = sorted.find(r => r.id === user?.id);
+
+  // Week date range label
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const daysSinceMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monDate = new Date(now); monDate.setDate(now.getDate() - daysSinceMon);
+  const weekLabel = `${monDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – ${now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
 
   if (loading) return <div className="space-y-3">{Array(6).fill(0).map((_, i) => <div key={i} className="card h-16 shimmer" />)}</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <Trophy size={24} className="text-gold" />
             Leaderboard
+            {data.scopedTeamName && (
+              <span className="badge badge-gold text-xs ml-1">{data.scopedTeamName}</span>
+            )}
           </h1>
-          <p className="text-white/30 text-sm mt-1">Weekly team rankings · resets every Monday</p>
+          <p className="text-white/30 text-sm mt-1">
+            Weekly points competition · {weekLabel} · resets every Monday
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Team filter — admin only */}
+          {isAdmin && data.teams.length > 0 && (
+            <select
+              value={teamFilter}
+              onChange={e => handleTeamFilter(e.target.value)}
+              className="input text-xs py-1.5 px-3 h-auto"
+            >
+              <option value="">All Staff</option>
+              {data.teams.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+
           {isAdmin && (
             <button
               onClick={handleReset}
@@ -82,19 +120,6 @@ export default function Leaderboard() {
               {resetting ? 'Resetting…' : 'Reset'}
             </button>
           )}
-          <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-xl p-1">
-            {(['week', 'month'] as const).map(p => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                  period === p ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
-                }`}
-              >
-                This {p}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -104,18 +129,29 @@ export default function Leaderboard() {
           <div className="flex items-center gap-3">
             <span className="text-2xl font-black text-gold">#{myRow.displayRank}</span>
             <div className="flex-1">
-              <p className="text-white font-semibold text-sm">Your ranking</p>
-              <p className="text-white/30 text-xs">{myRow.weekInteractions} interactions · {myRow.responseRate}% response · {myRow.totalTasks > 0 ? `${myRow.taskCompletionRate}% tasks done` : 'no tasks yet'}</p>
+              <p className="text-white font-semibold text-sm">Your ranking this week</p>
+              <p className="text-white/30 text-xs">
+                {myRow.weekInteractions} interactions · {myRow.responseRate}% response ·{' '}
+                {myRow.totalTasks > 0 ? `${myRow.taskCompletionRate}% tasks done` : 'no tasks yet'}
+              </p>
+              {myRow.teamName && (
+                <p className="text-gold/50 text-[10px] mt-0.5 flex items-center gap-1">
+                  <Users size={9} /> {myRow.teamName}
+                </p>
+              )}
             </div>
             <div className="text-right">
-              <p className={`font-bold text-lg ${myRow.meritTotal >= 0 ? 'text-gold' : 'text-red-400'}`}>{myRow.meritTotal >= 0 ? '+' : ''}{myRow.meritTotal}</p>
-              <p className="text-white/20 text-xs">merit pts</p>
+              <p className={`font-bold text-lg ${myRow.weekPts >= 0 ? 'text-gold' : 'text-red-400'}`}>
+                {myRow.weekPts >= 0 ? '+' : ''}{myRow.weekPts}
+              </p>
+              <p className="text-white/20 text-xs">this week</p>
+              <p className="text-white/15 text-[10px]">{myRow.meritTotal >= 0 ? '+' : ''}{myRow.meritTotal} all-time</p>
             </div>
           </div>
           {/* Availability selector (self) */}
           <div className="mt-3 pt-3 border-t border-dark-50/50">
             <p className="text-white/30 text-xs mb-2 uppercase tracking-wider font-medium">Your availability</p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {(Object.entries(AVAILABILITY_CONFIG) as [string, typeof AVAILABILITY_CONFIG[keyof typeof AVAILABILITY_CONFIG]][]).map(([key, cfg]) => (
                 <button
                   key={key}
@@ -170,11 +206,16 @@ export default function Leaderboard() {
                     <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-dark-300 ${avail.dot}`} />
                   </div>
 
-                  {/* Name + availability */}
+                  {/* Name + team badge */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-white font-semibold text-sm">{row.name}</p>
                       {isMe && <span className="badge badge-gold text-[10px]">You</span>}
+                      {row.teamName && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] text-gold/40 border border-gold/15 rounded px-1.5 py-0.5">
+                          <Users size={8} />{row.teamName}
+                        </span>
+                      )}
                     </div>
                     <p className={`text-xs ${avail.color}`}>{avail.label}</p>
                   </div>
@@ -182,9 +223,7 @@ export default function Leaderboard() {
                   {/* Stats */}
                   <div className="hidden sm:flex items-center gap-5 flex-shrink-0">
                     <div className="text-center">
-                      <p className="text-white font-bold text-sm">
-                        {period === 'week' ? row.weekInteractions : row.monthInteractions}
-                      </p>
+                      <p className="text-white font-bold text-sm">{row.weekInteractions}</p>
                       <p className="text-white/25 text-[10px]">interactions</p>
                     </div>
                     <div className="text-center">
@@ -208,23 +247,23 @@ export default function Leaderboard() {
                     </div>
                   </div>
 
-                  {/* Merit pts — primary rank driver */}
+                  {/* This week's pts — primary rank driver */}
                   <div className="text-right flex-shrink-0">
-                    <div className={`inline-flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 ${
-                      row.meritTotal >= 0 ? 'border-gold/40 bg-gold/5' : 'border-red-500/30 bg-red-500/5'
+                    <div className={`inline-flex flex-col items-center justify-center w-16 h-16 rounded-full border-2 ${
+                      row.weekPts >= 0 ? 'border-gold/40 bg-gold/5' : 'border-red-500/30 bg-red-500/5'
                     }`}>
-                      <Award size={10} className={row.meritTotal >= 0 ? 'text-gold/60' : 'text-red-400/60'} />
-                      <span className={`font-black text-sm leading-none ${row.meritTotal >= 0 ? 'text-gold' : 'text-red-400'}`}>
-                        {row.meritTotal >= 0 ? '+' : ''}{row.meritTotal}
+                      <Award size={10} className={row.weekPts >= 0 ? 'text-gold/60' : 'text-red-400/60'} />
+                      <span className={`font-black text-sm leading-none ${row.weekPts >= 0 ? 'text-gold' : 'text-red-400'}`}>
+                        {row.weekPts >= 0 ? '+' : ''}{row.weekPts}
                       </span>
-                      <span className="text-white/20 text-[8px]">pts</span>
+                      <span className="text-white/20 text-[8px]">this wk</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Mini stats bar on mobile */}
                 <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t border-dark-50/50 text-xs text-white/40 flex-wrap">
-                  <span className="flex items-center gap-1 text-gold/70"><Award size={10} />{row.meritTotal >= 0 ? '+' : ''}{row.meritTotal} pts</span>
+                  <span className="flex items-center gap-1 text-gold/70"><Award size={10} />{row.weekPts >= 0 ? '+' : ''}{row.weekPts} pts</span>
                   <span className="flex items-center gap-1"><TrendingUp size={10} />{row.weekInteractions} interactions</span>
                   <span>{row.responseRate}% response</span>
                   <span className="flex items-center gap-1 text-green-400/70"><CheckCircle size={10} />{row.closedCount} closed</span>
@@ -262,14 +301,14 @@ export default function Leaderboard() {
 
       {/* Score legend */}
       <div className="card border-dark-50/50">
-        <p className="text-white/30 text-xs font-medium uppercase tracking-wider mb-3">How ranking works</p>
+        <p className="text-white/30 text-xs font-medium uppercase tracking-wider mb-3">How weekly ranking works</p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: 'Merit Points', weight: '#1 rank key', icon: Award },
-            { label: 'Response rate', weight: '35%', icon: Target },
-            { label: 'Interactions', weight: '30%', icon: TrendingUp },
-            { label: 'Deals closed', weight: '20%', icon: CheckCircle },
-            { label: 'Task completion', weight: '15%', icon: CheckCircle },
+            { label: 'This week\'s pts', weight: '#1 rank key', icon: Award },
+            { label: 'Response rate',   weight: '35%',          icon: Target },
+            { label: 'Interactions',    weight: '30%',          icon: TrendingUp },
+            { label: 'Deals closed',    weight: '20%',          icon: CheckCircle },
+            { label: 'Task completion', weight: '15%',          icon: CheckCircle },
           ].map(({ label, weight, icon: Icon }) => (
             <div key={label} className="flex items-center gap-2 p-2.5 rounded-lg bg-dark-200">
               <Icon size={12} className="text-gold flex-shrink-0" />
@@ -280,6 +319,7 @@ export default function Leaderboard() {
             </div>
           ))}
         </div>
+        <p className="text-white/20 text-[10px] mt-3">Points reset each Monday · monthly history visible on staff profiles</p>
       </div>
     </div>
   );
