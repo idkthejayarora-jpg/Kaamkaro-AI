@@ -155,7 +155,7 @@ export const aiAPI = {
   dashboardSummary: () => api.get('/ai/dashboard-summary').then(r => r.data),
   weeklyReport: () => api.get('/ai/weekly-report').then(r => r.data),
   sentimentTrend: (customerId: string) => api.get(`/ai/sentiment-trend/${customerId}`).then(r => r.data),
-  leaderboard: () => api.get('/ai/leaderboard').then(r => r.data),
+  leaderboard: (teamId?: string) => api.get('/ai/leaderboard', { params: teamId ? { teamId } : {} }).then(r => r.data),
   resetLeaderboard: () => api.post('/ai/leaderboard/reset').then(r => r.data),
 };
 
