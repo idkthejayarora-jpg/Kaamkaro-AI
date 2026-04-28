@@ -111,6 +111,12 @@ export const tasksAPI = {
   complete: (id: string) => api.patch(`/tasks/${id}/complete`).then(r => r.data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/tasks/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/tasks/${id}`).then(r => r.data),
+  transferRequest: (taskId: string, toStaffId: string, conversationId: string) =>
+    api.post('/tasks/transfer-request', { taskId, toStaffId, conversationId }).then(r => r.data),
+  transferAccept: (taskId: string, messageId: string) =>
+    api.post(`/tasks/${taskId}/transfer-accept`, { messageId }).then(r => r.data),
+  transferDecline: (taskId: string, messageId: string) =>
+    api.post(`/tasks/${taskId}/transfer-decline`, { messageId }).then(r => r.data),
 };
 
 export const diaryAPI = {
