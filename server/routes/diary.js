@@ -1663,6 +1663,7 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
         createdAt:     now,
         source:        'diary',
         diaryEntryId:  entryId,
+        teamId:        pooledTeamId,   // null unless team has pooledTasks=true
       };
       sideEffects.push(
         insertOne('tasks', task)
