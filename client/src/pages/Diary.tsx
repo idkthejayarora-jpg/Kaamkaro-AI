@@ -501,6 +501,86 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor, entryTasks, onTa
           ))}
         </div>
       )}
+
+      {/* ── Tasks linked to this diary entry ── */}
+      {!editing && expanded && entryTasks.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <p className="text-white/30 text-xs flex items-center gap-1.5">
+              <ListTodo size={11} className="text-gold/70" />
+              Tasks created from this entry
+              <span className="text-white/20 ml-1">
+                ({entryTasks.filter(t => t.completed).length}/{entryTasks.length} done)
+              </span>
+            </p>
+            <button
+              onClick={() => navigate('/tasks')}
+              className="flex items-center gap-1 text-[10px] text-gold/50 hover:text-gold transition-colors"
+            >
+              View all tasks <ArrowRight size={9} />
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            {entryTasks.map(task => {
+              const isOverdue = !task.completed && task.dueDate < today;
+              const isDone    = task.completed;
+              return (
+                <div
+                  key={task.id}
+                  className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-all ${
+                    isDone
+                      ? 'bg-green-500/5 border-green-500/10 opacity-60'
+                      : isOverdue
+                        ? 'bg-red-500/5 border-red-500/15'
+                        : 'bg-dark-200 border-dark-50/60'
+                  }`}
+                >
+                  {/* Completion toggle */}
+                  <button
+                    onClick={() => !isDone && handleCompleteTask(task.id)}
+                    disabled={isDone || completingId === task.id}
+                    className="mt-0.5 flex-shrink-0 text-white/30 hover:text-green-400 transition-colors disabled:cursor-default"
+                    title={isDone ? 'Completed' : 'Mark complete'}
+                  >
+                    {completingId === task.id
+                      ? <div className="w-3.5 h-3.5 border border-white/20 border-t-green-400 rounded-full animate-spin" />
+                      : isDone
+                        ? <CheckCircle2 size={14} className="text-green-400" />
+                        : <Circle size={14} />
+                    }
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-medium leading-snug ${isDone ? 'line-through text-white/30' : 'text-white/80'}`}>
+                      {task.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {task.customerName && (
+                        <span className="text-[10px] text-white/25">{task.customerName}</span>
+                      )}
+                      <span className={`text-[10px] ${isOverdue ? 'text-red-400' : 'text-white/25'}`}>
+                        {isOverdue ? '⚠ Overdue · ' : ''}
+                        {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('en-IN', {
+                          day: 'numeric', month: 'short',
+                        })}
+                      </span>
+                      {(task.rescheduledCount ?? 0) > 0 && (
+                        <span className="text-[10px] text-amber-400/70">
+                          rescheduled {task.rescheduledCount}×
+                        </span>
+                      )}
+                    </div>
+                    {task.notes && !isDone && (
+                      <p className="text-[10px] text-white/25 mt-0.5 truncate">{task.notes}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
