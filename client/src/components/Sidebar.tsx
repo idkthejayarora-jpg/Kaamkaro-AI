@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, UserCheck, Building2,
   BookOpen, Sparkles, LogOut, Menu, X, ChevronRight,
   ClipboardList, Shield, Download, Trophy, Clock, Target,
-  Sun, Moon, FileText, Webhook, Radio, MessageSquare,
+  Sun, Moon, FileText, Webhook, Radio, MessageSquare, Funnel,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
