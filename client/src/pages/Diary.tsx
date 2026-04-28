@@ -1261,6 +1261,8 @@ export default function Diary() {
                   showAuthor={isAdmin && staffFilter === 'all'}
                   onDelete={id => setEntries(prev => prev.filter(x => x.id !== id))}
                   onReanalyzed={updated => setEntries(prev => prev.map(x => x.id === updated.id ? { ...x, ...updated } : x))}
+                  entryTasks={tasks.filter(t => t.diaryEntryId === e.id)}
+                  onTaskCompleted={handleTaskCompleted}
                 />
               ))}
             </div>
