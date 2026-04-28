@@ -14,7 +14,7 @@ const adminNav = [
   { to: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/staff',           icon: Users,           label: 'Staff' },
   { to: '/customers',       icon: UserCheck,       label: 'Customers' },
-  { to: '/crm',             icon: Funnel,          label: 'CRM Leads' },
+  { to: '/crm',             icon: Filter,          label: 'CRM Leads' },
   { to: '/vendors',         icon: Building2,       label: 'Vendors' },
   { to: '/tasks',           icon: ClipboardList,   label: 'Tasks' },
   { to: '/diary',           icon: BookOpen,        label: 'Diary' },
