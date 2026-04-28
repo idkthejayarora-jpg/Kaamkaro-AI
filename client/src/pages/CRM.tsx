@@ -47,7 +47,7 @@ export const SOURCE_LABELS: Record<string, string> = {
 };
 
 // ── Lead card ──────────────────────────────────────────────────────────────────
-function LeadCard({ lead, today }: { lead: Lead; today: string }) {
+function LeadCard({ lead, today, isAdmin }: { lead: Lead; today: string; isAdmin: boolean }) {
   const navigate = useNavigate();
   const isOverdue  = lead.nextFollowUp && lead.nextFollowUp < today;
   const isDueToday = lead.nextFollowUp === today;
