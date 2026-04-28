@@ -449,6 +449,8 @@ export interface LeadNote {
 
 export interface Lead {
   id: string;
+  staffId: string;            // owner — set on creation, used for scoping
+  linkedCustomerId: string | null; // customer record created at same time
   name: string;
   phone: string;
   place: string;
@@ -461,6 +463,8 @@ export interface Lead {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Admin-only: attached server-side
+  staffName?: string;
 }
 
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
