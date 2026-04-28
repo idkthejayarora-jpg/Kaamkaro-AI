@@ -174,6 +174,17 @@ export default function CRMForm() {
           />
         </div>
 
+        {/* Assign to (admin only — new lead) */}
+        {isAdmin && !isEdit && staffList.length > 0 && (
+          <div>
+            <label className="label">Assign to Staff</label>
+            <select className="input" value={form.assignedTo} onChange={e => set('assignedTo', e.target.value)}>
+              <option value="">Assign to myself</option>
+              {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
+
         {/* Source + Stage — side by side */}
         <div className="grid grid-cols-2 gap-3">
           <div>
