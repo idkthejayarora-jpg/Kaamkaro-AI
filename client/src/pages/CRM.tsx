@@ -186,12 +186,26 @@ export default function CRM() {
             )}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/crm/new')}
-          className="btn-primary flex items-center gap-2 flex-shrink-0"
-        >
-          <Plus size={16} /> New Lead
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isAdmin && staffList.length > 0 && (
+            <select
+              value={staffFilter}
+              onChange={e => setStaffFilter(e.target.value)}
+              className="input py-1.5 text-xs pr-7 w-auto"
+            >
+              <option value="all">All Staff</option>
+              {staffList.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={() => navigate('/crm/new')}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={16} /> New Lead
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
