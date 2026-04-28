@@ -71,6 +71,7 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppRoutes />
+          <OverdueTaskAlert />
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
