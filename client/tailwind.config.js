@@ -31,10 +31,11 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       animation: {
-        'fade-in':  'fadeIn 0.3s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'pulse-gold': 'pulseGold 2s infinite',
-        'spin-slow': 'spin 3s linear infinite',
+        'fade-in':        'fadeIn 0.3s ease-in-out',
+        'slide-up':       'slideUp 0.3s ease-out',
+        'slide-in-right': 'slideInRight 0.28s ease-out',
+        'pulse-gold':     'pulseGold 2s infinite',
+        'spin-slow':      'spin 3s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -44,6 +45,10 @@ export default {
         slideUp: {
           '0%':   { transform: 'translateY(16px)', opacity: '0' },
           '100%': { transform: 'translateY(0)',    opacity: '1' },
+        },
+        slideInRight: {
+          '0%':   { transform: 'translateX(100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)',    opacity: '1' },
         },
         pulseGold: {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(201,168,76,0.4)' },
