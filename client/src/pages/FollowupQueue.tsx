@@ -446,10 +446,10 @@ function QueueCard({
             <Phone size={11} /> Log
           </button>
           <button
-            onClick={() => onNavigate(item.customerId)}
+            onClick={() => onDetail(item)}
             className="text-white/25 hover:text-gold transition-colors py-1.5 px-2.5 flex items-center gap-1 text-[11px]"
           >
-            View <ChevronRight size={10} />
+            Logs <ChevronRight size={10} />
           </button>
         </div>
       </div>
