@@ -844,6 +844,7 @@ export default function FollowupQueue() {
   const [priorityFilter, setPriority] = useState<CustomerInsight['priority'] | 'all'>('all');
   const [staffFilter, setStaffFilter] = useState('all');
   const [logging, setLogging]         = useState<CustomerInsight | null>(null);
+  const [detailCustomer, setDetail]   = useState<CustomerInsight | null>(null);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
