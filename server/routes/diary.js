@@ -1021,12 +1021,85 @@ function parseDueDateFromText(text) {
   const d = new Date();
   const fmt = (dt) => skipSunday(dt).toISOString().split('T')[0];
 
+  // ── N-unit patterns (highest priority — most specific) ──────────────────────
+  // "2 din baad/mein", "do din baad", "3 dino mein"
+  let m = lower.match(/(\d+)\s*din\s*(?:mein|baad|ke\s*andar|me\b)/);
+  if (!m) m = lower.match(/\b(ek)\s*din\s*(?:mein|baad)/); // ek din = 1 day
+  if (m) {
+    const n = m[1] === 'ek' ? 1 : parseInt(m[1], 10);
+    if (n > 0 && n <= 365) { d.setDate(d.getDate() + n); return fmt(d); }
+  }
+  // "2 hafte baad/mein", "ek hafte mein", "do hafte mein"
+  m = lower.match(/(\d+)\s*hafte?\s*(?:mein|baad|ke\s*andar|me\b)/);
+  if (!m) m = lower.match(/\b(ek|do|teen)\s*hafte?\s*(?:mein|baad)/);
+  if (m) {
+    const wordMap = { ek: 1, do: 2, teen: 3 };
+    const n = wordMap[m[1]] !== undefined ? wordMap[m[1]] : parseInt(m[1], 10);
+    if (n > 0 && n <= 52) { d.setDate(d.getDate() + n * 7); return fmt(d); }
+  }
+  // "2 mahine baad/mein", "agle 2 mahine mein", "ek mahine mein"
+  m = lower.match(/(\d+)\s*mahine?\s*(?:mein|baad|ke\s*andar|me\b)/);
+  if (!m) m = lower.match(/agle\s+(\d+)\s*mahine?\b/);
+  if (!m) m = lower.match(/\b(ek|do|teen|char)\s*mahine?\s*(?:mein|baad)/);
+  if (m) {
+    const wordMap = { ek: 1, do: 2, teen: 3, char: 4 };
+    const n = wordMap[m[1]] !== undefined ? wordMap[m[1]] : parseInt(m[1], 10);
+    if (n > 0 && n <= 12) { d.setDate(d.getDate() + n * 30); return fmt(d); }
+  }
+  // "2 weeks baad", "3 weeks mein", "in 2 days", "in 3 weeks"
+  m = lower.match(/(?:in\s+)?(\d+)\s*weeks?\s*(?:baad|mein|later)?/);
+  if (m && !lower.match(/last\s+\d+\s*week/)) {
+    const n = parseInt(m[1], 10);
+    if (n > 0 && n <= 52) { d.setDate(d.getDate() + n * 7); return fmt(d); }
+  }
+  m = lower.match(/(?:in\s+)?(\d+)\s*days?\s*(?:baad|mein|later)?/);
+  if (m && !lower.match(/last\s+\d+\s*day/)) {
+    const n = parseInt(m[1], 10);
+    if (n > 0 && n <= 365) { d.setDate(d.getDate() + n); return fmt(d); }
+  }
+
+  // ── Named near-future markers ──────────────────────────────────────────────
   if (/\bparso\b|\bparson\b|\bday after tomorrow\b/.test(lower)) { d.setDate(d.getDate() + 2); return fmt(d); }
-  if (/\bkal\b|\btomorrow\b/.test(lower))              { d.setDate(d.getDate() + 1); return fmt(d); }
-  if (/\baaj\b|\btoday\b/.test(lower))                 { return fmt(d); }
-  if (/\bnext week\b|\bagle hafte\b|\bis hafte\b/.test(lower)) { d.setDate(d.getDate() + 7); return fmt(d); }
-  if (/\bnext month\b|\bagle mahine\b/.test(lower))    { d.setDate(d.getDate() + 30); return fmt(d); }
-  // Generic future intent → default to tomorrow
+  if (/\bkal\b|\btomorrow\b/.test(lower))                        { d.setDate(d.getDate() + 1); return fmt(d); }
+  if (/\baaj\b|\btoday\b/.test(lower))                           { return fmt(d); }
+
+  // ── End of this week ────────────────────────────────────────────────────────
+  if (/(?:is\s*hafte|this\s*week)\s*(?:ke\s*)?(?:end|akhir|ant)\b/.test(lower) ||
+      /\bweekend\b/.test(lower)) {
+    // Move to nearest Saturday (day 6)
+    const daysToSat = (6 - d.getDay() + 7) % 7 || 7;
+    d.setDate(d.getDate() + daysToSat);
+    return fmt(d);
+  }
+
+  // ── End of this month ────────────────────────────────────────────────────────
+  if (/(?:is\s*mahine|this\s*month)\s*(?:ke\s*)?(?:end|akhir|ant)\b/.test(lower) ||
+      /\bend\s*of\s*(?:this\s*)?month\b/.test(lower) ||
+      /\bmonth\s*end\b/.test(lower) ||
+      /\bmahine\s*(?:ke\s*)?(?:end|akhir)\b/.test(lower)) {
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return fmt(lastDay);
+  }
+
+  // ── This week / next week ────────────────────────────────────────────────────
+  if (/\bis\s*hafte\b/.test(lower)) { d.setDate(d.getDate() + 5); return fmt(d); }
+  if (/\bnext\s*week\b|\bagle\s*hafte\b/.test(lower)) { d.setDate(d.getDate() + 7); return fmt(d); }
+
+  // ── Next month (various forms) ────────────────────────────────────────────────
+  if (/\bnext\s*month\b|\bagle\s*mahine\b|\bagle\s*month\b/.test(lower) ||
+      /\baayenge\b.{0,30}\bmahine\b/.test(lower) ||
+      /\bmahine\b.{0,30}\baayenge\b/.test(lower)) {
+    d.setDate(d.getDate() + 30);
+    return fmt(d);
+  }
+
+  // ── Next quarter ─────────────────────────────────────────────────────────────
+  if (/\bnext\s*quarter\b|\bagle\s*quarter\b/.test(lower)) {
+    d.setDate(d.getDate() + 90);
+    return fmt(d);
+  }
+
+  // ── Generic future intent → default to tomorrow ───────────────────────────────
   d.setDate(d.getDate() + 1);
   return fmt(d);
 }
