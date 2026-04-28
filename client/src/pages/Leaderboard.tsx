@@ -18,20 +18,23 @@ interface LeaderboardData {
   scopedTeamId:   string | null;
   scopedTeamName: string | null;
   teams: { id: string; name: string }[];
+  myTeamId:   string | null;
+  myTeamName: string | null;
 }
 
 export default function Leaderboard() {
-  const [data,       setData]       = useState<LeaderboardData>({ rows: [], scopedTeamId: null, scopedTeamName: null, teams: [] });
+  const [data,       setData]       = useState<LeaderboardData>({ rows: [], scopedTeamId: null, scopedTeamName: null, teams: [], myTeamId: null, myTeamName: null });
   const [loading,    setLoading]    = useState(true);
   const [resetting,  setResetting]  = useState(false);
-  const [teamFilter, setTeamFilter] = useState<string>('');   // admin only
+  const [teamFilter, setTeamFilter] = useState<string>('');       // admin: filter by team id
+  const [staffScope, setStaffScope] = useState<'team' | 'all'>('team'); // staff: team vs all toggle
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  const load = async (tId?: string) => {
+  const load = async (tId?: string, scope?: 'all') => {
     setLoading(true);
     try {
-      const d = await aiAPI.leaderboard(tId || teamFilter || undefined);
+      const d = await aiAPI.leaderboard(tId || teamFilter || undefined, scope);
       setData(d);
     } catch {}
     setLoading(false);
@@ -44,7 +47,7 @@ export default function Leaderboard() {
     setResetting(true);
     try {
       await aiAPI.resetLeaderboard();
-      await load();
+      await load(undefined, staffScope === 'all' ? 'all' : undefined);
     } catch {}
     setResetting(false);
   };
@@ -52,6 +55,11 @@ export default function Leaderboard() {
   const handleTeamFilter = (tId: string) => {
     setTeamFilter(tId);
     load(tId);
+  };
+
+  const handleStaffScope = (s: 'team' | 'all') => {
+    setStaffScope(s);
+    load(undefined, s === 'all' ? 'all' : undefined);
   };
 
   const updateAvailability = async (id: string, availability: string) => {
