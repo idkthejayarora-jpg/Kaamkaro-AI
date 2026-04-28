@@ -624,8 +624,10 @@ function fixTranscript(raw: string): string {
   let t = raw;
 
   // ── STAGE 1: Multi-word phrases — must run before single-word rules ───────
-  t = t.replace(/\b(?:veediyo|vidiyo|veedeo|video)\s+(?:kol|kawl)\b/gi, 'video call');
+  t = t.replace(/\b(?:veediyo|vidiyo|veedeo|video)\s+(?:kol|kawl|cal)\b/gi, 'video call');
   t = t.replace(/\bvideo\s+call\b/gi,          'video call');     // already correct — keep
+  t = t.replace(/\baudio\s+cal\b/gi,           'audio call');
+  t = t.replace(/\bphone\s+cal\b/gi,           'phone call');
   t = t.replace(/\bwhats?\s+app\b/gi,          'WhatsApp');
   t = t.replace(/\bwhat\s+sap\b/gi,            'WhatsApp');
   t = t.replace(/\bbaat?\s+huee\b/gi,          'baat hui');
