@@ -1534,14 +1534,16 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
       const task = {
         id: uuidv4(),
         staffId,
-        customerId:   null,
-        customerName: null,
-        title:        cleanTitle || title,
-        notes:        `Auto-created from diary entry: "${content.slice(0, 120)}${content.length > 120 ? '…' : ''}"`,
+        customerId:    null,
+        customerName:  null,
+        title:         cleanTitle || title,
+        notes:         `Auto-created from diary entry: "${content.slice(0, 120)}${content.length > 120 ? '…' : ''}"`,
         dueDate,
-        completed:    false,
-        completedAt:  null,
-        createdAt:    now,
+        completed:     false,
+        completedAt:   null,
+        createdAt:     now,
+        source:        'diary',
+        diaryEntryId:  entryId,
       };
       sideEffects.push(
         insertOne('tasks', task)
