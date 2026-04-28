@@ -260,6 +260,7 @@ export interface Team {
   id: string;
   name: string;
   members: string[];   // staff IDs
+  pooledTasks: boolean;
   createdAt: string;
   updatedAt?: string;
 }
