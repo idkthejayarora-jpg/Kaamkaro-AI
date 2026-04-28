@@ -434,6 +434,35 @@ export interface ChatMessage {
   metadata?: TaskTransferMetadata;
 }
 
+// ── CRM Leads ─────────────────────────────────────────────────────────────────
+
+export type LeadStage =
+  | 'new' | 'contacted' | 'interested' | 'catalogue_sent'
+  | 'follow_up' | 'visit_scheduled' | 'won' | 'lost';
+
+export type LeadSource = 'walk_in' | 'referral' | 'phone' | 'instagram' | 'whatsapp' | 'other';
+
+export interface LeadNote {
+  text: string;
+  date: string; // ISO string
+}
+
+export interface Lead {
+  id: string;
+  name: string;
+  phone: string;
+  place: string;
+  source: LeadSource;
+  stage: LeadStage;
+  notes: LeadNote[];
+  nextFollowUp: string | null;  // YYYY-MM-DD
+  visitDate: string | null;     // YYYY-MM-DD
+  noPickupCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
 
 export interface PDFExtractedEntry {
