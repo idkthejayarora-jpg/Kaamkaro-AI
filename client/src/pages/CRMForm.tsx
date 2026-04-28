@@ -40,6 +40,12 @@ export default function CRMForm() {
   const [error,     setError]     = useState('');
   const [dirty,     setDirty]     = useState(false);
 
+  // Load staff list for admin assignee picker
+  useEffect(() => {
+    if (!isAdmin) return;
+    staffAPI.list().then((s: Staff[]) => setStaffList(s)).catch(() => {});
+  }, [isAdmin]);
+
   // Load existing lead when editing
   useEffect(() => {
     if (!isEdit) return;
@@ -52,6 +58,7 @@ export default function CRMForm() {
           place:        l.place || '',
           source:       l.source,
           stage:        l.stage,
+          assignedTo:   l.staffId || '',
           nextFollowUp: l.nextFollowUp || '',
           visitDate:    l.visitDate || '',
           note:         '',
