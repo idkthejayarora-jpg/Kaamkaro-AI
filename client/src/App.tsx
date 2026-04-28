@@ -20,6 +20,9 @@ import Templates from './pages/Templates';
 import WebhookSetup from './pages/WebhookSetup';
 import Chat from './pages/Chat';
 import Teams from './pages/Teams';
+import CRM from './pages/CRM';
+import CRMForm from './pages/CRMForm';
+import CRMDetail from './pages/CRMDetail';
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
