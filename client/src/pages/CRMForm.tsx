@@ -14,6 +14,7 @@ interface FormState {
   place: string;
   source: LeadSource;
   stage: LeadStage;
+  assignedTo: string;
   nextFollowUp: string;
   visitDate: string;
   note: string;
