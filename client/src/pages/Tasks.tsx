@@ -478,7 +478,20 @@ export default function Tasks() {
               <div className="space-y-2">{upcoming.map(t => <TaskItem key={t.id} task={t} />)}</div>
             </div>
           )}
-          {pending.length === 0 && (
+          {/* Team Pool tasks — distinct section with indigo styling */}
+          {pendingPool.length > 0 && (
+            <div>
+              <p className="text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Users size={11} /> Team Pool ({pendingPool.length})
+              </p>
+              <p className="text-indigo-300/40 text-[10px] mb-3 -mt-1">
+                Shared tasks — complete any of these to earn the merit points
+              </p>
+              <div className="space-y-2">{pendingPool.map(t => <TaskItem key={t.id} task={t} poolMode />)}</div>
+            </div>
+          )}
+
+          {pendingPersonal.length === 0 && pendingPool.length === 0 && (
             <div className="card text-center py-16">
               <CheckCircle size={36} className="text-green-400/40 mx-auto mb-3" />
               <p className="text-white/40 font-medium">All caught up!</p>
