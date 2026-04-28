@@ -114,6 +114,8 @@ export interface Task {
   lastRescheduledAt?: string | null;
   transferredFrom?: string | null;
   transferredAt?: string | null;
+  teamId?: string | null;
+  completedBy?: string | null;
 }
 
 export interface DiaryEntry {
