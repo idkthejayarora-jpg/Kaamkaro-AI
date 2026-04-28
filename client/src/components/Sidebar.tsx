@@ -32,7 +32,7 @@ const adminNav = [
 const staffNav = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/customers',   icon: UserCheck,       label: 'My Customers' },
-  { to: '/crm',         icon: Funnel,          label: 'CRM Leads' },
+  { to: '/crm',         icon: Filter,          label: 'CRM Leads' },
   { to: '/vendors',     icon: Building2,       label: 'Vendors' },
   { to: '/tasks',       icon: ClipboardList,   label: 'Tasks' },
   { to: '/diary',       icon: BookOpen,        label: 'Diary' },
