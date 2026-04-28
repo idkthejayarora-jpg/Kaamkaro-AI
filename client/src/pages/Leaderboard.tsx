@@ -99,6 +99,9 @@ export default function Leaderboard() {
           </h1>
           <p className="text-white/30 text-sm mt-1">
             Weekly points competition · {weekLabel} · resets every Monday
+            {!isAdmin && data.myTeamName && staffScope === 'team' && (
+              <span className="text-gold/50"> · {data.myTeamName}</span>
+            )}
           </p>
         </div>
 
