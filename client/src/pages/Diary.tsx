@@ -10,6 +10,7 @@ import {
 import { diaryAPI, staffAPI, tasksAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { DiaryEntry, Staff, Task } from '../types';
+import { useVoice, devanagariToRoman, fixTranscript, VOICE_LANG } from '../hooks/useVoice';
 
 // ── Web Speech API types (not always in TS DOM lib) ───────────────────────────
 interface SpeechRecognitionResult {
