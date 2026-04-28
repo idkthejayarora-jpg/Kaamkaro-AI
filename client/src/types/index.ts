@@ -232,6 +232,8 @@ export interface LeaderboardRow {
   name: string;
   avatar: string;
   availability: 'available' | 'on_call' | 'out_of_office';
+  teamId: string | null;
+  teamName: string | null;
   rank: number;
   score: number;
   weekInteractions: number;
@@ -243,7 +245,16 @@ export interface LeaderboardRow {
   completedTasks: number;
   totalTasks: number;
   taskCompletionRate: number;
+  weekPts: number;
   meritTotal: number;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  members: string[];   // staff IDs
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SentimentPoint {
