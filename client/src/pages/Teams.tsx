@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Plus, Trash2, Edit2, Check, X, UserPlus, UserMinus } from 'lucide-react';
+import { Users, Plus, Trash2, Edit2, Check, X, UserPlus, UserMinus, Database, Lock } from 'lucide-react';
 import { teamsAPI, staffAPI } from '../lib/api';
 import type { Team, Staff } from '../types';
 
