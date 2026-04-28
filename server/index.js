@@ -114,7 +114,7 @@ async function seed() {
   }
 
   // Ensure all other collections exist (never overwrite existing data)
-  const collections = ['staff', 'customers', 'vendors', 'performance', 'interactions', 'tasks', 'diary', 'auditLog', 'goals', 'templates', 'broadcasts', 'merits', 'meritGoals', 'vendorInteractions', 'config'];
+  const collections = ['staff', 'customers', 'vendors', 'performance', 'interactions', 'tasks', 'diary', 'auditLog', 'goals', 'templates', 'broadcasts', 'merits', 'meritGoals', 'vendorInteractions', 'config', 'teams'];
   for (const col of collections) {
     const filePath = path.join(dataDir, `${col}.json`);
     const exists = await fs.pathExists(filePath);
