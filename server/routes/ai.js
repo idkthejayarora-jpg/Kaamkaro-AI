@@ -591,7 +591,19 @@ router.get('/leaderboard', async (req, res) => {
     rows.sort((a, b) => b.weekPts - a.weekPts || b.score - a.score);
     rows.forEach((r, i) => { r.rank = i + 1; });
 
-    res.json({ rows, scopedTeamId, scopedTeamName, teams: teams.map(t => ({ id: t.id, name: t.name })) });
+    // Tell the client whether this user has a team (drives team/all toggle visibility)
+    const myTeamForUser = req.user.role === 'staff'
+      ? teams.find(t => Array.isArray(t.members) && t.members.includes(req.user.id)) || null
+      : null;
+
+    res.json({
+      rows,
+      scopedTeamId,
+      scopedTeamName,
+      teams: teams.map(t => ({ id: t.id, name: t.name })),
+      myTeamId:   myTeamForUser?.id   || null,
+      myTeamName: myTeamForUser?.name || null,
+    });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
