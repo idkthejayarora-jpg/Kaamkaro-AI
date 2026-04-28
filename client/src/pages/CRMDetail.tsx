@@ -3,11 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Phone, MapPin, MessageCircle, Edit2, Trash2,
   Check, X, PhoneOff, BookCheck, CalendarDays, Trophy,
-  Clock, Send, Loader2, Plus,
+  Clock, Send, Loader2, Mic, MicOff, AlertCircle,
 } from 'lucide-react';
 import { leadsAPI } from '../lib/api';
 import type { Lead, LeadNote, LeadStage } from '../types';
 import { STAGES, STAGE_LABELS, STAGE_COLORS, SOURCE_LABELS } from './CRM';
+import { useVoice } from '../hooks/useVoice';
 
 // ─ add N days to today's date (YYYY-MM-DD) ────────────────────────────────────
 function addDays(n: number): string {
