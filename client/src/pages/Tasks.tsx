@@ -242,9 +242,16 @@ export default function Tasks() {
 
   const pending  = staffFiltered.filter(t => !t.completed);
   const done     = staffFiltered.filter(t => t.completed);
-  const overdue  = pending.filter(t => t.dueDate < today);
-  const dueToday = pending.filter(t => t.dueDate === today);
-  const upcoming = pending.filter(t => t.dueDate > today);
+
+  // Separate personal tasks from team pool tasks
+  const pendingPersonal = pending.filter(t => !t.teamId);
+  const pendingPool     = pending.filter(t => !!t.teamId);
+
+  const overdue  = pendingPersonal.filter(t => t.dueDate < today);
+  const dueToday = pendingPersonal.filter(t => t.dueDate === today);
+  const upcoming = pendingPersonal.filter(t => t.dueDate > today);
+
+  const getTeamName = (teamId: string) => teams.find(tm => tm.id === teamId)?.name || 'Team';
 
   const handleComplete = async (id: string) => {
     await tasksAPI.complete(id);
