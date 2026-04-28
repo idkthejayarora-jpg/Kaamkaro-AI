@@ -91,7 +91,8 @@ router.patch('/:id/complete', async (req, res) => {
   }
 });
 
-// PATCH /api/tasks/:id — update task
+// PATCH /api/tasks/:id — update task (title, notes, dueDate)
+// Rescheduling (dueDate change) costs -0.5 merit points.
 router.patch('/:id', async (req, res) => {
   try {
     const tasks = await readDB('tasks');
@@ -100,7 +101,20 @@ router.patch('/:id', async (req, res) => {
     if (req.user.role === 'staff' && t.staffId !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    const updated = await updateOne('tasks', req.params.id, req.body);
+
+    const updates = { ...req.body };
+
+    // ── Reschedule penalty: -0.5 pts when dueDate changes ─────────────────────
+    if (updates.dueDate && updates.dueDate !== t.dueDate) {
+      const staffList  = await readDB('staff');
+      const staffMember = staffList.find(s => s.id === t.staffId);
+      const staffName  = staffMember?.name || req.user.name;
+      await awardMerit(t.staffId, staffName, -0.5, `Task rescheduled: ${t.title}`, 'overdue', t.id);
+      updates.rescheduledCount   = (t.rescheduledCount || 0) + 1;
+      updates.lastRescheduledAt  = new Date().toISOString();
+    }
+
+    const updated = await updateOne('tasks', req.params.id, updates);
     broadcast('task:updated', updated);
     res.json(updated);
   } catch (err) {
