@@ -497,7 +497,7 @@ router.get('/leaderboard', async (req, res) => {
     let scopedTeamId   = null;
     let scopedTeamName = null;
 
-    if (req.user.role === 'staff') {
+    if (req.user.role === 'staff' && req.query.scope !== 'all') {
       const myTeam = teams.find(t => Array.isArray(t.members) && t.members.includes(req.user.id));
       if (myTeam) {
         staff = allStaff.filter(s => myTeam.members.includes(s.id));
