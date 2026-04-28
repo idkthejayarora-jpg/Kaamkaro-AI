@@ -81,6 +81,257 @@ function PatternChips({ patterns, metrics }: { patterns: CustomerInsight['patter
   );
 }
 
+// ── Customer detail panel (slide-in from right) ───────────────────────────────
+
+const INTERACTION_TYPE_COLORS: Record<string, string> = {
+  call: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+  message: 'text-green-400 bg-green-500/10 border-green-500/20',
+  email: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+  meeting: 'text-gold bg-gold/10 border-gold/20',
+  diary: 'text-white/50 bg-white/5 border-white/10',
+};
+
+function CustomerDetailPanel({ item, onClose, onLog, onNavigate }: {
+  item: CustomerInsight;
+  onClose: () => void;
+  onLog: (item: CustomerInsight) => void;
+  onNavigate: (id: string) => void;
+}) {
+  const [interactions,  setInteractions]  = useState<Interaction[]>([]);
+  const [diaryEntries,  setDiaryEntries]  = useState<DiaryEntry[]>([]);
+  const [loadingLogs,   setLoadingLogs]   = useState(true);
+  const cfg = PRIORITY_CFG[item.priority];
+
+  useEffect(() => {
+    setLoadingLogs(true);
+    Promise.all([
+      interactionsAPI.list({ customerId: item.customerId })
+        .then((d: Interaction[]) => setInteractions(d))
+        .catch(() => {}),
+      diaryAPI.list()
+        .then((entries: DiaryEntry[]) => {
+          // Keep only diary entries that mention this customer
+          const relevant = entries.filter(e =>
+            Array.isArray(e.aiEntries) &&
+            e.aiEntries.some(ae => ae.customerId === item.customerId || ae.matchedCustomerName === item.customerName)
+          );
+          setDiaryEntries(relevant);
+        })
+        .catch(() => {}),
+    ]).finally(() => setLoadingLogs(false));
+  }, [item.customerId, item.customerName]);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 z-40 animate-fade-in"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-dark-300 border-l border-dark-50 z-50 flex flex-col shadow-2xl animate-slide-in-right overflow-hidden">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-dark-50 flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-white font-bold text-base truncate">{item.customerName}</span>
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color} border-current/20`}>
+                {cfg.label}
+              </span>
+              <span className="text-[10px] capitalize text-white/30 bg-white/5 border border-white/8 rounded-full px-2 py-0.5">
+                {item.status}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              {item.phone && <span className="text-white/30 text-xs">{item.phone}</span>}
+              {item.dealValue && (
+                <span className="text-gold/70 text-xs font-medium">
+                  ₹{item.dealValue >= 100000
+                    ? `${(item.dealValue / 100000).toFixed(1)}L`
+                    : item.dealValue.toLocaleString('en-IN')}
+                </span>
+              )}
+              <span className={`text-[11px] font-medium ${
+                item.lastContactDays === null ? 'text-red-400' :
+                item.lastContactDays > 14    ? 'text-red-400' :
+                item.lastContactDays > 7     ? 'text-orange-400' : 'text-white/40'
+              }`}>
+                {item.lastContactDays === null ? '⚠ Never contacted' :
+                 item.lastContactDays === 0   ? '✓ Today' :
+                 `${item.lastContactDays}d ago`}
+              </span>
+            </div>
+            {/* Pattern chips */}
+            <PatternChips patterns={item.patterns} metrics={item.metrics} />
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors flex-shrink-0 p-1">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* AI insight strip */}
+        {(item.insight || item.nextAction) && (
+          <div className="px-5 py-3 bg-gold/4 border-b border-gold/10 flex-shrink-0 space-y-1">
+            {item.insight && (
+              <div className="flex items-start gap-2 text-[11px] text-white/55 leading-relaxed">
+                <Brain size={11} className="text-gold/60 flex-shrink-0 mt-0.5" />
+                <span>{item.insight}</span>
+              </div>
+            )}
+            {item.nextAction && (
+              <div className="flex items-start gap-2 text-[11px]">
+                <Sparkles size={11} className="text-gold flex-shrink-0 mt-0.5" />
+                <span className="text-gold/80 font-medium">{item.nextAction}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-2 px-5 py-3 border-b border-dark-50 flex-shrink-0">
+          <button
+            onClick={() => onLog(item)}
+            className="btn-primary flex-1 flex items-center justify-center gap-2 text-sm"
+          >
+            <Phone size={13} /> Log Interaction
+          </button>
+          <button
+            onClick={() => { onNavigate(item.customerId); onClose(); }}
+            className="btn-ghost flex items-center gap-1.5 px-4 text-sm"
+          >
+            <ExternalLink size={13} /> Full CRM
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          {loadingLogs ? (
+            <div className="space-y-3">
+              {Array(4).fill(0).map((_, i) => (
+                <div key={i} className="h-16 bg-dark-200 rounded-xl shimmer" />
+              ))}
+            </div>
+          ) : (
+            <>
+              {/* Interaction logs */}
+              <div>
+                <h3 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <MessageSquare size={11} className="text-gold/60" />
+                  Interaction History
+                  <span className="text-white/20 normal-case tracking-normal font-normal">
+                    ({interactions.length})
+                  </span>
+                </h3>
+
+                {interactions.length === 0 ? (
+                  <p className="text-white/20 text-sm text-center py-6">No interactions logged yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {interactions.map(int => (
+                      <div key={int.id} className="bg-dark-200 rounded-xl p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${
+                              INTERACTION_TYPE_COLORS[int.type] ?? INTERACTION_TYPE_COLORS.diary
+                            }`}>
+                              {int.type}
+                            </span>
+                            <span className={`text-[10px] font-medium ${int.responded ? 'text-green-400' : 'text-red-400/70'}`}>
+                              {int.responded ? '✓ Responded' : '✗ No response'}
+                            </span>
+                          </div>
+                          <span className="text-white/20 text-[10px]">
+                            {new Date(int.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric', month: 'short',
+                              hour: '2-digit', minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        {int.notes && (
+                          <p className="text-white/50 text-xs leading-relaxed">{int.notes}</p>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-white/20 text-[10px]">by {int.staffName}</span>
+                          {int.followUpDate && (
+                            <span className="text-[10px] text-gold/60 flex items-center gap-1">
+                              <Calendar size={9} /> Follow-up: {new Date(int.followUpDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Diary entries mentioning this customer */}
+              <div>
+                <h3 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <BookOpen size={11} className="text-gold/60" />
+                  Diary Mentions
+                  <span className="text-white/20 normal-case tracking-normal font-normal">
+                    ({diaryEntries.length})
+                  </span>
+                </h3>
+
+                {diaryEntries.length === 0 ? (
+                  <p className="text-white/20 text-sm text-center py-6">No diary entries mention this customer.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {diaryEntries.map(entry => {
+                      // Find the specific AI entry for this customer
+                      const mention = entry.aiEntries.find(ae =>
+                        ae.customerId === item.customerId ||
+                        ae.matchedCustomerName === item.customerName
+                      );
+                      return (
+                        <div key={entry.id} className="bg-dark-200 rounded-xl p-3 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-white/25 text-[10px]">
+                              {new Date(entry.createdAt).toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', year: 'numeric',
+                              })}
+                            </span>
+                            {mention?.sentiment && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                                mention.sentiment === 'positive' ? 'text-green-400 bg-green-500/10 border-green-500/20' :
+                                mention.sentiment === 'negative' ? 'text-red-400 bg-red-500/10 border-red-500/20' :
+                                'text-white/30 bg-white/5 border-white/10'
+                              }`}>
+                                {mention.sentiment}
+                              </span>
+                            )}
+                          </div>
+                          {mention?.notes && (
+                            <p className="text-white/55 text-xs leading-relaxed">{mention.notes}</p>
+                          )}
+                          {mention?.actionItems && mention.actionItems.length > 0 && (
+                            <div className="flex gap-1 flex-wrap pt-0.5">
+                              {mention.actionItems.map((a, i) => (
+                                <span key={i} className="text-[10px] text-gold/60 bg-gold/8 border border-gold/15 rounded-full px-2 py-0.5">
+                                  → {a}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {entry.staffName && (
+                            <span className="text-white/20 text-[10px]">by {entry.staffName}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Customer queue card ───────────────────────────────────────────────────────
 
 function QueueCard({
