@@ -975,6 +975,7 @@ export default function FollowupQueue() {
                   isAdmin={isAdmin}
                   onLog={setLogging}
                   onNavigate={id => navigate(`/customers?highlight=${id}`)}
+                  onDetail={setDetail}
                 />
               ))}
             </div>
