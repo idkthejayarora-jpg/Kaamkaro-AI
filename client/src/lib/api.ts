@@ -188,7 +188,7 @@ export const teamsAPI = {
   list: () => api.get('/teams').then(r => r.data),
   create: (data: { name: string; members?: string[] }) =>
     api.post('/teams', data).then(r => r.data),
-  update: (id: string, data: { name?: string; members?: string[] }) =>
+  update: (id: string, data: { name?: string; members?: string[]; pooledTasks?: boolean }) =>
     api.patch(`/teams/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/teams/${id}`).then(r => r.data),
 };
