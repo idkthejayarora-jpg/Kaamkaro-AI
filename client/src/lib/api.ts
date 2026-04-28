@@ -214,6 +214,14 @@ export const chatAPI = {
     api.post(`/chat/conversations/${conversationId}/messages`, { text }).then(r => r.data),
 };
 
+export const leadsAPI = {
+  list: () => api.get('/leads').then(r => r.data),
+  get:  (id: string) => api.get(`/leads/${id}`).then(r => r.data),
+  create: (data: Record<string, unknown>) => api.post('/leads', data).then(r => r.data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/leads/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/leads/${id}`).then(r => r.data),
+};
+
 export const pdfAPI = {
   list: () => api.get('/pdf').then(r => r.data),
   upload: (file: File) => {
