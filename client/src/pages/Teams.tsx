@@ -241,6 +241,35 @@ export default function Teams() {
                   )}
                 </div>
 
+                {/* Pooled task database toggle */}
+                <div className="mb-4 pt-3 border-t border-dark-50/40">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      <Database size={13} className={`mt-0.5 flex-shrink-0 ${team.pooledTasks ? 'text-gold' : 'text-white/25'}`} />
+                      <div>
+                        <p className="text-white/60 text-xs font-medium">Shared Task Pool</p>
+                        <p className="text-white/25 text-[10px] mt-0.5 leading-snug">
+                          {team.pooledTasks
+                            ? 'ON — diary tasks from any member appear in the team pool. Whoever completes earns the merit.'
+                            : 'OFF — diary-created tasks are personal to each staff member.'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => togglePooledTasks(team.id, team.pooledTasks)}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                        team.pooledTasks
+                          ? 'bg-gold/15 border-gold/40 text-gold hover:bg-gold/20'
+                          : 'bg-dark-200 border-dark-50 text-white/30 hover:border-gold/30 hover:text-white/60'
+                      }`}
+                    >
+                      {team.pooledTasks
+                        ? <><Check size={11} /> Enabled</>
+                        : <><Lock size={11} /> Enable</>}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Add staff from non-members */}
                 {nonMembers.length > 0 && (
                   <div>
