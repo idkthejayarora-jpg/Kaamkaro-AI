@@ -122,6 +122,139 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// POST /api/tasks/transfer-request
+// Sends a task-transfer chat message to Staff B via an existing conversation.
+// Body: { taskId, toStaffId, conversationId }
+router.post('/transfer-request', async (req, res) => {
+  try {
+    const { taskId, toStaffId, conversationId } = req.body;
+    if (!taskId || !toStaffId || !conversationId) {
+      return res.status(400).json({ error: 'taskId, toStaffId, and conversationId required' });
+    }
+
+    const tasks = await readDB('tasks');
+    const task  = tasks.find(t => t.id === taskId);
+    if (!task)           return res.status(404).json({ error: 'Task not found' });
+    if (task.completed)  return res.status(400).json({ error: 'Cannot transfer a completed task' });
+    if (req.user.role === 'staff' && task.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Can only transfer your own tasks' });
+    }
+
+    const conversations = await readDB('conversations');
+    const conv = conversations.find(c => c.id === conversationId);
+    if (!conv)                          return res.status(404).json({ error: 'Conversation not found' });
+    if (!conv.members.includes(toStaffId)) return res.status(400).json({ error: 'Recipient is not in this conversation' });
+
+    const staffList = await readDB('staff');
+    const toStaff   = staffList.find(s => s.id === toStaffId);
+    const toStaffName = toStaff?.name || 'Staff';
+
+    const msg = {
+      id:             uuidv4(),
+      conversationId,
+      senderId:       req.user.id,
+      senderName:     req.user.name,
+      senderAvatar:   req.user.avatar || req.user.name[0].toUpperCase(),
+      text:           `🔄 Task transfer request: "${task.title}"`,
+      sentAt:         new Date().toISOString(),
+      messageType:    'task_transfer',
+      metadata: {
+        taskId:           task.id,
+        taskTitle:        task.title,
+        taskDueDate:      task.dueDate,
+        taskCustomerName: task.customerName || null,
+        taskNotes:        task.notes || '',
+        fromStaffId:      req.user.id,
+        fromStaffName:    req.user.name,
+        toStaffId,
+        toStaffName,
+        status:           'pending',
+      },
+    };
+
+    await insertOne('chat_messages', msg);
+    await updateOne('conversations', conversationId, {
+      lastMessageAt:   msg.sentAt,
+      lastMessageText: msg.text.slice(0, 80),
+    });
+    broadcast('chat:message', msg);
+
+    res.status(201).json(msg);
+  } catch (err) {
+    console.error('[Transfer] request error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/tasks/:id/transfer-accept
+// Staff B accepts — task.staffId becomes B, transferredFrom = A.
+// Body: { messageId }
+router.post('/:id/transfer-accept', async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    if (!messageId) return res.status(400).json({ error: 'messageId required' });
+
+    const tasks = await readDB('tasks');
+    const task  = tasks.find(t => t.id === req.params.id);
+    if (!task)          return res.status(404).json({ error: 'Task not found' });
+    if (task.completed) return res.status(400).json({ error: 'Task already completed' });
+
+    const msgs = await readDB('chat_messages');
+    const msg  = msgs.find(m => m.id === messageId);
+    if (!msg || msg.messageType !== 'task_transfer') return res.status(404).json({ error: 'Transfer request not found' });
+    if (msg.metadata?.toStaffId   !== req.user.id)   return res.status(403).json({ error: 'Not the intended recipient' });
+    if (msg.metadata?.taskId      !== req.params.id)  return res.status(400).json({ error: 'Task mismatch' });
+    if (msg.metadata?.status      !== 'pending')       return res.status(400).json({ error: 'Transfer already resolved' });
+
+    const now = new Date().toISOString();
+    const updatedTask = await updateOne('tasks', req.params.id, {
+      staffId:         req.user.id,
+      transferredFrom: task.staffId,
+      transferredAt:   now,
+    });
+
+    const updatedMsg = await updateOne('chat_messages', messageId, {
+      metadata: { ...msg.metadata, status: 'accepted', resolvedAt: now },
+    });
+
+    broadcast('task:updated',         updatedTask);
+    broadcast('chat:message:updated', updatedMsg);
+
+    res.json({ task: updatedTask, message: updatedMsg });
+  } catch (err) {
+    console.error('[Transfer] accept error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/tasks/:id/transfer-decline
+// Staff B declines — task unchanged, message status → 'declined'.
+// Body: { messageId }
+router.post('/:id/transfer-decline', async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    if (!messageId) return res.status(400).json({ error: 'messageId required' });
+
+    const msgs = await readDB('chat_messages');
+    const msg  = msgs.find(m => m.id === messageId);
+    if (!msg || msg.messageType !== 'task_transfer') return res.status(404).json({ error: 'Transfer request not found' });
+    if (msg.metadata?.toStaffId !== req.user.id)     return res.status(403).json({ error: 'Not the intended recipient' });
+    if (msg.metadata?.status    !== 'pending')         return res.status(400).json({ error: 'Transfer already resolved' });
+
+    const now = new Date().toISOString();
+    const updatedMsg = await updateOne('chat_messages', messageId, {
+      metadata: { ...msg.metadata, status: 'declined', resolvedAt: now },
+    });
+
+    broadcast('chat:message:updated', updatedMsg);
+
+    res.json({ message: updatedMsg });
+  } catch (err) {
+    console.error('[Transfer] decline error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // DELETE /api/tasks/:id
 router.delete('/:id', async (req, res) => {
   try {
