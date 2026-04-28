@@ -112,6 +112,8 @@ export interface Task {
   diaryEntryId?: string | null;
   rescheduledCount?: number;
   lastRescheduledAt?: string | null;
+  transferredFrom?: string | null;
+  transferredAt?: string | null;
 }
 
 export interface DiaryEntry {
