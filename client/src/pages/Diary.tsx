@@ -164,12 +164,15 @@ const LANG_BADGE: Record<string, string> = {
 };
 
 // ── Diary card ────────────────────────────────────────────────────────────────
-function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
+function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor, entryTasks, onTaskCompleted }: {
   entry: DiaryEntry;
   onDelete: (id: string) => void;
   onReanalyzed: (updated: DiaryEntry) => void;
   showAuthor?: boolean;
+  entryTasks: Task[];
+  onTaskCompleted: (taskId: string) => void;
 }) {
+  const navigate = useNavigate();
   const [expanded,      setExpanded]      = useState(entry.status === 'done' && entry.aiEntries.length > 0);
   const [showOrig,      setShowOrig]      = useState(false);
   const [deleting,      setDeleting]      = useState(false);
@@ -179,6 +182,7 @@ function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor }: {
   const [editContent,   setEditContent]   = useState(entry.content);
   const [editEntries,   setEditEntries]   = useState(entry.aiEntries);
   const [saving,        setSaving]        = useState(false);
+  const [completingId,  setCompletingId]  = useState<string | null>(null);
 
   // Keep edit state in sync if SSE pushes an update while not editing
   useEffect(() => {
