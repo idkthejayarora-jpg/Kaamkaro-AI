@@ -68,7 +68,8 @@
       "Bash(xargs ls *)",
       "Bash(python3 -c \"import pptx; print\\('pptx ok', pptx.__version__\\)\")",
       "Bash(pip3 install *)",
-      "Bash(python3 -c \"import pptx; print\\('ok'\\)\")"
+      "Bash(python3 -c \"import pptx; print\\('ok'\\)\")",
+      "Bash(python3 build_pitch.py)"
     ]
   }
 }

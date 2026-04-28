@@ -472,3 +472,9 @@ AuthenticationError: 401 {"type":"error","error":{"type":"authentication_error",
 ⚠️  Kamal AI   → NO API KEY — set ANTHROPIC_API_KEY in Railway env vars
    Diary analysis and Kamal AI chat will use fallback mode until key is set.
 
+✅ Found 1 admin user(s)
+
+🚀 Kaamkaro AI → http://localhost:3001
+⚠️  Kamal AI   → NO API KEY — set ANTHROPIC_API_KEY in Railway env vars
+   Diary analysis and Kamal AI chat will use fallback mode until key is set.
+
