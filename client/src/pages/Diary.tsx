@@ -972,6 +972,7 @@ export default function Diary() {
   const [error,        setError]        = useState('');
   const [loading,      setLoading]      = useState(true);
   const [staff,        setStaff]        = useState<Staff[]>([]);
+  const [tasks,        setTasks]        = useState<Task[]>([]);
   // Admin filters
   const [staffFilter,  setStaffFilter]  = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
