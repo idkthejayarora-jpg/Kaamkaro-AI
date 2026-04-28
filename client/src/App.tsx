@@ -61,7 +61,11 @@ function AppRoutes() {
         <Route path="/templates"       element={<PrivateRoute adminOnly><Templates /></PrivateRoute>} />
         <Route path="/webhook"         element={<PrivateRoute adminOnly><WebhookSetup /></PrivateRoute>} />
         <Route path="/audit"           element={<PrivateRoute adminOnly><AuditLog /></PrivateRoute>} />
-        <Route path="/teams"           element={<PrivateRoute adminOnly><Teams /></PrivateRoute>} />
+        <Route path="/teams"             element={<PrivateRoute adminOnly><Teams /></PrivateRoute>} />
+        <Route path="/crm"             element={<CRM />} />
+        <Route path="/crm/new"         element={<CRMForm />} />
+        <Route path="/crm/:id"         element={<CRMDetail />} />
+        <Route path="/crm/:id/edit"    element={<CRMForm />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
