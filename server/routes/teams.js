@@ -35,6 +35,7 @@ router.post('/', adminOnly, async (req, res) => {
       id: uuidv4(),
       name: name.trim(),
       members: inMembers,
+      pooledTasks: false,
       createdAt: new Date().toISOString(),
     };
     await insertOne('teams', team);
