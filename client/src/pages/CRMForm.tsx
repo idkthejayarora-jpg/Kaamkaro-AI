@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import { leadsAPI } from '../lib/api';
-import type { Lead, LeadStage, LeadSource } from '../types';
+import { leadsAPI, staffAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
+import type { Lead, LeadStage, LeadSource, Staff } from '../types';
 import { STAGES, STAGE_LABELS, SOURCE_LABELS } from './CRM';
 
 const SOURCES: LeadSource[] = ['walk_in', 'referral', 'phone', 'instagram', 'whatsapp', 'other'];
