@@ -109,6 +109,9 @@ export interface Task {
   completedAt: string | null;
   createdAt: string;
   source?: string;
+  diaryEntryId?: string | null;
+  rescheduledCount?: number;
+  lastRescheduledAt?: string | null;
 }
 
 export interface DiaryEntry {
