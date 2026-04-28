@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Phone, MapPin, Clock, AlertTriangle, CalendarDays,
-  Funnel,
+  Filter as Funnel,
 } from 'lucide-react';
 import { leadsAPI } from '../lib/api';
 import type { Lead, LeadStage } from '../types';
