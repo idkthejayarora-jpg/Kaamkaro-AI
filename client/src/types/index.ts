@@ -405,6 +405,20 @@ export interface ChatConversation {
   lastMessageText: string | null;
 }
 
+export interface TaskTransferMetadata {
+  taskId: string;
+  taskTitle: string;
+  taskDueDate: string;
+  taskCustomerName: string | null;
+  taskNotes?: string;
+  fromStaffId: string;
+  fromStaffName: string;
+  toStaffId: string;
+  toStaffName: string;
+  status: 'pending' | 'accepted' | 'declined';
+  resolvedAt?: string;
+}
+
 export interface ChatMessage {
   id: string;
   conversationId: string;
@@ -413,6 +427,8 @@ export interface ChatMessage {
   senderAvatar: string;
   text: string;
   sentAt: string;
+  messageType?: 'text' | 'task_transfer';
+  metadata?: TaskTransferMetadata;
 }
 
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
