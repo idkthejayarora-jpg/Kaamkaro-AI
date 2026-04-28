@@ -1111,54 +1111,93 @@ function parseDueDateFromText(text) {
  */
 function detectTasks(text, customerName) {
   const lower = text.toLowerCase();
-  const dueDate = parseDueDateFromText(text);
   const cName = customerName || 'Customer';
 
-  const patterns = [
+  // ── Pattern groups — each group fires at most once ──────────────────────────
+  // Patterns within a group are OR'd. First match wins.
+  const groups = [
     // Video call
-    { r: /video\s*call/i,                                      t: `Video call with ${cName}`    },
-    // Call / phone — English + Hindi future tense
-    { r: /(?:call back|call karega|call karein|phone karega|ring karega|call karna|call karunga|call karenge|call kar dunga|call kar denge|phone karunga|phone karenge|will call)\b/i,
-                                                               t: `Call ${cName}`               },
-    // Meeting / visit
-    { r: /(?:milenge|milna hai|meeting|appointment|milne aaunga|milne ayenge|milne jaaunga|aaunga|aayenge|milne aate hain)\b/i,
-                                                               t: `Meeting with ${cName}`       },
+    {
+      r: /video\s*call/i,
+      t: `Video call with ${cName}`,
+    },
+    // Call / phone
+    {
+      r: /(?:call\s*back|call\s*karega|call\s*karein|phone\s*karega|ring\s*karega|call\s*karna|call\s*karunga|call\s*karenge|call\s*kar\s*dunga|call\s*kar\s*denge|phone\s*karunga|phone\s*karenge|will\s*call|baat\s*karni\s*hai|baat\s*karenge|baat\s*karna\s*hai|phone\s*karunga)\b/i,
+      t: `Call ${cName}`,
+    },
+    // Meeting / visit / "will come"
+    {
+      r: /(?:milenge|milna\s*hai|milne\s*ka\s*plan|meeting|appointment|milne\s*aaunga|milne\s*ayenge|milne\s*aayenge|milne\s*jaaunga|milne\s*aate\s*hain|aaunga|aayenge|aane\s*wale\s*hain|aane\s*wala\s*hai|aa\s*jayenge|milne\s*wala|will\s*meet|will\s*come|visit\s*karunga|visit\s*karenge|will\s*visit)\b/i,
+      t: `Meeting with ${cName}`,
+    },
     // Quote / proposal / send
-    { r: /(?:quote|proposal|estimate|quotation|bhejunga|bhejenge|bhej dunga|bhej denge|bhejega|bhejna|will send|send karunga|send karenge)\b/i,
-                                                               t: `Send quote to ${cName}`  },
-    // Payment follow-up
-    { r: /(?:payment|invoice|bill|baaki|dues)\b/i,             t: `Follow up on payment — ${cName}` },
+    {
+      r: /(?:quote|proposal|estimate|quotation|bhejunga|bhejenge|bhej\s*dunga|bhej\s*denge|bhejega|bhejna\s*hai|will\s*send|send\s*karunga|send\s*karenge|bhej\s*deta|bhejna\s*padega)\b/i,
+      t: `Send quote to ${cName}`,
+    },
+    // Payment / dues / invoice follow-up
+    {
+      r: /(?:payment|invoice|bill|baaki|dues|baki\s*hai|paisa\s*lena|paise\s*lena|payment\s*lena|payment\s*ka|payment\s*pending|paisa\s*pending)\b/i,
+      t: `Follow up on payment — ${cName}`,
+    },
     // Delivery / dispatch
-    { r: /(?:deliver|dispatch|courier|mal bhejega|maal bhejunga|maal bhejenge|will deliver|deliver karunga|deliver karenge)\b/i,
-                                                               t: `Arrange delivery for ${cName}` },
-    // Follow up (generic)
-    { r: /follow.?up/i,                                        t: `Follow up with ${cName}`    },
-    // Demo / show
-    { r: /(?:demo|demonstration|dikhaunga|dikhayenge|dikhana hai|will show|show karunga|dikha dunga)\b/i,
-                                                               t: `Product demo for ${cName}`  },
-    // Will do / general future intent (Hindi)
-    { r: /(?:karunga|karenge|kar dunga|kar denge|karne wala|karne wali|karne waala)\b/i,
-                                                               t: `Follow up with ${cName}`    },
-    // Will tell / inform
-    { r: /(?:bolunga|bolenge|bol dunga|bol denge|bataunga|batayenge|bata dunga|inform karunga|will tell|will inform)\b/i,
-                                                               t: `Update ${cName}`             },
-    // Will give / share
-    { r: /(?:dega|degi|denge|de dunga|de denge|dunga|dungi|share karunga|will give|will share)\b/i,
-                                                               t: `Share details with ${cName}` },
-    // Check / verify
-    { r: /(?:check karunga|check karenge|check kar dunga|will check|dekhta hoon|dekhunga|dekhenge)\b/i,
-                                                               t: `Check and update ${cName}`   },
-    // Visit / go
-    { r: /(?:jaaunga|jayenge|ja dunga|ja denge|visit karunga|visit karenge|will visit|will go)\b/i,
-                                                               t: `Visit ${cName}`              },
+    {
+      r: /(?:deliver|dispatch|courier|maal\s*bhejunga|maal\s*bhejenge|mal\s*bhejega|will\s*deliver|deliver\s*karunga|deliver\s*karenge|maal\s*bhejna\s*hai|nikalna\s*hai|nikalne\s*wala)\b/i,
+      t: `Arrange delivery for ${cName}`,
+    },
+    // Sample / product sharing
+    {
+      r: /(?:sample|demo|demonstration|dikhaunga|dikhayenge|dikhana\s*hai|will\s*show|show\s*karunga|dikha\s*dunga|dikhana\s*padega)\b/i,
+      t: `Product demo for ${cName}`,
+    },
+    // Confirm / finalize
+    {
+      r: /(?:confirm\s*karna\s*hai|confirm\s*karunga|confirm\s*karenge|order\s*confirm|finalize|pakka\s*karna\s*hai|pakka\s*karunga)\b/i,
+      t: `Confirm order with ${cName}`,
+    },
+    // Reminder / follow up (explicit)
+    {
+      r: /(?:follow.?up|reminder|yaad\s*rakhna|yaad\s*dilana|remind\s*karna)\b/i,
+      t: `Follow up with ${cName}`,
+    },
+    // Will tell / inform / update
+    {
+      r: /(?:bolunga|bolenge|bol\s*dunga|bol\s*denge|bataunga|batayenge|bata\s*dunga|bata\s*dena\s*hai|inform\s*karunga|will\s*tell|will\s*inform|update\s*karunga|update\s*karenge|reply\s*karunga)\b/i,
+      t: `Update ${cName}`,
+    },
+    // Will give / share documents/details
+    {
+      r: /(?:deta\s*hoon|de\s*dunga|de\s*denge|dunga|dungi|share\s*karunga|will\s*give|will\s*share|document\s*dena|details\s*dena|info\s*dena)\b/i,
+      t: `Share details with ${cName}`,
+    },
+    // Check / verify / follow up on status
+    {
+      r: /(?:check\s*karunga|check\s*karenge|check\s*kar\s*dunga|will\s*check|dekhta\s*hoon|dekhunga|dekhenge|pata\s*karunga|pata\s*karenge|puchna\s*hai|poochna\s*hai|pata\s*lagana\s*hai)\b/i,
+      t: `Check and update ${cName}`,
+    },
+    // General strong future intent (Hindi) — catch-all
+    {
+      r: /(?:karunga|karenge|kar\s*dunga|kar\s*denge|karne\s*wala|karne\s*wali|karne\s*waala|karna\s*padega|karna\s*hai|karna\s*hoga|lena\s*hai|lena\s*padega|dena\s*hai|dena\s*padega)\b/i,
+      t: `Follow up with ${cName}`,
+    },
   ];
 
+  // Each group fires at most once; compute dueDate per group from its context window
   const tasks = [];
-  for (const { r, t } of patterns) {
-    if (r.test(lower)) {
-      tasks.push({ title: t, dueDate });
-      if (tasks.length >= 3) break;
-    }
+  for (const { r, t } of groups) {
+    if (tasks.length >= 3) break;
+    if (!r.test(lower)) continue;
+
+    // Find the position of the match and extract a ±80-char window for date parsing
+    const match = lower.match(r);
+    const pos   = match ? lower.indexOf(match[0]) : 0;
+    const window = text.slice(Math.max(0, pos - 80), Math.min(text.length, pos + 80));
+    const dueDate = parseDueDateFromText(window) !== parseDueDateFromText('')
+      ? parseDueDateFromText(window)
+      : parseDueDateFromText(text); // fall back to full-text date
+
+    tasks.push({ title: t, dueDate });
   }
   return tasks;
 }
