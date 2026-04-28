@@ -335,12 +335,13 @@ function CustomerDetailPanel({ item, onClose, onLog, onNavigate }: {
 // ── Customer queue card ───────────────────────────────────────────────────────
 
 function QueueCard({
-  item, isAdmin, onLog, onNavigate,
+  item, isAdmin, onLog, onNavigate, onDetail,
 }: {
   item: CustomerInsight;
   isAdmin: boolean;
   onLog: (item: CustomerInsight) => void;
   onNavigate: (id: string) => void;
+  onDetail: (item: CustomerInsight) => void;
 }) {
   const cfg = PRIORITY_CFG[item.priority];
 
@@ -356,7 +357,12 @@ function QueueCard({
         <div className="flex-1 min-w-0">
           {/* Header row */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-white font-semibold text-sm">{item.customerName}</span>
+            <button
+              onClick={() => onDetail(item)}
+              className="text-white font-semibold text-sm hover:text-gold transition-colors text-left"
+            >
+              {item.customerName}
+            </button>
             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color} border-current/20`}>
               {cfg.label}
             </span>
