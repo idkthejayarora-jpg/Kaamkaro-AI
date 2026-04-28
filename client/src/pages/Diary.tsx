@@ -804,6 +804,12 @@ function fixTranscript(raw: string): string {
   t = t.replace(/\bdilli\b/gi,          'Delhi');
   t = t.replace(/\bdehlee\b/gi,         'Delhi');
 
+  // ── STAGE FINAL: Hindi word 'kal' (yesterday/tomorrow) ──────────────────
+  // Chrome en-IN renders the Hindi word "kal" as "cal" (treats it as English).
+  // Multi-word call phrases (video call, phone call) have already been handled
+  // in Stage 1, so any remaining standalone 'cal' is the Hindi word.
+  t = t.replace(/\bcal\b/gi, 'kal');
+
   return t;
 }
 
