@@ -52,6 +52,13 @@ export default function Teams() {
     setSaving(false);
   };
 
+  const togglePooledTasks = async (id: string, current: boolean) => {
+    try {
+      const updated = await teamsAPI.update(id, { pooledTasks: !current });
+      setTeams(prev => prev.map(t => t.id === id ? updated : t));
+    } catch {}
+  };
+
   const deleteTeam = async (id: string) => {
     if (!confirm('Delete this team? Staff members will become unassigned on the leaderboard.')) return;
     try {
