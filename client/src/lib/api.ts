@@ -215,7 +215,7 @@ export const chatAPI = {
 };
 
 export const leadsAPI = {
-  list: () => api.get('/leads').then(r => r.data),
+  list: (params?: Record<string, string>) => api.get('/leads', { params }).then(r => r.data),
   get:  (id: string) => api.get(`/leads/${id}`).then(r => r.data),
   create: (data: Record<string, unknown>) => api.post('/leads', data).then(r => r.data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/leads/${id}`, data).then(r => r.data),
