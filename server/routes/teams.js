@@ -51,6 +51,7 @@ router.patch('/:id', adminOnly, async (req, res) => {
     const updates = {};
     if (req.body.name) updates.name = req.body.name.trim();
     if (Array.isArray(req.body.members)) updates.members = req.body.members;
+    if (typeof req.body.pooledTasks === 'boolean') updates.pooledTasks = req.body.pooledTasks;
     const updated = await updateOne('teams', req.params.id, updates);
     if (!updated) return res.status(404).json({ error: 'Not found' });
     res.json(updated);
