@@ -210,6 +210,7 @@ export default function Tasks() {
   const [tasks,     setTasks]     = useState<Task[]>([]);
   const [staff,     setStaff]     = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [teams,     setTeams]     = useState<Team[]>([]);
   const [filter,    setFilter]    = useState<'pending' | 'done'>('pending');
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [showAdd,   setShowAdd]   = useState(false);
@@ -219,14 +220,16 @@ export default function Tasks() {
   const navigate = useNavigate();
 
   const load = async () => {
-    const [t, s, c] = await Promise.all([
+    const [t, s, c, tm] = await Promise.all([
       tasksAPI.list(),
       isAdmin ? staffAPI.list() : Promise.resolve([]),
       customersAPI.list(),
+      teamsAPI.list().catch(() => [] as Team[]),
     ]);
     setTasks(t);
     setStaff(s);
     setCustomers(c);
+    setTeams(tm);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
