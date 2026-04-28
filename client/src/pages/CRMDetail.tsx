@@ -333,23 +333,70 @@ export default function CRMDetail() {
       {/* ── Add note ─────────────────────────────────────────────────────────── */}
       <div className="card">
         <p className="text-white/30 text-xs uppercase tracking-wider font-medium mb-3">Add Note</p>
-        <div className="flex gap-2">
-          <textarea
-            className="input flex-1 resize-none text-sm"
-            rows={2}
-            placeholder="Log a call, note an update, record anything…"
-            value={noteText}
-            onChange={e => setNoteText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitNote(); }}
-          />
+
+        {/* Textarea */}
+        <textarea
+          className="input w-full resize-none text-sm mb-2"
+          rows={3}
+          placeholder="Log a call, note an update, record anything… (Hindi/Hinglish/English)"
+          value={noteText}
+          onChange={e => setNoteText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitNote(); }}
+        />
+
+        {/* Live interim voice preview */}
+        {voice.listening && (
+          <div className="flex items-center gap-3 px-4 py-2.5 mb-2 bg-red-500/5 border border-red-500/20 rounded-xl">
+            <div className="flex items-end gap-0.5 flex-shrink-0">
+              {[3,5,7,5,3].map((h, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 bg-red-400 rounded-full animate-bounce"
+                  style={{ height: `${h}px`, animationDelay: `${i * 100}ms` }}
+                />
+              ))}
+            </div>
+            <span className="text-red-400 text-xs font-medium flex-shrink-0">Recording…</span>
+            {voice.interimText && (
+              <span className="text-white/35 text-xs italic truncate min-w-0">
+                {voice.interimText.slice(-80)}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Voice error */}
+        {voice.voiceError && (
+          <p className="flex items-center gap-2 text-amber-400 text-xs mb-2">
+            <AlertCircle size={12} />{voice.voiceError}
+          </p>
+        )}
+
+        {/* Action row: mic + save */}
+        <div className="flex items-center gap-2">
+          {voice.hasVoice && (
+            <button
+              onClick={voice.toggle}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                voice.listening
+                  ? 'bg-red-500 border-red-500 text-white'
+                  : 'border-dark-50 text-white/50 hover:text-white hover:border-gold/40'
+              }`}
+            >
+              {voice.listening ? <><MicOff size={14} /> Stop</> : <><Mic size={14} /> Speak</>}
+            </button>
+          )}
           <button
             onClick={submitNote}
             disabled={!noteText.trim() || saving}
-            className="btn-primary px-4 flex-shrink-0 flex items-center gap-1.5 self-end"
+            className="btn-primary flex items-center gap-1.5 ml-auto"
           >
             <Send size={13} /> Save
           </button>
         </div>
+        {!voice.hasVoice && (
+          <p className="text-white/15 text-xs mt-2">Voice input not available (use Chrome for best results)</p>
+        )}
       </div>
 
       {/* ── Notes timeline ───────────────────────────────────────────────────── */}
