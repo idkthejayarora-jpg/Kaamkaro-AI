@@ -2,12 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Plus, Check, Trash2, X, Calendar, User, Clock,
   CheckCircle, Filter, Edit2, BookOpen, AlertTriangle,
-  Save, RotateCcw, StickyNote,
+  Save, RotateCcw, StickyNote, Users,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { tasksAPI, staffAPI, customersAPI } from '../lib/api';
+import { tasksAPI, staffAPI, customersAPI, teamsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Task, Staff, Customer } from '../types';
+import type { Task, Staff, Customer, Team } from '../types';
 
 // ── Add Task Modal ─────────────────────────────────────────────────────────────
 function AddTaskModal({ staff, customers, onClose, onCreated }: {
