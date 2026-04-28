@@ -990,15 +990,25 @@ export default function Diary() {
 
   // Initial load
   useEffect(() => {
-    const tasks: Promise<unknown>[] = [
+    const fetches: Promise<unknown>[] = [
       diaryAPI.list()
         .then(d => setEntries(d))
         .catch(() => {}),
+      tasksAPI.list({ completed: false })
+        .then((ts: Task[]) => setTasks(ts))
+        .catch(() => {}),
+      // Also fetch completed tasks so we can show them as done in diary cards
+      tasksAPI.list({ completed: true })
+        .then((ts: Task[]) => setTasks(prev => {
+          const ids = new Set(prev.map(t => t.id));
+          return [...prev, ...ts.filter(t => !ids.has(t.id))];
+        }))
+        .catch(() => {}),
     ];
     if (isAdmin) {
-      tasks.push(staffAPI.list().then(s => setStaff(s)).catch(() => {}));
+      fetches.push(staffAPI.list().then(s => setStaff(s)).catch(() => {}));
     }
-    Promise.all(tasks).finally(() => setLoading(false));
+    Promise.all(fetches).finally(() => setLoading(false));
   }, [isAdmin]);
 
   // Real-time updates via SSE (replaces 4-second polling)
