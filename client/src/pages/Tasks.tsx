@@ -423,7 +423,6 @@ export default function Tasks() {
                 filter === f ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
               }`}>
               {f === 'pending' ? `Pending (${pending.length})` : `Done (${done.length})`}
-
             </button>
           ))}
         </div>
