@@ -278,7 +278,7 @@ export default function CRM() {
         </div>
       ) : (
         <div className="space-y-2">
-          {visibleLeads.map(l => <LeadCard key={l.id} lead={l} today={today} />)}
+          {visibleLeads.map(l => <LeadCard key={l.id} lead={l} today={today} isAdmin={isAdmin} />)}
         </div>
       )}
     </div>
