@@ -105,6 +105,7 @@ export default function CRMForm() {
           nextFollowUp: form.nextFollowUp || null,
           visitDate:    form.visitDate || null,
           note:         form.note.trim(),
+          ...(isAdmin && form.assignedTo ? { assignedTo: form.assignedTo } : {}),
         });
         setDirty(false);
         navigate(`/crm/${lead.id}`);
