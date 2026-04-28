@@ -12,6 +12,419 @@ import { useAuth } from '../contexts/AuthContext';
 import type { DiaryEntry, Staff, Task } from '../types';
 import { useVoice } from '../hooks/useVoice';
 
+const SENTIMENT_STYLES: Record<string, string> = {
+  positive: 'text-green-400 bg-green-500/10 border-green-500/20',
+  neutral:  'text-white/40 bg-white/5 border-white/10',
+  negative: 'text-red-400 bg-red-500/10 border-red-500/20',
+};
+const LANG_BADGE: Record<string, string> = {
+  hindi:    'हिं · Hindi',
+  english:  'EN · English',
+  hinglish: 'HG · Hinglish',
+};
+
+// ── Diary card ────────────────────────────────────────────────────────────────
+function DiaryCard({ entry, onDelete, onReanalyzed, showAuthor, entryTasks, onTaskCompleted }: {
+  entry: DiaryEntry;
+  onDelete: (id: string) => void;
+  onReanalyzed: (updated: DiaryEntry) => void;
+  showAuthor?: boolean;
+  entryTasks: Task[];
+  onTaskCompleted: (taskId: string) => void;
+}) {
+  const navigate = useNavigate();
+  const [expanded,      setExpanded]      = useState(entry.status === 'done' && entry.aiEntries.length > 0);
+  const [showOrig,      setShowOrig]      = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+  const [deleteError,   setDeleteError]   = useState('');
+  const [reanalyzing,   setReanalyzing]   = useState(false);
+  const [editing,       setEditing]       = useState(false);
+  const [editContent,   setEditContent]   = useState(entry.content);
+  const [editEntries,   setEditEntries]   = useState(entry.aiEntries);
+  const [saving,        setSaving]        = useState(false);
+  const [completingId,  setCompletingId]  = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editing) {
+      setEditContent(entry.content);
+      setEditEntries(entry.aiEntries);
+    }
+  }, [entry.content, entry.aiEntries, editing]);
+
+  const hasTranslation =
+    entry.translatedContent && entry.translatedContent.trim() !== entry.content.trim();
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this diary entry? This cannot be undone.')) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await diaryAPI.delete(entry.id);
+      onDelete(entry.id);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })
+        ?.response?.data?.error || 'Delete failed — please try again.';
+      setDeleteError(msg);
+      setDeleting(false);
+    }
+  };
+
+  const handleReanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      const updated = await diaryAPI.reanalyze(entry.id);
+      onReanalyzed(updated);
+    } catch { /* server will set status=processing; SSE will push the result */ }
+    finally { setReanalyzing(false); }
+  };
+
+  const handleSaveEdit = async (reanalyze = false) => {
+    setSaving(true);
+    try {
+      await diaryAPI.edit(entry.id, {
+        content: editContent,
+        aiEntries: reanalyze ? undefined : editEntries,
+        reanalyze,
+      });
+      setEditing(false);
+      onReanalyzed({ ...entry, content: editContent, aiEntries: reanalyze ? [] : editEntries });
+    } catch { /* non-fatal */ }
+    finally { setSaving(false); }
+  };
+
+  const removeAiEntry = (idx: number) => {
+    setEditEntries(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    setCompletingId(taskId);
+    try {
+      await tasksAPI.complete(taskId);
+      onTaskCompleted(taskId);
+    } catch { /* non-fatal */ }
+    finally { setCompletingId(null); }
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  return (
+    <div className="card">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-white/25 text-xs">
+              {new Date(entry.createdAt).toLocaleDateString('en-IN', {
+                day: 'numeric', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </span>
+            {showAuthor && entry.staffName && (
+              <span className="badge bg-gold/10 text-gold border-gold/20 text-[10px]">
+                <Users size={8} className="mr-0.5 inline" />
+                {entry.staffName}
+              </span>
+            )}
+            {entry.detectedLanguage && (
+              <span className="badge bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px]">
+                <Globe size={8} className="mr-0.5 inline" />
+                {LANG_BADGE[entry.detectedLanguage] ?? entry.detectedLanguage}
+              </span>
+            )}
+            {entry.status === 'processing' && (
+              <span className="badge badge-gold text-[10px] flex items-center gap-1">
+                <Clock size={9} className="animate-pulse" /> Analysing…
+              </span>
+            )}
+            {entry.status === 'done' && (
+              <span className="badge badge-green text-[10px]">
+                {entry.aiEntries.length} {entry.aiEntries.length === 1 ? 'entry' : 'entries'} extracted
+              </span>
+            )}
+            {entry.status === 'error' && (
+              <span className="badge badge-red text-[10px]">AI error</span>
+            )}
+          </div>
+
+          {hasTranslation ? (
+            <div>
+              <p className="text-white/60 text-sm leading-relaxed line-clamp-3">
+                {showOrig ? entry.content : entry.translatedContent}
+              </p>
+              <button
+                onClick={() => setShowOrig(s => !s)}
+                className="flex items-center gap-1 text-gold/50 hover:text-gold text-[10px] mt-1.5 transition-colors"
+              >
+                <Languages size={10} />
+                {showOrig ? 'Show translated' : 'Show original'}
+              </button>
+            </div>
+          ) : (
+            <p className="text-white/60 text-sm leading-relaxed line-clamp-3">{entry.content}</p>
+          )}
+
+          {deleteError && (
+            <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+              <AlertCircle size={11} />{deleteError}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+          {(entry.status === 'done' && entry.aiEntries.length > 0 || entryTasks.length > 0) && !editing && (
+            <button
+              onClick={() => setExpanded(e => !e)}
+              className="p-1.5 text-white/30 hover:text-gold transition-colors rounded-lg"
+            >
+              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            </button>
+          )}
+          {!editing && (
+            <button
+              onClick={() => { setEditing(true); setExpanded(false); }}
+              title="Edit entry"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all text-xs font-medium"
+            >
+              <Pencil size={11} />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          )}
+          {!editing && (
+            <button
+              onClick={handleReanalyze}
+              disabled={reanalyzing || entry.status === 'processing'}
+              title="Re-run AI analysis"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold/50 hover:bg-gold/10 hover:text-gold hover:border-gold/40 transition-all text-xs font-medium disabled:opacity-40"
+            >
+              {reanalyzing
+                ? <div className="w-3 h-3 border border-gold/40 border-t-gold rounded-full animate-spin" />
+                : <RefreshCw size={11} />}
+              <span className="hidden sm:inline">{reanalyzing ? 'Analysing…' : 'Re-run'}</span>
+            </button>
+          )}
+          {!editing && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/60 transition-all text-xs font-medium disabled:opacity-50"
+            >
+              {deleting
+                ? <div className="w-3 h-3 border border-red-400/50 border-t-red-400 rounded-full animate-spin" />
+                : <Trash2 size={11} />}
+              <span className="hidden sm:inline">{deleting ? 'Deleting…' : 'Delete'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {editing && (
+        <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-4 animate-fade-in">
+          <p className="text-white/40 text-xs font-medium flex items-center gap-1.5">
+            <Pencil size={10} className="text-gold" /> Editing entry
+          </p>
+          <textarea
+            value={editContent}
+            onChange={e => setEditContent(e.target.value)}
+            rows={4}
+            className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 resize-none leading-relaxed"
+          />
+          {editEntries.length > 0 && (
+            <div>
+              <p className="text-white/30 text-xs mb-2">Detected customers — remove wrong ones:</p>
+              <div className="space-y-1.5">
+                {editEntries.map((e, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 bg-dark-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-5 h-5 rounded-full bg-dark-100 border border-dark-50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white/40 text-[9px] font-bold">{(e.customerName || '?')[0].toUpperCase()}</span>
+                      </div>
+                      <span className="text-white text-xs font-medium truncate">{e.customerName}</span>
+                      {e.spokenName && e.spokenName !== e.customerName && (
+                        <span className="text-white/25 text-[10px] truncate">← "{e.spokenName}"</span>
+                      )}
+                      {e.isNewCustomer && (
+                        <span className="badge bg-green-500/10 text-green-400 border-green-500/20 text-[9px] flex-shrink-0">new</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeAiEntry(i)}
+                      className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0 p-0.5"
+                      title="Remove this customer link"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => handleSaveEdit(true)}
+              disabled={saving || !editContent.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gold text-black text-xs font-semibold hover:bg-gold/90 transition-colors disabled:opacity-40"
+            >
+              {saving ? <div className="w-3 h-3 border border-black/30 border-t-black rounded-full animate-spin" /> : <RefreshCw size={11} />}
+              Save & Re-analyze
+            </button>
+            <button
+              onClick={() => handleSaveEdit(false)}
+              disabled={saving || !editContent.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white text-xs font-medium hover:bg-white/10 transition-colors disabled:opacity-40"
+            >
+              <Check size={11} /> Save only
+            </button>
+            <button
+              onClick={() => { setEditing(false); setEditContent(entry.content); setEditEntries(entry.aiEntries); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white/30 hover:text-white text-xs transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!editing && expanded && entry.aiEntries.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-3 animate-fade-in">
+          <p className="text-white/30 text-xs flex items-center gap-1.5">
+            <Sparkles size={11} className="text-gold" />
+            Kamal extracted these interactions:
+          </p>
+          {entry.aiEntries.map((e, i) => (
+            <div key={i} className="bg-dark-200 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="w-6 h-6 rounded-full bg-dark-100 border border-dark-50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white/40 text-[10px] font-bold">
+                      {(e.customerName || '?')[0].toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-white font-medium text-sm">{e.customerName}</span>
+                  {e.spokenName && e.spokenName !== e.customerName && (
+                    <span className="text-white/25 text-xs">(said: "{e.spokenName}")</span>
+                  )}
+                  {e.isNewCustomer ? (
+                    <span className="flex items-center gap-1 badge bg-green-500/10 text-green-400 border-green-500/20 text-[10px]">
+                      <UserPlus size={9} /> New customer added
+                    </span>
+                  ) : e.matchedCustomerName ? (
+                    <span className="badge badge-gold text-[10px]">✓ Matched</span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {e.sentiment && (
+                    <span className={`badge text-[10px] border ${SENTIMENT_STYLES[e.sentiment] ?? ''}`}>
+                      {e.sentiment}
+                    </span>
+                  )}
+                  <span className="text-white/20 text-[10px]">{Math.round((e.confidence ?? 0) * 100)}%</span>
+                </div>
+              </div>
+              {e.date && (
+                <p className="text-white/30 text-xs">
+                  {new Date(e.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </p>
+              )}
+              <p className="text-white/60 text-xs leading-relaxed">{e.notes}</p>
+              {e.originalNotes && e.originalNotes !== e.notes && (
+                <details className="mt-0.5">
+                  <summary className="text-white/25 text-[10px] cursor-pointer hover:text-white/40 select-none">
+                    Original text
+                  </summary>
+                  <p className="text-white/30 text-xs mt-1 leading-relaxed pl-2 border-l border-dark-50">
+                    {e.originalNotes}
+                  </p>
+                </details>
+              )}
+              {e.actionItems && e.actionItems.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap pt-0.5">
+                  {e.actionItems.map((a, j) => (
+                    <span key={j} className="badge badge-gray text-[10px]">→ {a}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!editing && expanded && entryTasks.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-dark-50/50 space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <p className="text-white/30 text-xs flex items-center gap-1.5">
+              <ListTodo size={11} className="text-gold/70" />
+              Tasks created from this entry
+              <span className="text-white/20 ml-1">
+                ({entryTasks.filter(t => t.completed).length}/{entryTasks.length} done)
+              </span>
+            </p>
+            <button
+              onClick={() => navigate('/tasks')}
+              className="flex items-center gap-1 text-[10px] text-gold/50 hover:text-gold transition-colors"
+            >
+              View all tasks <ArrowRight size={9} />
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {entryTasks.map(task => {
+              const isOverdue = !task.completed && task.dueDate < today;
+              const isDone    = task.completed;
+              return (
+                <div
+                  key={task.id}
+                  className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-all ${
+                    isDone
+                      ? 'bg-green-500/5 border-green-500/10 opacity-60'
+                      : isOverdue
+                        ? 'bg-red-500/5 border-red-500/15'
+                        : 'bg-dark-200 border-dark-50/60'
+                  }`}
+                >
+                  <button
+                    onClick={() => !isDone && handleCompleteTask(task.id)}
+                    disabled={isDone || completingId === task.id}
+                    className="mt-0.5 flex-shrink-0 text-white/30 hover:text-green-400 transition-colors disabled:cursor-default"
+                    title={isDone ? 'Completed' : 'Mark complete'}
+                  >
+                    {completingId === task.id
+                      ? <div className="w-3.5 h-3.5 border border-white/20 border-t-green-400 rounded-full animate-spin" />
+                      : isDone
+                        ? <CheckCircle2 size={14} className="text-green-400" />
+                        : <Circle size={14} />
+                    }
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-medium leading-snug ${isDone ? 'line-through text-white/30' : 'text-white/80'}`}>
+                      {task.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {task.customerName && (
+                        <span className="text-[10px] text-white/25">{task.customerName}</span>
+                      )}
+                      <span className={`text-[10px] ${isOverdue ? 'text-red-400' : 'text-white/25'}`}>
+                        {isOverdue ? '⚠ Overdue · ' : ''}
+                        {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('en-IN', {
+                          day: 'numeric', month: 'short',
+                        })}
+                      </span>
+                      {(task.rescheduledCount ?? 0) > 0 && (
+                        <span className="text-[10px] text-amber-400/70">
+                          rescheduled {task.rescheduledCount}×
+                        </span>
+                      )}
+                    </div>
+                    {task.notes && !isDone && (
+                      <p className="text-[10px] text-white/25 mt-0.5 truncate">{task.notes}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Main Diary page ───────────────────────────────────────────────────────────
 export default function Diary() {
