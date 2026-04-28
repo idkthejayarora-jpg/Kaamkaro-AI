@@ -7,9 +7,23 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // GET /api/vendors
+// Admin → all vendors.
+// Staff → only vendors they have a vendorInteraction with.
+//         If two staff share a vendor, both see it.
 router.get('/', async (req, res) => {
   try {
     const vendors = await readDB('vendors');
+
+    if (req.user.role === 'staff') {
+      const vendorInteractions = await readDB('vendorInteractions');
+      const myVendorIds = new Set(
+        vendorInteractions
+          .filter(vi => vi.staffId === req.user.id)
+          .map(vi => vi.vendorId)
+      );
+      return res.json(vendors.filter(v => myVendorIds.has(v.id)));
+    }
+
     res.json(vendors);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
