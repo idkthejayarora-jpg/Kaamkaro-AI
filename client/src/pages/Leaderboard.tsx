@@ -103,6 +103,23 @@ export default function Leaderboard() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Staff team/all toggle — only shown when staff is in a team */}
+          {!isAdmin && data.myTeamId && (
+            <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-xl p-1">
+              {(['team', 'all'] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => handleStaffScope(s)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    staffScope === s ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+                  }`}
+                >
+                  {s === 'team' ? `My Team` : 'All Staff'}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Team filter — admin only */}
           {isAdmin && data.teams.length > 0 && (
             <select
