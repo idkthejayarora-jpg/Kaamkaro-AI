@@ -478,15 +478,57 @@ router.get('/sentiment-trend/:customerId', async (req, res) => {
 });
 
 // ── GET /api/ai/leaderboard ────────────────────────────────────────────────────
+// Query params: teamId (admin only) — filter by specific team
 router.get('/leaderboard', async (req, res) => {
   try {
-    const [staff, interactions, customers, tasks, merits] = await Promise.all([
+    const [allStaff, interactions, customers, tasks, merits, teams] = await Promise.all([
       readDB('staff'),
       readDB('interactions'),
       readDB('customers'),
       readDB('tasks'),
       readDB('merits').catch(() => []),
+      readDB('teams').catch(() => []),
     ]);
+
+    // ── Team scoping ───────────────────────────────────────────────────────────
+    // Staff: automatically scoped to their team (or all if not in any team)
+    // Admin: can filter by teamId query param, or see all
+    let staff = allStaff;
+    let scopedTeamId   = null;
+    let scopedTeamName = null;
+
+    if (req.user.role === 'staff') {
+      const myTeam = teams.find(t => Array.isArray(t.members) && t.members.includes(req.user.id));
+      if (myTeam) {
+        staff = allStaff.filter(s => myTeam.members.includes(s.id));
+        scopedTeamId   = myTeam.id;
+        scopedTeamName = myTeam.name;
+      }
+    } else if (req.query.teamId) {
+      const team = teams.find(t => t.id === req.query.teamId);
+      if (team) {
+        staff = allStaff.filter(s => team.members.includes(s.id));
+        scopedTeamId   = team.id;
+        scopedTeamName = team.name;
+      }
+    }
+
+    // Build a map of staffId → team for badge display
+    const staffTeamMap = {};
+    for (const team of teams) {
+      for (const mid of (team.members || [])) {
+        staffTeamMap[mid] = { teamId: team.id, teamName: team.name };
+      }
+    }
+
+    // ── Weekly window — current Mon 00:00 local → now ─────────────────────────
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun
+    const daysSinceMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysSinceMon);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekStartMs = weekStart.getTime();
 
     // Respect a manual reset date if admin has reset the leaderboard
     let resetAt = 0;
@@ -496,48 +538,60 @@ router.get('/leaderboard', async (req, res) => {
       if (r) resetAt = new Date(r.value).getTime();
     } catch {}
 
-    const weekAgo  = Math.max(Date.now() - 7  * 86400000, resetAt);
-    const monthAgo = Math.max(Date.now() - 30 * 86400000, resetAt);
+    // Use whichever is more recent: Monday of this week or manual reset
+    const weekWindowMs = Math.max(weekStartMs, resetAt);
+    const monthAgo     = Date.now() - 30 * 86400000;
 
-    // Response rate: interactions involving productive actions (payment/parcel/billing context)
+    // Response rate: interactions involving productive actions
     const RESPONSE_KEYWORDS = /payment|paid|billed|bill|invoice|parcel|delivery|advance|balance|collected|received|planned|follow.?up/i;
 
     const rows = staff.map(s => {
-      const weekInteractions  = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekAgo);
+      const weekInteractions  = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekWindowMs);
       const monthInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > monthAgo);
       const responded         = weekInteractions.filter(i =>
         i.responded || (i.notes && RESPONSE_KEYWORDS.test(i.notes))
       ).length;
       const responseRate      = weekInteractions.length > 0 ? Math.round(responded / weekInteractions.length * 100) : 0;
       const closedCount       = customers.filter(c => c.assignedTo === s.id && c.status === 'closed' && new Date(c.updatedAt || c.createdAt).getTime() > resetAt).length;
-      const completedTasks    = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
+      const completedTasks    = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekWindowMs).length;
       const totalTasks        = tasks.filter(t => t.staffId === s.id).length;
       const taskCompletionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
-      const meritTotal        = merits.filter(m => m.staffId === s.id).reduce((sum, m) => sum + (m.points || 0), 0);
+
+      // weekPts = merit points earned THIS calendar week (primary rank driver for competition)
+      const weekPts  = merits.filter(m => m.staffId === s.id && new Date(m.createdAt).getTime() > weekWindowMs).reduce((sum, m) => sum + (m.points || 0), 0);
+      // meritTotal = all-time for profile display
+      const meritTotal = merits.filter(m => m.staffId === s.id).reduce((sum, m) => sum + (m.points || 0), 0);
+
       const score = Math.round(
         (responseRate * 0.35) +
         (Math.min(weekInteractions.length / 20, 1) * 100 * 0.30) +
         (Math.min(closedCount / 5, 1) * 100 * 0.20) +
         (taskCompletionRate * 0.15)
       );
+
+      const teamInfo = staffTeamMap[s.id] || null;
+
       return {
         id: s.id, name: s.name, avatar: s.avatar,
         availability: s.availability || 'available',
+        teamId:   teamInfo?.teamId   || null,
+        teamName: teamInfo?.teamName || null,
         weekInteractions: weekInteractions.length,
         monthInteractions: monthInteractions.length,
         responseRate,
         streak: s.streakData?.currentStreak || 0,
         longestStreak: s.streakData?.longestStreak || 0,
         closedCount, completedTasks, totalTasks, taskCompletionRate,
-        meritTotal, score,
+        weekPts, meritTotal, score,
         rank: 0,
       };
     });
 
-    // Primary sort: merit points; secondary: score
-    rows.sort((a, b) => b.meritTotal - a.meritTotal || b.score - a.score);
+    // Primary sort: THIS WEEK's merit points (weekly competition); secondary: score
+    rows.sort((a, b) => b.weekPts - a.weekPts || b.score - a.score);
     rows.forEach((r, i) => { r.rank = i + 1; });
-    res.json(rows);
+
+    res.json({ rows, scopedTeamId, scopedTeamName, teams: teams.map(t => ({ id: t.id, name: t.name })) });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
