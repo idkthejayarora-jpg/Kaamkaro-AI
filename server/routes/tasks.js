@@ -14,7 +14,18 @@ router.get('/', async (req, res) => {
   try {
     let tasks = await readDB('tasks');
     if (req.user.role === 'staff') {
-      tasks = tasks.filter(t => t.staffId === req.user.id);
+      // Find if this staff is in a team with pooledTasks enabled
+      let pooledTeamId = null;
+      try {
+        const teams = await readDB('teams');
+        const myTeam = teams.find(t => Array.isArray(t.members) && t.members.includes(req.user.id));
+        if (myTeam?.pooledTasks === true) pooledTeamId = myTeam.id;
+      } catch {}
+
+      tasks = tasks.filter(t =>
+        t.staffId === req.user.id ||                                      // own tasks (any status)
+        (pooledTeamId && t.teamId === pooledTeamId && !t.completed)       // team pool (only pending)
+      );
     }
     const { completed, staffId } = req.query;
     if (completed !== undefined) tasks = tasks.filter(t => t.completed === (completed === 'true'));
