@@ -1025,7 +1025,31 @@ export default function Diary() {
     'diary:deleted': (payload) => {
       setEntries(prev => prev.filter(e => e.id !== (payload as { id: string }).id));
     },
+    'task:updated': (task) => {
+      setTasks(prev => {
+        const idx = prev.findIndex(t => t.id === (task as Task).id);
+        if (idx === -1) return [...prev, task as Task];
+        const next = [...prev];
+        next[idx] = { ...prev[idx], ...(task as Task) };
+        return next;
+      });
+    },
+    'task:created': (task) => {
+      setTasks(prev => {
+        if (prev.some(t => t.id === (task as Task).id)) return prev;
+        return [...prev, task as Task];
+      });
+    },
   });
+
+  // Mark a task complete locally (called from DiaryCard)
+  const handleTaskCompleted = (taskId: string) => {
+    setTasks(prev => prev.map(t =>
+      t.id === taskId
+        ? { ...t, completed: true, completedAt: new Date().toISOString() }
+        : t,
+    ));
+  };
 
   const handleSubmit = async () => {
     const text = content.trim();
