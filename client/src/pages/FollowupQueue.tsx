@@ -997,6 +997,16 @@ export default function FollowupQueue() {
           onLogged={() => { setLogging(null); loadQueue(); }}
         />
       )}
+
+      {/* ── Customer detail panel ──────────────────────────────────────── */}
+      {detailCustomer && (
+        <CustomerDetailPanel
+          item={detailCustomer}
+          onClose={() => setDetail(null)}
+          onLog={c => { setDetail(null); setLogging(c); }}
+          onNavigate={id => navigate(`/customers?highlight=${id}`)}
+        />
+      )}
     </div>
   );
 }
