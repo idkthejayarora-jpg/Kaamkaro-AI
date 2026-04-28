@@ -8,11 +8,12 @@ import {
   Clock, AlertTriangle, Phone, ChevronRight, Sparkles,
   Users, TrendingUp, TrendingDown, Ghost, ShoppingBag,
   CreditCard, Flame, CheckCircle, X, Brain, Activity,
-  AlertCircle, Shield, BarChart2, MessageSquare,
+  AlertCircle, Shield, BarChart2, MessageSquare, BookOpen,
+  ExternalLink, CheckCircle2, Calendar,
 } from 'lucide-react';
-import { insightsAPI, interactionsAPI } from '../lib/api';
+import { insightsAPI, interactionsAPI, diaryAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Customer, Interaction, CustomerInsight, StaffBehavior, InsightsTrends } from '../types';
+import type { Interaction, CustomerInsight, StaffBehavior, InsightsTrends, DiaryEntry } from '../types';
 
 const GOLD = '#D4AF37';
 const DIM  = '#1e1e1e';
