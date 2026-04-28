@@ -291,6 +291,7 @@ export default function Tasks() {
             onClick={() => handleComplete(task.id)}
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
               task.completed        ? 'bg-green-500/20 border-green-500/40' :
+              isPool                ? 'border-indigo-400/40 hover:border-indigo-400 hover:bg-indigo-500/10' :
               isOverdueTask         ? 'border-red-500/40 hover:border-red-400 hover:bg-red-500/10' :
                                       'border-gold/30 hover:border-gold hover:bg-gold/10'
             }`}
@@ -299,9 +300,17 @@ export default function Tasks() {
           </button>
 
           <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${task.completed ? 'line-through text-white/30' : 'text-white'}`}>
-              {task.title}
-            </p>
+            {/* Pool badge + title row */}
+            <div className="flex items-start gap-2 flex-wrap">
+              {isPool && task.teamId && (
+                <span className="flex items-center gap-1 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5">
+                  <Users size={8} />{getTeamName(task.teamId)} Pool
+                </span>
+              )}
+              <p className={`text-sm font-medium ${task.completed ? 'line-through text-white/30' : 'text-white'}`}>
+                {task.title}
+              </p>
+            </div>
 
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               {task.customerName && (
