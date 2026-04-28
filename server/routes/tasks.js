@@ -76,24 +76,40 @@ router.patch('/:id/complete', async (req, res) => {
     if (req.user.role === 'staff' && t.staffId !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    const completed   = !t.completed;
-    const completedAt = completed ? new Date().toISOString() : null;
-    const updated = await updateOne('tasks', req.params.id, { completed, completedAt });
+    const nowCompleting = !t.completed;
+    const completedAt   = nowCompleting ? new Date().toISOString() : null;
+    // Track who actually completed a pool task
+    const completedBy   = nowCompleting ? req.user.id : null;
+    const updated = await updateOne('tasks', req.params.id, { completed: nowCompleting, completedAt, completedBy });
     broadcast('task:updated', updated);
 
     // ── Merit points ──────────────────────────────────────────────────────────
-    if (completed) {
-      const staff = (await readDB('staff')).find(s => s.id === t.staffId)
-                    || await readDB('users').then(u => u.find(u => u.id === t.staffId)).catch(() => null);
-      const staffName = staff?.name || req.user.name;
-      const today     = new Date().toISOString().split('T')[0];
-      const isLate    = t.dueDate && t.dueDate < today;
+    // Pool tasks: merit goes to whoever completes (req.user), not the original creator.
+    // Personal tasks: merit goes to the task owner (t.staffId) as before.
+    if (nowCompleting) {
+      const isPoolTask  = !!t.teamId;
+      const meritId     = isPoolTask ? req.user.id   : t.staffId;
+      const meritName   = isPoolTask ? req.user.name : (() => {
+        // Resolve staff name for personal task owner
+        return null; // resolved below
+      })();
+
+      let resolvedName = meritName;
+      if (!resolvedName) {
+        try {
+          const staffList = await readDB('staff');
+          const s = staffList.find(x => x.id === meritId);
+          resolvedName = s?.name || req.user.name;
+        } catch { resolvedName = req.user.name; }
+      }
+
+      const today  = new Date().toISOString().split('T')[0];
+      const isLate = t.dueDate && t.dueDate < today;
 
       if (isLate) {
-        // -1 for late, but still +1 for completing — net 0, but two separate events for transparency
-        await awardMerit(t.staffId, staffName, -1, `Late completion: ${t.title}`, 'overdue', t.id);
+        await awardMerit(meritId, resolvedName, -1, `Late completion: ${t.title}`, 'overdue', t.id);
       }
-      await awardMerit(t.staffId, staffName, 1, `Task completed: ${t.title}`, 'task', t.id);
+      await awardMerit(meritId, resolvedName, 1, `Task completed: ${t.title}`, 'task', t.id);
     }
 
     res.json(updated);
