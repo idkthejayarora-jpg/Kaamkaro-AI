@@ -11,23 +11,35 @@ router.use(authMiddleware);
 let Anthropic;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
 
-const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
+// Model preference order — first valid one wins at runtime
+const AI_MODELS = [
+  process.env.ANTHROPIC_MODEL,       // if env var set, try it first
+  'claude-3-5-haiku-20241022',       // stable, widely available
+  'claude-3-haiku-20240307',         // older fallback
+].filter(Boolean);
 
 function getClient() {
   if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
-// Wrapper: run with preferred model, auto-fallback to stable haiku on 404/400
+// Wrapper: try models in order, fallback on any model-related error
 async function aiCreate(client, params) {
-  try {
-    return await client.messages.create({ ...params, model: AI_MODEL });
-  } catch (err) {
-    if ((err?.status === 404 || err?.status === 400) && AI_MODEL !== 'claude-3-5-haiku-20241022') {
-      return await client.messages.create({ ...params, model: 'claude-3-5-haiku-20241022' });
+  let lastErr;
+  for (const model of AI_MODELS) {
+    try {
+      return await client.messages.create({ ...params, model });
+    } catch (err) {
+      const status = err?.status;
+      // 400/404/422 = bad model name or request — try next
+      if (status === 400 || status === 404 || status === 422) {
+        lastErr = err;
+        continue;
+      }
+      throw err; // auth error, rate limit, etc — bubble up immediately
     }
-    throw err;
   }
+  throw lastErr;
 }
 
 // ── POST /api/ai/kamal — context-aware Kamal AI with Action Mode ────────────────
