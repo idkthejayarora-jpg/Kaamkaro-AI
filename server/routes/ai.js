@@ -911,7 +911,10 @@ Return ONLY valid JSON:
     let raw = aiRes.content[0].text.trim();
     // Strip markdown code fences if present
     raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-    const result = JSON.parse(raw);
+    // Extract JSON object even if Claude adds surrounding text
+    const objMatch = raw.match(/\{[\s\S]*\}/);
+    if (!objMatch) throw new Error('AI did not return valid JSON');
+    const result = JSON.parse(objMatch[0]);
     result.generatedAt = new Date().toISOString();
     res.json(result);
   } catch (err) {
