@@ -146,8 +146,7 @@ CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.
       { role: 'user', content: message },
     ];
 
-    const result = await client.messages.create({
-      model: 'claude-haiku-4-5',
+    const result = await aiCreate(client, {
       max_tokens: 1024,
       system: contextSummary,
       messages,
@@ -406,8 +405,7 @@ Return ONLY valid JSON array — no markdown, no explanation:
   "priority": "high|medium|low"
 }]`;
 
-    const result = await client.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 4000,
+    const result = await aiCreate(client, { max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -547,8 +545,7 @@ Write a business report covering:
 Style: Direct, warm, like a smart business partner. 8-10 sentences. Mention real names from the data.
 Respond with ONLY the report text — no JSON, no markdown.`;
 
-    const result = await client.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 800,
+    const result = await aiCreate(client, { max_tokens: 800,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -891,8 +888,7 @@ Return ONLY valid JSON:
   "summary": "2-3 sentence overall business insight"
 }`;
 
-    const aiRes = await client.messages.create({
-      model:      'claude-opus-4-5',
+    const aiRes = await aiCreate(client, {
       max_tokens: 2000,
       messages:   [{ role: 'user', content: prompt }],
     });

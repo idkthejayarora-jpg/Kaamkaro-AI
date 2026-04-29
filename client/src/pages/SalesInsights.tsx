@@ -65,8 +65,9 @@ export default function SalesInsights() {
     try {
       const result = await aiAPI.salesInsights();
       setData(result);
-    } catch {
-      setError('Failed to generate insights. Make sure there are diary entries and CRM notes to analyse.');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as { message?: string })?.message || 'Unknown error';
+      setError(`Failed to generate insights: ${msg}`);
     } finally {
       setLoading(false);
     }
