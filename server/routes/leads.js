@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── POST /api/leads ────────────────────────────────────────────────────────────
-// Creates a lead AND a corresponding customer record.
+// Creates a lead linked to an existing customer (customerId) OR a brand-new one.
 // staffId defaults to req.user.id; admin can pass assignedTo to set a different owner.
 router.post('/', async (req, res) => {
   try {
@@ -55,7 +55,8 @@ router.post('/', async (req, res) => {
       name, phone = '', place = '', source = 'other',
       stage = 'new', nextFollowUp = null,
       visitDate = null, note = '',
-      assignedTo,  // admin may specify a staff member
+      assignedTo,    // admin may specify a staff member
+      customerId: existingCustomerId,  // if picking from customer DB
     } = req.body;
 
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
@@ -67,29 +68,41 @@ router.post('/', async (req, res) => {
       ? [{ text: note.trim(), date: new Date().toISOString() }]
       : [];
 
-    // ── 1. Create the customer record ──────────────────────────────────────────
-    const customerId = uuidv4();
-    const customer = {
-      id:            customerId,
-      name:          name.trim(),
-      phone:         phone?.trim() || '',
-      email:         '',
-      assignedTo:    staffId,
-      assignedStaff: [staffId],
-      status:        'lead',            // maps to existing pipeline stage
-      lastContact:   null,
-      notes:         note?.trim() || '',
-      tags:          ['crm-lead'],
-      dealValue:     null,
-      createdAt:     new Date().toISOString(),
-    };
-    await insertOne('customers', customer);
+    let linkedCustomerId;
 
-    // ── 2. Create the lead record ──────────────────────────────────────────────
+    if (existingCustomerId) {
+      // ── Use existing customer — just update phone if it was missing ────────
+      linkedCustomerId = existingCustomerId;
+      const customers = await readDB('customers');
+      const existing  = customers.find(c => c.id === existingCustomerId);
+      if (existing && !existing.phone && phone?.trim()) {
+        await updateOne('customers', existingCustomerId, { phone: phone.trim() });
+      }
+    } else {
+      // ── Create a new customer record ────────────────────────────────────────
+      linkedCustomerId = uuidv4();
+      const customer = {
+        id:            linkedCustomerId,
+        name:          name.trim(),
+        phone:         phone?.trim() || '',
+        email:         '',
+        assignedTo:    staffId,
+        assignedStaff: [staffId],
+        status:        'lead',
+        lastContact:   null,
+        notes:         note?.trim() || '',
+        tags:          ['crm-lead'],
+        dealValue:     null,
+        createdAt:     new Date().toISOString(),
+      };
+      await insertOne('customers', customer);
+    }
+
+    // ── Create the lead record ─────────────────────────────────────────────────
     const lead = {
       id:               uuidv4(),
       staffId,
-      linkedCustomerId: customerId,
+      linkedCustomerId,
       name:             name.trim(),
       phone:            phone?.trim() || '',
       place:            place?.trim() || '',
