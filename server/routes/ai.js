@@ -769,19 +769,19 @@ router.get('/sales-insights', async (req, res) => {
     // Build staff map for context
     const staffMap = Object.fromEntries(staff.map(s => [s.id, s.name]));
 
-    // Collect diary text (last 90 days)
-    const cutoff = new Date(Date.now() - 90 * 86400000).toISOString();
-    const recentDiary = diaryEntries
-      .filter(d => d.createdAt > cutoff)
+    // ALL diary entries — no date cutoff, sorted newest first
+    const allDiary = diaryEntries
+      .sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''))
       .map(d => ({
         date:    d.date || d.createdAt?.split('T')[0],
         author:  staffMap[d.staffId] || 'Unknown',
         content: d.content || '',
-        aiTasks: (d.aiEntries || []).map(e => e.text || e.task || '').join('; '),
-      }));
+        aiNotes: (d.aiEntries || []).map(e => e.text || e.task || '').filter(Boolean).join('; '),
+      }))
+      .filter(d => d.content);
 
-    // Collect lead notes
-    const leadData = leads
+    // ALL leads with full note history
+    const allLeads = leads
       .filter(l => l.isActive !== false)
       .map(l => ({
         name:   l.name,
@@ -789,87 +789,92 @@ router.get('/sales-insights', async (req, res) => {
         source: l.source,
         place:  l.place,
         staff:  staffMap[l.staffId] || 'Unknown',
-        notes:  (l.notes || []).map(n => n.text).join(' | '),
-      }))
-      .filter(l => l.notes.length > 0);
+        notes:  (l.notes || []).map(n => n.text).filter(Boolean).join(' | '),
+      }));
 
-    // Customer context (name + tags)
-    const customerContext = customers.slice(0, 80).map(c =>
-      `${c.name}${c.tags?.length ? ' [' + c.tags.join(',') + ']' : ''}`
-    ).join(', ');
+    // ALL customers with tags, notes, deal value
+    const allCustomers = customers.map(c => ({
+      name:       c.name,
+      status:     c.status,
+      tags:       c.tags || [],
+      notes:      typeof c.notes === 'string' ? c.notes : '',
+      dealValue:  c.dealValue || 0,
+      lastContact: c.lastContact,
+    }));
 
-    // If no AI client, return rule-based keyword analysis
+    // Rule-based fallback — keyword scan across entire corpus
     if (!client) {
-      // Simple keyword extraction without AI
       const allText = [
-        ...recentDiary.map(d => d.content + ' ' + d.aiTasks),
-        ...leadData.map(l => l.notes),
+        ...allDiary.map(d => d.content + ' ' + d.aiNotes),
+        ...allLeads.map(l => l.notes),
+        ...allCustomers.map(c => c.notes),
       ].join(' ').toLowerCase();
 
-      const keywords = ['tiles', 'marble', 'granite', 'flooring', 'sanitaryware',
-        'bathroom', 'kitchen', 'wall', 'floor', 'slab', 'vitrified', 'mosaic',
-        'outdoor', 'elevation', 'steps'];
+      // Generic product keywords — works for any Indian retail business
+      const keywords = [
+        'set', 'bridal', 'wedding', 'gold', 'diamond', 'ad', 'collection',
+        'bracelet', 'necklace', 'earring', 'ring', 'order', 'customize',
+        'tiles', 'marble', 'granite', 'flooring', 'fabric', 'suit', 'saree',
+      ];
       const counts = {};
       keywords.forEach(k => {
-        const matches = (allText.match(new RegExp(k, 'g')) || []).length;
-        if (matches > 0) counts[k] = matches;
+        const n = (allText.match(new RegExp(`\\b${k}\\b`, 'g')) || []).length;
+        if (n > 0) counts[k] = n;
       });
 
       return res.json({
-        trends: Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6)
-          .map(([item, count]) => ({ item, count, customers: [] })),
-        tips: [],
+        trends: Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+          .map(([item, count]) => ({ item, count, customers: [], insight: `Mentioned ${count} time${count>1?'s':''} across diary and lead notes` })),
+        segments: [], outreachTips: [], restockAlerts: [],
         rawMode: true,
+        summary: `Analysed ${allDiary.length} diary entries, ${allLeads.length} leads, ${allCustomers.length} customers.`,
         generatedAt: new Date().toISOString(),
       });
     }
 
-    const diaryText = recentDiary.length
-      ? recentDiary.map(d =>
-          `[${d.date} · ${d.author}] ${d.content}${d.aiTasks ? ' | Tasks: ' + d.aiTasks : ''}`
-        ).join('\n')
-      : '(no recent diary entries)';
+    const diaryText = allDiary.length
+      ? allDiary.map(d => `[${d.date} · ${d.author}] ${d.content}${d.aiNotes ? ' | ' + d.aiNotes : ''}`).join('\n')
+      : '(no diary entries yet)';
 
-    const notesText = leadData.length
-      ? leadData.map(l =>
-          `Lead: ${l.name} (${l.stage}, via ${l.source}${l.place ? ', ' + l.place : ''}, staff: ${l.staff})\nNotes: ${l.notes}`
+    const notesText = allLeads.filter(l => l.notes).length
+      ? allLeads.filter(l => l.notes).map(l =>
+          `Lead: ${l.name} (${l.stage}, ${l.source}${l.place ? ', ' + l.place : ''}, staff: ${l.staff})\nNotes: ${l.notes}`
         ).join('\n\n')
-      : '(no lead notes)';
+      : '(no lead notes yet)';
 
-    const prompt = `You are a sales intelligence AI for an Indian interior/flooring/building materials business. Analyze the following diary entries and CRM lead notes to extract product/stock trends and generate actionable sales tips.
+    const customerText = allCustomers.length
+      ? allCustomers.map(c =>
+          `${c.name}${c.tags.length ? ' [' + c.tags.join(', ') + ']' : ''}${c.notes ? ' — ' + c.notes.slice(0, 80) : ''}${c.dealValue ? ' ₹' + c.dealValue : ''}`
+        ).join('\n')
+      : '(no customers yet)';
 
-=== DIARY ENTRIES (last 90 days) ===
+    const prompt = `You are a sales intelligence AI for an Indian retail business. Analyse the COMPLETE database — every diary entry, every CRM lead note, every customer record — to find product trends and generate actionable sales tips. There are NO time filters; use all historical data.
+
+LANGUAGE: Entries mix Hindi and English (Hinglish). Read naturally:
+"AD set" = American Diamond jewellery set | "bridal set" = bridal jewellery | "maal liya/bheja" = goods purchased/sent | "shop pe aayi" = came to shop | "whatsapp kiye" = sent on WhatsApp | "order nikla" = order placed | "customize karke" = customised and sent
+
+=== ALL DIARY ENTRIES (${allDiary.length} total) ===
 ${diaryText}
 
-=== CRM LEAD NOTES ===
+=== ALL CRM LEAD NOTES (${allLeads.length} leads) ===
 ${notesText}
 
-=== CUSTOMER DATABASE SNAPSHOT ===
-${customerContext}
+=== ALL CUSTOMERS (${allCustomers.length} total) ===
+${customerText}
 
-Your task:
-1. Identify which PRODUCTS/STOCK ITEMS are mentioned most (tiles, marble, granite, specific sizes, collections, brands, sanitaryware, etc.)
-2. Identify which CUSTOMER TYPES / LOCATIONS / SEGMENTS are buying or interested in what
-3. Generate SPECIFIC OUTREACH TIPS — name real leads/customers from the data and suggest what product to pitch to them
-4. Flag any RESTOCK ALERTS if demand appears high for something
+Tasks:
+1. Which PRODUCTS / COLLECTIONS / ITEMS appear most across all data (count mentions)?
+2. Which CUSTOMER SEGMENTS / LOCATIONS / TYPES buy what?
+3. Specific OUTREACH TIPS — name real people from the data, suggest exact product to pitch, write a short Hinglish WhatsApp message
+4. Any RESTOCK ALERTS where demand is building?
 
-Respond with ONLY valid JSON in this exact shape:
+Return ONLY valid JSON:
 {
-  "trends": [
-    { "item": "product name", "count": 12, "customers": ["Name1", "Name2"], "insight": "one-line observation" }
-  ],
-  "segments": [
-    { "segment": "e.g. Builders in Noida", "preferredProducts": ["tiles", "slab"], "tip": "action tip" }
-  ],
-  "outreachTips": [
-    { "leadName": "actual name from data", "product": "product to pitch", "reason": "why this fits them", "message": "short suggested WhatsApp/call message in Hinglish" }
-  ],
-  "restockAlerts": [
-    { "item": "product", "urgency": "high|medium", "reason": "why" }
-  ],
-  "summary": "2-3 sentence overall insight"
+  "trends": [{ "item": "product", "count": 5, "customers": ["Name"], "insight": "one-line observation" }],
+  "segments": [{ "segment": "type", "preferredProducts": ["x"], "tip": "action" }],
+  "outreachTips": [{ "leadName": "real name", "product": "pitch", "reason": "why", "message": "Hinglish WhatsApp message" }],
+  "restockAlerts": [{ "item": "product", "urgency": "high|medium", "reason": "why" }],
+  "summary": "2-3 sentence overall business insight"
 }`;
 
     const aiRes = await client.messages.create({
