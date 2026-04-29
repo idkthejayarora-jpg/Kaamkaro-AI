@@ -18,7 +18,15 @@ const AI_MODELS = [
   'claude-3-haiku-20240307',         // older fallback
 ].filter(Boolean);
 
+// Once billing fails, skip all API calls for this process lifetime
+let _billingFailed = false;
+
+function isBillingErr(err) {
+  return err?.status === 400 && String(err?.message || err?.error?.error?.message || '').toLowerCase().includes('credit');
+}
+
 function getClient() {
+  if (_billingFailed) return null;
   if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
@@ -30,6 +38,7 @@ async function aiCreate(client, params) {
     try {
       return await client.messages.create({ ...params, model });
     } catch (err) {
+      if (isBillingErr(err)) { _billingFailed = true; throw err; }
       const status = err?.status;
       // 400/404/422 = bad model name or request — try next
       if (status === 400 || status === 404 || status === 422) {
