@@ -74,7 +74,9 @@
       "Bash(brew install *)",
       "Bash(curl -fsSL https://railway.app/install.sh)",
       "Bash(sh)",
-      "Bash(curl -s https://api.github.com/repos/railwayapp/cli/releases/latest)"
+      "Bash(curl -s https://api.github.com/repos/railwayapp/cli/releases/latest)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

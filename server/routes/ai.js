@@ -243,48 +243,107 @@ CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.
 });
 
 // ── GET /api/ai/recommendations ───────────────────────────────────────────────
+// Analyzes ALL available data — diary (Hinglish/English), leads, customers,
+// tasks, interactions — and returns per-staff actionable insights.
 router.get('/recommendations', async (req, res) => {
   try {
-    const staff        = await readDB('staff');
-    const performance  = await readDB('performance');
-    const customers    = await readDB('customers');
-    const interactions = await readDB('interactions');
+    const [staff, customers, interactions, diary, leads, tasks, performance] = await Promise.all([
+      readDB('staff'),
+      readDB('customers').catch(() => []),
+      readDB('interactions').catch(() => []),
+      readDB('diary').catch(() => []),
+      readDB('leads').catch(() => []),
+      readDB('tasks').catch(() => []),
+      readDB('performance').catch(() => []),
+    ]);
 
+    const client = getClient();
+    const now = Date.now();
+    const today = new Date().toISOString().split('T')[0];
+
+    // ── Build per-staff context ─────────────────────────────────────────────────
     const staffMetrics = staff.map(s => {
-      const perfs   = performance.filter(p => p.staffId === s.id);
-      const latest  = perfs.sort((a, b) => b.week.localeCompare(a.week)).slice(0, 4);
-      const avgResp = latest.length ? Math.round(latest.reduce((sum, p) => sum + (p.responseRate || 0), 0) / latest.length) : 0;
-      const avgCont = latest.length ? Math.round(latest.reduce((sum, p) => sum + (p.customersContacted || 0), 0) / latest.length) : 0;
-      const streak  = s.streakData?.currentStreak || 0;
-      const longest = s.streakData?.longestStreak || 0;
-      const myCustomers      = customers.filter(c => c.assignedTo === s.id);
-      const activeCustomers  = myCustomers.filter(c => !['closed', 'churned'].includes(c.status));
-      const recentInteractions = interactions.filter(i =>
-        i.staffId === s.id && new Date(i.createdAt).getTime() > Date.now() - 7 * 86400000
-      );
+      const myDiary    = diary.filter(d => d.staffId === s.id);
+      const myLeads    = leads.filter(l => l.staffId === s.id && l.isActive !== false);
+      const myCustomers = customers.filter(c => c.assignedTo === s.id);
+      const myTasks    = tasks.filter(t => t.staffId === s.id || t.assignedTo === s.id);
+      const myInteractions = interactions.filter(i => i.staffId === s.id);
+
+      // Recent diary (last 30 days)
+      const recentDiary = myDiary
+        .filter(d => d.createdAt > new Date(now - 30 * 86400000).toISOString())
+        .map(d => ({
+          date:    d.date || d.createdAt?.split('T')[0],
+          content: d.content || '',
+          tasks:   (d.aiEntries || []).map(e => e.text || e.task || '').filter(Boolean),
+        }));
+
+      // Overdue follow-ups
+      const overdueLeads = myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today);
+      const dueTodayLeads = myLeads.filter(l => l.nextFollowUp === today);
+
+      // Lead stage breakdown
+      const leadsByStage = {};
+      myLeads.forEach(l => { leadsByStage[l.stage] = (leadsByStage[l.stage] || 0) + 1; });
+
+      // Pending tasks
+      const pendingTasks = myTasks.filter(t => !t.completed).map(t => ({
+        title: t.title, due: t.dueDate, overdue: t.dueDate && t.dueDate < today,
+      }));
+
+      // Performance
+      const perfs = performance.filter(p => p.staffId === s.id)
+        .sort((a, b) => b.week.localeCompare(a.week)).slice(0, 4);
+      const avgResp = perfs.length
+        ? Math.round(perfs.reduce((sum, p) => sum + (p.responseRate || 0), 0) / perfs.length) : null;
+
+      // Compute a simple activity score from diary + interactions
+      const activityScore = Math.min(100, Math.round(
+        (recentDiary.length * 8) +
+        (myInteractions.filter(i => new Date(i.createdAt).getTime() > now - 7 * 86400000).length * 5) +
+        (myLeads.length * 3) +
+        (myCustomers.length * 2)
+      ));
+
       return {
-        id: s.id, name: s.name, avgResponseRate: avgResp,
-        avgCustomersContacted: avgCont, currentStreak: streak, longestStreak: longest,
-        customerCount: myCustomers.length, activeCustomers: activeCustomers.length,
-        recentInteractions: recentInteractions.length,
-        performanceScore: Math.round((avgResp * 0.4) + (Math.min(avgCont / 20, 1) * 100 * 0.3) + (streak / 7 * 100 * 0.3)),
+        id: s.id,
+        name: s.name,
+        role: s.role,
+        activityScore,
+        diaryEntryCount: myDiary.length,
+        recentDiaryCount: recentDiary.length,
+        recentDiary,
+        leadCount:    myLeads.length,
+        leadsByStage,
+        overdueLeads: overdueLeads.map(l => ({ name: l.name, due: l.nextFollowUp })),
+        dueTodayLeads: dueTodayLeads.map(l => l.name),
+        customerCount: myCustomers.length,
+        pendingTasks,
+        recentInteractions: myInteractions.filter(i => new Date(i.createdAt).getTime() > now - 7 * 86400000).length,
+        avgResponseRate: avgResp,
       };
     });
 
-    const client = getClient();
-
+    // ── No AI client — rule-based fallback ─────────────────────────────────────
     if (!client) {
       const recommendations = staffMetrics.map(s => {
         const issues = [], strengths = [], actions = [];
-        if (s.avgResponseRate < 50) { issues.push('Low response rate'); actions.push('Review follow-up timing and message quality'); }
-        else strengths.push(`${s.avgResponseRate}% response rate`);
-        if (s.currentStreak < 3) { issues.push('Low activity streak'); actions.push('Log at least one customer contact daily to build consistency'); }
-        else strengths.push(`${s.currentStreak}-day active streak`);
-        if (s.avgCustomersContacted < 8) { issues.push('Below-average outreach'); actions.push('Aim for at least 10 customer contacts per week'); }
-        if (s.activeCustomers < s.customerCount * 0.5) { issues.push('High inactive customer rate'); actions.push('Re-engage inactive customers with personalised outreach'); }
-        if (actions.length === 0) actions.push('Keep up the great work and aim to close pending negotiations');
+
+        if (s.recentDiaryCount > 0) strengths.push(`${s.recentDiaryCount} diary entries logged recently`);
+        else issues.push('No recent diary entries logged');
+
+        if (s.overdueLeads.length > 0) {
+          issues.push(`${s.overdueLeads.length} overdue follow-up${s.overdueLeads.length > 1 ? 's' : ''}`);
+          actions.push(`Follow up: ${s.overdueLeads.slice(0,3).map(l=>l.name).join(', ')}`);
+        }
+        if (s.dueTodayLeads.length > 0) actions.push(`Due today: ${s.dueTodayLeads.slice(0,3).join(', ')}`);
+        if (s.leadCount > 0) strengths.push(`${s.leadCount} active CRM leads`);
+        if (s.pendingTasks.filter(t => t.overdue).length > 0) issues.push('Has overdue tasks');
+        if (actions.length === 0) actions.push('Keep logging diary entries and follow up on pending leads');
+
         return {
-          staffId: s.id, staffName: s.name, performanceScore: s.performanceScore,
+          staffId: s.id, staffName: s.name, performanceScore: s.activityScore,
+          summary: `${s.recentDiaryCount} recent entries · ${s.leadCount} leads · ${s.overdueLeads.length} overdue`,
           strengths, issues, actions,
           priority: issues.length > 2 ? 'high' : issues.length > 0 ? 'medium' : 'low',
         };
@@ -292,36 +351,48 @@ router.get('/recommendations', async (req, res) => {
       return res.json({ recommendations, staffMetrics });
     }
 
-    const prompt = `Analyze this sales team performance data and give actionable coaching recommendations.
+    // ── AI analysis ─────────────────────────────────────────────────────────────
+    const prompt = `You are a sales performance AI for an Indian business. Analyze the following staff data which includes diary entries in Hinglish (Hindi+English mix), CRM lead notes, tasks, and customer data. Understand Hinglish naturally — treat it as plain business notes.
 
-Data:
-${JSON.stringify(staffMetrics, null, 2)}
+STAFF DATA:
+${JSON.stringify(staffMetrics.map(s => ({
+  id: s.id, name: s.name, activityScore: s.activityScore,
+  recentDiary: s.recentDiary.slice(0, 10),
+  leadCount: s.leadCount, leadsByStage: s.leadsByStage,
+  overdueLeads: s.overdueLeads,
+  dueTodayLeads: s.dueTodayLeads,
+  customerCount: s.customerCount,
+  pendingTasks: s.pendingTasks.slice(0, 5),
+  recentInteractions: s.recentInteractions,
+  avgResponseRate: s.avgResponseRate,
+})), null, 2)}
 
-For each staff member return:
+For EACH staff member, analyze their diary entries (Hinglish is fine), identify what products/services they're selling, who they're meeting, what follow-ups are pending, and how active they are. Generate coaching insights.
+
+Return ONLY valid JSON array — no markdown, no explanation:
 [{
   "staffId": "id",
   "staffName": "name",
-  "performanceScore": number,
-  "summary": "one sentence",
-  "strengths": ["max 2 points"],
-  "issues": ["max 2 points"],
-  "actions": ["2-3 specific actionable steps"],
+  "performanceScore": <number 0-100 based on activity and results>,
+  "summary": "<1 sentence summary of what this person is working on based on diary/leads>",
+  "strengths": ["<specific strength from actual data, max 2>"],
+  "issues": ["<specific issue from actual data, max 2>"],
+  "actions": ["<specific actionable next step with actual names/leads where possible, 2-3 items>"],
   "priority": "high|medium|low"
-}]
-
-Return ONLY the JSON array.`;
+}]`;
 
     const result = await client.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 2048,
+      model: 'claude-haiku-4-5', max_tokens: 3000,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const raw = result.content[0].text.trim().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    let raw = result.content[0].text.trim()
+      .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
     const recommendations = JSON.parse(raw);
     res.json({ recommendations, staffMetrics });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed' });
+    console.error('[AI] recommendations error:', err);
+    res.status(500).json({ error: 'Failed to generate insights' });
   }
 });
 
