@@ -306,14 +306,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               <li
                 key={to}
                 draggable={editMode}
-                onDragStart={() => handleDragStart(idx)}
-                onDragEnter={() => handleDragEnter(idx)}
+                onDragStart={e => handleDragStart(e, idx)}
+                onDragOver={e => handleDragOver(e, idx)}
                 onDragEnd={handleDragEnd}
-                onDragOver={e => e.preventDefault()}
-                className={`transition-all duration-150 ${
-                  editMode && dragIdx === idx ? 'opacity-40 scale-95' : ''
-                } ${
-                  editMode && overIdx === idx && dragIdx !== idx ? 'border-t border-gold/30' : ''
+                className={`transition-opacity duration-100 ${
+                  editMode && dragIdx === idx ? 'opacity-30' : 'opacity-100'
                 }`}
               >
                 {editMode ? (
