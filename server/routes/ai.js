@@ -423,7 +423,10 @@ Return ONLY valid JSON array — no markdown, no explanation:
 
     let raw = result.content[0].text.trim()
       .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-    const recommendations = JSON.parse(raw);
+    // Extract JSON array even if Claude adds surrounding text
+    const arrMatch = raw.match(/\[[\s\S]*\]/);
+    if (!arrMatch) throw new Error('AI did not return a valid JSON array');
+    const recommendations = JSON.parse(arrMatch[0]);
     res.json({ recommendations, staffMetrics });
   } catch (err) {
     console.error('[AI] recommendations error:', err);
