@@ -643,4 +643,140 @@ router.post('/leaderboard/reset', adminOnly, async (req, res) => {
   }
 });
 
+// ── GET /api/ai/sales-insights ─────────────────────────────────────────────────
+// Scans diary entries + CRM lead notes → returns product/stock trends + per-lead tips.
+router.get('/sales-insights', async (req, res) => {
+  try {
+    const client = getClient();
+
+    // Gather raw text from diary entries
+    const diaryEntries = await readDB('diary').catch(() => []);
+    const leads        = await readDB('leads').catch(() => []);
+    const customers    = await readDB('customers').catch(() => []);
+    const staff        = await readDB('staff').catch(() => []);
+
+    // Build staff map for context
+    const staffMap = Object.fromEntries(staff.map(s => [s.id, s.name]));
+
+    // Collect diary text (last 90 days)
+    const cutoff = new Date(Date.now() - 90 * 86400000).toISOString();
+    const recentDiary = diaryEntries
+      .filter(d => d.createdAt > cutoff)
+      .map(d => ({
+        date:    d.date || d.createdAt?.split('T')[0],
+        author:  staffMap[d.staffId] || 'Unknown',
+        content: d.content || '',
+        aiTasks: (d.aiEntries || []).map(e => e.text || e.task || '').join('; '),
+      }));
+
+    // Collect lead notes
+    const leadData = leads
+      .filter(l => l.isActive !== false)
+      .map(l => ({
+        name:   l.name,
+        stage:  l.stage,
+        source: l.source,
+        place:  l.place,
+        staff:  staffMap[l.staffId] || 'Unknown',
+        notes:  (l.notes || []).map(n => n.text).join(' | '),
+      }))
+      .filter(l => l.notes.length > 0);
+
+    // Customer context (name + tags)
+    const customerContext = customers.slice(0, 80).map(c =>
+      `${c.name}${c.tags?.length ? ' [' + c.tags.join(',') + ']' : ''}`
+    ).join(', ');
+
+    // If no AI client, return rule-based keyword analysis
+    if (!client) {
+      // Simple keyword extraction without AI
+      const allText = [
+        ...recentDiary.map(d => d.content + ' ' + d.aiTasks),
+        ...leadData.map(l => l.notes),
+      ].join(' ').toLowerCase();
+
+      const keywords = ['tiles', 'marble', 'granite', 'flooring', 'sanitaryware',
+        'bathroom', 'kitchen', 'wall', 'floor', 'slab', 'vitrified', 'mosaic',
+        'outdoor', 'elevation', 'steps'];
+      const counts = {};
+      keywords.forEach(k => {
+        const matches = (allText.match(new RegExp(k, 'g')) || []).length;
+        if (matches > 0) counts[k] = matches;
+      });
+
+      return res.json({
+        trends: Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+          .map(([item, count]) => ({ item, count, customers: [] })),
+        tips: [],
+        rawMode: true,
+        generatedAt: new Date().toISOString(),
+      });
+    }
+
+    const diaryText = recentDiary.length
+      ? recentDiary.map(d =>
+          `[${d.date} · ${d.author}] ${d.content}${d.aiTasks ? ' | Tasks: ' + d.aiTasks : ''}`
+        ).join('\n')
+      : '(no recent diary entries)';
+
+    const notesText = leadData.length
+      ? leadData.map(l =>
+          `Lead: ${l.name} (${l.stage}, via ${l.source}${l.place ? ', ' + l.place : ''}, staff: ${l.staff})\nNotes: ${l.notes}`
+        ).join('\n\n')
+      : '(no lead notes)';
+
+    const prompt = `You are a sales intelligence AI for an Indian interior/flooring/building materials business. Analyze the following diary entries and CRM lead notes to extract product/stock trends and generate actionable sales tips.
+
+=== DIARY ENTRIES (last 90 days) ===
+${diaryText}
+
+=== CRM LEAD NOTES ===
+${notesText}
+
+=== CUSTOMER DATABASE SNAPSHOT ===
+${customerContext}
+
+Your task:
+1. Identify which PRODUCTS/STOCK ITEMS are mentioned most (tiles, marble, granite, specific sizes, collections, brands, sanitaryware, etc.)
+2. Identify which CUSTOMER TYPES / LOCATIONS / SEGMENTS are buying or interested in what
+3. Generate SPECIFIC OUTREACH TIPS — name real leads/customers from the data and suggest what product to pitch to them
+4. Flag any RESTOCK ALERTS if demand appears high for something
+
+Respond with ONLY valid JSON in this exact shape:
+{
+  "trends": [
+    { "item": "product name", "count": 12, "customers": ["Name1", "Name2"], "insight": "one-line observation" }
+  ],
+  "segments": [
+    { "segment": "e.g. Builders in Noida", "preferredProducts": ["tiles", "slab"], "tip": "action tip" }
+  ],
+  "outreachTips": [
+    { "leadName": "actual name from data", "product": "product to pitch", "reason": "why this fits them", "message": "short suggested WhatsApp/call message in Hinglish" }
+  ],
+  "restockAlerts": [
+    { "item": "product", "urgency": "high|medium", "reason": "why" }
+  ],
+  "summary": "2-3 sentence overall insight"
+}`;
+
+    const aiRes = await client.messages.create({
+      model:      'claude-opus-4-5',
+      max_tokens: 2000,
+      messages:   [{ role: 'user', content: prompt }],
+    });
+
+    let raw = aiRes.content[0].text.trim();
+    // Strip markdown code fences if present
+    raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    const result = JSON.parse(raw);
+    result.generatedAt = new Date().toISOString();
+    res.json(result);
+  } catch (err) {
+    console.error('[AI] sales-insights error:', err);
+    res.status(500).json({ error: 'Failed to generate insights' });
+  }
+});
+
 module.exports = router;
