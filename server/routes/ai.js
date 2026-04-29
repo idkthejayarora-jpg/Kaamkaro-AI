@@ -447,7 +447,7 @@ router.get('/dashboard-summary', async (req, res) => {
   }
 });
 
-// ── GET /api/ai/weekly-report — auto-generated weekly summary ──────────────────
+// ── GET /api/ai/weekly-report — full-database business report ─────────────────
 router.get('/weekly-report', async (req, res) => {
   try {
     const [staff, interactions, customers, tasks, diary, leads] = await Promise.all([
@@ -459,65 +459,82 @@ router.get('/weekly-report', async (req, res) => {
       readDB('leads').catch(() => []),
     ]);
 
-    const weekAgo = Date.now() - 7 * 86400000;
     const today   = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
 
-    // Build per-staff weekly summary using ALL data sources
+    // Build per-staff complete summary — ALL history + recent spotlight
     const staffSummary = staff.map(s => {
-      const myDiary        = diary.filter(d => d.staffId === s.id && d.createdAt > new Date(weekAgo).toISOString());
+      const myDiary        = diary.filter(d => d.staffId === s.id).sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''));
       const myLeads        = leads.filter(l => l.staffId === s.id && l.isActive !== false);
-      const myInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekAgo);
-      const myTasks        = tasks.filter(t => (t.staffId === s.id || t.assignedTo === s.id));
-      const completedTasks = myTasks.filter(t => t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
-      const overdueLeads   = myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today).length;
+      const myInteractions = interactions.filter(i => i.staffId === s.id);
+      const myTasks        = tasks.filter(t => t.staffId === s.id || t.assignedTo === s.id);
 
-      // Extract diary activity summary
-      const diaryHighlights = myDiary.map(d => d.content || '').filter(Boolean).join(' | ');
+      // This week's diary vs all-time
+      const thisWeekDiary  = myDiary.filter(d => (d.date || d.createdAt?.split('T')[0]) >= weekAgo);
+      const allDiaryText   = myDiary.map(d => `[${d.date || d.createdAt?.split('T')[0]}] ${d.content || ''}`).join('\n');
 
       return {
         name: s.name,
-        diaryEntries: myDiary.length,
-        diaryHighlights: diaryHighlights.slice(0, 400),
-        leads: myLeads.length,
-        overdueLeads,
-        interactions: myInteractions.length,
-        completedTasks,
-        pendingTasks: myTasks.filter(t => !t.completed).length,
-        customers: customers.filter(c => c.assignedTo === s.id).length,
+        // All-time stats
+        totalDiaryEntries:    myDiary.length,
+        totalLeads:           myLeads.length,
+        totalCustomers:       customers.filter(c => c.assignedTo === s.id).length,
+        totalInteractions:    myInteractions.length,
+        totalTasksCompleted:  myTasks.filter(t => t.completed).length,
+        // This week spotlight
+        newDiaryThisWeek:    thisWeekDiary.length,
+        diaryThisWeek:       thisWeekDiary.map(d => d.content || '').filter(Boolean),
+        // Pipeline health
+        overdueLeads:  myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today).map(l => l.name),
+        dueTodayLeads: myLeads.filter(l => l.nextFollowUp === today).map(l => l.name),
+        pendingTasks:  myTasks.filter(t => !t.completed).length,
+        leadsByStage:  myLeads.reduce((acc, l) => { acc[l.stage] = (acc[l.stage] || 0) + 1; return acc; }, {}),
+        // Full diary for deep analysis
+        fullDiary: allDiaryText,
+        // All lead notes
+        leadNotes: myLeads.flatMap(l => (l.notes || []).map(n => `${l.name}: ${n.text}`)),
       };
     });
 
     const client = getClient();
 
     if (!client) {
-      const totalDiary = staffSummary.reduce((s, x) => s + x.diaryEntries, 0);
-      const totalLeads = staffSummary.reduce((s, x) => s + x.leads, 0);
+      const totalDiary = staffSummary.reduce((s, x) => s + x.totalDiaryEntries, 0);
+      const totalLeads = staffSummary.reduce((s, x) => s + x.totalLeads, 0);
+      const totalOverdue = staffSummary.reduce((s, x) => s + x.overdueLeads.length, 0);
       const lines = [
-        `📊 Weekly Report — ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
-        `📓 Diary entries logged this week: ${totalDiary}`,
+        `📊 Business Report — ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        `📓 Total diary entries: ${totalDiary} | This week: ${staffSummary.reduce((s,x) => s + x.newDiaryThisWeek, 0)}`,
         `🎯 Active CRM leads: ${totalLeads}`,
+        totalOverdue > 0 ? `⚠️ Overdue follow-ups: ${totalOverdue}` : '✅ No overdue follow-ups',
       ];
       staffSummary.forEach(s => {
-        if (s.overdueLeads > 0) lines.push(`⚠️ ${s.name}: ${s.overdueLeads} overdue follow-up(s)`);
+        if (s.overdueLeads.length) lines.push(`  ${s.name}: call ${s.overdueLeads.slice(0,3).join(', ')}`);
       });
       return res.json({ report: lines.join('\n'), staffSummary });
     }
 
-    const prompt = `Generate a concise weekly business performance report. The data includes diary entries in Hinglish (Hindi+English) — read them naturally as business notes about customer meetings, orders, and follow-ups.
+    const prompt = `You are a business intelligence AI for an Indian retail/jewellery business. Write a comprehensive performance report using the COMPLETE database — all diary entries, leads, customers, and tasks. There are no time restrictions; use all historical data to identify trends.
 
-TEAM DATA THIS WEEK:
+LANGUAGE: Diary entries mix Hindi and English (Hinglish). Read naturally:
+"shop pe aayi" = came to shop | "maal liya/bheja" = goods purchased/sent | "AD set" = American Diamond jewellery | "bridal set" = bridal jewellery set | "whatsapp kiye" = sent on WhatsApp | "order nikla" = order came through | "follow up karna" = need to follow up
+
+COMPLETE TEAM DATA:
 ${JSON.stringify(staffSummary, null, 2)}
 
-Write a 6-8 sentence report in warm, direct management style:
-1. What was accomplished (based on diary + tasks)
-2. Which customers/leads were active (from diary highlights — understand Hinglish)
-3. What's pending / overdue follow-ups
-4. One specific recommendation for next week
+Write a business report covering:
+1. Overall business activity (total diary entries, leads, customers across all time)
+2. What products/services are being sold most (from diary + lead notes — extract from Hinglish)
+3. Key customers and leads — who is active, who needs follow-up
+4. This week's activity vs overall momentum
+5. Specific overdue follow-ups to action immediately
+6. One clear recommendation to grow sales next week
 
-Respond with ONLY the report text — no JSON, no headers, no markdown formatting.`;
+Style: Direct, warm, like a smart business partner. 8-10 sentences. Mention real names from the data.
+Respond with ONLY the report text — no JSON, no markdown.`;
 
     const result = await client.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 600,
+      model: 'claude-haiku-4-5', max_tokens: 800,
       messages: [{ role: 'user', content: prompt }],
     });
 
