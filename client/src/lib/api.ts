@@ -164,6 +164,7 @@ export const aiAPI = {
   leaderboard: (teamId?: string, scope?: 'all') =>
     api.get('/ai/leaderboard', { params: { ...(teamId ? { teamId } : {}), ...(scope ? { scope } : {}) } }).then(r => r.data),
   resetLeaderboard: () => api.post('/ai/leaderboard/reset').then(r => r.data),
+  salesInsights: () => api.get('/ai/sales-insights').then(r => r.data),
 };
 
 export const insightsAPI = {
