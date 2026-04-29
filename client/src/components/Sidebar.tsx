@@ -85,8 +85,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const [navItems,   setNavItems]   = useState<NavItem[]>(() => loadOrder(defaultNav, role, userId));
   const [editMode,   setEditMode]   = useState(false);
   const [dragIdx,    setDragIdx]    = useState<number | null>(null);
-  const [overIdx,    setOverIdx]    = useState<number | null>(null);
-  const dragNode                    = useRef<number | null>(null);
+  // Ref-based drag source — avoids stale-closure & inside-setState mutation bugs
+  const dragFromRef                 = useRef<number | null>(null);
+  const navItemsRef                 = useRef<NavItem[]>(navItems);
+  // Keep ref in sync with state
+  useEffect(() => { navItemsRef.current = navItems; }, [navItems]);
 
   const [exporting,          setExporting]          = useState(false);
   const [attendanceLoading,  setAttendanceLoading]  = useState(false);
