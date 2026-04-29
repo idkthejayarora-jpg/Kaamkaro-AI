@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Phone, MapPin, Clock, AlertTriangle, CalendarDays,
-  Filter as Funnel, User,
+  Filter as Funnel, User, Users,
 } from 'lucide-react';
-import { leadsAPI, staffAPI } from '../lib/api';
+import { leadsAPI, staffAPI, teamsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Lead, LeadStage, Staff } from '../types';
 
@@ -45,6 +45,8 @@ export const SOURCE_LABELS: Record<string, string> = {
   whatsapp:  'WhatsApp',
   other:     'Other',
 };
+
+interface Team { id: string; name: string; members: string[]; }
 
 // ── Lead card ──────────────────────────────────────────────────────────────────
 function LeadCard({ lead, today, isAdmin }: { lead: Lead; today: string; isAdmin: boolean }) {
@@ -100,8 +102,9 @@ function LeadCard({ lead, today, isAdmin }: { lead: Lead; today: string; isAdmin
               </span>
             )}
             {isAdmin && lead.staffName && (
-              <span className="text-white/20 text-[10px] flex items-center gap-0.5">
+              <span className="text-white/20 text-[10px] flex items-center gap-1">
                 <User size={8} />{lead.staffName}
+                {lead.teamName && <span className="text-white/10">· {lead.teamName}</span>}
               </span>
             )}
           </div>
@@ -121,6 +124,8 @@ function LeadCard({ lead, today, isAdmin }: { lead: Lead; today: string; isAdmin
 export default function CRM() {
   const [leads,       setLeads]       = useState<Lead[]>([]);
   const [staffList,   setStaffList]   = useState<Staff[]>([]);
+  const [teams,       setTeams]       = useState<Team[]>([]);
+  const [teamFilter,  setTeamFilter]  = useState<string>('all');
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [loading,     setLoading]     = useState(true);
   const [tab,         setTab]         = useState<'today' | 'all' | LeadStage>('today');
@@ -131,17 +136,36 @@ export default function CRM() {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
-      if (isAdmin && staffFilter !== 'all') params.staffId = staffFilter;
-      const [data, staffData] = await Promise.all([
+      if (isAdmin) {
+        if (teamFilter !== 'all')  params.teamId  = teamFilter;
+        else if (staffFilter !== 'all') params.staffId = staffFilter;
+      }
+      const [data, staffData, teamsData] = await Promise.all([
         leadsAPI.list(params),
         isAdmin ? staffAPI.list().catch(() => []) : Promise.resolve([]),
+        isAdmin ? teamsAPI.list().catch(() => []) : Promise.resolve([]),
       ]);
       setLeads(data);
       setStaffList(staffData as Staff[]);
+      setTeams(teamsData as Team[]);
     } catch {}
     setLoading(false);
   };
-  useEffect(() => { load(); }, [staffFilter]);
+  useEffect(() => { load(); }, [teamFilter, staffFilter]);
+
+  // When team changes, reset staff filter
+  const handleTeamChange = (val: string) => {
+    setTeamFilter(val);
+    setStaffFilter('all');
+  };
+
+  // Staff filtered to selected team (or all if no team selected)
+  const filteredStaff = teamFilter === 'all'
+    ? staffList
+    : staffList.filter(s => {
+        const team = teams.find(t => t.id === teamFilter);
+        return team?.members?.includes(s.id);
+      });
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -186,29 +210,64 @@ export default function CRM() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isAdmin && staffList.length > 0 && (
-            <select
-              value={staffFilter}
-              onChange={e => setStaffFilter(e.target.value)}
-              className="input py-1.5 text-xs pr-7 w-auto"
-            >
-              <option value="all">All Staff</option>
-              {staffList.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          )}
-          <button
-            onClick={() => navigate('/crm/new')}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus size={16} /> New Lead
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/crm/new')}
+          className="btn-primary flex items-center gap-2 flex-shrink-0"
+        >
+          <Plus size={16} /> New Lead
+        </button>
       </div>
 
-      {/* Filter tabs */}
+      {/* Team + Staff filters — admin only */}
+      {isAdmin && (
+        <div className="flex gap-2 flex-wrap items-center">
+          {/* Team filter */}
+          {teams.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Users size={13} className="text-white/30" />
+              <select
+                value={teamFilter}
+                onChange={e => handleTeamChange(e.target.value)}
+                className="input py-1.5 text-xs w-auto"
+              >
+                <option value="all">All Teams</option>
+                {teams.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Staff filter */}
+          {filteredStaff.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <User size={13} className="text-white/30" />
+              <select
+                value={staffFilter}
+                onChange={e => setStaffFilter(e.target.value)}
+                className="input py-1.5 text-xs w-auto"
+              >
+                <option value="all">{teamFilter !== 'all' ? 'All in team' : 'All Staff'}</option>
+                {filteredStaff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Active filter pill */}
+          {(teamFilter !== 'all' || staffFilter !== 'all') && (
+            <button
+              onClick={() => { setTeamFilter('all'); setStaffFilter('all'); }}
+              className="text-[10px] text-white/30 hover:text-white border border-dark-50 rounded-lg px-2 py-1 transition-colors"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Stage tabs */}
       <div className="flex gap-1.5 flex-wrap">
         {/* Today tab */}
         <button
