@@ -112,6 +112,14 @@ export default function Recommendations() {
         </button>
       </div>
 
+      {/* Load error */}
+      {loadError && (
+        <div className="card bg-red-500/5 border-red-500/20 text-red-400 text-sm flex items-start gap-2">
+          <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+          <div><p className="font-medium">Failed to load insights</p><p className="text-red-400/60 text-xs mt-0.5">{loadError}</p></div>
+        </div>
+      )}
+
       {/* Tab toggle */}
       <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-xl p-1 w-fit">
         {([['recs', 'Recommendations', Sparkles], ['report', 'Weekly Report', BarChart3]] as const).map(([tab, label, Icon]) => (
