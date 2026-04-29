@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // ── GET /api/leads ─────────────────────────────────────────────────────────────
-// Staff: only their own leads.  Admin: all leads (optional ?staffId filter).
+// Staff: only their own leads.  Admin: all leads (optional ?staffId / ?teamId filter).
 router.get('/', async (req, res) => {
   try {
     let leads = await readDB('leads');
@@ -15,9 +15,17 @@ router.get('/', async (req, res) => {
 
     if (req.user.role === 'staff') {
       leads = leads.filter(l => l.staffId === req.user.id);
-    } else if (req.query.staffId) {
-      // Admin can filter by a specific staff member
-      leads = leads.filter(l => l.staffId === req.query.staffId);
+    } else {
+      // Admin filters
+      if (req.query.teamId) {
+        // Filter by all staff members in a team
+        const teams = await readDB('teams');
+        const team  = teams.find(t => t.id === req.query.teamId);
+        const memberIds = team?.members || [];
+        leads = leads.filter(l => memberIds.includes(l.staffId));
+      } else if (req.query.staffId) {
+        leads = leads.filter(l => l.staffId === req.query.staffId);
+      }
     }
 
     // Sort: nextFollowUp ASC (nulls last), then createdAt DESC
@@ -30,12 +38,19 @@ router.get('/', async (req, res) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    // Attach staff name for admin view
+    // Attach staff name + team name for admin view
     if (req.user.role === 'admin') {
       try {
-        const staffList = await readDB('staff');
-        const staffMap  = Object.fromEntries(staffList.map(s => [s.id, s.name]));
-        leads = leads.map(l => ({ ...l, staffName: staffMap[l.staffId] || '' }));
+        const [staffList, teams] = await Promise.all([readDB('staff'), readDB('teams')]);
+        const staffMap = Object.fromEntries(staffList.map(s => [s.id, s.name]));
+        // Build staffId → teamName map
+        const staffTeamMap = {};
+        teams.forEach(t => (t.members || []).forEach(mid => { staffTeamMap[mid] = t.name; }));
+        leads = leads.map(l => ({
+          ...l,
+          staffName: staffMap[l.staffId] || '',
+          teamName:  staffTeamMap[l.staffId] || '',
+        }));
       } catch {}
     }
 
