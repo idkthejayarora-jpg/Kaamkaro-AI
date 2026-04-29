@@ -105,37 +105,41 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   }, [role, userId]);
 
   // ── Drag handlers ────────────────────────────────────────────────────────────
-  const handleDragStart = (idx: number) => {
-    dragNode.current = idx;
+  const handleDragStart = (e: React.DragEvent, idx: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    dragFromRef.current = idx;
     setDragIdx(idx);
   };
 
-  const handleDragEnter = (idx: number) => {
-    if (dragNode.current === null || dragNode.current === idx) return;
-    setOverIdx(idx);
-    setNavItems(prev => {
-      const next = [...prev];
-      const [moved] = next.splice(dragNode.current!, 1);
-      next.splice(idx, 0, moved);
-      dragNode.current = idx;
-      return next;
-    });
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault(); // required to allow drop
+    const from = dragFromRef.current;
+    if (from === null || from === idx) return;
+    // Reorder using the latest ref (no stale closure)
+    const next = [...navItemsRef.current];
+    const [moved] = next.splice(from, 1);
+    next.splice(idx, 0, moved);
+    dragFromRef.current = idx; // update source to new position
+    navItemsRef.current = next;
+    setNavItems(next);
+    setDragIdx(idx);
   };
 
   const handleDragEnd = () => {
+    dragFromRef.current = null;
     setDragIdx(null);
-    setOverIdx(null);
-    dragNode.current = null;
-    saveOrder(navItems, role, userId);
+    // navItemsRef.current always has the latest order (no stale closure)
+    saveOrder(navItemsRef.current, role, userId);
   };
 
   const handleExitEdit = () => {
     setEditMode(false);
-    saveOrder(navItems, role, userId);
+    saveOrder(navItemsRef.current, role, userId);
   };
 
   const handleReset = () => {
     setNavItems(defaultNav);
+    navItemsRef.current = defaultNav;
     saveOrder(defaultNav, role, userId);
   };
 
