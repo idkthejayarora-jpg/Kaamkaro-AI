@@ -415,7 +415,7 @@ Return ONLY valid JSON array — no markdown, no explanation:
     res.json({ recommendations, staffMetrics });
   } catch (err) {
     console.error('[AI] recommendations error:', err);
-    res.status(500).json({ error: 'Failed to generate insights' });
+    res.status(500).json({ error: err?.message || String(err) || 'Failed to generate insights' });
   }
 });
 
@@ -551,8 +551,8 @@ Respond with ONLY the report text — no JSON, no markdown.`;
 
     res.json({ report: result.content[0].text, staffSummary });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to generate report' });
+    console.error('[AI] weekly-report error:', err);
+    res.status(500).json({ error: err?.message || 'Failed to generate report' });
   }
 });
 
