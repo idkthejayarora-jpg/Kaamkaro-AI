@@ -243,84 +243,97 @@ CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.
 });
 
 // ── GET /api/ai/recommendations ───────────────────────────────────────────────
-// Analyzes ALL available data — diary (Hinglish/English), leads, customers,
-// tasks, interactions — and returns per-staff actionable insights.
+// Uses the ENTIRE database — no date filters. Accuracy grows as data accumulates.
 router.get('/recommendations', async (req, res) => {
   try {
-    const [staff, customers, interactions, diary, leads, tasks, performance] = await Promise.all([
+    const [staff, customers, interactions, diary, leads, tasks] = await Promise.all([
       readDB('staff'),
       readDB('customers').catch(() => []),
       readDB('interactions').catch(() => []),
       readDB('diary').catch(() => []),
       readDB('leads').catch(() => []),
       readDB('tasks').catch(() => []),
-      readDB('performance').catch(() => []),
     ]);
 
     const client = getClient();
-    const now = Date.now();
     const today = new Date().toISOString().split('T')[0];
 
-    // ── Build per-staff context ─────────────────────────────────────────────────
+    // ── Build full per-staff context from ALL data ──────────────────────────────
     const staffMetrics = staff.map(s => {
-      const myDiary    = diary.filter(d => d.staffId === s.id);
-      const myLeads    = leads.filter(l => l.staffId === s.id && l.isActive !== false);
-      const myCustomers = customers.filter(c => c.assignedTo === s.id);
-      const myTasks    = tasks.filter(t => t.staffId === s.id || t.assignedTo === s.id);
+      const myDiary        = diary.filter(d => d.staffId === s.id).sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''));
+      const myLeads        = leads.filter(l => l.staffId === s.id && l.isActive !== false);
+      const myCustomers    = customers.filter(c => c.assignedTo === s.id);
+      const myTasks        = tasks.filter(t => t.staffId === s.id || t.assignedTo === s.id);
       const myInteractions = interactions.filter(i => i.staffId === s.id);
 
-      // Recent diary (last 30 days)
-      const recentDiary = myDiary
-        .filter(d => d.createdAt > new Date(now - 30 * 86400000).toISOString())
-        .map(d => ({
-          date:    d.date || d.createdAt?.split('T')[0],
-          content: d.content || '',
-          tasks:   (d.aiEntries || []).map(e => e.text || e.task || '').filter(Boolean),
-        }));
+      // ALL diary entries — newest first, full content for AI
+      const allDiaryEntries = myDiary.map(d => ({
+        date:    d.date || d.createdAt?.split('T')[0],
+        content: (d.content || '').trim(),
+        // Flatten AI-extracted tasks/entries
+        aiNotes: (d.aiEntries || []).map(e => e.text || e.task || e.description || '').filter(Boolean),
+      })).filter(d => d.content);
 
-      // Overdue follow-ups
-      const overdueLeads = myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today);
-      const dueTodayLeads = myLeads.filter(l => l.nextFollowUp === today);
+      // ALL leads with their full note history
+      const allLeads = myLeads.map(l => ({
+        name:  l.name, phone: l.phone, place: l.place,
+        stage: l.stage, source: l.source,
+        nextFollowUp: l.nextFollowUp, visitDate: l.visitDate,
+        overdue: l.nextFollowUp && l.nextFollowUp < today,
+        dueToday: l.nextFollowUp === today,
+        notes: (l.notes || []).map(n => n.text).filter(Boolean),
+        noPickupCount: l.noPickupCount || 0,
+      }));
 
-      // Lead stage breakdown
+      // ALL customers with notes + interaction count
+      const allCustomers = myCustomers.map(c => ({
+        name: c.name, status: c.status, tags: c.tags,
+        lastContact: c.lastContact, dealValue: c.dealValue,
+        notes: typeof c.notes === 'string' ? c.notes : '',
+        interactionCount: myInteractions.filter(i => i.customerId === c.id).length,
+      }));
+
+      // Tasks — pending + recently completed
+      const pendingTasks    = myTasks.filter(t => !t.completed).map(t => ({ title: t.title, due: t.dueDate, overdue: t.dueDate && t.dueDate < today }));
+      const completedTasks  = myTasks.filter(t => t.completed).length;
+
+      // Overdue & due-today counts
+      const overdueLeads  = allLeads.filter(l => l.overdue);
+      const dueTodayLeads = allLeads.filter(l => l.dueToday);
+
+      // Stage breakdown
       const leadsByStage = {};
       myLeads.forEach(l => { leadsByStage[l.stage] = (leadsByStage[l.stage] || 0) + 1; });
 
-      // Pending tasks
-      const pendingTasks = myTasks.filter(t => !t.completed).map(t => ({
-        title: t.title, due: t.dueDate, overdue: t.dueDate && t.dueDate < today,
-      }));
-
-      // Performance
-      const perfs = performance.filter(p => p.staffId === s.id)
-        .sort((a, b) => b.week.localeCompare(a.week)).slice(0, 4);
-      const avgResp = perfs.length
-        ? Math.round(perfs.reduce((sum, p) => sum + (p.responseRate || 0), 0) / perfs.length) : null;
-
-      // Compute a simple activity score from diary + interactions
+      // Activity score — based on ALL history, grows as data accumulates
       const activityScore = Math.min(100, Math.round(
-        (recentDiary.length * 8) +
-        (myInteractions.filter(i => new Date(i.createdAt).getTime() > now - 7 * 86400000).length * 5) +
-        (myLeads.length * 3) +
-        (myCustomers.length * 2)
+        Math.min(allDiaryEntries.length * 5, 40) +   // up to 40pts from diary
+        Math.min(myLeads.length * 4, 25) +            // up to 25pts from leads
+        Math.min(myCustomers.length * 2, 15) +        // up to 15pts from customers
+        Math.min(myInteractions.length * 2, 10) +     // up to 10pts from interactions
+        Math.min(completedTasks * 3, 10)              // up to 10pts from tasks done
       ));
 
       return {
-        id: s.id,
-        name: s.name,
-        role: s.role,
+        id: s.id, name: s.name, role: s.role,
         activityScore,
-        diaryEntryCount: myDiary.length,
-        recentDiaryCount: recentDiary.length,
-        recentDiary,
-        leadCount:    myLeads.length,
+        // Diary — send ALL entries; Claude reads Hinglish natively
+        totalDiaryEntries: allDiaryEntries.length,
+        diaryEntries: allDiaryEntries,   // no limit — full history
+        // Leads — full pipeline
+        totalLeads: myLeads.length,
         leadsByStage,
-        overdueLeads: overdueLeads.map(l => ({ name: l.name, due: l.nextFollowUp })),
+        overdueLeads:  overdueLeads.map(l => ({ name: l.name, due: l.nextFollowUp, noPickup: l.noPickupCount })),
         dueTodayLeads: dueTodayLeads.map(l => l.name),
-        customerCount: myCustomers.length,
+        allLeads,      // full lead list with notes
+        // Customers
+        totalCustomers: myCustomers.length,
+        customers: allCustomers,
+        // Tasks
         pendingTasks,
-        recentInteractions: myInteractions.filter(i => new Date(i.createdAt).getTime() > now - 7 * 86400000).length,
-        avgResponseRate: avgResp,
+        completedTasksTotal: completedTasks,
+        // Interactions
+        totalInteractions: myInteractions.length,
       };
     });
 
@@ -329,60 +342,58 @@ router.get('/recommendations', async (req, res) => {
       const recommendations = staffMetrics.map(s => {
         const issues = [], strengths = [], actions = [];
 
-        if (s.recentDiaryCount > 0) strengths.push(`${s.recentDiaryCount} diary entries logged recently`);
-        else issues.push('No recent diary entries logged');
+        if (s.totalDiaryEntries > 0) strengths.push(`${s.totalDiaryEntries} diary entries logged`);
+        else issues.push('No diary entries logged yet');
 
         if (s.overdueLeads.length > 0) {
           issues.push(`${s.overdueLeads.length} overdue follow-up${s.overdueLeads.length > 1 ? 's' : ''}`);
-          actions.push(`Follow up: ${s.overdueLeads.slice(0,3).map(l=>l.name).join(', ')}`);
+          actions.push(`Call: ${s.overdueLeads.slice(0, 3).map(l => l.name).join(', ')}`);
         }
-        if (s.dueTodayLeads.length > 0) actions.push(`Due today: ${s.dueTodayLeads.slice(0,3).join(', ')}`);
-        if (s.leadCount > 0) strengths.push(`${s.leadCount} active CRM leads`);
+        if (s.dueTodayLeads.length > 0) actions.push(`Due today: ${s.dueTodayLeads.slice(0, 3).join(', ')}`);
+        if (s.totalLeads > 0) strengths.push(`${s.totalLeads} CRM leads across pipeline`);
         if (s.pendingTasks.filter(t => t.overdue).length > 0) issues.push('Has overdue tasks');
-        if (actions.length === 0) actions.push('Keep logging diary entries and follow up on pending leads');
+        if (!actions.length) actions.push('Log daily diary entries and keep leads updated');
 
         return {
           staffId: s.id, staffName: s.name, performanceScore: s.activityScore,
-          summary: `${s.recentDiaryCount} recent entries · ${s.leadCount} leads · ${s.overdueLeads.length} overdue`,
+          summary: `${s.totalDiaryEntries} diary entries · ${s.totalLeads} leads · ${s.overdueLeads.length} overdue`,
           strengths, issues, actions,
-          priority: issues.length > 2 ? 'high' : issues.length > 0 ? 'medium' : 'low',
+          priority: issues.length >= 2 ? 'high' : issues.length === 1 ? 'medium' : 'low',
         };
       });
       return res.json({ recommendations, staffMetrics });
     }
 
-    // ── AI analysis ─────────────────────────────────────────────────────────────
-    const prompt = `You are a sales performance AI for an Indian business. Analyze the following staff data which includes diary entries in Hinglish (Hindi+English mix), CRM lead notes, tasks, and customer data. Understand Hinglish naturally — treat it as plain business notes.
+    // ── Full AI analysis — entire database, no cutoffs ─────────────────────────
+    const prompt = `You are a sales performance AI for an Indian jewellery/fashion/retail business. Analyze the COMPLETE database for each staff member — every diary entry, every CRM lead, every customer, every task. There are NO time filters; use all historical data.
 
-STAFF DATA:
-${JSON.stringify(staffMetrics.map(s => ({
-  id: s.id, name: s.name, activityScore: s.activityScore,
-  recentDiary: s.recentDiary.slice(0, 10),
-  leadCount: s.leadCount, leadsByStage: s.leadsByStage,
-  overdueLeads: s.overdueLeads,
-  dueTodayLeads: s.dueTodayLeads,
-  customerCount: s.customerCount,
-  pendingTasks: s.pendingTasks.slice(0, 5),
-  recentInteractions: s.recentInteractions,
-  avgResponseRate: s.avgResponseRate,
-})), null, 2)}
+LANGUAGE: Diary entries are in Hinglish (Hindi+English mix). Read them naturally as plain business notes.
+Examples: "shop pe aayi" = came to shop, "maal liya" = took goods/made purchase, "AD set" = American Diamond set, "bridal set bheja" = sent bridal set, "follow up karna" = need to follow up.
 
-For EACH staff member, analyze their diary entries (Hinglish is fine), identify what products/services they're selling, who they're meeting, what follow-ups are pending, and how active they are. Generate coaching insights.
+STAFF DATABASE (complete):
+${JSON.stringify(staffMetrics, null, 2)}
+
+Analyze each staff member's FULL history:
+- What products/items are being sold or discussed most?
+- Which customers/leads are hot, warm, or cold?
+- What patterns emerge from the diary entries over time?
+- What follow-ups are overdue or urgent?
+- How active and effective is this person?
 
 Return ONLY valid JSON array — no markdown, no explanation:
 [{
   "staffId": "id",
   "staffName": "name",
-  "performanceScore": <number 0-100 based on activity and results>,
-  "summary": "<1 sentence summary of what this person is working on based on diary/leads>",
-  "strengths": ["<specific strength from actual data, max 2>"],
-  "issues": ["<specific issue from actual data, max 2>"],
-  "actions": ["<specific actionable next step with actual names/leads where possible, 2-3 items>"],
+  "performanceScore": <0-100, based on total activity volume + lead pipeline + results>,
+  "summary": "<1-2 sentences: what they're actively working on, based on actual diary/lead data>",
+  "strengths": ["<specific strength derived from real entries — name products, customers, patterns>"],
+  "issues": ["<specific gap or risk — overdue leads, silent customers, patterns of concern>"],
+  "actions": ["<concrete next step — name real leads/customers where possible, 2-3 items>"],
   "priority": "high|medium|low"
 }]`;
 
     const result = await client.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 3000,
+      model: 'claude-haiku-4-5', max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     });
 
