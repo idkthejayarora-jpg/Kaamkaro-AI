@@ -69,7 +69,12 @@
       "Bash(python3 -c \"import pptx; print\\('pptx ok', pptx.__version__\\)\")",
       "Bash(pip3 install *)",
       "Bash(python3 -c \"import pptx; print\\('ok'\\)\")",
-      "Bash(python3 build_pitch.py)"
+      "Bash(python3 build_pitch.py)",
+      "Bash(sudo npm *)",
+      "Bash(brew install *)",
+      "Bash(curl -fsSL https://railway.app/install.sh)",
+      "Bash(sh)",
+      "Bash(curl -s https://api.github.com/repos/railwayapp/cli/releases/latest)"
     ]
   }
 }
