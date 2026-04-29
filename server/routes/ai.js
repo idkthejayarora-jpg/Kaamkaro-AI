@@ -271,6 +271,9 @@ CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.
 
     res.json({ response, navigate, action: actionResult });
   } catch (err) {
+    if (isBillingErr(err)) {
+      return res.json({ response: "AI credits have run out. Basic navigation still works — ask me to go to Dashboard, Staff, Customers, Tasks, Diary, or Insights.", navigate: null, action: null });
+    }
     console.error('Kamal error:', err);
     res.json({ response: "Having a moment — please try again!", navigate: null, action: null });
   }
