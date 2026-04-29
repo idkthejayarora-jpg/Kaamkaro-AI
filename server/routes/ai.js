@@ -598,8 +598,40 @@ Respond with ONLY the report text — no JSON, no markdown.`;
       messages: [{ role: 'user', content: prompt }],
     });
 
-    res.json({ report: result.content[0].text, staffSummary });
+    return res.json({ report: result.content[0].text, staffSummary });
   } catch (err) {
+    // Billing / no credits → use rule-based report instead of erroring
+    if (isBillingErr(err) || _billingFailed) {
+      console.warn('[AI] weekly-report: billing failed, using rule-based fallback');
+      const today = new Date().toISOString().split('T')[0];
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+      const [staff2, interactions2, customers2, tasks2, diary2, leads2] = await Promise.all([
+        readDB('staff'), readDB('interactions').catch(() => []),
+        readDB('customers').catch(() => []), readDB('tasks').catch(() => []),
+        readDB('diary').catch(() => []), readDB('leads').catch(() => []),
+      ]);
+      const staffSummary2 = staff2.map(s => {
+        const myDiary = diary2.filter(d => d.staffId === s.id);
+        const myLeads = leads2.filter(l => l.staffId === s.id && l.isActive !== false);
+        const thisWeekDiary = myDiary.filter(d => (d.date || d.createdAt?.split('T')[0]) >= weekAgo);
+        return { name: s.name, totalDiaryEntries: myDiary.length, totalLeads: myLeads.length,
+          newDiaryThisWeek: thisWeekDiary.length,
+          overdueLeads: myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today).map(l => l.name) };
+      });
+      const totalDiary = staffSummary2.reduce((s, x) => s + x.totalDiaryEntries, 0);
+      const totalLeads = staffSummary2.reduce((s, x) => s + x.totalLeads, 0);
+      const totalOverdue = staffSummary2.reduce((s, x) => s + x.overdueLeads.length, 0);
+      const lines = [
+        `📊 Business Report — ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        `📓 Total diary entries: ${totalDiary} | This week: ${staffSummary2.reduce((s, x) => s + x.newDiaryThisWeek, 0)}`,
+        `🎯 Active CRM leads: ${totalLeads}`,
+        totalOverdue > 0 ? `⚠️ Overdue follow-ups: ${totalOverdue}` : '✅ No overdue follow-ups',
+      ];
+      staffSummary2.forEach(s => {
+        if (s.overdueLeads.length) lines.push(`  ${s.name}: call ${s.overdueLeads.slice(0, 3).join(', ')}`);
+      });
+      return res.json({ report: lines.join('\n'), staffSummary: staffSummary2 });
+    }
     console.error('[AI] weekly-report error:', err);
     res.status(500).json({ error: err?.message || 'Failed to generate report' });
   }
