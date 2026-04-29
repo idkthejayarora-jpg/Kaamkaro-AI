@@ -982,8 +982,52 @@ Return ONLY valid JSON:
     if (!objMatch) throw new Error('AI did not return valid JSON');
     const result = JSON.parse(objMatch[0]);
     result.generatedAt = new Date().toISOString();
-    res.json(result);
+    return res.json(result);
   } catch (err) {
+    // Billing / no credits → use keyword rule-based fallback
+    if (isBillingErr(err) || _billingFailed) {
+      console.warn('[AI] sales-insights: billing failed, using rule-based fallback');
+      const allText = [
+        ...allDiary.map(d => d.content + ' ' + d.aiNotes),
+        ...allLeads.filter(l => l.notes).map(l => l.notes),
+        ...allCustomers.map(c => c.notes),
+      ].join(' ').toLowerCase();
+
+      const keywords = [
+        'bridal', 'wedding', 'gold', 'diamond', 'ad set', 'ad', 'collection',
+        'bracelet', 'necklace', 'earring', 'ring', 'customize', 'order',
+        'tiles', 'marble', 'granite', 'flooring', 'fabric', 'suit', 'saree',
+        'set', 'parcel', 'delivery', 'sample',
+      ];
+      const counts = {};
+      keywords.forEach(k => {
+        const n = (allText.match(new RegExp(`\\b${k}\\b`, 'g')) || []).length;
+        if (n > 0) counts[k] = n;
+      });
+
+      // Find leads with notes for outreach tips
+      const outreachTips = allLeads.filter(l => l.notes && l.stage !== 'closed').slice(0, 5).map(l => ({
+        leadName: l.name,
+        product: Object.keys(counts)[0] || 'your products',
+        reason: `Active lead in ${l.stage} stage`,
+        message: `Hi ${l.name.split(' ')[0]}, naya collection aa gaya hai — aapko zaroor pasand aayega! Kab milein?`,
+      }));
+
+      // Overdue leads as alerts
+      const today2 = new Date().toISOString().split('T')[0];
+      const overdueTips = allLeads.filter(l => l.notes && l.stage && (!l.nextFollowUp || l.nextFollowUp < today2)).slice(0, 3);
+
+      return res.json({
+        trends: Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+          .map(([item, count]) => ({ item, count, customers: [], insight: `Mentioned ${count} time${count > 1 ? 's' : ''} across diary and notes` })),
+        segments: [],
+        outreachTips,
+        restockAlerts: overdueTips.map(l => ({ item: l.name, urgency: 'medium', reason: `Follow-up overdue — last stage: ${l.stage}` })),
+        rawMode: true,
+        summary: `Analysed ${allDiary.length} diary entries, ${allLeads.length} leads, ${allCustomers.length} customers. (Rule-based mode — add Anthropic credits for AI-powered insights.)`,
+        generatedAt: new Date().toISOString(),
+      });
+    }
     console.error('[AI] sales-insights error:', err);
     res.status(500).json({ error: err?.message || String(err) || 'Failed to generate insights' });
   }
