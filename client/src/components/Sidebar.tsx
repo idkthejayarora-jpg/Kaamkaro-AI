@@ -4,12 +4,14 @@ import {
   BookOpen, Sparkles, LogOut, Menu, X, ChevronRight,
   ClipboardList, Shield, Download, Trophy, Clock, Target,
   Sun, Moon, FileText, Webhook, Radio, MessageSquare, Filter, TrendingUp,
+  GripVertical, Settings2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { exportAPI, staffAPI, broadcastAPI } from '../lib/api';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
+// ── Nav definitions ────────────────────────────────────────────────────────────
 const adminNav = [
   { to: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/staff',           icon: Users,           label: 'Staff' },
@@ -43,28 +45,99 @@ const staffNav = [
   { to: '/goals',       icon: Target,          label: 'Goals' },
 ];
 
-interface SidebarProps {
-  mobileOpen: boolean;
-  onClose: () => void;
+type NavItem = typeof adminNav[number];
+
+// ── Persist nav order in localStorage ─────────────────────────────────────────
+function storageKey(role: string, userId: string) {
+  return `kk_nav_order_${role}_${userId}`;
 }
+
+function loadOrder(defaultNav: NavItem[], role: string, userId: string): NavItem[] {
+  try {
+    const saved = localStorage.getItem(storageKey(role, userId));
+    if (!saved) return defaultNav;
+    const paths: string[] = JSON.parse(saved);
+    // Merge: respect saved order, but always include new items added since last save
+    const ordered = paths.map(p => defaultNav.find(n => n.to === p)).filter(Boolean) as NavItem[];
+    const unseen  = defaultNav.filter(n => !paths.includes(n.to));
+    return [...ordered, ...unseen];
+  } catch {
+    return defaultNav;
+  }
+}
+
+function saveOrder(items: NavItem[], role: string, userId: string) {
+  localStorage.setItem(storageKey(role, userId), JSON.stringify(items.map(n => n.to)));
+}
+
+// ── Sidebar component ──────────────────────────────────────────────────────────
+interface SidebarProps { mobileOpen: boolean; onClose: () => void; }
 
 export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const { user, logout, isAdmin, updateUser } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
-  const nav = isAdmin ? adminNav : staffNav;
 
-  const [exporting,        setExporting]        = useState(false);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [showBroadcast,    setShowBroadcast]    = useState(false);
-  const [broadcastMsg,     setBroadcastMsg]     = useState('');
-  const [sending,          setSending]          = useState(false);
+  const defaultNav = isAdmin ? adminNav : staffNav;
+  const role       = user?.role || 'staff';
+  const userId     = user?.id   || 'unknown';
+
+  const [navItems,   setNavItems]   = useState<NavItem[]>(() => loadOrder(defaultNav, role, userId));
+  const [editMode,   setEditMode]   = useState(false);
+  const [dragIdx,    setDragIdx]    = useState<number | null>(null);
+  const [overIdx,    setOverIdx]    = useState<number | null>(null);
+  const dragNode                    = useRef<number | null>(null);
+
+  const [exporting,          setExporting]          = useState(false);
+  const [attendanceLoading,  setAttendanceLoading]  = useState(false);
+  const [showBroadcast,      setShowBroadcast]      = useState(false);
+  const [broadcastMsg,       setBroadcastMsg]       = useState('');
+  const [sending,            setSending]            = useState(false);
 
   const isActive = user?.attendanceStatus === 'active';
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  // Keep navItems in sync if user switches role (e.g. re-login)
+  useEffect(() => {
+    setNavItems(loadOrder(defaultNav, role, userId));
+  }, [role, userId]);
 
-  const handleExport = async () => {
+  // ── Drag handlers ────────────────────────────────────────────────────────────
+  const handleDragStart = (idx: number) => {
+    dragNode.current = idx;
+    setDragIdx(idx);
+  };
+
+  const handleDragEnter = (idx: number) => {
+    if (dragNode.current === null || dragNode.current === idx) return;
+    setOverIdx(idx);
+    setNavItems(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(dragNode.current!, 1);
+      next.splice(idx, 0, moved);
+      dragNode.current = idx;
+      return next;
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setOverIdx(null);
+    dragNode.current = null;
+    saveOrder(navItems, role, userId);
+  };
+
+  const handleExitEdit = () => {
+    setEditMode(false);
+    saveOrder(navItems, role, userId);
+  };
+
+  const handleReset = () => {
+    setNavItems(defaultNav);
+    saveOrder(defaultNav, role, userId);
+  };
+
+  const handleLogout      = () => { logout(); navigate('/login'); };
+  const handleExport      = async () => {
     setExporting(true);
     try {
       const blob = await exportAPI.download();
@@ -76,8 +149,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       URL.revokeObjectURL(url);
     } finally { setExporting(false); }
   };
-
-  const handleAttendance = async () => {
+  const handleAttendance  = async () => {
     if (attendanceLoading) return;
     setAttendanceLoading(true);
     try {
@@ -86,8 +158,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     } catch { /* non-fatal */ }
     finally { setAttendanceLoading(false); }
   };
-
-  const sendBroadcast = async () => {
+  const sendBroadcast     = async () => {
     if (!broadcastMsg.trim() || sending) return;
     setSending(true);
     try {
@@ -114,28 +185,18 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-dark-50">
           <div className="flex items-center gap-3">
-            {/* KJ Lotus logo */}
             <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
               <circle cx="32" cy="32" r="32" fill="#0A0A0A"/>
               <circle cx="32" cy="32" r="30" fill="none" stroke="#C9A84C" strokeWidth="1.2" strokeDasharray="2 1.2" opacity="0.8"/>
               <circle cx="32" cy="32" r="28" fill="none" stroke="#C9A84C" strokeWidth="0.5" opacity="0.4"/>
-              {/* Centre tall petal */}
               <path d="M32 10 C30 15 28.5 20 28.5 27 C28.5 31 30 33.5 32 33.5 C34 33.5 35.5 31 35.5 27 C35.5 20 34 15 32 10Z" fill="#C9A84C"/>
-              {/* Left inner petal */}
               <path d="M28 14 C24 18 21.5 24 21.5 30 C21.5 33.5 23 35.5 26 35.5 C28.5 35.5 30 33.5 30 30 C30 24 29 18.5 28 14Z" fill="#C9A84C"/>
-              {/* Right inner petal */}
               <path d="M36 14 C40 18 42.5 24 42.5 30 C42.5 33.5 41 35.5 38 35.5 C35.5 35.5 34 33.5 34 30 C34 24 35 18.5 36 14Z" fill="#C9A84C"/>
-              {/* Far-left outer petal */}
               <path d="M22 20 C17 24 14 30 14 36 C14 39.5 16 41.5 19.5 41.5 C23 41.5 25 39 25.5 35.5 C26 32 24.5 26 22 20Z" fill="#A8872A"/>
-              {/* Far-right outer petal */}
               <path d="M42 20 C47 24 50 30 50 36 C50 39.5 48 41.5 44.5 41.5 C41 41.5 39 39 38.5 35.5 C38 32 39.5 26 42 20Z" fill="#A8872A"/>
-              {/* Lotus seat */}
               <path d="M18 40 C22 37.5 27 36.5 32 36.5 C37 36.5 42 37.5 46 40 C42 42 37 43 32 43 C27 43 22 42 18 40Z" fill="#C9A84C"/>
-              {/* Left leaf */}
               <path d="M14 38 C16 34 20 34 23 36 C20 39 15 40.5 14 38Z" fill="#A8872A" opacity="0.85"/>
-              {/* Right leaf */}
               <path d="M50 38 C48 34 44 34 41 36 C44 39 49 40.5 50 38Z" fill="#A8872A" opacity="0.85"/>
-              {/* KJ text */}
               <text x="32" y="56" fontFamily="Georgia,Times New Roman,serif" fontSize="11" fontStyle="italic" fontWeight="bold" textAnchor="middle" fill="#C9A84C" letterSpacing="1">KJ</text>
             </svg>
             <div>
@@ -157,10 +218,9 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* User pill — shows attendance status dot + check-in/out */}
+        {/* User pill */}
         <div className="mx-4 mt-4 mb-2 p-3 rounded-xl bg-dark-300 border border-dark-50">
           <div className="flex items-center gap-3">
-            {/* Avatar with status dot */}
             <div className="relative flex-shrink-0">
               <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center">
                 <span className="text-gold text-xs font-bold">{user?.avatar || 'U'}</span>
@@ -182,7 +242,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             </div>
           </div>
 
-          {/* Check-in / Check-out button (staff only) */}
           {user?.role === 'staff' && (
             <button
               onClick={handleAttendance}
@@ -201,19 +260,74 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto">
-          <p className="text-white/20 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-2">Menu</p>
-          <ul className="space-y-0.5">
-            {nav.map(({ to, icon: Icon, label }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  onClick={onClose}
-                  className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          {/* Section header + customize toggle */}
+          <div className="flex items-center justify-between px-3 mb-2 mt-2">
+            <p className="text-white/20 text-[10px] font-semibold uppercase tracking-widest">Menu</p>
+            {!editMode ? (
+              <button
+                onClick={() => setEditMode(true)}
+                className="text-white/20 hover:text-gold transition-colors"
+                title="Customize menu order"
+              >
+                <Settings2 size={12} />
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleReset}
+                  className="text-[9px] text-white/20 hover:text-white/50 transition-colors"
                 >
-                  <Icon size={16} className="flex-shrink-0" />
-                  <span className="flex-1">{label}</span>
-                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100" />
-                </NavLink>
+                  Reset
+                </button>
+                <button
+                  onClick={handleExitEdit}
+                  className="text-[9px] bg-gold/15 text-gold px-2 py-0.5 rounded-md hover:bg-gold/25 transition-colors font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Edit mode hint */}
+          {editMode && (
+            <p className="text-white/15 text-[10px] px-3 mb-2">Drag to reorder</p>
+          )}
+
+          <ul className="space-y-0.5">
+            {navItems.map(({ to, icon: Icon, label }, idx) => (
+              <li
+                key={to}
+                draggable={editMode}
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                onDragOver={e => e.preventDefault()}
+                className={`transition-all duration-150 ${
+                  editMode && dragIdx === idx ? 'opacity-40 scale-95' : ''
+                } ${
+                  editMode && overIdx === idx && dragIdx !== idx ? 'border-t border-gold/30' : ''
+                }`}
+              >
+                {editMode ? (
+                  /* Edit mode — drag handle + label, no NavLink */
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-grab active:cursor-grabbing text-white/50 hover:text-white/70 hover:bg-white/5 transition-colors select-none">
+                    <GripVertical size={14} className="text-white/20 flex-shrink-0" />
+                    <Icon size={16} className="flex-shrink-0" />
+                    <span className="flex-1 text-sm">{label}</span>
+                  </div>
+                ) : (
+                  /* Normal nav link */
+                  <NavLink
+                    to={to}
+                    onClick={onClose}
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={16} className="flex-shrink-0" />
+                    <span className="flex-1">{label}</span>
+                    <ChevronRight size={12} className="opacity-0 group-hover:opacity-100" />
+                  </NavLink>
+                )}
               </li>
             ))}
           </ul>
@@ -221,7 +335,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
         {/* Bottom actions */}
         <div className="p-3 border-t border-dark-50 space-y-1">
-          {/* Broadcast button — admin only */}
           {isAdmin && (
             <button
               onClick={() => setShowBroadcast(true)}
