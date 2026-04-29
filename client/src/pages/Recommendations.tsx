@@ -44,12 +44,19 @@ export default function Recommendations() {
   const [activeTab, setActiveTab]     = useState<'recs' | 'report'>('recs');
   const [report, setReport]           = useState<string | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [loadError, setLoadError]         = useState('');
+  const [reportError, setReportError]     = useState('');
 
   const load = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
+    setLoadError('');
     try {
       const data = await aiAPI.recommendations();
       setRecs(data.recommendations || []);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        || (err as { message?: string })?.message || 'Unknown error';
+      setLoadError(msg);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -57,11 +64,16 @@ export default function Recommendations() {
   };
 
   const loadReport = async () => {
-    if (report) return; // already loaded
+    if (report) return;
     setReportLoading(true);
+    setReportError('');
     try {
       const data = await aiAPI.weeklyReport();
       setReport(data.report);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        || (err as { message?: string })?.message || 'Unknown error';
+      setReportError(msg);
     } finally { setReportLoading(false); }
   };
 
