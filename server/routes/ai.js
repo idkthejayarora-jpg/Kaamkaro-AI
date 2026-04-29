@@ -439,66 +439,78 @@ router.get('/dashboard-summary', async (req, res) => {
 // ── GET /api/ai/weekly-report — auto-generated weekly summary ──────────────────
 router.get('/weekly-report', async (req, res) => {
   try {
-    const staff        = await readDB('staff');
-    const interactions = await readDB('interactions');
-    const customers    = await readDB('customers');
-    const tasks        = await readDB('tasks');
-    const performance  = await readDB('performance');
+    const [staff, interactions, customers, tasks, diary, leads] = await Promise.all([
+      readDB('staff'),
+      readDB('interactions').catch(() => []),
+      readDB('customers').catch(() => []),
+      readDB('tasks').catch(() => []),
+      readDB('diary').catch(() => []),
+      readDB('leads').catch(() => []),
+    ]);
 
-    const weekAgo   = Date.now() - 7 * 86400000;
-    const thisWeek  = getCurrentWeek();
-    const weekPerf  = performance.filter(p => p.week === thisWeek);
+    const weekAgo = Date.now() - 7 * 86400000;
+    const today   = new Date().toISOString().split('T')[0];
 
-    // Build per-staff summary
+    // Build per-staff weekly summary using ALL data sources
     const staffSummary = staff.map(s => {
+      const myDiary        = diary.filter(d => d.staffId === s.id && d.createdAt > new Date(weekAgo).toISOString());
+      const myLeads        = leads.filter(l => l.staffId === s.id && l.isActive !== false);
       const myInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekAgo);
-      const responded      = myInteractions.filter(i => i.responded).length;
-      const responseRate   = myInteractions.length > 0 ? Math.round(responded / myInteractions.length * 100) : 0;
-      const completedTasks = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
-      const closedCustomers = customers.filter(c => c.assignedTo === s.id && c.status === 'closed').length;
-      const p = weekPerf.find(p => p.staffId === s.id);
+      const myTasks        = tasks.filter(t => (t.staffId === s.id || t.assignedTo === s.id));
+      const completedTasks = myTasks.filter(t => t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekAgo).length;
+      const overdueLeads   = myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today).length;
+
+      // Extract diary activity summary
+      const diaryHighlights = myDiary.map(d => d.content || '').filter(Boolean).join(' | ');
+
       return {
         name: s.name,
+        diaryEntries: myDiary.length,
+        diaryHighlights: diaryHighlights.slice(0, 400),
+        leads: myLeads.length,
+        overdueLeads,
         interactions: myInteractions.length,
-        responseRate,
         completedTasks,
-        closedCustomers,
-        streak: s.streakData?.currentStreak || 0,
-        performanceScore: p ? Math.round((p.responseRate * 0.4) + (Math.min(p.customersContacted / 20, 1) * 100 * 0.3) + ((s.streakData?.currentStreak || 0) / 7 * 100 * 0.3)) : 0,
+        pendingTasks: myTasks.filter(t => !t.completed).length,
+        customers: customers.filter(c => c.assignedTo === s.id).length,
       };
     });
-
-    const topPerformer = staffSummary.sort((a, b) => b.interactions - a.interactions)[0];
-    const totalInteractions = interactions.filter(i => new Date(i.createdAt).getTime() > weekAgo).length;
-    const avgResponseRate = staffSummary.length > 0 ? Math.round(staffSummary.reduce((s, x) => s + x.responseRate, 0) / staffSummary.length) : 0;
 
     const client = getClient();
 
     if (!client) {
-      const lines = [`📊 Weekly Performance Report — Week of ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}`];
-      if (topPerformer) lines.push(`🏆 Top performer: ${topPerformer.name} with ${topPerformer.interactions} interactions`);
-      lines.push(`📞 Total interactions: ${totalInteractions}`);
-      lines.push(`📈 Avg response rate: ${avgResponseRate}%`);
-      const needsAttention = staffSummary.filter(s => s.responseRate < 40 || s.interactions < 3);
-      if (needsAttention.length > 0) lines.push(`⚠️ Needs attention: ${needsAttention.map(s => s.name).join(', ')}`);
-      return res.json({ report: lines.join('\n'), staffSummary, topPerformer });
+      const totalDiary = staffSummary.reduce((s, x) => s + x.diaryEntries, 0);
+      const totalLeads = staffSummary.reduce((s, x) => s + x.leads, 0);
+      const lines = [
+        `📊 Weekly Report — ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        `📓 Diary entries logged this week: ${totalDiary}`,
+        `🎯 Active CRM leads: ${totalLeads}`,
+      ];
+      staffSummary.forEach(s => {
+        if (s.overdueLeads > 0) lines.push(`⚠️ ${s.name}: ${s.overdueLeads} overdue follow-up(s)`);
+      });
+      return res.json({ report: lines.join('\n'), staffSummary });
     }
 
-    const prompt = `Generate a concise weekly performance report for a sales team. Keep it to 5-7 sentences max.
+    const prompt = `Generate a concise weekly business performance report. The data includes diary entries in Hinglish (Hindi+English) — read them naturally as business notes about customer meetings, orders, and follow-ups.
 
-Team data for this week:
-- Total interactions logged: ${totalInteractions}
-- Avg response rate: ${avgResponseRate}%
-- Per staff: ${JSON.stringify(staffSummary)}
+TEAM DATA THIS WEEK:
+${JSON.stringify(staffSummary, null, 2)}
 
-Write in a warm, direct management style. Mention the top performer by name. Flag anyone who needs attention (low interactions or response rate). End with one actionable recommendation for next week.`;
+Write a 6-8 sentence report in warm, direct management style:
+1. What was accomplished (based on diary + tasks)
+2. Which customers/leads were active (from diary highlights — understand Hinglish)
+3. What's pending / overdue follow-ups
+4. One specific recommendation for next week
+
+Respond with ONLY the report text — no JSON, no headers, no markdown formatting.`;
 
     const result = await client.messages.create({
-      model: 'claude-haiku-4-5', max_tokens: 512,
+      model: 'claude-haiku-4-5', max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    res.json({ report: result.content[0].text, staffSummary, topPerformer });
+    res.json({ report: result.content[0].text, staffSummary });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to generate report' });
