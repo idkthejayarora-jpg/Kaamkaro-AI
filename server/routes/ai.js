@@ -901,7 +901,7 @@ Return ONLY valid JSON:
     res.json(result);
   } catch (err) {
     console.error('[AI] sales-insights error:', err);
-    res.status(500).json({ error: 'Failed to generate insights' });
+    res.status(500).json({ error: err?.message || String(err) || 'Failed to generate insights' });
   }
 });
 
