@@ -11,9 +11,23 @@ router.use(authMiddleware);
 let Anthropic;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
 
+const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
+
 function getClient() {
   if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+
+// Wrapper: run with preferred model, auto-fallback to stable haiku on 404/400
+async function aiCreate(client, params) {
+  try {
+    return await client.messages.create({ ...params, model: AI_MODEL });
+  } catch (err) {
+    if ((err?.status === 404 || err?.status === 400) && AI_MODEL !== 'claude-3-5-haiku-20241022') {
+      return await client.messages.create({ ...params, model: 'claude-3-5-haiku-20241022' });
+    }
+    throw err;
+  }
 }
 
 // ── POST /api/ai/kamal — context-aware Kamal AI with Action Mode ────────────────

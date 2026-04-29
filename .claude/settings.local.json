@@ -77,7 +77,8 @@
       "Bash(curl -s https://api.github.com/repos/railwayapp/cli/releases/latest)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(node -e \"require\\('./server/routes/ai.js'\\)\")"
+      "Bash(node -e \"require\\('./server/routes/ai.js'\\)\")",
+      "Bash(git add *)"
     ]
   }
 }
