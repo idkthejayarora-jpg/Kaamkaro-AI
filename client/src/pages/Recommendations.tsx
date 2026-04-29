@@ -138,6 +138,11 @@ export default function Recommendations() {
               <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
               <p className="text-white/40 text-sm">Kamal is generating your weekly report…</p>
             </div>
+          ) : reportError ? (
+            <div className="text-red-400 text-sm flex items-start gap-2 py-2">
+              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+              <div><p className="font-medium">Failed to generate report</p><p className="text-red-400/60 text-xs mt-0.5">{reportError}</p></div>
+            </div>
           ) : report ? (
             <div>
               <div className="flex items-center gap-2 mb-4">
