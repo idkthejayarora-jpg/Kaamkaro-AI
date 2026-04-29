@@ -23,6 +23,7 @@ const adminNav = [
   { to: '/followup',        icon: Clock,           label: 'Follow-up Queue' },
   { to: '/goals',           icon: Target,          label: 'Goals' },
   { to: '/recommendations', icon: Sparkles,        label: 'AI Insights' },
+  { to: '/sales-insights',  icon: TrendingUp,      label: 'Sales Insights' },
   { to: '/templates',       icon: FileText,        label: 'Templates' },
   { to: '/webhook',         icon: Webhook,         label: 'WhatsApp Setup' },
   { to: '/teams',           icon: Users,           label: 'Teams' },
