@@ -465,6 +465,7 @@ export interface Lead {
   updatedAt: string;
   // Admin-only: attached server-side
   staffName?: string;
+  teamName?:  string;
 }
 
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
