@@ -436,8 +436,33 @@ Return ONLY valid JSON array — no markdown, no explanation:
     const arrMatch = raw.match(/\[[\s\S]*\]/);
     if (!arrMatch) throw new Error('AI did not return a valid JSON array');
     const recommendations = JSON.parse(arrMatch[0]);
-    res.json({ recommendations, staffMetrics });
+    return res.json({ recommendations, staffMetrics });
   } catch (err) {
+    // Billing / no credits → use rule-based fallback instead of erroring
+    if (isBillingErr(err) || _billingFailed) {
+      console.warn('[AI] recommendations: billing failed, using rule-based fallback');
+      const recommendations = staffMetrics.map(s => {
+        const issues = [], strengths = [], actions = [];
+        if (s.totalDiaryEntries > 0) strengths.push(`${s.totalDiaryEntries} diary entries logged`);
+        else issues.push('No diary entries logged yet');
+        if (s.overdueLeads.length > 0) {
+          issues.push(`${s.overdueLeads.length} overdue follow-up${s.overdueLeads.length > 1 ? 's' : ''}`);
+          actions.push(`Call: ${s.overdueLeads.slice(0, 3).map(l => l.name).join(', ')}`);
+        }
+        if (s.dueTodayLeads.length > 0) actions.push(`Due today: ${s.dueTodayLeads.slice(0, 3).join(', ')}`);
+        if (s.totalLeads > 0) strengths.push(`${s.totalLeads} CRM leads across pipeline`);
+        if (s.pendingTasks.filter(t => t.overdue).length > 0) issues.push('Has overdue tasks');
+        if (s.totalCustomers > 0) strengths.push(`${s.totalCustomers} customers assigned`);
+        if (!actions.length) actions.push('Log daily diary entries and keep leads updated');
+        return {
+          staffId: s.id, staffName: s.name, performanceScore: s.activityScore,
+          summary: `${s.totalDiaryEntries} diary entries · ${s.totalLeads} leads · ${s.overdueLeads.length} overdue`,
+          strengths, issues, actions,
+          priority: issues.length >= 2 ? 'high' : issues.length === 1 ? 'medium' : 'low',
+        };
+      });
+      return res.json({ recommendations, staffMetrics });
+    }
     console.error('[AI] recommendations error:', err);
     res.status(500).json({ error: err?.message || String(err) || 'Failed to generate insights' });
   }
