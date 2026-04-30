@@ -33,45 +33,137 @@
   --color-dark-500:  0   0   0;   /* #000000  page background          */
 }
 
-/* ── Light mode overrides ──────────────────────────────────────────────────────*/
+/* ── Light mode ───────────────────────────────────────────────────────────────
+   Apple iOS/macOS light palette — every dark-N slot flips to a system gray.
+     500 → #F2F2F7  page background  (iOS systemBackground)
+     400 → #FFFFFF  sidebar          (white panel)
+     300 → #FFFFFF  cards            (white surface)
+     200 → #F2F2F7  inputs           (grouped secondary bg)
+     100 → #E5E5EA  hover fill       (iOS separator light)
+      50 → #D1D1D6  borders          (iOS separator opaque)
+   ─────────────────────────────────────────────────────────────────────────── */
 html.light {
-  --color-dark:     200 200 204;
-  --color-dark-50:  210 210 215;
-  --color-dark-100: 225 225 230;
-  --color-dark-200: 242 242 247;
-  --color-dark-300: 255 255 255;
-  --color-dark-400: 248 248 253;
-  --color-dark-500: 242 242 247;
+  --color-dark:     174 174 178;   /* #AEAEB2  muted text / strong separator  */
+  --color-dark-50:  209 209 214;   /* #D1D1D6  borders                        */
+  --color-dark-100: 229 229 234;   /* #E5E5EA  hover fill                     */
+  --color-dark-200: 242 242 247;   /* #F2F2F7  inputs / inner bg              */
+  --color-dark-300: 255 255 255;   /* #FFFFFF  cards                          */
+  --color-dark-400: 255 255 255;   /* #FFFFFF  sidebar                        */
+  --color-dark-500: 242 242 247;   /* #F2F2F7  page bg                        */
 }
 
-html.light .text-white          { color: #1C1C1E !important; }
-html.light .text-white\/90      { color: rgba(28,28,30,0.9)  !important; }
-html.light .text-white\/80      { color: rgba(28,28,30,0.8)  !important; }
-html.light .text-white\/70      { color: rgba(28,28,30,0.7)  !important; }
-html.light .text-white\/60      { color: rgba(28,28,30,0.6)  !important; }
-html.light .text-white\/50      { color: rgba(28,28,30,0.5)  !important; }
-html.light .text-white\/40      { color: rgba(28,28,30,0.4)  !important; }
-html.light .text-white\/30      { color: rgba(28,28,30,0.3)  !important; }
-html.light .text-white\/25      { color: rgba(28,28,30,0.25) !important; }
-html.light .text-white\/20      { color: rgba(28,28,30,0.2)  !important; }
-html.light .text-white\/15      { color: rgba(28,28,30,0.15) !important; }
+/* ── Text — flip white/alpha to near-black/alpha ─────────────────────────── */
+html.light .text-white        { color: #1C1C1E !important; }
+html.light .text-white\/90    { color: rgba(28,28,30,0.90) !important; }
+html.light .text-white\/80    { color: rgba(28,28,30,0.80) !important; }
+html.light .text-white\/70    { color: rgba(28,28,30,0.70) !important; }
+html.light .text-white\/60    { color: rgba(28,28,30,0.60) !important; }
+html.light .text-white\/50    { color: rgba(28,28,30,0.50) !important; }
+html.light .text-white\/40    { color: rgba(28,28,30,0.40) !important; }
+html.light .text-white\/35    { color: rgba(28,28,30,0.35) !important; }
+html.light .text-white\/30    { color: rgba(28,28,30,0.30) !important; }
+html.light .text-white\/25    { color: rgba(28,28,30,0.25) !important; }
+html.light .text-white\/20    { color: rgba(28,28,30,0.20) !important; }
+html.light .text-white\/15    { color: rgba(28,28,30,0.15) !important; }
+html.light .text-white\/10    { color: rgba(28,28,30,0.10) !important; }
 
-html.light .text-gold                { color: #8B6914 !important; }
-html.light .btn-primary              { color: #ffffff !important; }
-html.light .sidebar-link.active      { background: rgba(0,0,0,0.06) !important; }
-html.light ::placeholder             { color: rgba(28,28,30,0.35) !important; }
+/* ── Accent / gold — darken for readability on white ────────────────────── */
+html.light .text-gold         { color: var(--accent-dark, #8B6914) !important; }
+
+/* ── Backgrounds — flip white-alpha fills to black-alpha ────────────────── */
+html.light .bg-white\/5       { background-color: rgba(0,0,0,0.04) !important; }
+html.light .bg-white\/10      { background-color: rgba(0,0,0,0.06) !important; }
+
+/* ── Borders — card, input, and component borders ────────────────────────── */
+/* Cards */
+html.light .card {
+  border-color: rgba(0,0,0,0.08) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+html.light .card:hover {
+  border-color: rgba(0,0,0,0.14) !important;
+}
+
+/* Inputs */
+html.light .input {
+  background-color: #ffffff !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: #1C1C1E !important;
+}
+html.light .input:focus {
+  border-color: var(--accent-dark, #8B6914) !important;
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12) !important;
+}
+
+/* Buttons */
+html.light .btn-primary       { color: #ffffff !important; }
+html.light .btn-secondary     { border-color: rgba(0,0,0,0.15) !important; }
+html.light .btn-secondary:hover { background: rgba(0,0,0,0.05) !important; }
+html.light .btn-ghost         { color: rgba(28,28,30,0.55) !important; }
+html.light .btn-ghost:hover   { color: rgba(28,28,30,0.90) !important; background: rgba(0,0,0,0.05) !important; }
+
+/* Badges */
+html.light .badge-gray        { background: rgba(0,0,0,0.06) !important; color: rgba(28,28,30,0.55) !important; }
+html.light .badge-gold        { background: rgb(var(--accent-rgb) / 0.12) !important; }
+
+/* ── Sidebar links ────────────────────────────────────────────────────────── */
+html.light .sidebar-link      { color: rgba(28,28,30,0.50) !important; }
+html.light .sidebar-link:hover {
+  color: rgba(28,28,30,0.85) !important;
+  background: rgba(0,0,0,0.05) !important;
+}
+html.light .sidebar-link.active {
+  color: var(--accent-dark, #8B6914) !important;
+  background: rgb(var(--accent-rgb) / 0.10) !important;
+}
+html.light .sidebar-link.active:hover {
+  background: rgb(var(--accent-rgb) / 0.14) !important;
+}
+
+/* ── Forms & placeholders ────────────────────────────────────────────────── */
+html.light ::placeholder      { color: rgba(28,28,30,0.30) !important; }
+
+/* ── Labels ──────────────────────────────────────────────────────────────── */
+html.light .label             { color: rgba(28,28,30,0.45) !important; }
+
+/* ── Scrollbars ──────────────────────────────────────────────────────────── */
 html.light ::-webkit-scrollbar-track { background: #F2F2F7; }
 html.light ::-webkit-scrollbar-thumb { background: #C7C7CC; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #AEAEB2; }
 
+/* ── Shimmer skeleton ────────────────────────────────────────────────────── */
+html.light .shimmer {
+  background: linear-gradient(90deg, #E5E5EA 25%, #F2F2F7 50%, #E5E5EA 75%) !important;
+}
+
+/* ── Selection ───────────────────────────────────────────────────────────── */
+html.light ::selection        { background: rgb(var(--accent-rgb) / 0.20); color: #1C1C1E; }
+
+/* ── Recharts ────────────────────────────────────────────────────────────── */
 html.light .recharts-tooltip-wrapper .recharts-default-tooltip {
   background: #ffffff !important;
   border: 1px solid #E5E5EA !important;
   color: #1C1C1E !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
 }
 html.light .recharts-cartesian-grid-horizontal line,
-html.light .recharts-cartesian-grid-vertical line {
-  stroke: #E5E5EA !important;
-}
+html.light .recharts-cartesian-grid-vertical line { stroke: #E5E5EA !important; }
+html.light .recharts-text { fill: rgba(28,28,30,0.50) !important; }
+
+/* ── Body / page text ────────────────────────────────────────────────────── */
+html.light body              { color: #1C1C1E; }
+
+/* ── Dark-bg utility overrides (used inline on some cards/panels) ─────────── */
+html.light .bg-dark-200       { background-color: #F2F2F7 !important; }
+html.light .bg-dark-300       { background-color: #FFFFFF !important; }
+html.light .bg-dark-400       { background-color: #FFFFFF !important; }
+html.light .bg-dark-500       { background-color: #F2F2F7 !important; }
+
+/* Border utilities */
+html.light .border-dark-50    { border-color: #D1D1D6 !important; }
+html.light .border-white\/10  { border-color: rgba(0,0,0,0.08) !important; }
+html.light .border-white\/20  { border-color: rgba(0,0,0,0.12) !important; }
+html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
 
 /* ── Base ─────────────────────────────────────────────────────────────────────*/
 @layer base {
