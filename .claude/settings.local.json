@@ -80,7 +80,11 @@
       "Bash(node -e \"require\\('./server/routes/ai.js'\\)\")",
       "Bash(git add *)",
       "Bash(cat client/tailwind.config.js)",
-      "Bash(cat client/tailwind.config.ts)"
+      "Bash(cat client/tailwind.config.ts)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/logo.png\")",
+      "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-192.png\")",
+      "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-512.png\")"
     ]
   }
 }
