@@ -298,33 +298,39 @@ export default function Settings() {
         {/* Accent colour */}
         <div>
           <p className="text-white text-sm font-medium mb-1">Accent Colour</p>
-          <p className="text-white/40 text-xs mb-3">Changes the highlight colour throughout the app</p>
-          <div className="grid grid-cols-4 gap-2">
-            {ACCENT_PRESETS.map(preset => (
-              <button
-                key={preset.name}
-                onClick={() => setAccent(preset as AccentPreset)}
-                className={`group relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
-                  accent.name === preset.name
-                    ? 'border-white/40 bg-white/5'
-                    : 'border-dark-50 hover:border-white/20 hover:bg-white/5'
-                }`}
-              >
-                <div
-                  className="w-7 h-7 rounded-full transition-all"
-                  style={{
-                    backgroundColor: preset.main,
-                    boxShadow: accent.name === preset.name
-                      ? `0 0 0 2px #1A1A1A, 0 0 0 4px ${preset.main}`
-                      : 'none',
-                  }}
-                />
-                <span className="text-[10px] text-white/40 group-hover:text-white/60">{preset.name}</span>
-                {accent.name === preset.name && (
-                  <CheckCircle size={10} className="absolute top-1.5 right-1.5 text-white/60" />
-                )}
-              </button>
-            ))}
+          <p className="text-white/40 text-xs mb-3">Changes buttons, badges, active items and highlights throughout the app</p>
+          <div className="grid grid-cols-5 gap-2">
+            {ACCENT_PRESETS.map(preset => {
+              const active = accent.name === preset.name;
+              return (
+                <button
+                  key={preset.name}
+                  onClick={() => setAccent(preset as AccentPreset)}
+                  title={preset.name}
+                  className={`group relative flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border transition-all ${
+                    active ? 'border-white/30 bg-white/5' : 'border-dark-50 hover:border-white/20 hover:bg-white/5'
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full transition-all"
+                    style={{
+                      backgroundColor: preset.main,
+                      boxShadow: active
+                        ? `0 0 0 2px #141414, 0 0 0 4px ${preset.main}`
+                        : `0 2px 6px ${preset.main}55`,
+                    }}
+                  />
+                  <span className={`text-[9px] leading-tight text-center transition-colors ${
+                    active ? 'text-white/70' : 'text-white/30 group-hover:text-white/50'
+                  }`}>{preset.name}</span>
+                  {active && (
+                    <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-white/20 flex items-center justify-center">
+                      <CheckCircle size={8} className="text-white" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </Section>
