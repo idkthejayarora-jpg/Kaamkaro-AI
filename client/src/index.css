@@ -190,17 +190,17 @@ html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
 }
 
 /* ── Dynamic accent colour — overrides compiled Tailwind gold classes ──────────
-   When the user picks a different accent in Settings, JS sets --accent /
-   --accent-dark / --accent-light on :root and all gold classes follow.     */
-.text-gold,  [class*="text-gold"]  { color: var(--accent) !important; }
-.bg-gold,    [class*="bg-gold"]    { background-color: var(--accent) !important; }
-.border-gold,[class*="border-gold"]{ border-color: var(--accent) !important; }
-.ring-gold,  [class*="ring-gold"]  { --tw-ring-color: var(--accent) !important; }
-.from-gold,  [class*="from-gold"]  { --tw-gradient-from: var(--accent) !important; }
-.to-gold,    [class*="to-gold"]    { --tw-gradient-to:   var(--accent) !important; }
-/* Opacity variants handled via CSS alpha — inherit from base colour */
-::-webkit-scrollbar-thumb:hover    { background: var(--accent) !important; }
-::selection                        { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+   IMPORTANT: Only exact class names — NO wildcards.
+   Wildcard [class*="bg-gold"] would match hover:bg-gold/5 and make every
+   element with that hover class permanently solid-coloured. Exact selectors
+   only affect the specific utility, not modifier-prefixed variants.         */
+.text-gold   { color: var(--accent) !important; }
+.bg-gold     { background-color: var(--accent) !important; }
+.border-gold { border-color: var(--accent) !important; }
+.ring-gold   { --tw-ring-color: var(--accent) !important; }
+.from-gold   { --tw-gradient-from: var(--accent) !important; }
+.to-gold     { --tw-gradient-to:   var(--accent) !important; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent) !important; }
 
 /* ── Voice pulse animation ─────────────────────────────────────────────────────*/
 @keyframes voicePulse {
