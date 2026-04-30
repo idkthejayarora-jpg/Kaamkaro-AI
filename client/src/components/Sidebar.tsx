@@ -111,15 +111,14 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     setDragIdx(idx);
   };
 
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault(); // required to allow drop
+  // dragEnter fires ONCE when cursor enters a new element — safe to reorder here
+  const handleDragEnter = (_e: React.DragEvent, idx: number) => {
     const from = dragFromRef.current;
     if (from === null || from === idx) return;
-    // Reorder using the latest ref (no stale closure)
     const next = [...navItemsRef.current];
     const [moved] = next.splice(from, 1);
     next.splice(idx, 0, moved);
-    dragFromRef.current = idx; // update source to new position
+    dragFromRef.current = idx;
     navItemsRef.current = next;
     setNavItems(next);
     setDragIdx(idx);
