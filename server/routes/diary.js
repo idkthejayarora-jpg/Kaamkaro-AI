@@ -1061,7 +1061,8 @@ function parseDueDateFromText(text) {
   // ── Named near-future markers ──────────────────────────────────────────────
   if (/\bparso\b|\bparson\b|\bday after tomorrow\b/.test(lower)) { d.setDate(d.getDate() + 2); return fmt(d); }
   if (/\bkal\b|\btomorrow\b/.test(lower))                        { d.setDate(d.getDate() + 1); return fmt(d); }
-  if (/\baaj\b|\btoday\b/.test(lower))                           { return fmt(d); }
+  // "aaj" or shorthand "aj"; "shaam ko" / "shamko" / "sham ko" = this evening = today
+  if (/\baaj\b|\baj\b|\btoday\b|\bshaam\s*ko\b|\bshamko\b|\bsham\s*ko\b|\bevening\b|\babhi\b|\bsubah\b/.test(lower)) { return fmt(d); }
 
   // ── End of this week ────────────────────────────────────────────────────────
   if (/(?:is\s*hafte|this\s*week)\s*(?:ke\s*)?(?:end|akhir|ant)\b/.test(lower) ||
