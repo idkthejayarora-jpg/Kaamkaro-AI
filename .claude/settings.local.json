@@ -78,7 +78,9 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(node -e \"require\\('./server/routes/ai.js'\\)\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(cat client/tailwind.config.js)",
+      "Bash(cat client/tailwind.config.ts)"
     ]
   }
 }

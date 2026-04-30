@@ -5,17 +5,10 @@ export default {
     extend: {
       colors: {
         gold: {
-          DEFAULT: '#C9A84C',
-          50:  '#FBF6E3',
-          100: '#F5EACC',
-          200: '#EDD899',
-          300: '#E4C566',
-          400: '#DCB24F',
-          500: '#C9A84C',
-          600: '#A8872A',
-          700: '#7E6520',
-          800: '#544315',
-          900: '#2A210B',
+          // Uses a CSS RGB triplet variable so ALL opacity variants (bg-gold/10,
+          // border-gold/20, text-gold/50, etc.) automatically follow the accent
+          // colour set by ThemeContext — no hardcoded #C9A84C anywhere in utilities.
+          DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)',
         },
         dark: {
           DEFAULT: 'rgb(var(--color-dark) / <alpha-value>)',
