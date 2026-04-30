@@ -24,6 +24,7 @@ import CRM from './pages/CRM';
 import CRMForm from './pages/CRMForm';
 import CRMDetail from './pages/CRMDetail';
 import SalesInsights from './pages/SalesInsights';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
