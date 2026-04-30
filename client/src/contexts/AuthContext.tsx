@@ -7,6 +7,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (phone: string, password: string) => Promise<void>;
+  register: (name: string, phone: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (u: User) => void;
   isAdmin: boolean;
