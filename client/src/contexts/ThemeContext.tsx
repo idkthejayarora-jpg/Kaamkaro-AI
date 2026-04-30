@@ -48,15 +48,30 @@ const ThemeContext = createContext<ThemeContextValue>({
   setAccent: () => {},
 });
 
+/** Convert a hex colour (#RRGGBB) to a space-separated "R G B" triplet. */
+function hexToRgbTriplet(hex: string): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r} ${g} ${b}`;
+}
+
 function applyAccent(preset: AccentPreset) {
-  const r = document.documentElement;
-  r.style.setProperty('--accent',       preset.main);
-  r.style.setProperty('--accent-dark',  preset.dark);
-  r.style.setProperty('--accent-light', preset.light);
-  // Also update legacy gold vars so any hardcoded var(--gold) usage follows
-  r.style.setProperty('--gold',         preset.main);
-  r.style.setProperty('--gold-dark',    preset.dark);
-  r.style.setProperty('--gold-light',   preset.light);
+  const root = document.documentElement;
+  // Hex values — used by direct var(--accent) references in index.css
+  root.style.setProperty('--accent',       preset.main);
+  root.style.setProperty('--accent-dark',  preset.dark);
+  root.style.setProperty('--accent-light', preset.light);
+  // Legacy gold vars for any var(--gold) usage
+  root.style.setProperty('--gold',         preset.main);
+  root.style.setProperty('--gold-dark',    preset.dark);
+  root.style.setProperty('--gold-light',   preset.light);
+  // RGB triplets — required so Tailwind's opacity modifiers work dynamically:
+  // bg-gold/10 → rgb(var(--accent-rgb) / 0.1) which updates with every accent change.
+  root.style.setProperty('--accent-rgb',       hexToRgbTriplet(preset.main));
+  root.style.setProperty('--accent-rgb-dark',  hexToRgbTriplet(preset.dark));
+  root.style.setProperty('--accent-rgb-light', hexToRgbTriplet(preset.light));
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
