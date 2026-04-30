@@ -306,7 +306,8 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 key={to}
                 draggable={editMode}
                 onDragStart={e => handleDragStart(e, idx)}
-                onDragOver={e => handleDragOver(e, idx)}
+                onDragEnter={e => handleDragEnter(e, idx)}
+                onDragOver={e => e.preventDefault()}
                 onDragEnd={handleDragEnd}
                 className={`transition-opacity duration-100 ${
                   editMode && dragIdx === idx ? 'opacity-30' : 'opacity-100'
