@@ -4,14 +4,30 @@ type Theme = 'dark' | 'light';
 
 // Preset accent swatches
 export const ACCENT_PRESETS = [
-  { name: 'Gold',    main: '#C9A84C', dark: '#A8872A', light: '#DCB24F' },
-  { name: 'Rose',    main: '#E8617A', dark: '#C44A62', light: '#F08898' },
-  { name: 'Teal',    main: '#2DD4BF', dark: '#0F9E8C', light: '#5EE8D6' },
-  { name: 'Violet',  main: '#A78BFA', dark: '#7C5FD6', light: '#C4B5FD' },
-  { name: 'Coral',   main: '#FB923C', dark: '#D97706', light: '#FDBA74' },
-  { name: 'Sky',     main: '#38BDF8', dark: '#0EA5E9', light: '#7DD3FC' },
-  { name: 'Lime',    main: '#A3E635', dark: '#65A30D', light: '#D9F99D' },
-  { name: 'Crimson', main: '#F43F5E', dark: '#BE123C', light: '#FB7185' },
+  // Warm
+  { name: 'Gold',      main: '#C9A84C', dark: '#A8872A', light: '#DCB24F' },
+  { name: 'Amber',     main: '#F59E0B', dark: '#B45309', light: '#FCD34D' },
+  { name: 'Coral',     main: '#FB923C', dark: '#C2410C', light: '#FDBA74' },
+  { name: 'Crimson',   main: '#F43F5E', dark: '#BE123C', light: '#FB7185' },
+  { name: 'Rose',      main: '#E8617A', dark: '#C44A62', light: '#F08898' },
+  // Cool
+  { name: 'Violet',    main: '#A78BFA', dark: '#7C5FD6', light: '#C4B5FD' },
+  { name: 'Purple',    main: '#C084FC', dark: '#9333EA', light: '#E879F9' },
+  { name: 'Indigo',    main: '#818CF8', dark: '#4338CA', light: '#A5B4FC' },
+  { name: 'Sky',       main: '#38BDF8', dark: '#0EA5E9', light: '#7DD3FC' },
+  { name: 'Cyan',      main: '#22D3EE', dark: '#0891B2', light: '#67E8F9' },
+  // Nature
+  { name: 'Teal',      main: '#2DD4BF', dark: '#0F9E8C', light: '#5EE8D6' },
+  { name: 'Emerald',   main: '#34D399', dark: '#059669', light: '#6EE7B7' },
+  { name: 'Lime',      main: '#A3E635', dark: '#65A30D', light: '#D9F99D' },
+  { name: 'Green',     main: '#4ADE80', dark: '#16A34A', light: '#86EFAC' },
+  // Neutral / unique
+  { name: 'Silver',    main: '#94A3B8', dark: '#64748B', light: '#CBD5E1' },
+  { name: 'Blush',     main: '#FDA4AF', dark: '#E11D48', light: '#FECDD3' },
+  { name: 'Peach',     main: '#FDBA74', dark: '#EA580C', light: '#FED7AA' },
+  { name: 'Mint',      main: '#6EE7B7', dark: '#059669', light: '#A7F3D0' },
+  { name: 'Lavender',  main: '#C4B5FD', dark: '#7C3AED', light: '#DDD6FE' },
+  { name: 'Saffron',   main: '#FB923C', dark: '#9A3412', light: '#FFEDD5' },
 ] as const;
 
 export type AccentPreset = typeof ACCENT_PRESETS[number];
