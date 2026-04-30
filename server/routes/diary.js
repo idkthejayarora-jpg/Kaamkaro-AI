@@ -1117,6 +1117,11 @@ function detectTasks(text, customerName) {
   // ── Pattern groups — each group fires at most once ──────────────────────────
   // Patterns within a group are OR'd. First match wins.
   const groups = [
+    // Photo / image — very common in Indian retail ("photo karni hai", "photo bhejni hai")
+    {
+      r: /photo|image|pic\b|tasveer|screenshot/i,
+      t: `Send photo to ${cName}`,
+    },
     // Video call
     {
       r: /video\s*call/i,
