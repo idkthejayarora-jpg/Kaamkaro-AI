@@ -311,11 +311,12 @@ export default function Settings() {
                 }`}
               >
                 <div
-                  className="w-7 h-7 rounded-full ring-2 ring-offset-2 ring-offset-dark-300 transition-all"
+                  className="w-7 h-7 rounded-full transition-all"
                   style={{
                     backgroundColor: preset.main,
-                    ringColor: accent.name === preset.name ? preset.main : 'transparent',
-                    boxShadow: accent.name === preset.name ? `0 0 0 2px ${preset.main}` : 'none',
+                    boxShadow: accent.name === preset.name
+                      ? `0 0 0 2px #1A1A1A, 0 0 0 4px ${preset.main}`
+                      : 'none',
                   }}
                 />
                 <span className="text-[10px] text-white/40 group-hover:text-white/60">{preset.name}</span>
