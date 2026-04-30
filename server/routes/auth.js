@@ -64,4 +64,76 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password  (own password)
+router.post('/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ error: 'Current and new password required' });
+    if (newPassword.length < 4)
+      return res.status(400).json({ error: 'New password must be at least 4 characters' });
+
+    // Find in users then staff
+    const users = await readDB('users');
+    let user = users.find(u => u.id === req.user.id);
+    let collection = 'users';
+    if (!user) {
+      const staff = await readDB('staff');
+      user = staff.find(s => s.id === req.user.id);
+      collection = 'staff';
+    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await updateOne(collection, req.user.id, { password: hashed });
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/admin/reset-password  (admin resets any user's password)
+router.post('/admin/reset-password', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    if (!userId || !newPassword)
+      return res.status(400).json({ error: 'userId and newPassword required' });
+    if (newPassword.length < 4)
+      return res.status(400).json({ error: 'Password must be at least 4 characters' });
+
+    const users = await readDB('users');
+    let user = users.find(u => u.id === userId);
+    let collection = 'users';
+    if (!user) {
+      const staff = await readDB('staff');
+      user = staff.find(s => s.id === userId);
+      collection = 'staff';
+    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await updateOne(collection, userId, { password: hashed });
+    res.json({ message: `Password reset for ${user.name}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/auth/admin/users  (admin: list all users with IDs)
+router.get('/admin/users', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const [users, staff] = await Promise.all([readDB('users'), readDB('staff')]);
+    const safeUsers = users.map(({ password: _, ...u }) => ({ ...u, collection: 'users' }));
+    const safeStaff = staff.map(({ password: _, ...s }) => ({ ...s, collection: 'staff' }));
+    res.json([...safeUsers, ...safeStaff]);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
