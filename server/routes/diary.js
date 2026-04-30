@@ -1183,8 +1183,9 @@ function detectTasks(text, customerName) {
       t: `Check and update ${cName}`,
     },
     // General strong future intent (Hindi) — catch-all
+    // Covers both masculine (karna) and feminine (karni) verb agreement forms
     {
-      r: /(?:karunga|karenge|kar\s*dunga|kar\s*denge|karne\s*wala|karne\s*wali|karne\s*waala|karna\s*padega|karna\s*hai|karna\s*hoga|lena\s*hai|lena\s*padega|dena\s*hai|dena\s*padega)\b/i,
+      r: /(?:karunga|karenge|kar\s*dunga|kar\s*denge|karne\s*wala|karne\s*wali|karne\s*waala|karna\s*padega|karna\s*hai|karna\s*hoga|karni\s*hai|karni\s*hogi|karni\s*padegi|lena\s*hai|lena\s*padega|leni\s*hai|leni\s*padegi|dena\s*hai|dena\s*padega|deni\s*hai|deni\s*padegi|karna\s*padhega|karni\s*padhegi)\b/i,
       t: `Follow up with ${cName}`,
     },
   ];
