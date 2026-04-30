@@ -1143,7 +1143,7 @@ function detectTasks(text, customerName) {
     // ── Meeting / visit / "will come" ──────────────────────────────────────────
     // "milenge", "milna hai", "meeting hai", "visit karunga", "aaunga", "bulaunga"
     {
-      r: /\b(?:milenge|milna\s*hai|milne\s*ka\s*plan|milne\s*ka\s*socha|meeting|meating|meetin|miting|appointment|milne\s*aaunga|milne\s*ayenge|milne\s*aayenge|milne\s*jaaunga|milne\s*aate\s*hain|milne\s*wala|milne\s*wali|milne\s*ka\s*irada|milna\s*chahta|aaunga|aayenge|aa\s*jayenge|aa\s*jaunga|aa\s*jaoonga|aane\s*wale\s*hain|aane\s*wala\s*hai|aane\s*wali\s*hai|will\s*meet|will\s*come|visit\s*karunga|visit\s*karenge|visit\s*karna|visit\s*karna\s*hai|will\s*visit|bulaunga|bulayenge|bulana\s*hai|invite\s*karna|invite\s*karunga|office\s*aana|ghar\s*aana|dukaan\s*aana|aa\s*jana|aa\s*jao|aaoge|aaogi|pahunga|pahunche\s*hain|pahunchna\s*hai)\b/i,
+      r: /\b(?:milenge|milna\s*hai|milne\s*ka\s*plan|milne\s*ka\s*socha|meeting|meating|meetin|miting|appointment|milne\s*aaunga|milne\s*ayenge|milne\s*aayenge|milne\s*jaaunga|milne\s*aate\s*hain|milne\s*wala|milne\s*wali|milne\s*ka\s*irada|milna\s*chahta|milna\s*chahti|milna\s*chahte|aana\s*chahta|aana\s*chahti|aana\s*chahte|aaunga|aayenge|aa\s*jayenge|aa\s*jaunga|aa\s*jaoonga|aane\s*wale\s*hain|aane\s*wala\s*hai|aane\s*wali\s*hai|will\s*meet|will\s*come|visit\s*karunga|visit\s*karenge|visit\s*karna|visit\s*karna\s*hai|will\s*visit|bulaunga|bulayenge|bulana\s*hai|invite\s*karna|invite\s*karunga|office\s*aana|ghar\s*aana|dukaan\s*aana|aa\s*jana|aa\s*jao|aaoge|aaogi|pahunga|pahunche\s*hain|pahunchna\s*hai)\b/i,
       t: `Meeting with ${cName}`,
     },
 
