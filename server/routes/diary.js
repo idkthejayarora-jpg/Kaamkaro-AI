@@ -1116,76 +1116,112 @@ function detectTasks(text, customerName) {
 
   // ── Pattern groups — each group fires at most once ──────────────────────────
   // Patterns within a group are OR'd. First match wins.
+  // Each group covers: standard spelling, common typos, Hinglish variants,
+  // masculine AND feminine verb forms (karna/karni, lena/leni, dena/deni).
   const groups = [
-    // Photo / image — very common in Indian retail ("photo karni hai", "photo bhejni hai")
+    // ── Photo / image ──────────────────────────────────────────────────────────
+    // "photo karni hai", "photo bhejni hai", "foto dalna", "pic bhejo", "tasveer leni"
     {
-      r: /photo|image|pic\b|tasveer|screenshot/i,
+      r: /\b(?:photo|photu|phot|foto|fotu|image|img|pic|pics|tasveer|tasvir|tassveer|snap|snapshot|screenshot|screen\s*shot|screenshoot|screenshut)\b/i,
       t: `Send photo to ${cName}`,
     },
-    // Video call
+
+    // ── Video call ─────────────────────────────────────────────────────────────
+    // "video call karni hai", "vc karna", "zoom call", "video kol", "video kon"
     {
-      r: /video\s*call/i,
+      r: /\b(?:video\s*call|video\s*kol|video\s*kon|video\s*kal|vc\b|zoom\s*call|zoom\s*meeting|google\s*meet|gmeet|whatsapp\s*video|video\s*chat|video\s*karni|video\s*karna)\b/i,
       t: `Video call with ${cName}`,
     },
-    // Call / phone
+
+    // ── Call / phone ───────────────────────────────────────────────────────────
+    // "call karna hai", "phone karunga", "ring karega", "baat karni hai", "fon karna"
     {
-      r: /(?:call\s*back|call\s*karega|call\s*karein|phone\s*karega|ring\s*karega|call\s*karna|call\s*karunga|call\s*karenge|call\s*kar\s*dunga|call\s*kar\s*denge|phone\s*karunga|phone\s*karenge|will\s*call|baat\s*karni\s*hai|baat\s*karenge|baat\s*karna\s*hai|phone\s*karunga)\b/i,
+      r: /\b(?:call\s*back|call\s*karega|call\s*karein|call\s*karna|call\s*karunga|call\s*karenge|call\s*kar\s*dunga|call\s*kar\s*denge|call\s*kar\s*lunga|call\s*kar\s*lenge|call\s*karo|call\s*karna\s*hai|call\s*karna\s*padega|call\s*karna\s*padegi|will\s*call|call\s*karte\s*hain|call\s*lagana|call\s*lagaunga|call\s*lagayenge|call\s*dena|call\s*marna|phone\s*karega|phone\s*karna|phone\s*karunga|phone\s*karenge|phone\s*kar\s*dunga|phone\s*karo|phone\s*karna\s*hai|phone\s*lagana|phone\s*lagaunga|fon\s*karna|fon\s*karunga|fon\s*karenge|fon\s*lagana|ring\s*karega|ring\s*karna|ring\s*karunga|contact\s*karna|contact\s*karunga|contact\s*karenge|baat\s*karni\s*hai|baat\s*karna\s*hai|baat\s*karenge|baat\s*karunga|baat\s*kar\s*dunga|baat\s*karo|phon\s*karna|phon\s*karunga|call\s*aayegi|call\s*aayega)\b/i,
       t: `Call ${cName}`,
     },
-    // Meeting / visit / "will come"
+
+    // ── Meeting / visit / "will come" ──────────────────────────────────────────
+    // "milenge", "milna hai", "meeting hai", "visit karunga", "aaunga", "bulaunga"
     {
-      r: /(?:milenge|milna\s*hai|milne\s*ka\s*plan|meeting|appointment|milne\s*aaunga|milne\s*ayenge|milne\s*aayenge|milne\s*jaaunga|milne\s*aate\s*hain|aaunga|aayenge|aane\s*wale\s*hain|aane\s*wala\s*hai|aa\s*jayenge|milne\s*wala|will\s*meet|will\s*come|visit\s*karunga|visit\s*karenge|will\s*visit)\b/i,
+      r: /\b(?:milenge|milna\s*hai|milne\s*ka\s*plan|milne\s*ka\s*socha|meeting|meating|meetin|miting|appointment|milne\s*aaunga|milne\s*ayenge|milne\s*aayenge|milne\s*jaaunga|milne\s*aate\s*hain|milne\s*wala|milne\s*wali|milne\s*ka\s*irada|milna\s*chahta|aaunga|aayenge|aa\s*jayenge|aa\s*jaunga|aa\s*jaoonga|aane\s*wale\s*hain|aane\s*wala\s*hai|aane\s*wali\s*hai|will\s*meet|will\s*come|visit\s*karunga|visit\s*karenge|visit\s*karna|visit\s*karna\s*hai|will\s*visit|bulaunga|bulayenge|bulana\s*hai|invite\s*karna|invite\s*karunga|office\s*aana|ghar\s*aana|dukaan\s*aana|aa\s*jana|aa\s*jao|aaoge|aaogi|pahunga|pahunche\s*hain|pahunchna\s*hai)\b/i,
       t: `Meeting with ${cName}`,
     },
-    // Quote / proposal / send
+
+    // ── Quote / proposal / send ────────────────────────────────────────────────
+    // "quote bhejunga", "rate list dena", "catalogue send karna", "bhej dunga"
     {
-      r: /(?:quote|proposal|estimate|quotation|bhejunga|bhejenge|bhej\s*dunga|bhej\s*denge|bhejega|bhejna\s*hai|will\s*send|send\s*karunga|send\s*karenge|bhej\s*deta|bhejna\s*padega)\b/i,
+      r: /\b(?:quote|quotation|kwotation|proposal|proposel|proposel|estimate|estimat|rate\s*list|rate\s*bhejunga|rate\s*bhejenge|rate\s*dena|rate\s*bataunga|rate\s*batayenge|catalogue|catalog|catlog|brochure|broshure|bhejunga|bhejenge|bhej\s*dunga|bhej\s*denge|bhej\s*lunga|bhej\s*lenge|bhejega|bhejna\s*hai|bhejna\s*padega|bhejni\s*hai|bhejni\s*padegi|will\s*send|send\s*karunga|send\s*karenge|send\s*kar\s*dunga|send\s*kar\s*denge|send\s*karna\s*hai|message\s*karunga|message\s*karenge|message\s*karna\s*hai|whatsapp\s*karunga|whatsapp\s*karenge|whatsapp\s*karna\s*hai|share\s*kar\s*dunga|share\s*kar\s*denge|share\s*karunga|share\s*karenge|forward\s*karunga|forward\s*karenge|details\s*bhejunga|info\s*bhejunga|link\s*bhejunga)\b/i,
       t: `Send quote to ${cName}`,
     },
-    // Payment / dues / invoice follow-up
+
+    // ── Payment / dues / invoice follow-up ────────────────────────────────────
+    // "payment lena", "paisa pending", "baaki hai", "udhar lena", "invoice bhejna"
     {
-      r: /(?:payment|invoice|bill|baaki|dues|baki\s*hai|paisa\s*lena|paise\s*lena|payment\s*lena|payment\s*ka|payment\s*pending|paisa\s*pending)\b/i,
+      r: /\b(?:payment|payement|peyment|paymant|invoice|invoce|invois|bill|baaki|baki|baqi|dues|due\s*hai|paisa\s*lena|paise\s*lena|paisa\s*lene|paise\s*lene|payment\s*lena|payment\s*leni|payment\s*ka|payment\s*pending|payment\s*aana|paisa\s*pending|paisa\s*aana|paisa\s*milega|baaki\s*hai|baki\s*hai|baqi\s*hai|udhar|udhaar|udhar\s*lena|udhar\s*wapas|paise\s*wapas|paisa\s*wapas|amount\s*lena|amount\s*pending|payment\s*follow|paise\s*nikalne|paisa\s*nikalna|recovery|rikwari|ricovery|paise\s*le\s*lena|paisa\s*le\s*lena)\b/i,
       t: `Follow up on payment — ${cName}`,
     },
-    // Delivery / dispatch
+
+    // ── Delivery / dispatch ────────────────────────────────────────────────────
+    // "maal bhejna hai", "deliver karunga", "parcel nikalna", "dispatch karna"
     {
-      r: /(?:deliver|dispatch|courier|maal\s*bhejunga|maal\s*bhejenge|mal\s*bhejega|will\s*deliver|deliver\s*karunga|deliver\s*karenge|maal\s*bhejna\s*hai|nikalna\s*hai|nikalne\s*wala)\b/i,
+      r: /\b(?:deliver|deliveri|diliver|dispatch|dispach|disptach|courier|couriear|maal\s*bhejunga|maal\s*bhejenge|maal\s*bhejna\s*hai|maal\s*bhejni\s*hai|maal\s*nikalna|maal\s*nikalne|maal\s*ready|mal\s*bhejega|mal\s*bhejna|will\s*deliver|deliver\s*karunga|deliver\s*karenge|deliver\s*karna\s*hai|delivery\s*karni\s*hai|bhijwana|bhijwaunga|bhijwayenge|nikalna\s*hai|nikalne\s*wala|nikalne\s*wali|parcel\s*nikalna|parcel\s*bhejna|parcel\s*bhejunga|parcel\s*bhejenge|parcel\s*karna|shipment|shipmant|goods\s*ready|order\s*nikalna|maal\s*bhejna\s*padega|maal\s*bhejna\s*padegi)\b/i,
       t: `Arrange delivery for ${cName}`,
     },
-    // Sample / product sharing
+
+    // ── Sample / demo / product show ──────────────────────────────────────────
+    // "sample bhejunga", "demo dikhaunga", "collection dikhana", "new design batana"
     {
-      r: /(?:sample|demo|demonstration|dikhaunga|dikhayenge|dikhana\s*hai|will\s*show|show\s*karunga|dikha\s*dunga|dikhana\s*padega)\b/i,
+      r: /\b(?:sample|sampal|sampel|semple|demo|demonstrashun|demonstration|dikhaunga|dikhayenge|dikhana\s*hai|dikhani\s*hai|dikhana\s*padega|dikhani\s*padegi|will\s*show|show\s*karunga|show\s*karenge|show\s*karna\s*hai|dikha\s*dunga|dikha\s*denge|dikha\s*lunga|dikha\s*lenge|product\s*dikhana|new\s*design|collection\s*dikhana|design\s*dikhana|sample\s*dena|sample\s*dunga|sample\s*bhejunga|sample\s*bhejenge|trial|trayal|test\s*karana)\b/i,
       t: `Product demo for ${cName}`,
     },
-    // Confirm / finalize
+
+    // ── Confirm / finalize / book ─────────────────────────────────────────────
+    // "confirm karna hai", "order pakka karna", "deal final karna", "booking karni"
     {
-      r: /(?:confirm\s*karna\s*hai|confirm\s*karunga|confirm\s*karenge|order\s*confirm|finalize|pakka\s*karna\s*hai|pakka\s*karunga)\b/i,
+      r: /\b(?:confirm\s*karna\s*hai|confirm\s*karni\s*hai|confirm\s*karunga|confirm\s*karenge|confirm\s*kar\s*dunga|confirm\s*karwana|order\s*confirm|deal\s*confirm|finalize|finalise|final\s*karna|pakka\s*karna|pakka\s*karna\s*hai|pakka\s*karni\s*hai|pakka\s*karunga|pakka\s*karenge|pakka\s*ho\s*jayega|deal\s*pakka|deal\s*final|deal\s*pakki|order\s*pakka|book\s*karna|book\s*karunga|book\s*karenge|booking\s*karni|booking\s*karna|agree\s*karna|fix\s*karna|lock\s*karna|deal\s*lock|deal\s*done|seal\s*karna)\b/i,
       t: `Confirm order with ${cName}`,
     },
-    // Reminder / follow up (explicit)
+
+    // ── Reminder / explicit follow-up ─────────────────────────────────────────
+    // "follow up karna", "reminder set karna", "yaad rakhna", "track karna"
     {
-      r: /(?:follow.?up|reminder|yaad\s*rakhna|yaad\s*dilana|remind\s*karna)\b/i,
+      r: /\b(?:follow.?up|followup|f\.?u\b|reminder|riminder|yaad\s*rakhna|yaad\s*dilana|yaad\s*dilani|remind\s*karna|remind\s*karunga|dhyan\s*rakhna|track\s*karna|track\s*karunga|peeche\s*padna|peecha\s*karna|pursue\s*karna|followup\s*karna|follow\s*karna|follow\s*karunga)\b/i,
       t: `Follow up with ${cName}`,
     },
-    // Will tell / inform / update / "update dalna hai" / "dalni hai"
+
+    // ── Update / inform / tell ────────────────────────────────────────────────
+    // "update dalna", "bata dena", "inform karna", "bol dena", "reply karna"
     {
-      r: /(?:bolunga|bolenge|bol\s*dunga|bol\s*denge|bataunga|batayenge|bata\s*dunga|bata\s*dena\s*hai|inform\s*karunga|will\s*tell|will\s*inform|update\s*karunga|update\s*karenge|update\s*dalna|update\s*dalni|reply\s*karunga|dalna\s*hai|dalni\s*hai|dal\s*dena\s*hai|dal\s*deni\s*hai)\b/i,
+      r: /\b(?:bolunga|bolenge|bol\s*dunga|bol\s*denge|bol\s*dena|bol\s*dena\s*hai|bol\s*do|bol\s*deta\s*hoon|bataunga|batayenge|bata\s*dunga|bata\s*denge|bata\s*dena|bata\s*dena\s*hai|bata\s*do|batao|batana\s*hai|batani\s*hai|btao|inform\s*karna|inform\s*karunga|inform\s*karenge|inform\s*kar\s*dunga|will\s*tell|will\s*inform|update\s*karna|update\s*karunga|update\s*karenge|update\s*kar\s*dunga|update\s*dalna|update\s*dalni|update\s*dena|update\s*dena\s*hai|update\s*deni\s*hai|update\s*dalo|reply\s*karna|reply\s*karunga|reply\s*karenge|reply\s*kar\s*dunga|jawab\s*dena|jawab\s*dunga|ans\s*karna|answer\s*karna|message\s*karna|message\s*karunga|message\s*karenge|whatsapp\s*karna|whatsapp\s*karunga|whatsapp\s*karenge|dalna\s*hai|dalni\s*hai|dal\s*dena\s*hai|dal\s*deni\s*hai|daalni\s*hai)\b/i,
       t: `Update ${cName}`,
     },
-    // Will give / share documents/details
+
+    // ── Share details / documents / info ─────────────────────────────────────
+    // "details dena", "document share karna", "number dena", "info bhejunga"
     {
-      r: /(?:deta\s*hoon|de\s*dunga|de\s*denge|dunga|dungi|share\s*karunga|will\s*give|will\s*share|document\s*dena|details\s*dena|info\s*dena)\b/i,
+      r: /\b(?:deta\s*hoon|de\s*dunga|de\s*denge|de\s*lunga|de\s*lenge|dunga|dungi|share\s*karunga|share\s*karenge|share\s*kar\s*dunga|will\s*give|will\s*share|document\s*dena|documents\s*dena|details\s*dena|details\s*bhejunga|info\s*dena|info\s*bhejunga|number\s*dena|number\s*dunga|address\s*dena|address\s*bhejunga|location\s*dena|location\s*bhejunga|catalogue\s*dena|brochure\s*dena|list\s*dena|list\s*bhejunga|price\s*list\s*dena|rate\s*card\s*dena)\b/i,
       t: `Share details with ${cName}`,
     },
-    // Check / verify / follow up on status
+
+    // ── Check / verify / find out ─────────────────────────────────────────────
+    // "check karunga", "pata karunga", "dekhta hoon", "poochna hai", "verify karna"
     {
-      r: /(?:check\s*karunga|check\s*karenge|check\s*kar\s*dunga|will\s*check|dekhta\s*hoon|dekhunga|dekhenge|pata\s*karunga|pata\s*karenge|puchna\s*hai|poochna\s*hai|pata\s*lagana\s*hai)\b/i,
+      r: /\b(?:check\s*karunga|check\s*karenge|check\s*kar\s*dunga|check\s*kar\s*denge|check\s*kar\s*lunga|check\s*karna\s*hai|check\s*karni\s*hai|will\s*check|dekhta\s*hoon|dekhunga|dekhenge|dekh\s*lunga|dekh\s*lenge|dekhna\s*hai|dekhni\s*hai|pata\s*karunga|pata\s*karenge|pata\s*kar\s*dunga|pata\s*karna\s*hai|pata\s*lagana\s*hai|pata\s*lagaunga|puchna\s*hai|poochna\s*hai|pooch\s*lunga|pooch\s*lenge|poochunga|puochunga|verify\s*karna|verify\s*karunga|verify\s*karenge|confirm\s*karna\s*hai|jaanch\s*karna|investigate\s*karna|enquiry\s*karna|enquiry\s*karunga|enquire\s*karna|pata\s*chal\s*jayega)\b/i,
       t: `Check and update ${cName}`,
     },
-    // General strong future intent (Hindi) — catch-all
-    // Covers both masculine (karna) and feminine (karni) verb agreement forms
+
+    // ── Collect advance / down payment ────────────────────────────────────────
+    // "advance lena", "token lena", "advance milega", "booking amount lena"
     {
-      r: /(?:karunga|karenge|kar\s*dunga|kar\s*denge|karne\s*wala|karne\s*wali|karne\s*waala|karna\s*padega|karna\s*hai|karna\s*hoga|karni\s*hai|karni\s*hogi|karni\s*padegi|lena\s*hai|lena\s*padega|leni\s*hai|leni\s*padegi|dena\s*hai|dena\s*padega|deni\s*hai|deni\s*padegi|karna\s*padhega|karni\s*padhegi)\b/i,
+      r: /\b(?:advance\s*lena|advance\s*leni|advance\s*milega|advance\s*milegi|advance\s*chahiye|advance\s*le\s*lena|advance\s*le\s*leni|advanss\s*lena|advans\s*lena|token\s*lena|token\s*milega|token\s*amount|booking\s*amount|down\s*payment|security\s*lena|deposit\s*lena)\b/i,
+      t: `Collect advance from ${cName}`,
+    },
+
+    // ── General strong future intent (Hindi) — catch-all ─────────────────────
+    // Covers masculine (karna/karunga) AND feminine (karni/karungi) agreement forms,
+    // plus abbreviated/colloquial forms (kr dunga, de dunga, le lunga, ho jayega)
+    {
+      r: /\b(?:karunga|karungi|karenge|karengi|kar\s*dunga|kar\s*dungi|kar\s*denge|kar\s*dengi|kar\s*lunga|kar\s*lungi|kar\s*lenge|kar\s*lengi|karne\s*wala|karne\s*wali|karne\s*waala|karne\s*waali|karna\s*padega|karna\s*padegi|karna\s*hai|karna\s*hoga|karna\s*hogi|karni\s*hai|karni\s*hogi|karni\s*padegi|karni\s*padega|kr\s*dunga|kr\s*dungi|kr\s*denge|kr\s*dengi|kr\s*lunga|kr\s*lenge|lena\s*hai|lena\s*padega|lena\s*padegi|lena\s*hoga|leni\s*hai|leni\s*padegi|leni\s*padega|leni\s*hogi|le\s*lunga|le\s*lungi|le\s*lenge|le\s*lengi|le\s*dunga|le\s*dungi|dena\s*hai|dena\s*padega|dena\s*padegi|dena\s*hoga|deni\s*hai|deni\s*padegi|deni\s*padega|deni\s*hogi|de\s*dunga|de\s*dungi|de\s*denge|de\s*dengi|karna\s*padhega|karna\s*padhegi|karni\s*padhegi|karni\s*padhega|ho\s*jayega|ho\s*jayegi|ho\s*jaayega|ho\s*jaayegi|kar\s*deta\s*hoon|kar\s*deti\s*hoon|kar\s*deta|kar\s*deti|karta\s*hoon|karti\s*hoon|hogi\s*taiyari|tayar\s*karunga|tayar\s*karenge)\b/i,
       t: `Follow up with ${cName}`,
     },
   ];
