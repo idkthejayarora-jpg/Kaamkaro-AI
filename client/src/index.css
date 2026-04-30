@@ -11,6 +11,10 @@
   --gold:         #C9A84C;
   --gold-light:   #DCB24F;
   --gold-dark:    #A8872A;
+  /* RGB triplets — needed so Tailwind bg-gold/10, border-gold/20 etc. work */
+  --accent-rgb:       201 168 76;
+  --accent-rgb-dark:  168 135 42;
+  --accent-rgb-light: 220 178 79;
 
   /* ── Apple-style true dark palette ────────────────────────────────────────
      Mirrors macOS dark mode layering:
