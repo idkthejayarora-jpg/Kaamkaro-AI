@@ -92,9 +92,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   };
 
+  const register = async (name: string, phone: string, password: string) => {
+    const data = await authAPI.register(name, phone, password);
+    localStorage.setItem('kk_token', data.token);
+    localStorage.setItem('kk_user', JSON.stringify(data.user));
+    setToken(data.token);
+    setUser(data.user);
+  };
+
   return (
     <AuthContext.Provider value={{
-      user, token, loading, login, logout, updateUser,
+      user, token, loading, login, register, logout, updateUser,
       isAdmin: user?.role === 'admin',
     }}>
       {children}
