@@ -358,6 +358,10 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               <span>{exporting ? 'Exporting…' : 'Export Data'}</span>
             </button>
           )}
+          <NavLink to="/settings" onClick={onClose} className={({ isActive }) => `w-full sidebar-link ${isActive ? 'active' : 'text-white/30 hover:text-gold hover:bg-gold/5'}`}>
+            <Settings size={16} />
+            <span>Settings</span>
+          </NavLink>
           <button onClick={handleLogout} className="w-full sidebar-link text-red-400/50 hover:text-red-400 hover:bg-red-500/10">
             <LogOut size={16} />
             <span>Sign Out</span>
