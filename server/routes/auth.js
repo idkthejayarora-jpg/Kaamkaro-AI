@@ -7,6 +7,52 @@ const { authMiddleware, adminOnly, JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
 
+// POST /api/auth/register  — self-signup for new staff
+router.post('/register', async (req, res) => {
+  try {
+    const { name, phone, password } = req.body;
+    if (!name?.trim() || !phone?.trim() || !password)
+      return res.status(400).json({ error: 'Name, phone, and password are required' });
+    if (password.length < 4)
+      return res.status(400).json({ error: 'Password must be at least 4 characters' });
+
+    // Check phone not already taken (users + staff)
+    const [users, staff] = await Promise.all([readDB('users'), readDB('staff')]);
+    const taken = [...users, ...staff].find(u => u.phone === phone.trim());
+    if (taken) return res.status(409).json({ error: 'This phone number is already registered' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    const newStaff = {
+      id:               uuidv4(),
+      name:             name.trim(),
+      phone:            phone.trim(),
+      password:         hashed,
+      role:             'staff',
+      active:           true,
+      avatar:           name.trim()[0].toUpperCase(),
+      attendanceStatus: 'inactive',
+      streakData:       { currentStreak: 0, lastActivityDate: null, longestStreak: 0 },
+      createdAt:        new Date().toISOString(),
+      selfRegistered:   true,   // admin can filter/review these
+    };
+
+    await insertOne('staff', newStaff);
+
+    const token = jwt.sign(
+      { id: newStaff.id, phone: newStaff.phone, role: newStaff.role, name: newStaff.name },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const { password: _, ...safeUser } = newStaff;
+    console.log(`[Auth] New self-registration: ${newStaff.name} (${newStaff.phone})`);
+    res.status(201).json({ token, user: safeUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
