@@ -1167,9 +1167,9 @@ function detectTasks(text, customerName) {
       r: /(?:follow.?up|reminder|yaad\s*rakhna|yaad\s*dilana|remind\s*karna)\b/i,
       t: `Follow up with ${cName}`,
     },
-    // Will tell / inform / update
+    // Will tell / inform / update / "update dalna hai" / "dalni hai"
     {
-      r: /(?:bolunga|bolenge|bol\s*dunga|bol\s*denge|bataunga|batayenge|bata\s*dunga|bata\s*dena\s*hai|inform\s*karunga|will\s*tell|will\s*inform|update\s*karunga|update\s*karenge|reply\s*karunga)\b/i,
+      r: /(?:bolunga|bolenge|bol\s*dunga|bol\s*denge|bataunga|batayenge|bata\s*dunga|bata\s*dena\s*hai|inform\s*karunga|will\s*tell|will\s*inform|update\s*karunga|update\s*karenge|update\s*dalna|update\s*dalni|reply\s*karunga|dalna\s*hai|dalni\s*hai|dal\s*dena\s*hai|dal\s*deni\s*hai)\b/i,
       t: `Update ${cName}`,
     },
     // Will give / share documents/details
