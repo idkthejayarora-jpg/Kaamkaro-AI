@@ -52,6 +52,11 @@ export const authAPI = {
   login: (phone: string, password: string) =>
     api.post('/auth/login', { phone, password }).then(r => r.data),
   me: () => api.get('/auth/me').then(r => r.data),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }).then(r => r.data),
+  adminResetPassword: (userId: string, newPassword: string) =>
+    api.post('/auth/admin/reset-password', { userId, newPassword }).then(r => r.data),
+  adminListUsers: () => api.get('/auth/admin/users').then(r => r.data),
 };
 
 export const staffAPI = {
