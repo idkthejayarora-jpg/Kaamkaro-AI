@@ -4,6 +4,11 @@
 
 /* ── Color tokens (dark mode = default) ───────────────────────────────────────*/
 :root {
+  /* Accent color — changeable from Settings. Defaults to gold. */
+  --accent:        #C9A84C;
+  --accent-dark:   #A8872A;
+  --accent-light:  #DCB24F;
+  /* Legacy gold vars (keep for anything that reads them directly) */
   --gold: #C9A84C;
   --gold-light: #DCB24F;
   --gold-dark: #A8872A;
