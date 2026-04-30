@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Eye, EyeOff, Phone, Lock, AlertCircle, User, UserPlus, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock, AlertCircle, User, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
