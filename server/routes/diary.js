@@ -1800,6 +1800,37 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     }
   }
 
+  // ── Vendor task auto-complete/update from diary signals ─────────────────
+  for (const { vendor } of resolvedVendors) {
+    sideEffects.push((async () => {
+      try {
+        const allTasks = await readDB('tasks');
+        const vendorTasks = allTasks.filter(t =>
+          !t.completed && t.staffId === staffId &&
+          (t.vendorId === vendor.id || (t.customerName && nameSimilarity(t.customerName, vendor.name) >= 0.78))
+        );
+        if (vendorTasks.length === 0) return;
+        const lc = content.toLowerCase();
+        const completionMatch = /(?:aa\s*gaya|de\s*diya|mila|cleared?|done|deliver(?:ed)?|dispatch(?:ed)?|pahunch\s*gaya|ho\s*gaya|bheji|bhej\s*diya|maal\s*aa)/.test(lc);
+        if (completionMatch) {
+          const task = vendorTasks[0];
+          const staffList = await readDB('staff').catch(() => []);
+          const staffMember = staffList.find(s => s.id === staffId);
+          const resolvedName = staffMember?.name || staffName;
+          const updated = await updateOne('tasks', task.id, {
+            completed: true, completedAt: now,
+            notes: (task.notes ? task.notes + '\n' : '') + `[Auto-completed via diary] "${content.slice(0, 100)}"`,
+          }).catch(() => null);
+          if (updated) {
+            broadcast('task:updated', updated);
+            await awardMerit(staffId, resolvedName, 1, `Task completed: ${task.title}`, 'task', task.id).catch(() => {});
+            console.log(`[Diary NLP] ✅ Vendor task auto-completed: "${task.title}" for ${vendor.name}`);
+          }
+        }
+      } catch (e) { console.warn('[Diary NLP] Vendor task update failed:', e.message); }
+    })());
+  }
+
   // ── Vendor interaction logging ────────────────────────────────────────────
   for (const { vendor } of resolvedVendors) {
     const vi = {
