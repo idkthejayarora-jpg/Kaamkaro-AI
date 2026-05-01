@@ -163,40 +163,53 @@ export default function NotificationsBell() {
     setNotifs(items.map(n => ({ ...n, read: readSet.has(n.id) })));
   };
 
-  // ── Staff alert builder ──────────────────────────────────────────────────────
+  // ── Staff alert builder — uses staff-scoped APIs only, no admin data ──────────
   const buildStaffNotifications = async () => {
-    const summary = await aiAPI.dashboardSummary();
+    // Fetch only THIS staff member's data (server scopes these by auth token)
+    const [myTasks, broadcasts] = await Promise.all([
+      tasksAPI.list({ completed: false }).catch(() => [] as { dueDate: string; title: string }[]),
+      broadcastAPI.list().catch(() => [] as { id: string; message: string; sentBy: string; sentAt: string }[]),
+    ]);
+
+    const today = new Date().toISOString().split('T')[0];
+    const overdueTasks = myTasks.filter((t) => t.dueDate < today);
+    const dueTodayTasks = myTasks.filter((t) => t.dueDate === today);
     const items: Notification[] = [];
 
-    if (summary.overdueCount > 0) {
+    // Unread broadcast messages
+    const readSet2 = getBcastReadSet(user?.id || '');
+    const unreadBcasts = broadcasts.filter((b) => !readSet2.has(b.id));
+    if (unreadBcasts.length > 0) {
       items.push({
-        id: 'overdue',
-        type: 'overdue',
-        title: `${summary.overdueCount} overdue customer${summary.overdueCount > 1 ? 's' : ''}`,
-        body: `${summary.overdueCount} customer${summary.overdueCount > 1 ? 's haven\'t' : ' hasn\'t'} been contacted in 7+ days.`,
-        href: '/followup',
+        id: 'broadcasts',
+        type: 'info',
+        title: `${unreadBcasts.length} unread announcement${unreadBcasts.length > 1 ? 's' : ''}`,
+        body: unreadBcasts[0].message.slice(0, 80) + (unreadBcasts[0].message.length > 80 ? '…' : ''),
+        href: '/',
         read: false,
       });
     }
 
-    if (summary.dueTasksCount > 0) {
+    // MY overdue tasks only
+    if (overdueTasks.length > 0) {
       items.push({
-        id: 'tasks',
-        type: 'task_due',
-        title: `${summary.dueTasksCount} task${summary.dueTasksCount > 1 ? 's' : ''} due`,
-        body: 'You have pending tasks due today or overdue.',
+        id: 'my_overdue_tasks',
+        type: 'overdue',
+        title: `${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}`,
+        body: overdueTasks.slice(0, 2).map((t) => t.title).join(', ') + (overdueTasks.length > 2 ? ` +${overdueTasks.length - 2} more` : ''),
         href: '/tasks',
         read: false,
       });
     }
 
-    if (summary.topStreaker?.name === user?.name && summary.topStreaker.streak > 0) {
+    // MY tasks due today only
+    if (dueTodayTasks.length > 0) {
       items.push({
-        id: 'streak',
-        type: 'well_done',
-        title: `${summary.topStreaker.streak}-day streak 🔥`,
-        body: 'You\'re top of the leaderboard! Keep it up.',
-        href: '/leaderboard',
+        id: 'my_today_tasks',
+        type: 'task_due',
+        title: `${dueTodayTasks.length} task${dueTodayTasks.length > 1 ? 's' : ''} due today`,
+        body: dueTodayTasks.slice(0, 2).map((t) => t.title).join(', '),
+        href: '/tasks',
         read: false,
       });
     }
@@ -206,7 +219,7 @@ export default function NotificationsBell() {
         id: 'all_good',
         type: 'well_done',
         title: 'All caught up!',
-        body: 'No overdue customers or tasks. Great work.',
+        body: 'No overdue tasks and no unread announcements. Great work.',
         read: true,
       });
     }
