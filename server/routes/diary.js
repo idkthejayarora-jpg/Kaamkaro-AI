@@ -85,6 +85,20 @@ function fuzzyMatchCustomer(spokenName, customers, threshold = 0.72) {
   const spokenTokens = normSpoken.split(' ').filter(t => t.length > 0);
   let best = null, bestScore = 0;
 
+  // ── Party/account number exact match (highest priority) ──────────────────────
+  // "Party 1031" spoken → must match stored "Party 1031" exactly on the number
+  const spokenPartyNum = spokenName.match(/\b(?:party|account)\s*(\d{3,6})\b/i);
+  if (spokenPartyNum) {
+    const num = spokenPartyNum[1];
+    const exact = customers.find(c => {
+      const m = c.name.match(/\b(?:party|account)\s*(\d{3,6})\b/i);
+      return m && m[1] === num;
+    });
+    if (exact) return exact;
+    // No exact match → return null (don't fuzzy-match party 1031 to party 1032)
+    return null;
+  }
+
   for (const c of customers) {
     let score = nameSimilarity(spokenName, c.name);
 
