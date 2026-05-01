@@ -1784,15 +1784,14 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
           if (!targetTask) return; // no matching task found
 
           const task = targetTask;
-          {
-            const updated = await updateOne('tasks', task.id, {
-              completed:   true,
-              completedAt: now,
-              notes: (task.notes ? task.notes + '\n' : '') +
-                `[Auto-completed via diary] "${content.slice(0, 100)}"`,
-            }).catch(() => null);
-            if (!updated) continue;
+          const updated = await updateOne('tasks', task.id, {
+            completed:   true,
+            completedAt: now,
+            notes: (task.notes ? task.notes + '\n' : '') +
+              `[Auto-completed via diary] "${content.slice(0, 100)}"`,
+          }).catch(() => null);
 
+          if (updated) {
             broadcast('task:updated', updated);
             // Award merit — this is a real completion
             const staffList = await readDB('staff').catch(() => []);
@@ -1803,7 +1802,6 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
             if (isLate) await awardMerit(staffId, resolvedName, -1, `Late: ${task.title}`, 'overdue', task.id).catch(() => {});
             await awardMerit(staffId, resolvedName, 1, `Task completed: ${task.title}`, 'task', task.id).catch(() => {});
             console.log(`[Diary NLP] ✅ Auto-completed task: "${task.title}" for ${customer.name}`);
-            break; // one completion per diary entry per customer
           }
           return; // skip reschedule if we just completed
         }
