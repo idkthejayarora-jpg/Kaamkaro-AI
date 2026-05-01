@@ -171,9 +171,9 @@ export default function NotificationsBell() {
   const buildStaffNotifications = async () => {
     // Fetch only THIS staff member's data (server scopes these by auth token)
     const [myTasks, broadcasts] = await Promise.all([
-      tasksAPI.list({ completed: false }).catch(() => [] as { dueDate: string; title: string }[]),
-      broadcastAPI.list().catch(() => [] as { id: string; message: string; sentBy: string; sentAt: string }[]),
-    ]);
+      tasksAPI.list({ completed: false }).catch(() => []),
+      broadcastAPI.list().catch(() => []),
+    ]) as [{ dueDate: string; title: string }[], { id: string; message: string; sentBy: string; sentAt: string }[]];
 
     const today = new Date().toISOString().split('T')[0];
     const overdueTasks = myTasks.filter((t) => t.dueDate < today);
