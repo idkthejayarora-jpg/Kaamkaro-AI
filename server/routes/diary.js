@@ -2032,4 +2032,167 @@ function extractJSON(text) {
   return null;
 }
 
+// ── POST /api/diary/task-voice — voice input → tasks (no customer creation, no merit penalty) ──
+// Recognises existing customers, detects genuine excuses (no pickup / not responding /
+// payment pending) and updates tasks with a note — NO merit deduction.
+// Also creates new tasks from future-intent phrases detected in the voice input.
+router.post('/task-voice', async (req, res) => {
+  try {
+    const { content: rawContent } = req.body;
+    if (!rawContent?.trim()) return res.status(400).json({ error: 'Content required' });
+
+    const content = await correctSpeechText(rawContent);
+    const staffId   = req.user.id;
+    const staffName = req.user.name;
+    const now       = new Date().toISOString();
+
+    // ── Load existing data ────────────────────────────────────────────────────
+    const [allCustomers, allTasks] = await Promise.all([
+      readDB('customers').catch(() => []),
+      readDB('tasks').catch(() => []),
+    ]);
+
+    // Staff can only see their own pending tasks
+    const myPendingTasks = allTasks.filter(t =>
+      !t.completed && (t.staffId === staffId || (t.teamId && !t.completed))
+    );
+
+    // ── Extract names & match EXISTING customers only (no creation) ───────────
+    const names = extractNamesFromText(content);
+    const matched = []; // { customer, tasks[] }
+
+    for (const name of names) {
+      const vendor = fuzzyMatchVendor(name, await readDB('vendors').catch(() => []), 0.72);
+      if (vendor) continue; // skip vendors
+
+      const customer = fuzzyMatchCustomer(name, allCustomers, 0.75);
+      if (!customer) continue; // no match → skip (no creation)
+
+      const relatedTasks = myPendingTasks.filter(t => t.customerId === customer.id);
+      matched.push({ customer, relatedTasks });
+    }
+
+    // ── Genuine excuse detection ──────────────────────────────────────────────
+    const lc = content.toLowerCase();
+
+    const excuseType = (() => {
+      if (/nahi\s*utha(?:ya|ta|ti|tha)?|no\s*pickup|phone\s*nahi\s*utha|call\s*nahi\s*liya|nahi\s*utha\s*raha/.test(lc))
+        return 'no_pickup';
+      if (/payment\s*nahi|paise\s*nahi\s*(?:aaye|mile|diye|mila|aayi)|payment\s*pending|baaki\s*hai/.test(lc))
+        return 'payment_pending';
+      if (/respond\s*nahi|reply\s*nahi|jawab\s*nahi|contact\s*nahi|nahi\s*bol\s*raha|nahi\s*mil\s*raha|nahi\s*aa\s*raha/.test(lc))
+        return 'not_responding';
+      if (/busy\s*hai|baad\s*mein|time\s*nahi|switch\s*off|band\s*hai|net\s*nahi|signal\s*nahi/.test(lc))
+        return 'unavailable';
+      return null;
+    })();
+
+    const excuseNote = {
+      no_pickup:      'Customer did not pick up the call.',
+      payment_pending:'Payment not received from customer.',
+      not_responding: 'Customer is not responding.',
+      unavailable:    'Customer was unavailable.',
+    }[excuseType] || null;
+
+    // ── New due date from content (for rescheduling) ──────────────────────────
+    const newDueDate = parseDueDateFromText(content);
+    const tomorrow   = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
+
+    const updatedTasks  = [];
+    const createdTasks  = [];
+
+    // ── Update existing tasks for matched customers (genuine excuse path) ─────
+    if (excuseType) {
+      for (const { customer, relatedTasks } of matched) {
+        for (const task of relatedTasks) {
+          const appendNote = `[Voice update] ${excuseNote}${newDueDate ? ` Following up on ${newDueDate}.` : ''}`;
+          const existingNotes = task.notes ? task.notes + '\n' + appendNote : appendNote;
+
+          const patch = { notes: existingNotes, updatedAt: now };
+          // Only push due date if a specific date was spoken AND task isn't already past that date
+          if (newDueDate && newDueDate > task.dueDate) patch.dueDate = newDueDate;
+          else if (excuseType === 'no_pickup') patch.dueDate = newDueDate || tomorrow;
+
+          // ⚠️ Deliberately NOT calling awardMerit — genuine excuse, no penalty
+          const updated = await updateOne('tasks', task.id, patch).catch(() => null);
+          if (updated) {
+            broadcast('task:updated', updated);
+            updatedTasks.push(updated);
+            console.log(`[TaskVoice] 📋 Updated task "${task.title}" for ${customer.name} — excuse: ${excuseType}`);
+          }
+        }
+      }
+    }
+
+    // ── Create new tasks from detected future-intent phrases ──────────────────
+    for (const { customer } of matched) {
+      const detectedTasks = detectTasks(content, customer.name);
+      for (const { title, dueDate } of detectedTasks) {
+        // Skip if title very similar to an already-created one in this call
+        const isDupe = createdTasks.some(t => t.title === title && t.customerId === customer.id);
+        if (isDupe) continue;
+
+        const task = {
+          id:           uuidv4(),
+          staffId,
+          customerId:   customer.id,
+          customerName: customer.name,
+          title,
+          notes:        `Voice entry: "${content.slice(0, 100)}${content.length > 100 ? '…' : ''}"`,
+          dueDate,
+          completed:    false,
+          completedAt:  null,
+          createdAt:    now,
+          source:       'voice_task',
+        };
+        await insertOne('tasks', task).catch(() => {});
+        broadcast('task:created', task);
+        createdTasks.push(task);
+        console.log(`[TaskVoice] ✅ Task created: "${title}" for ${customer.name}`);
+      }
+    }
+
+    // ── If no customers matched but we have task intents, create generic tasks ─
+    if (matched.length === 0) {
+      const detectedTasks = detectTasks(content, null);
+      for (const { title, dueDate } of detectedTasks) {
+        const cleanTitle = title.replace(/ (?:with|for|—|of) Customer$/, '').trim() || title;
+        const task = {
+          id:           uuidv4(),
+          staffId,
+          customerId:   null,
+          customerName: null,
+          title:        cleanTitle,
+          notes:        `Voice entry: "${content.slice(0, 100)}${content.length > 100 ? '…' : ''}"`,
+          dueDate,
+          completed:    false,
+          completedAt:  null,
+          createdAt:    now,
+          source:       'voice_task',
+        };
+        await insertOne('tasks', task).catch(() => {});
+        broadcast('task:created', task);
+        createdTasks.push(task);
+        console.log(`[TaskVoice] ✅ General task: "${cleanTitle}"`);
+      }
+    }
+
+    res.json({
+      content,
+      excuseType,
+      customersMatched: matched.map(m => m.customer.name),
+      tasksCreated:  createdTasks,
+      tasksUpdated:  updatedTasks,
+      summary: excuseType
+        ? `${excuseNote} Updated ${updatedTasks.length} task(s) — no points deducted.`
+        : createdTasks.length
+        ? `Created ${createdTasks.length} task(s).`
+        : 'No tasks detected. Try mentioning a customer name and action.',
+    });
+  } catch (err) {
+    console.error('[TaskVoice]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
