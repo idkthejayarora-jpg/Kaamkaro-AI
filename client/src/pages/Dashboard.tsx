@@ -855,42 +855,65 @@ function StaffDashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
 
-      {/* ── Broadcast messages (unread) ─────────────────────────────────────── */}
-      {unreadBcasts.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-amber-400 text-xs font-semibold flex items-center gap-1.5">
-              <MessageSquare size={12} /> Announcements
-              <span className="bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-1">
-                {unreadBcasts.length}
-              </span>
-            </p>
-            <button onClick={dismissAllBcasts} className="text-white/25 hover:text-white text-[10px] transition-colors">
-              Mark all read
-            </button>
-          </div>
-          {unreadBcasts.map(b => (
-            <div key={b.id} className="flex items-start gap-3 p-3.5 bg-amber-500/8 border border-amber-500/25 rounded-xl animate-fade-in">
-              <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <MessageSquare size={13} className="text-amber-400" />
+      {/* ── Broadcast modal popup ───────────────────────────────────────────── */}
+      {bcastModal && broadcasts.length > 0 && (() => {
+        const b = broadcasts[bcastModalIdx];
+        if (!b) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+            <div className="bg-dark-300 border border-amber-500/40 rounded-2xl shadow-2xl w-full max-w-sm animate-slide-up">
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-dark-50">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center">
+                    <MessageSquare size={13} className="text-amber-400" />
+                  </div>
+                  <p className="text-amber-400 font-semibold text-sm">Announcement</p>
+                  {broadcasts.length > 1 && (
+                    <span className="text-white/30 text-xs">({bcastModalIdx + 1}/{broadcasts.length})</span>
+                  )}
+                </div>
+                <button onClick={() => setBcastModal(false)} className="text-white/30 hover:text-white transition-colors">
+                  <X size={16} />
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm leading-snug">{b.message}</p>
-                <p className="text-white/30 text-[10px] mt-1">
+              {/* Body */}
+              <div className="px-5 py-4">
+                <p className="text-white text-sm leading-relaxed">{b.message}</p>
+                <p className="text-white/30 text-[10px] mt-2.5">
                   {b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                 </p>
               </div>
-              <button
-                onClick={() => dismissBcast(b.id)}
-                className="text-white/20 hover:text-white transition-colors flex-shrink-0 mt-0.5"
-                title="Mark as read"
-              >
-                <X size={14} />
-              </button>
+              {/* Footer */}
+              <div className="flex items-center gap-2 px-5 py-3.5 border-t border-dark-50">
+                {broadcasts.length > 1 && bcastModalIdx < broadcasts.length - 1 ? (
+                  <>
+                    <button
+                      onClick={() => setBcastModalIdx(i => i + 1)}
+                      className="flex-1 btn-primary text-sm py-2"
+                    >
+                      Next →
+                    </button>
+                    <button
+                      onClick={() => setBcastModal(false)}
+                      className="flex-1 text-white/40 hover:text-white text-sm transition-colors"
+                    >
+                      Close
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setBcastModal(false)}
+                    className="w-full btn-primary text-sm py-2"
+                  >
+                    Got it
+                  </button>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* Streak hero */}
       <div className="card bg-gradient-to-br from-dark-300 to-dark-400 border-gold/20 relative overflow-hidden">
