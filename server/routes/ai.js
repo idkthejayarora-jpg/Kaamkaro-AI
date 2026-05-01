@@ -856,15 +856,28 @@ router.get('/sales-insights', async (req, res) => {
     const client = getClient();
 
     // Gather raw text from diary entries
-    const diaryEntries = await readDB('diary').catch(() => []);
-    const leads        = await readDB('leads').catch(() => []);
-    const customers    = await readDB('customers').catch(() => []);
-    const staff        = await readDB('staff').catch(() => []);
+    let diaryEntries = await readDB('diary').catch(() => []);
+    let leads        = await readDB('leads').catch(() => []);
+    let customers    = await readDB('customers').catch(() => []);
+    const staff      = await readDB('staff').catch(() => []);
+
+    // ── Staff-scoped: only show their own data ────────────────────────────────
+    if (req.user.role === 'staff') {
+      diaryEntries = diaryEntries.filter(d => d.staffId === req.user.id);
+      leads        = leads.filter(l => l.staffId === req.user.id);
+      // Customers assigned to this staff member (by assignedTo or interactions created by them)
+      const interactions = await readDB('interactions').catch(() => []);
+      const myCustomerIds = new Set([
+        ...customers.filter(c => c.assignedTo === req.user.id || c.assignedStaff === req.user.id).map(c => c.id),
+        ...interactions.filter(i => i.staffId === req.user.id).map(i => i.customerId),
+      ]);
+      customers = customers.filter(c => myCustomerIds.has(c.id));
+    }
 
     // Build staff map for context
     const staffMap = Object.fromEntries(staff.map(s => [s.id, s.name]));
 
-    // ALL diary entries — no date cutoff, sorted newest first
+    // Diary entries — no date cutoff, sorted newest first
     const allDiary = diaryEntries
       .sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''))
       .map(d => ({
