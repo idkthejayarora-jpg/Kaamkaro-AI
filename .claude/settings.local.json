@@ -84,7 +84,10 @@
       "mcp__Claude_in_Chrome__tabs_context_mcp",
       "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/logo.png\")",
       "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-192.png\")",
-      "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-512.png\")"
+      "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-512.png\")",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/diary.js\")",
+      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/tasks.js\")"
     ]
   }
 }

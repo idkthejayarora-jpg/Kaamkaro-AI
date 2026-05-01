@@ -4,6 +4,7 @@ const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware } = require('../middleware/auth');
 const { updateStaffStreak } = require('../utils/streak');
 const { broadcast } = require('../utils/sse');
+const { awardMerit } = require('../utils/merits');
 
 // Anthropic is optional — only used if API key + credits are present
 let Anthropic;
