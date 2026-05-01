@@ -702,6 +702,25 @@ export default function Tasks() {
           onClose={() => setEditing(null)}
           onSaved={handleSaved} />
       )}
+
+      {showVoice && (
+        <VoiceTaskPanel
+          onClose={() => setShowVoice(false)}
+          onTasksChanged={(created, updated) => {
+            setTasks(prev => {
+              // Merge updated tasks into state
+              let next = prev.map(t => {
+                const u = updated.find(x => x.id === t.id);
+                return u ? { ...t, ...u } : t;
+              });
+              // Append newly created tasks
+              const existingIds = new Set(next.map(t => t.id));
+              created.forEach(t => { if (!existingIds.has(t.id)) next = [...next, t]; });
+              return next;
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
