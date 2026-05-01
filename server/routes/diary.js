@@ -1739,6 +1739,46 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     );
   }
 
+  // ── CRM lead sync: update noPickupCount / nextFollowUp from diary ─────────
+  // "Ramesh ne video call nahi uthayi, parso karengi" → update his lead record
+  // No merit deduction — diary is a factual log, not a task reschedule.
+  try {
+    const lc = content.toLowerCase();
+    const noPickupSignal =
+      /nahi\s*utha(?:ya|ta|ti|tha)?|no\s*pickup|phone\s*nahi\s*utha|call\s*nahi\s*liya|nahi\s*utha\s*raha|nahi\s*utha\s*rahi/.test(lc);
+    const notRespondingSignal =
+      /respond\s*nahi|reply\s*nahi|jawab\s*nahi|contact\s*nahi|nahi\s*bol\s*raha|nahi\s*mil\s*raha/.test(lc);
+
+    if ((noPickupSignal || notRespondingSignal) && resolvedList.length > 0) {
+      const allLeads = await readDB('leads').catch(() => []);
+      const followUpDate = parseDueDateFromText(content);
+      const tomorrow = (() => {
+        const d = new Date(); d.setDate(d.getDate() + 1);
+        return d.toISOString().split('T')[0];
+      })();
+
+      for (const { customer } of resolvedList) {
+        const lead = allLeads.find(l =>
+          (l.linkedCustomerId && l.linkedCustomerId === customer.id) ||
+          nameSimilarity(l.name, customer.name) >= 0.78
+        );
+        if (!lead || lead.stage === 'won' || lead.stage === 'lost') continue;
+
+        const patch = {
+          updatedAt: now,
+          nextFollowUp: followUpDate || (noPickupSignal ? tomorrow : lead.nextFollowUp),
+        };
+        if (noPickupSignal) patch.noPickupCount = (lead.noPickupCount || 0) + 1;
+
+        await updateOne('leads', lead.id, patch).catch(() => {});
+        broadcast('lead:updated', { ...lead, ...patch });
+        console.log(`[Diary NLP] 📞 Lead "${lead.name}" updated — no-pickup: ${noPickupSignal}, followUp: ${patch.nextFollowUp}`);
+      }
+    }
+  } catch (e) {
+    console.warn('[Diary NLP] CRM sync failed (non-fatal):', e.message);
+  }
+
   await Promise.allSettled(sideEffects);
 
   if (newCustomers.length > 0) {
