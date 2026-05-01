@@ -17,8 +17,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/templates — admin only
-router.post('/', adminOnly, async (req, res) => {
+// POST /api/templates — all authenticated users can create templates
+router.post('/', async (req, res) => {
   try {
     const { title, content, stage, type = 'general' } = req.body;
     if (!title || !content) return res.status(400).json({ error: 'title and content required' });
