@@ -378,15 +378,16 @@ function EditTaskModal({ task, onClose, onSaved }: {
 
 // ── Main Tasks page ────────────────────────────────────────────────────────────
 export default function Tasks() {
-  const [tasks,     setTasks]     = useState<Task[]>([]);
-  const [staff,     setStaff]     = useState<Staff[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [teams,     setTeams]     = useState<Team[]>([]);
-  const [filter,    setFilter]    = useState<'pending' | 'done'>('pending');
+  const [tasks,       setTasks]       = useState<Task[]>([]);
+  const [staff,       setStaff]       = useState<Staff[]>([]);
+  const [customers,   setCustomers]   = useState<Customer[]>([]);
+  const [teams,       setTeams]       = useState<Team[]>([]);
+  const [filter,      setFilter]      = useState<'pending' | 'done'>('pending');
   const [staffFilter, setStaffFilter] = useState<string>('all');
-  const [showAdd,   setShowAdd]   = useState(false);
-  const [editing,   setEditing]   = useState<Task | null>(null);
-  const [loading,   setLoading]   = useState(true);
+  const [showAdd,     setShowAdd]     = useState(false);
+  const [showVoice,   setShowVoice]   = useState(false);
+  const [editing,     setEditing]     = useState<Task | null>(null);
+  const [loading,     setLoading]     = useState(true);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
