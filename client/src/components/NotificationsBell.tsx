@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Bell, AlertTriangle, Clock, Flame, CheckCircle, X,
-  UserMinus, Users, TrendingDown, ShieldAlert,
+  UserMinus, Users, TrendingDown, ShieldAlert, MessageSquare,
 } from 'lucide-react';
-import { aiAPI, customersAPI, staffAPI } from '../lib/api';
+import { aiAPI, customersAPI, staffAPI, tasksAPI, broadcastAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useSSE } from '../hooks/useSSE';
 import { useNavigate } from 'react-router-dom';
+
+function getBcastReadSet(userId: string): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(`kk_bcast_read_${userId}`) || '[]')); }
+  catch { return new Set(); }
+}
 
 interface Notification {
   id: string;
