@@ -89,7 +89,7 @@ export default function SalesInsights() {
             Sales Insights
           </h1>
           <p className="text-white/30 text-sm mt-1">
-            AI scan of diary entries + CRM lead notes
+            Keyword scan of diary entries + CRM lead notes
             {genTime && <span className="ml-2 text-white/20">· Generated at {genTime}</span>}
           </p>
         </div>

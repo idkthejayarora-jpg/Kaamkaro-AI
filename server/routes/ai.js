@@ -849,23 +849,21 @@ router.post('/leaderboard/reset', adminOnly, async (req, res) => {
   }
 });
 
+
 // ── GET /api/ai/sales-insights ─────────────────────────────────────────────────
-// Scans diary entries + CRM lead notes → returns product/stock trends + per-lead tips.
+// 100% rule-based — zero AI tokens consumed. Keyword scan + stage-based logic.
 router.get('/sales-insights', async (req, res) => {
   try {
-    const client = getClient();
-
-    // Gather raw text from diary entries
+    // ── Load data ─────────────────────────────────────────────────────────────
     let diaryEntries = await readDB('diary').catch(() => []);
     let leads        = await readDB('leads').catch(() => []);
     let customers    = await readDB('customers').catch(() => []);
     const staff      = await readDB('staff').catch(() => []);
 
-    // ── Staff-scoped: only show their own data ────────────────────────────────
+    // ── Staff-scoped: only show their own entries ─────────────────────────────
     if (req.user.role === 'staff') {
       diaryEntries = diaryEntries.filter(d => d.staffId === req.user.id);
       leads        = leads.filter(l => l.staffId === req.user.id);
-      // Customers assigned to this staff member (by assignedTo or interactions created by them)
       const interactions = await readDB('interactions').catch(() => []);
       const myCustomerIds = new Set([
         ...customers.filter(c => c.assignedTo === req.user.id || c.assignedStaff === req.user.id).map(c => c.id),
@@ -874,178 +872,177 @@ router.get('/sales-insights', async (req, res) => {
       customers = customers.filter(c => myCustomerIds.has(c.id));
     }
 
-    // Build staff map for context
-    const staffMap = Object.fromEntries(staff.map(s => [s.id, s.name]));
+    // ── Product keyword dictionary (display name → search aliases) ────────────
+    const PRODUCT_DICT = {
+      'AD Set':       ['ad set', 'american diamond set', 'a.d. set', 'ad ka set', 'ad earring', 'ad necklace'],
+      'Bridal Set':   ['bridal set', 'bridal', 'shaadi ka set', 'wedding set', 'dulhan set'],
+      'Gold':         ['gold', 'sona', 'gold set', 'gold earring', 'gold necklace', 'gold ring'],
+      'Diamond':      ['diamond', 'heera', 'diamond set', 'diamond earring', 'diamond ring'],
+      'Earrings':     ['earring', 'earrings', 'jhumka', 'jhumki', 'bali', 'tops', 'studs'],
+      'Necklace':     ['necklace', 'haar', 'mala', 'necklace set', 'choker', 'hasnuli'],
+      'Bracelet':     ['bracelet', 'bangle', 'bangles', 'kangan', 'kada', 'churi', 'churiya'],
+      'Ring':         ['ring', 'rings', 'angoothi', 'finger ring'],
+      'Pendant':      ['pendant', 'mangalsutra', 'mangal sutra', 'locket'],
+      'Anklet':       ['anklet', 'payal', 'pajeb'],
+      'Collection':   ['collection', 'new collection', 'latest collection', 'naya collection', 'new stock'],
+      'Customized':   ['customize', 'customized', 'customize karke', 'custom order', 'banwana', 'banvana'],
+      'Saree':        ['saree', 'sarees', 'sari', 'silk saree', 'cotton saree'],
+      'Suit':         ['suit', 'suits', 'salwar suit', 'salwar kameez', 'churidar'],
+      'Lehenga':      ['lehenga', 'lehnga', 'ghaghra'],
+      'Fabric':       ['fabric', 'kapda', 'kapde', 'cloth', 'material'],
+      'Kurti':        ['kurti', 'kurtis'],
+      'Tiles':        ['tile', 'tiles'],
+      'Marble':       ['marble', 'marbles', 'sangmarmar'],
+      'Granite':      ['granite'],
+      'Flooring':     ['flooring', 'floor'],
+      'Sample':       ['sample', 'samples', 'namoona'],
+      'Design':       ['design', 'designs', 'naya design', 'pattern', 'latest design'],
+    };
 
-    // Diary entries — no date cutoff, sorted newest first
-    const allDiary = diaryEntries
-      .sort((a, b) => (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''))
-      .map(d => ({
-        date:    d.date || d.createdAt?.split('T')[0],
-        author:  staffMap[d.staffId] || 'Unknown',
-        content: d.content || '',
-        aiNotes: (d.aiEntries || []).map(e => e.text || e.task || '').filter(Boolean).join('; '),
-      }))
-      .filter(d => d.content);
+    // ── Demand / urgency signals ──────────────────────────────────────────────
+    const DEMAND_RE = /chahiye|chahte|chahta|chahti|order karo|mangwao|stock nahi|nahi hai|out of stock|khatam ho|available nahi|dhoondh raha|zaroorat|need|want urgently|urgent order|jaldi chahiye/;
 
-    // ALL leads with full note history
-    const allLeads = leads
-      .filter(l => l.isActive !== false)
-      .map(l => ({
-        name:   l.name,
-        stage:  l.stage,
-        source: l.source,
-        place:  l.place,
-        staff:  staffMap[l.staffId] || 'Unknown',
-        notes:  (l.notes || []).map(n => n.text).filter(Boolean).join(' | '),
-      }));
+    // ── Build text corpus with customer name context ───────────────────────────
+    const corpus = [
+      ...diaryEntries.map(d => ({
+        text: (d.content || '') + ' ' + (d.aiEntries || []).map(e => e.text || e.task || '').join(' '),
+        customerName: d.customerName || null,
+      })),
+      ...leads.filter(l => l.isActive !== false).map(l => ({
+        text: (l.notes || []).map(n => n.text || '').join(' '),
+        customerName: l.name || null,
+      })),
+      ...customers.map(c => ({
+        text: typeof c.notes === 'string' ? c.notes : '',
+        customerName: c.name || null,
+      })),
+    ].filter(e => e.text.trim());
 
-    // ALL customers with tags, notes, deal value
-    const allCustomers = customers.map(c => ({
-      name:       c.name,
-      status:     c.status,
-      tags:       c.tags || [],
-      notes:      typeof c.notes === 'string' ? c.notes : '',
-      dealValue:  c.dealValue || 0,
-      lastContact: c.lastContact,
-    }));
+    // ── Trend analysis ────────────────────────────────────────────────────────
+    const trendMap = {};
+    const demandMap = {};
 
-    // Rule-based fallback — keyword scan across entire corpus
-    if (!client) {
-      const allText = [
-        ...allDiary.map(d => d.content + ' ' + d.aiNotes),
-        ...allLeads.map(l => l.notes),
-        ...allCustomers.map(c => c.notes),
-      ].join(' ').toLowerCase();
+    for (const entry of corpus) {
+      const lc = entry.text.toLowerCase();
+      const hasDemand = DEMAND_RE.test(lc);
 
-      // Generic product keywords — works for any Indian retail business
-      const keywords = [
-        'set', 'bridal', 'wedding', 'gold', 'diamond', 'ad', 'collection',
-        'bracelet', 'necklace', 'earring', 'ring', 'order', 'customize',
-        'tiles', 'marble', 'granite', 'flooring', 'fabric', 'suit', 'saree',
-      ];
-      const counts = {};
-      keywords.forEach(k => {
-        const n = (allText.match(new RegExp(`\\b${k}\\b`, 'g')) || []).length;
-        if (n > 0) counts[k] = n;
-      });
-
-      return res.json({
-        trends: Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-          .map(([item, count]) => ({ item, count, customers: [], insight: `Mentioned ${count} time${count>1?'s':''} across diary and lead notes` })),
-        segments: [], outreachTips: [], restockAlerts: [],
-        rawMode: true,
-        summary: `Analysed ${allDiary.length} diary entries, ${allLeads.length} leads, ${allCustomers.length} customers.`,
-        generatedAt: new Date().toISOString(),
-      });
+      for (const [product, aliases] of Object.entries(PRODUCT_DICT)) {
+        if (!aliases.some(alias => lc.includes(alias))) continue;
+        if (!trendMap[product]) trendMap[product] = { count: 0, customers: new Set(), demandCount: 0 };
+        trendMap[product].count++;
+        if (entry.customerName) trendMap[product].customers.add(entry.customerName);
+        if (hasDemand) { trendMap[product].demandCount++; demandMap[product] = (demandMap[product] || 0) + 1; }
+      }
     }
 
-    const diaryText = allDiary.length
-      ? allDiary.map(d => `[${d.date} · ${d.author}] ${d.content}${d.aiNotes ? ' | ' + d.aiNotes : ''}`).join('\n')
-      : '(no diary entries yet)';
+    const trends = Object.entries(trendMap)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 10)
+      .map(([item, v]) => {
+        const custList = [...v.customers].slice(0, 5);
+        let insight = `Mentioned ${v.count} time${v.count !== 1 ? 's' : ''}`;
+        if (v.demandCount >= 2)    insight += ' — high demand signal';
+        else if (custList.length >= 3) insight += ` across ${custList.length} customers`;
+        return { item, count: v.count, customers: custList, insight };
+      });
 
-    const notesText = allLeads.filter(l => l.notes).length
-      ? allLeads.filter(l => l.notes).map(l =>
-          `Lead: ${l.name} (${l.stage}, ${l.source}${l.place ? ', ' + l.place : ''}, staff: ${l.staff})\nNotes: ${l.notes}`
-        ).join('\n\n')
-      : '(no lead notes yet)';
+    // ── Segments by lead source ───────────────────────────────────────────────
+    const sourceMap = {};
+    for (const lead of leads.filter(l => l.isActive !== false)) {
+      const src = (lead.source || 'Direct').replace(/_/g, ' ');
+      if (!sourceMap[src]) sourceMap[src] = { count: 0, products: {} };
+      sourceMap[src].count++;
+      const notesLc = (lead.notes || []).map(n => n.text || '').join(' ').toLowerCase();
+      for (const [prod, aliases] of Object.entries(PRODUCT_DICT)) {
+        if (aliases.some(a => notesLc.includes(a)))
+          sourceMap[src].products[prod] = (sourceMap[src].products[prod] || 0) + 1;
+      }
+    }
+    const segments = Object.entries(sourceMap)
+      .filter(([, v]) => v.count >= 2)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([source, v]) => {
+        const topProds = Object.entries(v.products).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p]) => p);
+        return {
+          segment: `${source} (${v.count} lead${v.count !== 1 ? 's' : ''})`,
+          preferredProducts: topProds.length ? topProds : [trends[0]?.item || 'General'],
+          tip: topProds.length
+            ? `Focus ${source} leads on ${topProds[0]} — most requested by this group`
+            : `${v.count} leads from ${source} — pitch your top sellers`,
+        };
+      });
 
-    const customerText = allCustomers.length
-      ? allCustomers.map(c =>
-          `${c.name}${c.tags.length ? ' [' + c.tags.join(', ') + ']' : ''}${c.notes ? ' — ' + c.notes.slice(0, 80) : ''}${c.dealValue ? ' ₹' + c.dealValue : ''}`
-        ).join('\n')
-      : '(no customers yet)';
+    // ── Outreach tips: leads in warm/hot pipeline stages ─────────────────────
+    const today = new Date().toISOString().split('T')[0];
+    const HOT_STAGES  = new Set(['visit_scheduled', 'negotiating']);
+    const WARM_STAGES = new Set(['interested', 'catalogue_seen', 'follow_up']);
+    const STAGE_LABELS = {
+      new: 'New', contacted: 'Contacted', interested: 'Interested',
+      catalogue_seen: 'Catalogue seen', follow_up: 'Follow-up pending',
+      visit_scheduled: 'Visit scheduled', negotiating: 'Negotiating',
+      won: 'Won', lost: 'Lost',
+    };
 
-    const prompt = `You are a sales intelligence AI for an Indian retail business. Analyse the COMPLETE database — every diary entry, every CRM lead note, every customer record — to find product trends and generate actionable sales tips. There are NO time filters; use all historical data.
+    const topProduct = trends[0]?.item || 'our latest collection';
 
-LANGUAGE: Entries mix Hindi and English (Hinglish). Read naturally:
-"AD set" = American Diamond jewellery set | "bridal set" = bridal jewellery | "maal liya/bheja" = goods purchased/sent | "shop pe aayi" = came to shop | "whatsapp kiye" = sent on WhatsApp | "order nikla" = order placed | "customize karke" = customised and sent
+    const outreachTips = leads
+      .filter(l => l.isActive !== false && (HOT_STAGES.has(l.stage) || WARM_STAGES.has(l.stage)))
+      .sort((a, b) => {
+        const aScore = (HOT_STAGES.has(a.stage) ? 2 : 1) + (a.nextFollowUp && a.nextFollowUp <= today ? 1 : 0);
+        const bScore = (HOT_STAGES.has(b.stage) ? 2 : 1) + (b.nextFollowUp && b.nextFollowUp <= today ? 1 : 0);
+        return bScore - aScore;
+      })
+      .slice(0, 6)
+      .map(lead => {
+        const notesLc = (lead.notes || []).map(n => n.text || '').join(' ').toLowerCase();
+        let pitch = topProduct;
+        for (const [prod, aliases] of Object.entries(PRODUCT_DICT)) {
+          if (aliases.some(a => notesLc.includes(a))) { pitch = prod; break; }
+        }
+        const firstName  = (lead.name || 'ji').split(' ')[0];
+        const isOverdue  = lead.nextFollowUp && lead.nextFollowUp < today;
+        const isHot      = HOT_STAGES.has(lead.stage);
+        const stageLabel = STAGE_LABELS[lead.stage] || lead.stage || 'Active';
+        return {
+          leadName: lead.name,
+          product:  pitch,
+          reason:   isOverdue
+            ? `Follow-up overdue since ${lead.nextFollowUp} (${stageLabel})`
+            : `${isHot ? 'Hot lead' : 'Warm lead'} — ${stageLabel}`,
+          message: isHot
+            ? `Hi ${firstName} ji! ${pitch} ke baare mein baat karni thi — kya aaj ya kal ka time milega?`
+            : `Hi ${firstName} ji, ${pitch.toLowerCase()} ka naya collection aa gaya hai — aapko zaroor pasand aayega! Kab aayenge milne?`,
+        };
+      });
 
-=== ALL DIARY ENTRIES (${allDiary.length} total) ===
-${diaryText}
+    // ── Restock alerts: products with demand signals ──────────────────────────
+    const restockAlerts = Object.entries(demandMap)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 4)
+      .map(([item, count]) => ({
+        item,
+        urgency: count >= 3 ? 'high' : 'medium',
+        reason:  `${count} entr${count !== 1 ? 'ies' : 'y'} with demand/urgency signals`,
+      }));
 
-=== ALL CRM LEAD NOTES (${allLeads.length} leads) ===
-${notesText}
+    // ── Summary ───────────────────────────────────────────────────────────────
+    const activeLeads = leads.filter(l => l.isActive !== false).length;
+    const wonLeads    = leads.filter(l => l.stage === 'won').length;
+    const convRate    = activeLeads > 0 ? Math.round((wonLeads / activeLeads) * 100) : 0;
+    const topItems    = trends.slice(0, 3).map(t => t.item).join(', ');
+    const summary = [
+      `Analysed ${diaryEntries.length} diary entries, ${activeLeads} active leads, ${customers.length} customers.`,
+      topItems ? `Most discussed: ${topItems}.` : '',
+      outreachTips.length ? `${outreachTips.length} leads ready for outreach.` : '',
+      convRate > 0 ? `Conversion rate: ${convRate}%.` : '',
+    ].filter(Boolean).join(' ');
 
-=== ALL CUSTOMERS (${allCustomers.length} total) ===
-${customerText}
+    return res.json({ trends, segments, outreachTips, restockAlerts, summary, rawMode: true, generatedAt: new Date().toISOString() });
 
-Tasks:
-1. Which PRODUCTS / COLLECTIONS / ITEMS appear most across all data (count mentions)?
-2. Which CUSTOMER SEGMENTS / LOCATIONS / TYPES buy what?
-3. Specific OUTREACH TIPS — name real people from the data, suggest exact product to pitch, write a short Hinglish WhatsApp message
-4. Any RESTOCK ALERTS where demand is building?
-
-Return ONLY valid JSON:
-{
-  "trends": [{ "item": "product", "count": 5, "customers": ["Name"], "insight": "one-line observation" }],
-  "segments": [{ "segment": "type", "preferredProducts": ["x"], "tip": "action" }],
-  "outreachTips": [{ "leadName": "real name", "product": "pitch", "reason": "why", "message": "Hinglish WhatsApp message" }],
-  "restockAlerts": [{ "item": "product", "urgency": "high|medium", "reason": "why" }],
-  "summary": "2-3 sentence overall business insight"
-}`;
-
-    const aiRes = await aiCreate(client, {
-      max_tokens: 2000,
-      messages:   [{ role: 'user', content: prompt }],
-    });
-
-    let raw = aiRes.content[0].text.trim();
-    // Strip markdown code fences if present
-    raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-    // Extract JSON object even if Claude adds surrounding text
-    const objMatch = raw.match(/\{[\s\S]*\}/);
-    if (!objMatch) throw new Error('AI did not return valid JSON');
-    const result = JSON.parse(objMatch[0]);
-    result.generatedAt = new Date().toISOString();
-    return res.json(result);
   } catch (err) {
-    // Billing / no credits → use keyword rule-based fallback
-    if (isBillingErr(err) || _billingFailed) {
-      console.warn('[AI] sales-insights: billing failed, using rule-based fallback');
-      const allText = [
-        ...allDiary.map(d => d.content + ' ' + d.aiNotes),
-        ...allLeads.filter(l => l.notes).map(l => l.notes),
-        ...allCustomers.map(c => c.notes),
-      ].join(' ').toLowerCase();
-
-      const keywords = [
-        'bridal', 'wedding', 'gold', 'diamond', 'ad set', 'ad', 'collection',
-        'bracelet', 'necklace', 'earring', 'ring', 'customize', 'order',
-        'tiles', 'marble', 'granite', 'flooring', 'fabric', 'suit', 'saree',
-        'set', 'parcel', 'delivery', 'sample',
-      ];
-      const counts = {};
-      keywords.forEach(k => {
-        const n = (allText.match(new RegExp(`\\b${k}\\b`, 'g')) || []).length;
-        if (n > 0) counts[k] = n;
-      });
-
-      // Find leads with notes for outreach tips
-      const outreachTips = allLeads.filter(l => l.notes && l.stage !== 'closed').slice(0, 5).map(l => ({
-        leadName: l.name,
-        product: Object.keys(counts)[0] || 'your products',
-        reason: `Active lead in ${l.stage} stage`,
-        message: `Hi ${l.name.split(' ')[0]}, naya collection aa gaya hai — aapko zaroor pasand aayega! Kab milein?`,
-      }));
-
-      // Overdue leads as alerts
-      const today2 = new Date().toISOString().split('T')[0];
-      const overdueTips = allLeads.filter(l => l.notes && l.stage && (!l.nextFollowUp || l.nextFollowUp < today2)).slice(0, 3);
-
-      return res.json({
-        trends: Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
-          .map(([item, count]) => ({ item, count, customers: [], insight: `Mentioned ${count} time${count > 1 ? 's' : ''} across diary and notes` })),
-        segments: [],
-        outreachTips,
-        restockAlerts: overdueTips.map(l => ({ item: l.name, urgency: 'medium', reason: `Follow-up overdue — last stage: ${l.stage}` })),
-        rawMode: true,
-        summary: `Analysed ${allDiary.length} diary entries, ${allLeads.length} leads, ${allCustomers.length} customers. (Rule-based mode — add Anthropic credits for AI-powered insights.)`,
-        generatedAt: new Date().toISOString(),
-      });
-    }
-    console.error('[AI] sales-insights error:', err);
-    res.status(500).json({ error: err?.message || String(err) || 'Failed to generate insights' });
+    console.error('[Sales Insights] error:', err);
+    res.status(500).json({ error: err?.message || 'Failed to generate insights' });
   }
 });
 
