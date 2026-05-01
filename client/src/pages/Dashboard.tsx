@@ -776,9 +776,10 @@ function StaffDashboard() {
   const [customers,   setCustomers]   = useState<Customer[]>([]);
   const [tasks,       setTasks]       = useState<Task[]>([]);
   const [performance, setPerf]        = useState<Performance[]>([]);
-  const [broadcasts,  setBroadcasts]  = useState<BroadcastMsg[]>([]);
-  const [readBcasts,  setReadBcasts]  = useState<Set<string>>(() => getBcastReadSet(user?.id || ''));
-  const [loading,     setLoading]     = useState(true);
+  const [broadcasts,    setBroadcasts]    = useState<BroadcastMsg[]>([]);
+  const [bcastModal,    setBcastModal]    = useState(false);
+  const [bcastModalIdx, setBcastModalIdx] = useState(0); // which broadcast is shown in modal
+  const [loading,       setLoading]       = useState(true);
 
   const load = useCallback(async () => {
     const [c, t, p, b] = await Promise.all([
@@ -790,7 +791,14 @@ function StaffDashboard() {
     setCustomers(c);
     setTasks(t);
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
-    setBroadcasts(b);
+    const bList = b as BroadcastMsg[];
+    setBroadcasts(bList);
+    // Pop up modal on every dashboard load if there are any broadcasts
+    if (bList.length > 0) {
+      setBcastModalIdx(0);
+      setBcastModal(true);
+      playNotifBeep();
+    }
     setLoading(false);
   }, [user]);
 
@@ -799,22 +807,15 @@ function StaffDashboard() {
   // ── Live broadcast via SSE ────────────────────────────────────────────────────
   useSSE({
     'admin:broadcast': (msg: unknown) => {
-      setBroadcasts(prev => [msg as BroadcastMsg, ...prev]);
+      setBroadcasts(prev => {
+        const updated = [msg as BroadcastMsg, ...prev];
+        setBcastModalIdx(0);
+        setBcastModal(true);
+        return updated;
+      });
       playNotifBeep();
     },
   });
-
-  const unreadBcasts = broadcasts.filter(b => !readBcasts.has(b.id));
-
-  const dismissBcast = (id: string) => {
-    markBcastRead(user!.id, [id]);
-    setReadBcasts(prev => new Set([...prev, id]));
-  };
-  const dismissAllBcasts = () => {
-    const ids = broadcasts.map(b => b.id);
-    markBcastRead(user!.id, ids);
-    setReadBcasts(new Set(ids));
-  };
 
   const streak      = (user as Staff | null)?.streakData?.currentStreak || 0;
   const longestStreak = (user as Staff | null)?.streakData?.longestStreak || 0;
