@@ -798,8 +798,8 @@ function StaffDashboard() {
 
   // ── Live broadcast via SSE ────────────────────────────────────────────────────
   useSSE({
-    'admin:broadcast': (msg: BroadcastMsg) => {
-      setBroadcasts(prev => [msg, ...prev]);
+    'admin:broadcast': (msg: unknown) => {
+      setBroadcasts(prev => [msg as BroadcastMsg, ...prev]);
       playNotifBeep();
     },
   });
