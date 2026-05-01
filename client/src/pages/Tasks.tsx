@@ -581,9 +581,19 @@ export default function Tasks() {
               : '0 overdue'}
           </p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
-          <Plus size={16} /><span className="hidden sm:inline">Add Task</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowVoice(true)}
+            title="Voice task entry"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-dark-400 border border-dark-50 text-white/50 hover:text-gold hover:border-gold/30 transition-all text-sm"
+          >
+            <Mic size={15} />
+            <span className="hidden sm:inline text-xs">Voice</span>
+          </button>
+          <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
+            <Plus size={16} /><span className="hidden sm:inline">Add Task</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
