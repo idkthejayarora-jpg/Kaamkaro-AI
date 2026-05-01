@@ -853,6 +853,44 @@ function StaffDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+
+      {/* ── Broadcast messages (unread) ─────────────────────────────────────── */}
+      {unreadBcasts.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-amber-400 text-xs font-semibold flex items-center gap-1.5">
+              <MessageSquare size={12} /> Announcements
+              <span className="bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full text-[9px] font-bold ml-1">
+                {unreadBcasts.length}
+              </span>
+            </p>
+            <button onClick={dismissAllBcasts} className="text-white/25 hover:text-white text-[10px] transition-colors">
+              Mark all read
+            </button>
+          </div>
+          {unreadBcasts.map(b => (
+            <div key={b.id} className="flex items-start gap-3 p-3.5 bg-amber-500/8 border border-amber-500/25 rounded-xl animate-fade-in">
+              <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <MessageSquare size={13} className="text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm leading-snug">{b.message}</p>
+                <p className="text-white/30 text-[10px] mt-1">
+                  {b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                </p>
+              </div>
+              <button
+                onClick={() => dismissBcast(b.id)}
+                className="text-white/20 hover:text-white transition-colors flex-shrink-0 mt-0.5"
+                title="Mark as read"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Streak hero */}
       <div className="card bg-gradient-to-br from-dark-300 to-dark-400 border-gold/20 relative overflow-hidden">
         <div className="absolute -right-8 -top-8 w-32 h-32 bg-gold/5 rounded-full" />
