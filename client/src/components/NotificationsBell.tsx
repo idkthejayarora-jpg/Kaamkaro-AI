@@ -59,11 +59,15 @@ export default function NotificationsBell() {
     if (!loaded) { buildNotifications(); setLoaded(true); }
   }, []);
 
-  // Admin: refresh critical alerts when customer or interaction changes via SSE
+  // Admin: refresh on customer/interaction changes. Staff: refresh on new broadcast.
   useSSE(isAdmin ? {
-    'customer:created': () => buildNotifications(),
+    'customer:created':    () => buildNotifications(),
     'interaction:created': () => buildNotifications(),
-  } : {});
+  } : {
+    'admin:broadcast': () => buildNotifications(),
+    'task:created':    () => buildNotifications(),
+    'task:updated':    () => buildNotifications(),
+  });
 
   // ── Admin alert builder ──────────────────────────────────────────────────────
   const buildAdminNotifications = async () => {
