@@ -773,24 +773,48 @@ function AdminDashboard() {
 function StaffDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [tasks, setTasks]         = useState<Task[]>([]);
-  const [performance, setPerf]    = useState<Performance[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [customers,   setCustomers]   = useState<Customer[]>([]);
+  const [tasks,       setTasks]       = useState<Task[]>([]);
+  const [performance, setPerf]        = useState<Performance[]>([]);
+  const [broadcasts,  setBroadcasts]  = useState<BroadcastMsg[]>([]);
+  const [readBcasts,  setReadBcasts]  = useState<Set<string>>(() => getBcastReadSet(user?.id || ''));
+  const [loading,     setLoading]     = useState(true);
 
   const load = useCallback(async () => {
-    const [c, t, p] = await Promise.all([
+    const [c, t, p, b] = await Promise.all([
       customersAPI.list(),
       tasksAPI.list({ completed: false }),
       staffAPI.getPerformance(user!.id),
+      broadcastAPI.list().catch(() => []),
     ]);
     setCustomers(c);
     setTasks(t);
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
+    setBroadcasts(b);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Live broadcast via SSE ────────────────────────────────────────────────────
+  useSSE({
+    'admin:broadcast': (msg: BroadcastMsg) => {
+      setBroadcasts(prev => [msg, ...prev]);
+      playNotifBeep();
+    },
+  });
+
+  const unreadBcasts = broadcasts.filter(b => !readBcasts.has(b.id));
+
+  const dismissBcast = (id: string) => {
+    markBcastRead(user!.id, [id]);
+    setReadBcasts(prev => new Set([...prev, id]));
+  };
+  const dismissAllBcasts = () => {
+    const ids = broadcasts.map(b => b.id);
+    markBcastRead(user!.id, ids);
+    setReadBcasts(new Set(ids));
+  };
 
   const streak      = (user as Staff | null)?.streakData?.currentStreak || 0;
   const longestStreak = (user as Staff | null)?.streakData?.longestStreak || 0;
