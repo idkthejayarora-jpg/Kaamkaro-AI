@@ -8,7 +8,7 @@ import {
   TrendingUp, Users, UserCheck, AlertTriangle,
   CheckCircle, Clock, ChevronRight, Phone, Calendar,
   MessageSquare, Mail, Target, Zap, Trophy, AlertCircle,
-  Award, Plus, X, Star, TrendingDown, Flame,
+  Award, Plus, X, Star, TrendingDown, Flame, Mic,
 } from 'lucide-react';
 import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
