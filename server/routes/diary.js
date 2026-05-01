@@ -79,6 +79,38 @@ function nameSimilarity(a, b) {
   return maxLen === 0 ? 1 : 1 - dist / maxLen;
 }
 
+// ── Task content matcher — semantic word-overlap between diary text and task title ─
+// Filters noise (grammar words, verb inflections, connectors) and checks overlap.
+// Used to pick the right task when multiple are pending for the same customer.
+const TASK_NOISE = new Set([
+  // Hindi grammar / connectors
+  'ko','ne','se','ka','ki','ke','hai','tha','thi','the','hoga','hogi',
+  'kar','karo','karna','karni','karega','karegi','karunga','karungi',
+  'kiya','di','diya','de','liya','gaya','gayi','gaye','ho','hona','hone',
+  'aaj','kal','parso','wala','wali','abhi','phir','bhi','aur','toh',
+  'mein','mai','mujhe','unhe','unko','unka','unki','uska','uski',
+  // Completion/future markers (don't drive content matching)
+  'karni','hai','thi','tha','karna','karni','karunga','dunga','dungi',
+  'milna','milenge','aayenge','karengi','karega',
+  // English noise
+  'for','and','the','to','a','an','of','in','on','at','by','with','is',
+  'was','will','should','would','have','has','been','be',
+  // Action verbs (generic — don't distinguish tasks)
+  'call','called','calling','done','complete','completed',
+]);
+
+function taskContentMatch(diaryText, taskTitle) {
+  const words = str => str.toLowerCase()
+    .replace(/[^\w\s]/g, ' ').split(/\s+/)
+    .filter(w => w.length > 2 && !TASK_NOISE.has(w));
+  const dWords = new Set(words(diaryText));
+  const tWords = words(taskTitle);
+  if (tWords.length === 0) return false;
+  const overlap = tWords.filter(w => dWords.has(w)).length;
+  // Match if ≥2 significant words overlap, or all meaningful words match (short titles)
+  return overlap >= 2 || (tWords.length <= 2 && overlap >= 1);
+}
+
 function fuzzyMatchCustomer(spokenName, customers, threshold = 0.72) {
   if (!spokenName || !spokenName.trim()) return null;
   const normSpoken = normalizeName(spokenName);
