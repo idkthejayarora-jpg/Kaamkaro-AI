@@ -944,6 +944,21 @@ function StaffDashboard() {
         </div>
       </div>
 
+      {/* ── Diary mic CTA ───────────────────────────────────────────────────── */}
+      <button
+        onClick={() => navigate('/diary')}
+        className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gold/30 bg-gold/5 hover:bg-gold/10 hover:border-gold/50 transition-all group active:scale-[0.98]"
+      >
+        <div className="w-12 h-12 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0 group-hover:bg-gold/25 transition-colors">
+          <Mic size={22} className="text-gold" />
+        </div>
+        <div className="text-left flex-1">
+          <p className="text-white font-semibold text-sm">Log Today's Work</p>
+          <p className="text-white/40 text-xs mt-0.5">Tap to open diary & record voice entries</p>
+        </div>
+        <ChevronRight size={16} className="text-gold/50 group-hover:text-gold transition-colors flex-shrink-0" />
+      </button>
+
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center py-4">
