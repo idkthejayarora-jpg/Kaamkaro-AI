@@ -131,12 +131,18 @@ router.patch('/:id', async (req, res) => {
 
     const updates = { ...req.body };
 
-    // ── Reschedule penalty: -0.5 pts when dueDate changes ─────────────────────
+    // ── Reschedule penalty: -0.5 pts ONLY when task was already overdue ──────
+    // Rescheduling a future task = planning ahead (no penalty).
+    // Rescheduling an overdue task = missed deadline (small penalty).
     if (updates.dueDate && updates.dueDate !== t.dueDate) {
-      const staffList  = await readDB('staff');
-      const staffMember = staffList.find(s => s.id === t.staffId);
-      const staffName  = staffMember?.name || req.user.name;
-      await awardMerit(t.staffId, staffName, -0.5, `Task rescheduled: ${t.title}`, 'overdue', t.id);
+      const today = new Date().toISOString().split('T')[0];
+      const isOverdue = t.dueDate && t.dueDate < today;
+      if (isOverdue) {
+        const staffList   = await readDB('staff');
+        const staffMember = staffList.find(s => s.id === t.staffId);
+        const staffName   = staffMember?.name || req.user.name;
+        await awardMerit(t.staffId, staffName, -0.5, `Overdue task rescheduled: ${t.title}`, 'overdue', t.id);
+      }
       updates.rescheduledCount   = (t.rescheduledCount || 0) + 1;
       updates.lastRescheduledAt  = new Date().toISOString();
     }
