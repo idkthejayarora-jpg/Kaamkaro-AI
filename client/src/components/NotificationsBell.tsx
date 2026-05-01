@@ -23,13 +23,13 @@ interface Notification {
 }
 
 const TYPE_CONFIG: Record<Notification['type'], { icon: React.ElementType; color: string; bg: string }> = {
-  critical:       { icon: ShieldAlert,   color: 'text-red-400',    bg: 'bg-red-500/10'    },
-  overdue:        { icon: AlertTriangle, color: 'text-red-400',    bg: 'bg-red-500/10'    },
-  warning:        { icon: TrendingDown,  color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  task_due:       { icon: Clock,         color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  streak_at_risk: { icon: Flame,         color: 'text-gold',       bg: 'bg-gold/10'       },
-  info:           { icon: Users,         color: 'text-blue-400',   bg: 'bg-blue-500/10'   },
-  well_done:      { icon: CheckCircle,   color: 'text-green-400',  bg: 'bg-green-500/10'  },
+  critical:       { icon: ShieldAlert,    color: 'text-red-400',    bg: 'bg-red-500/10'    },
+  overdue:        { icon: AlertTriangle,  color: 'text-red-400',    bg: 'bg-red-500/10'    },
+  warning:        { icon: TrendingDown,   color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  task_due:       { icon: Clock,          color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  streak_at_risk: { icon: Flame,          color: 'text-gold',       bg: 'bg-gold/10'       },
+  info:           { icon: MessageSquare,  color: 'text-amber-400',  bg: 'bg-amber-500/10'  },
+  well_done:      { icon: CheckCircle,    color: 'text-green-400',  bg: 'bg-green-500/10'  },
 };
 
 const LS_KEY = 'kk_notif_read';
