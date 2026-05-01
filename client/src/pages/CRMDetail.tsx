@@ -4,9 +4,10 @@ import {
   ArrowLeft, Phone, MapPin, MessageCircle, Edit2, Trash2,
   Check, X, PhoneOff, BookCheck, CalendarDays, Trophy,
   Clock, Send, Loader2, Mic, MicOff, AlertCircle,
+  FileText, Copy, CheckCheck, Search,
 } from 'lucide-react';
-import { leadsAPI } from '../lib/api';
-import type { Lead, LeadNote, LeadStage } from '../types';
+import { leadsAPI, templatesAPI } from '../lib/api';
+import type { Lead, LeadNote, LeadStage, Template } from '../types';
 import { STAGES, STAGE_LABELS, STAGE_COLORS, SOURCE_LABELS } from './CRM';
 import { useVoice } from '../hooks/useVoice';
 
@@ -17,7 +18,6 @@ function addDays(n: number): string {
   return d.toISOString().split('T')[0];
 }
 
-// ─ Confirm delete helper ───────────────────────────────────────────────────────
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -25,17 +25,202 @@ function fmtDate(iso: string) {
   });
 }
 
+// ── Template picker modal ──────────────────────────────────────────────────────
+function TemplatePicker({ lead, onClose, onSent }: {
+  lead: Lead;
+  onClose: () => void;
+  onSent: (templateTitle: string) => void;
+}) {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [search,    setSearch]    = useState('');
+  const [selected,  setSelected]  = useState<Template | null>(null);
+  const [preview,   setPreview]   = useState('');
+  const [copied,    setCopied]    = useState(false);
+
+  // Substitutes {name}, {customerName}, {phone}, {place} placeholders
+  const fillTemplate = (tpl: Template) => {
+    return tpl.content
+      .replace(/\{name\}|\{customerName\}/gi, lead.name)
+      .replace(/\{phone\}/gi,  lead.phone  || '')
+      .replace(/\{place\}/gi,  lead.place  || '')
+      .replace(/\{stage\}/gi,  STAGE_LABELS[lead.stage] || '')
+      .replace(/\{date\}/gi,   new Date().toLocaleDateString('en-IN'));
+  };
+
+  useEffect(() => {
+    templatesAPI.list()
+      .then(data => setTemplates(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const pick = (tpl: Template) => {
+    setSelected(tpl);
+    setPreview(fillTemplate(tpl));
+    setCopied(false);
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(preview);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    if (selected) {
+      templatesAPI.use(selected.id).catch(() => {});
+      onSent(selected.title);
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (!lead.phone) return;
+    const phone = '91' + lead.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(preview)}`, '_blank');
+    if (selected) {
+      templatesAPI.use(selected.id).catch(() => {});
+      onSent(selected.title);
+    }
+  };
+
+  const filtered = templates.filter(t =>
+    !search || t.title.toLowerCase().includes(search.toLowerCase()) ||
+    t.content.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const TYPE_ICON: Record<string, string> = {
+    message: '💬', call: '📞', email: '📧', meeting: '📅', general: '📄',
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in">
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-lg shadow-2xl max-h-[88vh] flex flex-col animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <FileText size={16} className="text-gold" />
+            <h2 className="text-white font-semibold text-sm">Send Template to {lead.name}</h2>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white"><X size={17} /></button>
+        </div>
+
+        {selected ? (
+          /* ── Preview pane ── */
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="px-5 pt-4 pb-2 border-b border-dark-50 flex-shrink-0">
+              <button
+                onClick={() => setSelected(null)}
+                className="text-white/40 hover:text-white text-xs flex items-center gap-1 mb-2 transition-colors"
+              >
+                ← Back to templates
+              </button>
+              <p className="text-white font-medium text-sm">{selected.title}</p>
+              <p className="text-white/30 text-xs">{TYPE_ICON[selected.type]} {selected.type}</p>
+            </div>
+
+            {/* Message preview */}
+            <div className="flex-1 overflow-y-auto p-5">
+              <p className="text-white/40 text-[10px] uppercase tracking-wider mb-2">Message preview</p>
+              <div className="bg-dark-400 border border-dark-50 rounded-xl p-4">
+                <p className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed">{preview}</p>
+              </div>
+              <p className="text-white/20 text-[10px] mt-2">
+                Placeholders filled: name, phone, place, stage, date
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="p-4 border-t border-dark-50 flex gap-2 flex-shrink-0">
+              <button
+                onClick={handleCopy}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  copied
+                    ? 'bg-green-500/15 border-green-500/30 text-green-400'
+                    : 'bg-dark-400 border-dark-50 text-white/60 hover:text-white hover:border-gold/30'
+                }`}
+              >
+                {copied ? <><CheckCheck size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
+              </button>
+              {lead.phone && (
+                <button
+                  onClick={handleWhatsApp}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-green-500/20 text-green-400/70 hover:text-green-400 hover:bg-green-500/8 hover:border-green-500/40 transition-all"
+                >
+                  <MessageCircle size={14} /> Send via WhatsApp
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ── Template list ── */
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Search */}
+            <div className="px-5 py-3 border-b border-dark-50 flex-shrink-0">
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
+                <input
+                  className="input pl-8 text-sm py-2"
+                  placeholder="Search templates…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {loading && (
+                <div className="flex items-center justify-center py-8 text-white/30 text-sm gap-2">
+                  <Loader2 size={16} className="animate-spin" /> Loading templates…
+                </div>
+              )}
+              {!loading && filtered.length === 0 && (
+                <div className="text-center py-8">
+                  <FileText size={28} className="text-white/10 mx-auto mb-2" />
+                  <p className="text-white/30 text-sm">
+                    {search ? 'No templates match your search' : 'No templates yet — create them in the Templates section'}
+                  </p>
+                </div>
+              )}
+              {filtered.map(tpl => (
+                <button
+                  key={tpl.id}
+                  onClick={() => pick(tpl)}
+                  className="w-full text-left p-3.5 bg-dark-400 border border-dark-50 rounded-xl hover:border-gold/25 hover:bg-dark-200 transition-all group"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-base leading-none mt-0.5">{TYPE_ICON[tpl.type]}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium group-hover:text-gold transition-colors">{tpl.title}</p>
+                      <p className="text-white/30 text-xs mt-0.5 line-clamp-2 leading-relaxed">
+                        {tpl.content.replace(/\{name\}|\{customerName\}/gi, lead.name).slice(0, 100)}…
+                      </p>
+                      {tpl.usageCount > 0 && (
+                        <p className="text-white/15 text-[10px] mt-1">Used {tpl.usageCount} times</p>
+                      )}
+                    </div>
+                    <Send size={12} className="text-white/15 group-hover:text-gold transition-colors flex-shrink-0 mt-1" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CRMDetail() {
   const { id }    = useParams<{ id: string }>();
   const navigate  = useNavigate();
 
-  const [lead,     setLead]     = useState<Lead | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
-  const [noteText, setNoteText] = useState('');
-  const [editSchedule, setEditSchedule] = useState(false);
-  const [followUpEdit, setFollowUpEdit] = useState('');
-  const [visitEdit,    setVisitEdit]    = useState('');
+  const [lead,          setLead]          = useState<Lead | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [saving,        setSaving]        = useState(false);
+  const [noteText,      setNoteText]      = useState('');
+  const [editSchedule,  setEditSchedule]  = useState(false);
+  const [followUpEdit,  setFollowUpEdit]  = useState('');
+  const [visitEdit,     setVisitEdit]     = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Voice input — appends spoken text to the note textarea
   const voice = useVoice((text: string) => {
@@ -170,25 +355,33 @@ export default function CRMDetail() {
         </div>
       </div>
 
-      {/* ── Phone / WhatsApp buttons ────────────────────────────────────────── */}
-      {lead.phone && (
-        <div className="flex gap-2">
+      {/* ── Phone / WhatsApp / Template buttons ─────────────────────────────── */}
+      <div className="flex gap-2 flex-wrap">
+        {lead.phone && (
           <a
             href={`tel:${lead.phone}`}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dark-50 text-white/50 hover:text-white hover:border-gold/30 transition-colors text-sm font-medium"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dark-50 text-white/50 hover:text-white hover:border-gold/30 transition-colors text-sm font-medium min-w-0"
           >
-            <Phone size={14} /> Call {lead.phone}
+            <Phone size={14} /> Call
           </a>
+        )}
+        {lead.phone && (
           <a
             href={`https://wa.me/91${lead.phone.replace(/\D/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-green-500/20 text-green-400/60 hover:text-green-400 hover:border-green-500/40 transition-colors text-sm font-medium"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-green-500/20 text-green-400/60 hover:text-green-400 hover:border-green-500/40 transition-colors text-sm font-medium min-w-0"
           >
             <MessageCircle size={14} /> WhatsApp
           </a>
-        </div>
-      )}
+        )}
+        <button
+          onClick={() => setShowTemplates(true)}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gold/20 text-gold/60 hover:text-gold hover:bg-gold/5 hover:border-gold/40 transition-colors text-sm font-medium min-w-0"
+        >
+          <FileText size={14} /> Template
+        </button>
+      </div>
 
       {/* ── Stage pills ─────────────────────────────────────────────────────── */}
       <div className="card">
@@ -334,7 +527,6 @@ export default function CRMDetail() {
       <div className="card">
         <p className="text-white/30 text-xs uppercase tracking-wider font-medium mb-3">Add Note</p>
 
-        {/* Textarea */}
         <textarea
           className="input w-full resize-none text-sm mb-2"
           rows={3}
@@ -344,7 +536,6 @@ export default function CRMDetail() {
           onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitNote(); }}
         />
 
-        {/* Live interim voice preview */}
         {voice.listening && (
           <div className="flex items-center gap-3 px-4 py-2.5 mb-2 bg-red-500/5 border border-red-500/20 rounded-xl">
             <div className="flex items-end gap-0.5 flex-shrink-0">
@@ -365,14 +556,12 @@ export default function CRMDetail() {
           </div>
         )}
 
-        {/* Voice error */}
         {voice.voiceError && (
           <p className="flex items-center gap-2 text-amber-400 text-xs mb-2">
             <AlertCircle size={12} />{voice.voiceError}
           </p>
         )}
 
-        {/* Action row: mic + save */}
         <div className="flex items-center gap-2">
           {voice.hasVoice && (
             <button
@@ -429,6 +618,18 @@ export default function CRMDetail() {
         Created {fmtDate(lead.createdAt)}
         {lead.updatedAt !== lead.createdAt && ` · Updated ${fmtDate(lead.updatedAt)}`}
       </p>
+
+      {/* ── Template picker ──────────────────────────────────────────────────── */}
+      {showTemplates && (
+        <TemplatePicker
+          lead={lead}
+          onClose={() => setShowTemplates(false)}
+          onSent={(title) => {
+            appendNote(`Template sent: "${title}"`);
+            setShowTemplates(false);
+          }}
+        />
+      )}
     </div>
   );
 }
