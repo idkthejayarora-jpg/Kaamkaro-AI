@@ -647,6 +647,24 @@ function extractNamesFromText(text) {
     if (!found.has(key)) found.set(key, name);
   };
 
+  // ── Pass 0: Party / account numbers ─────────────────────────────────────────
+  // Handles customers stored as "Party 1031", "Party 3072", etc.
+  // Voice: "party 1031 ne payment diya", "party number 3072 ka maal"
+  // Written: "party1031", "P-3072", "account 1031"
+  {
+    const partyRe = /\b(?:party|account|parchi|khata|dealer|firm|no\.?|number|#)\s*[-–]?\s*(\d{3,6})\b/gi;
+    let pm;
+    while ((pm = partyRe.exec(text)) !== null) {
+      addName(`Party ${pm[1]}`);
+    }
+    // Also catch bare "1031" when preceded/followed by party-signal words in same sentence
+    const bareRe = /\bparty\s+(\d{3,6})\b|\b(\d{3,6})\s+(?:wala|ka|ki|ke|ne|ko)\b/gi;
+    while ((pm = bareRe.exec(text)) !== null) {
+      const num = pm[1] || pm[2];
+      if (num) addName(`Party ${num}`);
+    }
+  }
+
   const tokens = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
 
   // ── Pass 1: Location-anchored extraction ──────────────────────────────────
