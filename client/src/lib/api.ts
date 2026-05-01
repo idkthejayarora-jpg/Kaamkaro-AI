@@ -135,6 +135,8 @@ export const diaryAPI = {
     api.patch(`/diary/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/diary/${id}`).then(r => r.data),
   reanalyze: (id: string) => api.post(`/diary/${id}/reanalyze`).then(r => r.data),
+  // Voice → tasks: matches existing customers only, no customer creation, no merit penalty for genuine excuses
+  taskVoice: (content: string) => api.post('/diary/task-voice', { content }).then(r => r.data),
 };
 
 export const exportAPI = {
