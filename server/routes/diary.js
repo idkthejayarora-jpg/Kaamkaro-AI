@@ -1881,7 +1881,7 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
         );
         if (vendorTasks.length === 0) return;
         const lc = content.toLowerCase();
-        const completionMatch = /(?:aa\s*gaya|de\s*diya|mila|cleared?|done|deliver(?:ed)?|dispatch(?:ed)?|pahunch\s*gaya|ho\s*gaya|bheji|bhej\s*diya|maal\s*aa)/.test(lc);
+        const completionMatch = /(?:aa\s*gaya|de\s*diya|mila|cleared?|done|deliver(?:ed)?|dispatch(?:ed)?|pahunch\s*gaya|ho\s*gaya|bheji|bhej\s*diya|maal\s*aa|kar\s*di(?:ya|ye)?|kar\s*liya|ho\s*gayi)/.test(lc);
         if (completionMatch) {
           const task = vendorTasks[0];
           const staffList = await readDB('staff').catch(() => []);
