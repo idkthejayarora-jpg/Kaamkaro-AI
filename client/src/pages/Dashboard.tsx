@@ -777,9 +777,18 @@ function StaffDashboard() {
   const [tasks,       setTasks]       = useState<Task[]>([]);
   const [performance, setPerf]        = useState<Performance[]>([]);
   const [broadcasts,    setBroadcasts]    = useState<BroadcastMsg[]>([]);
+  const [unreadQueue,   setUnreadQueue]   = useState<BroadcastMsg[]>([]); // only unseen ones for modal
   const [bcastModal,    setBcastModal]    = useState(false);
-  const [bcastModalIdx, setBcastModalIdx] = useState(0); // which broadcast is shown in modal
+  const [bcastModalIdx, setBcastModalIdx] = useState(0);
   const [loading,       setLoading]       = useState(true);
+
+  // Mark broadcasts as read in localStorage and remove from unread queue
+  const dismissBcastModal = () => {
+    const ids = unreadQueue.map(b => b.id);
+    markBcastRead(user!.id, ids);
+    setBcastModal(false);
+    setUnreadQueue([]);
+  };
 
   const load = useCallback(async () => {
     const [c, t, p, b] = await Promise.all([
@@ -793,8 +802,11 @@ function StaffDashboard() {
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
     const bList = b as BroadcastMsg[];
     setBroadcasts(bList);
-    // Pop up modal on every dashboard load if there are any broadcasts
-    if (bList.length > 0) {
+    // Only pop up broadcasts the staff hasn't read yet
+    const readSet = getBcastReadSet(user!.id);
+    const unread  = bList.filter(br => !readSet.has(br.id));
+    if (unread.length > 0) {
+      setUnreadQueue(unread);
       setBcastModalIdx(0);
       setBcastModal(true);
       playNotifBeep();
@@ -804,11 +816,13 @@ function StaffDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Live broadcast via SSE ────────────────────────────────────────────────────
+  // ── Live broadcast via SSE — always show new ones immediately ────────────────
   useSSE({
     'admin:broadcast': (msg: unknown) => {
-      setBroadcasts(prev => {
-        const updated = [msg as BroadcastMsg, ...prev];
+      const newMsg = msg as BroadcastMsg;
+      setBroadcasts(prev => [newMsg, ...prev]);
+      setUnreadQueue(prev => {
+        const updated = [newMsg, ...prev];
         setBcastModalIdx(0);
         setBcastModal(true);
         return updated;
