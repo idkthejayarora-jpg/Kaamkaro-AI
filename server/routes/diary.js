@@ -1679,6 +1679,86 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
           .catch(() => {})
       );
     }
+
+    // 4. Auto-update / auto-complete existing tasks from diary signals ───────────
+    // Completion: "payment aa gaya / ho gaya / kar liya / done / bhej diya"
+    // Reschedule (no merit penalty): "parso karunga / kal milna" — factual diary log
+    sideEffects.push((async () => {
+      try {
+        const allTasks = await readDB('tasks');
+        const customerTasks = allTasks.filter(t =>
+          !t.completed && t.staffId === staffId && t.customerId === customer.id
+        );
+        if (customerTasks.length === 0) return;
+
+        const lc = content.toLowerCase();
+
+        // ── Completion signals ──────────────────────────────────────────────────
+        const completionMatch = lc.match(
+          /(?:payment|paise|paisa|advance|token|baaki)\s*(?:aa\s*gaya|aa\s*gayi|aa\s*gaye|de\s*diya|diye|mila|mili|mile|cleared?|received?|kar\s*diya)|(?:ho\s*gaya|ho\s*gayi|kar\s*liya|karlia|kar\s*li|khatam|done|complet(?:ed|ion)|nikal\s*gaya|bhej\s*diya|bheji|deliver(?:ed|y\s*ho\s*gayi)|dispatch(?:ed)?|pahunch\s*gaya|pahunch\s*gayi|maal\s*aa\s*gaya)/
+        );
+
+        if (completionMatch) {
+          // Match keyword to find which task to complete
+          const keyword = completionMatch[0];
+          const isPayment = /payment|paise|paisa|advance|token|baaki/.test(keyword);
+          const isDelivery = /deliver|dispatch|maal\s*aa|bhej\s*diya|pahunch/.test(keyword);
+
+          for (const task of customerTasks) {
+            const taskLc = task.title.toLowerCase();
+            const relevant =
+              (isPayment  && /payment|paise|advance|token|baaki/.test(taskLc)) ||
+              (isDelivery && /deliver|dispatch|send|bhej|courier|maal/.test(taskLc)) ||
+              (!isPayment && !isDelivery); // generic completion → complete first matching task
+
+            if (!relevant) continue;
+
+            const updated = await updateOne('tasks', task.id, {
+              completed:   true,
+              completedAt: now,
+              notes: (task.notes ? task.notes + '\n' : '') +
+                `[Auto-completed via diary] "${content.slice(0, 100)}"`,
+            }).catch(() => null);
+            if (!updated) continue;
+
+            broadcast('task:updated', updated);
+            // Award merit — this is a real completion
+            const staffList = await readDB('staff').catch(() => []);
+            const staffMember = staffList.find(s => s.id === staffId);
+            const resolvedName = staffMember?.name || staffName;
+            const today2 = new Date().toISOString().split('T')[0];
+            const isLate = task.dueDate && task.dueDate < today2;
+            if (isLate) await awardMerit(staffId, resolvedName, -1, `Late: ${task.title}`, 'overdue', task.id).catch(() => {});
+            await awardMerit(staffId, resolvedName, 1, `Task completed: ${task.title}`, 'task', task.id).catch(() => {});
+            console.log(`[Diary NLP] ✅ Auto-completed task: "${task.title}" for ${customer.name}`);
+            break; // one completion per diary entry per customer
+          }
+          return; // skip reschedule if we just completed
+        }
+
+        // ── Reschedule signals (no merit penalty — it's a factual diary log) ────
+        const newDate = parseDueDateFromText(content);
+        const rescheduleSignal = /(?:parso|kal|agle\s*hafte|next\s*week|\d+\s*din\s*baad|follow[\s-]*up|dobara\s*call|phir\s*call|milna|milenge|meeting\s*hai|ayenge|aayenge)/.test(lc);
+
+        if (newDate && rescheduleSignal) {
+          const task = customerTasks[0]; // reschedule the soonest-due task
+          if (task && newDate !== task.dueDate) {
+            const updated = await updateOne('tasks', task.id, {
+              dueDate: newDate,
+              notes: (task.notes ? task.notes + '\n' : '') +
+                `[Diary rescheduled — no penalty] "${content.slice(0, 100)}"`,
+              // ⚠️ intentionally NOT calling awardMerit(-0.5) — diary is factual
+            }).catch(() => null);
+            if (updated) {
+              broadcast('task:updated', updated);
+              console.log(`[Diary NLP] 📅 Task rescheduled (no penalty): "${task.title}" → ${newDate}`);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Diary NLP] Task auto-update failed (non-fatal):', e.message);
+      }
+    })());
   }
 
   // ── General tasks: future-intent with NO specific customer resolved ──────────
