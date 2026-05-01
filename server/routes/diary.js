@@ -1759,7 +1759,7 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
 
         // ── Completion signals ──────────────────────────────────────────────────
         const completionMatch = lc.match(
-          /(?:payment|paise|paisa|advance|token|baaki)\s*(?:aa\s*gaya|aa\s*gayi|aa\s*gaye|de\s*diya|diye|mila|mili|mile|cleared?|received?|kar\s*diya)|(?:ho\s*gaya|ho\s*gayi|kar\s*liya|karlia|kar\s*li|khatam|done|complet(?:ed|ion)|nikal\s*gaya|bhej\s*diya|bheji|deliver(?:ed|y\s*ho\s*gayi)|dispatch(?:ed)?|pahunch\s*gaya|pahunch\s*gayi|maal\s*aa\s*gaya)/
+          /(?:payment|paise|paisa|advance|token|baaki)\s*(?:aa\s*gaya|aa\s*gayi|aa\s*gaye|de\s*diya|diye|mila|mili|mile|cleared?|received?|kar\s*diya)|(?:ho\s*gaya|ho\s*gayi|kar\s*liya|karlia|kar\s*li|kar\s*di(?:ya|ye)?|khatam|done|complet(?:ed|ion)|nikal\s*gaya|bhej\s*diya|bheji|deliver(?:ed|y\s*ho\s*gayi)|dispatch(?:ed)?|pahunch\s*gaya|pahunch\s*gayi|maal\s*aa\s*gaya)/
         );
 
         if (completionMatch) {
@@ -1768,15 +1768,23 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
           const isPayment = /payment|paise|paisa|advance|token|baaki/.test(keyword);
           const isDelivery = /deliver|dispatch|maal\s*aa|bhej\s*diya|pahunch/.test(keyword);
 
-          for (const task of customerTasks) {
-            const taskLc = task.title.toLowerCase();
-            const relevant =
-              (isPayment  && /payment|paise|advance|token|baaki/.test(taskLc)) ||
-              (isDelivery && /deliver|dispatch|send|bhej|courier|maal/.test(taskLc)) ||
-              (!isPayment && !isDelivery); // generic completion → complete first matching task
+          // Priority 1: find task by semantic word-overlap with diary content
+          let targetTask = customerTasks.find(t => taskContentMatch(lc, t.title));
 
-            if (!relevant) continue;
+          // Priority 2: fall back to keyword-type matching
+          if (!targetTask) {
+            targetTask = customerTasks.find(task => {
+              const taskLc = task.title.toLowerCase();
+              return (isPayment  && /payment|paise|advance|token|baaki/.test(taskLc)) ||
+                     (isDelivery && /deliver|dispatch|send|bhej|courier|maal/.test(taskLc)) ||
+                     (!isPayment && !isDelivery);
+            });
+          }
 
+          if (!targetTask) return; // no matching task found
+
+          const task = targetTask;
+          {
             const updated = await updateOne('tasks', task.id, {
               completed:   true,
               completedAt: now,
