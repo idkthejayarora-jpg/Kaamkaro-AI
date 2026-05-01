@@ -10,9 +10,41 @@ import {
   MessageSquare, Mail, Target, Zap, Trophy, AlertCircle,
   Award, Plus, X, Star, TrendingDown, Flame,
 } from 'lucide-react';
-import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI } from '../lib/api';
+import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useSSE } from '../hooks/useSSE';
 import type { Staff, Customer, Performance, DashboardSummary, Task, MeritSummary, MeritGoal } from '../types';
+
+// ── Notification beep (Web Audio API — no external file needed) ───────────────
+function playNotifBeep() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx  = new AudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch { /* audio not available */ }
+}
+
+interface BroadcastMsg { id: string; message: string; sentBy: string; sentAt: string; }
+
+function getBcastReadSet(userId: string): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(`kk_bcast_read_${userId}`) || '[]')); }
+  catch { return new Set(); }
+}
+function markBcastRead(userId: string, ids: string[]) {
+  const s = getBcastReadSet(userId);
+  ids.forEach(id => s.add(id));
+  localStorage.setItem(`kk_bcast_read_${userId}`, JSON.stringify([...s]));
+}
 
 const GOLD = '#D4AF37';
 const DIM  = '#2A2A2A';
