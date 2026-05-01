@@ -869,57 +869,46 @@ function StaffDashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
 
-      {/* ── Broadcast modal popup ───────────────────────────────────────────── */}
-      {bcastModal && broadcasts.length > 0 && (() => {
-        const b = broadcasts[bcastModalIdx];
+      {/* ── Broadcast modal — only shows unread, marks read on dismiss ──────── */}
+      {bcastModal && unreadQueue.length > 0 && (() => {
+        const b = unreadQueue[bcastModalIdx];
         if (!b) return null;
+        const hasNext = bcastModalIdx < unreadQueue.length - 1;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
             <div className="bg-dark-300 border border-amber-500/40 rounded-2xl shadow-2xl w-full max-w-sm animate-slide-up">
-              {/* Header */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-dark-50">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center">
                     <MessageSquare size={13} className="text-amber-400" />
                   </div>
                   <p className="text-amber-400 font-semibold text-sm">Announcement</p>
-                  {broadcasts.length > 1 && (
-                    <span className="text-white/30 text-xs">({bcastModalIdx + 1}/{broadcasts.length})</span>
+                  {unreadQueue.length > 1 && (
+                    <span className="text-white/30 text-xs">({bcastModalIdx + 1}/{unreadQueue.length})</span>
                   )}
                 </div>
-                <button onClick={() => setBcastModal(false)} className="text-white/30 hover:text-white transition-colors">
+                <button onClick={dismissBcastModal} className="text-white/30 hover:text-white transition-colors">
                   <X size={16} />
                 </button>
               </div>
-              {/* Body */}
               <div className="px-5 py-4">
                 <p className="text-white text-sm leading-relaxed">{b.message}</p>
                 <p className="text-white/30 text-[10px] mt-2.5">
                   {b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                 </p>
               </div>
-              {/* Footer */}
               <div className="flex items-center gap-2 px-5 py-3.5 border-t border-dark-50">
-                {broadcasts.length > 1 && bcastModalIdx < broadcasts.length - 1 ? (
+                {hasNext ? (
                   <>
-                    <button
-                      onClick={() => setBcastModalIdx(i => i + 1)}
-                      className="flex-1 btn-primary text-sm py-2"
-                    >
+                    <button onClick={() => setBcastModalIdx(i => i + 1)} className="flex-1 btn-primary text-sm py-2">
                       Next →
                     </button>
-                    <button
-                      onClick={() => setBcastModal(false)}
-                      className="flex-1 text-white/40 hover:text-white text-sm transition-colors"
-                    >
-                      Close
+                    <button onClick={dismissBcastModal} className="flex-1 text-white/40 hover:text-white text-sm transition-colors">
+                      Done
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setBcastModal(false)}
-                    className="w-full btn-primary text-sm py-2"
-                  >
+                  <button onClick={dismissBcastModal} className="w-full btn-primary text-sm py-2">
                     Got it
                   </button>
                 )}
