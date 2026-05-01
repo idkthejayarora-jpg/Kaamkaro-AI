@@ -10,6 +10,176 @@ import { useAuth } from '../contexts/AuthContext';
 import { useVoice } from '../hooks/useVoice';
 import type { Task, Staff, Customer, Team } from '../types';
 
+// ── Voice Task Panel ──────────────────────────────────────────────────────────
+interface VoiceResult {
+  summary: string;
+  excuseType: string | null;
+  customersMatched: string[];
+  tasksCreated: Task[];
+  tasksUpdated: Task[];
+}
+
+function VoiceTaskPanel({ onClose, onTasksChanged }: {
+  onClose: () => void;
+  onTasksChanged: (created: Task[], updated: Task[]) => void;
+}) {
+  const [transcript, setTranscript] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult]         = useState<VoiceResult | null>(null);
+  const [error, setError]           = useState('');
+
+  const { listening, interimText, hasVoice, voiceError, toggle, stop } = useVoice(
+    (text) => setTranscript(prev => (prev ? prev + ' ' : '') + text)
+  );
+
+  const handleSubmit = async () => {
+    if (!transcript.trim()) return;
+    if (listening) stop();
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await diaryAPI.taskVoice(transcript.trim());
+      setResult(res);
+      onTasksChanged(res.tasksCreated || [], res.tasksUpdated || []);
+    } catch {
+      setError('Failed to process. Try again.');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in">
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+          <div className="flex items-center gap-2">
+            <Mic size={16} className="text-gold" />
+            <h2 className="text-white font-semibold text-sm">Voice Task</h2>
+          </div>
+          <button onClick={onClose} className="text-white/30 hover:text-white"><X size={17} /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Info strip */}
+          {!result && (
+            <p className="text-white/30 text-xs leading-relaxed">
+              Say what happened — <span className="text-white/50">"Ramesh ne call nahi uthaya, parso follow karunga"</span> or <span className="text-white/50">"Priya ka payment aana baaki hai"</span>. Existing tasks update without penalty; new tasks are created automatically.
+            </p>
+          )}
+
+          {/* Transcript box */}
+          {!result && (
+            <div className="relative">
+              <textarea
+                className="input resize-none text-sm leading-relaxed"
+                rows={4}
+                placeholder="Tap the mic or type here…"
+                value={transcript + (interimText ? ' ' + interimText : '')}
+                onChange={e => setTranscript(e.target.value)}
+              />
+              {listening && (
+                <span className="absolute top-2 right-2 flex gap-0.5">
+                  {[0,1,2].map(i => (
+                    <span key={i} className="w-0.5 bg-gold rounded-full animate-pulse"
+                      style={{ height: `${12 + i * 4}px`, animationDelay: `${i * 0.15}s` }} />
+                  ))}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Voice error */}
+          {voiceError && <p className="text-red-400 text-xs">{voiceError}</p>}
+          {error && <p className="text-red-400 text-xs">{error}</p>}
+
+          {/* Result */}
+          {result && (
+            <div className="space-y-3">
+              <div className={`rounded-xl px-4 py-3 text-sm border ${
+                result.excuseType
+                  ? 'bg-amber-500/8 border-amber-500/20 text-amber-300'
+                  : result.tasksCreated?.length
+                  ? 'bg-green-500/8 border-green-500/20 text-green-300'
+                  : 'bg-dark-400 border-dark-50 text-white/40'
+              }`}>
+                {result.summary}
+              </div>
+
+              {result.customersMatched?.length > 0 && (
+                <p className="text-white/30 text-xs">
+                  Matched: <span className="text-white/60">{result.customersMatched.join(', ')}</span>
+                </p>
+              )}
+
+              {result.tasksCreated?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Created</p>
+                  {result.tasksCreated.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-white/70 bg-dark-400 rounded-lg px-3 py-1.5">
+                      <Plus size={10} className="text-green-400 flex-shrink-0" />
+                      {t.title}
+                      {t.dueDate && <span className="text-white/30 ml-auto">{t.dueDate}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {result.tasksUpdated?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider">Updated (no deduction)</p>
+                  {result.tasksUpdated.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-white/70 bg-dark-400 rounded-lg px-3 py-1.5">
+                      <RotateCcw size={10} className="text-amber-400 flex-shrink-0" />
+                      {t.title}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="px-5 pb-5 flex gap-2">
+          {result ? (
+            <>
+              <button onClick={() => { setResult(null); setTranscript(''); }} className="btn-ghost flex-1 text-sm">
+                New entry
+              </button>
+              <button onClick={onClose} className="btn-primary flex-1 text-sm">Done</button>
+            </>
+          ) : (
+            <>
+              {hasVoice && (
+                <button
+                  onClick={toggle}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+                    listening
+                      ? 'bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                      : 'bg-gold/10 border-gold/20 text-gold hover:bg-gold/20'
+                  }`}
+                >
+                  {listening ? <MicOff size={15} /> : <Mic size={15} />}
+                  {listening ? 'Stop' : 'Record'}
+                </button>
+              )}
+              <button
+                onClick={handleSubmit}
+                disabled={!transcript.trim() || submitting}
+                className="btn-primary flex-1 flex items-center justify-center gap-2 text-sm"
+              >
+                {submitting
+                  ? <><span className="w-3.5 h-3.5 border-2 border-dark-500/30 border-t-dark-500 rounded-full animate-spin" /> Processing…</>
+                  : <><Send size={14} /> Process</>
+                }
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Add Task Modal ─────────────────────────────────────────────────────────────
 function AddTaskModal({ staff, customers, onClose, onCreated }: {
   staff: Staff[]; customers: Customer[];
