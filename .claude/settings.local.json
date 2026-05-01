@@ -87,7 +87,12 @@
       "Bash(cp ~/Desktop/image-1777530613226.png \"/Users/jaigopalarora/Kaamkaro AI/client/public/icon-512.png\")",
       "Bash(node_modules/.bin/tsc --noEmit)",
       "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/diary.js\")",
-      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/tasks.js\")"
+      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/tasks.js\")",
+      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/templates.js\")",
+      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
+      "Bash(head -851 \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
+      "Bash(tail -n +1052 \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
+      "Read(//tmp/**)"
     ]
   }
 }
