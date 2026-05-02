@@ -70,6 +70,7 @@ function AppRoutes() {
         <Route path="/crm/new"         element={<CRMForm />} />
         <Route path="/crm/:id"         element={<CRMDetail />} />
         <Route path="/crm/:id/edit"    element={<CRMForm />} />
+        <Route path="/stock"           element={<Stock />} />
         <Route path="/settings"        element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
