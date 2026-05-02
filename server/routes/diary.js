@@ -1805,7 +1805,10 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
         .catch(() => {})
     );
 
-    // 3. Create tasks for detected future-intent phrases
+    // 3a. Loop task auto-detection — runs async, non-blocking
+    sideEffects.push(detectAndCreateLoopTask(staffId, staffName, customer, now));
+
+    // 3b. Create tasks for detected future-intent phrases
     const detectedTasks = detectTasks(content, customer.name);
     for (const { title, dueDate } of detectedTasks) {
       const task = {
