@@ -10,7 +10,7 @@ const STAGES: { key: PipelineStatus; label: string }[] = [
   { key: 'closed', label: 'Closed' }, { key: 'churned', label: 'Churned' },
 ];
 
-const SERVER = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+const SERVER = window.location.origin;
 
 function AttachmentThumb({ att }: { att: TemplateAttachment }) {
   const isImage = att.mimetype.startsWith('image/');
