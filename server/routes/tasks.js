@@ -161,12 +161,11 @@ router.patch('/:id', async (req, res) => {
     const updates = { ...req.body };
 
     // ── Reschedule penalty: -0.5 pts ONLY when task was already overdue ──────
-    // Rescheduling a future task = planning ahead (no penalty).
-    // Rescheduling an overdue task = missed deadline (small penalty).
+    // Loop tasks: never penalised (cadence adjustments are normal).
     if (updates.dueDate && updates.dueDate !== t.dueDate) {
       const today = new Date().toISOString().split('T')[0];
       const isOverdue = t.dueDate && t.dueDate < today;
-      if (isOverdue) {
+      if (isOverdue && !t.isLoop) {
         const staffList   = await readDB('staff');
         const staffMember = staffList.find(s => s.id === t.staffId);
         const staffName   = staffMember?.name || req.user.name;
