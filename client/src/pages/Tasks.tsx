@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Plus, Check, Trash2, X, Calendar, User, Clock,
   CheckCircle, Filter, Edit2, BookOpen, AlertTriangle,
-  Save, RotateCcw, StickyNote, Users, Mic, MicOff, Send,
+  Save, RotateCcw, StickyNote, Users, Mic, MicOff, Send, Repeat2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tasksAPI, staffAPI, customersAPI, teamsAPI, diaryAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useVoice } from '../hooks/useVoice';
+import { useSSE } from '../hooks/useSSE';
 import type { Task, Staff, Customer, Team } from '../types';
 
 // ── Voice Task Panel ──────────────────────────────────────────────────────────
