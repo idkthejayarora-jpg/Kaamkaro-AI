@@ -398,6 +398,9 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </div>
       </aside>
 
+      {/* Account switcher — admin only */}
+      {showSwitcher && <AccountSwitcher onClose={() => setShowSwitcher(false)} />}
+
       {/* Broadcast modal */}
       {showBroadcast && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
