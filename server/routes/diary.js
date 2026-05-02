@@ -230,6 +230,39 @@ const STOP_WORDS = new Set([
   'wale','wali','waale','waali','vale','vali',
 ]);
 
+// ── Inject stock product terms into STOP_WORDS at module load ─────────────────
+// e.g. "bracelet", "necklace", "bangle" etc. must NOT be extracted as customer names
+for (const term of stockRoute.STOCK_TERMS) {
+  // Only add single-word terms (multi-word like "bridal set" can't be a single token)
+  if (!term.includes(' ')) STOP_WORDS.add(term);
+}
+
+// ── Runtime customer name cache (refreshed per diary processing call) ─────────
+// Populated from the actual customer DB so names the static dict doesn't know
+// (e.g. "Taruna UK", "Bittoo Fashion") can still be detected without a location anchor.
+let CUSTOMER_NAME_CACHE = new Set();
+
+async function refreshCustomerNameCache(staffId) {
+  try {
+    const customers = await readDB('customers');
+    CUSTOMER_NAME_CACHE = new Set();
+    const relevant = staffId
+      ? customers.filter(c => c.assignedTo === staffId || (c.assignedStaff || []).includes(staffId))
+      : customers;
+    for (const c of relevant) {
+      // Split customer name into words and add each meaningful word to the cache
+      const parts = c.name.toLowerCase().split(/\s+/);
+      for (const p of parts) {
+        if (p.length >= 3 && !STOP_WORDS.has(p) && !/^\d+$/.test(p)) {
+          CUSTOMER_NAME_CACHE.add(p);
+        }
+      }
+    }
+  } catch {
+    // Non-fatal — detection falls back to static dictionary
+  }
+}
+
 // ── Common Indian names dictionary ─────────────────────────────────────────────
 // Voice transcriptions are ALL LOWERCASE — this dictionary lets us detect names
 // that the capitalization-based regex cannot find.
