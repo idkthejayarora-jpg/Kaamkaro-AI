@@ -5,6 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { updateStaffStreak } = require('../utils/streak');
 const { broadcast } = require('../utils/sse');
 const { awardMerit } = require('../utils/merits');
+const stockRoute = require('./stock');
 
 // Anthropic is optional — only used if API key + credits are present
 let Anthropic;
