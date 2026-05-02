@@ -247,4 +247,15 @@ export const pdfAPI = {
   },
 };
 
+export const stockAPI = {
+  list: (params?: { staffId?: string }) => api.get('/stock', { params }).then(r => r.data),
+  addEntry: (data: {
+    item: string; qty: number; unit?: string;
+    customerId?: string; customerName?: string; note?: string;
+    date?: string; staffId?: string;
+  }) => api.post('/stock/entry', data).then(r => r.data),
+  deleteItem: (id: string) => api.delete(`/stock/${id}`).then(r => r.data),
+  deleteEntry: (id: string, entryId: string) => api.delete(`/stock/${id}/entry/${entryId}`).then(r => r.data),
+};
+
 export default api;
