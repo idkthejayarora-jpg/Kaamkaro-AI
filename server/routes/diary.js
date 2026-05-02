@@ -937,6 +937,95 @@ function buildEnglishSummary(names, lang, sentiment, actions, staffName) {
   return parts.length > 0 ? parts.join(' ') : 'Interaction logged.';
 }
 
+// ── Loop task pattern detection ───────────────────────────────────────────────
+// After each diary entry, check if staff is updating this customer on a regular
+// cadence (daily / every 2 days / weekly). If yes and no loop task exists yet,
+// create one automatically and notify the staff member.
+async function detectAndCreateLoopTask(staffId, staffName, customer, now) {
+  try {
+    // Only proceed if at least 3 prior diary entries exist for this customer-staff pair
+    const allDiary = await readDB('diary').catch(() => []);
+    const priorEntries = allDiary.filter(d =>
+      d.staffId === staffId &&
+      d.customerName && nameSimilarity(d.customerName, customer.name) >= 0.78
+    );
+    if (priorEntries.length < 3) return;
+
+    // Check last 21 days
+    const cutoff = new Date(Date.now() - 21 * 86400000).toISOString().split('T')[0];
+    const dates = priorEntries
+      .map(d => d.date || d.createdAt?.split('T')[0])
+      .filter(d => d && d >= cutoff)
+      .sort();
+    if (dates.length < 3) return;
+
+    // Deduplicate same-day entries
+    const uniqueDates = [...new Set(dates)];
+    if (uniqueDates.length < 3) return;
+
+    // Calculate gaps between consecutive entry dates
+    const gaps = [];
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const diff = (new Date(uniqueDates[i]) - new Date(uniqueDates[i - 1])) / 86400000;
+      gaps.push(diff);
+    }
+    const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    const maxGap = Math.max(...gaps);
+
+    let loopInterval = null;
+    if      (avgGap <= 1.5 && maxGap <= 3)  loopInterval = 'daily';
+    else if (avgGap <= 3   && maxGap <= 5)  loopInterval = 'every2days';
+    else if (avgGap <= 8   && maxGap <= 12) loopInterval = 'weekly';
+    if (!loopInterval) return;
+
+    // Skip if a loop task already exists for this customer
+    const allTasks = await readDB('tasks').catch(() => []);
+    const existingLoop = allTasks.find(t =>
+      !t.completed && t.isLoop &&
+      t.staffId === staffId &&
+      t.customerId === customer.id
+    );
+    if (existingLoop) return;
+
+    const intervalDays   = { daily: 1, every2days: 2, weekly: 7 }[loopInterval];
+    const intervalLabel  = { daily: 'daily', every2days: 'every 2 days', weekly: 'weekly' }[loopInterval];
+    const nextDue = new Date();
+    nextDue.setDate(nextDue.getDate() + intervalDays);
+    const dueDate = nextDue.toISOString().split('T')[0];
+
+    const task = {
+      id:           uuidv4(),
+      staffId,
+      customerId:   customer.id,
+      customerName: customer.name,
+      title:        `Update ${customer.name} — new products`,
+      notes:        `Auto loop task — detected ${intervalLabel} update pattern`,
+      dueDate,
+      completed:    false,
+      completedAt:  null,
+      createdAt:    now,
+      source:       'loop',
+      isLoop:       true,
+      loopInterval,
+      loopMerit:    0.5,   // secretive: partial merit so it feels earned but not over-rewarded
+    };
+
+    await insertOne('tasks', task).catch(() => {});
+    broadcast('task:created', task);
+    // Targeted notification to the staff member about their new loop task
+    broadcast('task:loop_created', {
+      staffId,
+      taskId:       task.id,
+      customerName: customer.name,
+      interval:     intervalLabel,
+      dueDate,
+    });
+    console.log(`[Diary NLP] 🔄 Loop task created for ${customer.name} (${intervalLabel}) → ${staffName}`);
+  } catch (e) {
+    console.warn('[Diary NLP] Loop task detection failed (non-fatal):', e.message);
+  }
+}
+
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
 // GET /api/diary
