@@ -4,7 +4,7 @@ import {
   ArrowLeft, Phone, MapPin, MessageCircle, Edit2, Trash2,
   Check, X, PhoneOff, BookCheck, CalendarDays, Trophy,
   Clock, Send, Loader2, Mic, MicOff, AlertCircle,
-  FileText, Copy, CheckCheck, Search, Paperclip, Image, File as FileIcon,
+  FileText, Copy, CheckCheck, Search, Paperclip, Image, File as FileIcon, Plus,
 } from 'lucide-react';
 import { leadsAPI, templatesAPI } from '../lib/api';
 import type { Lead, LeadNote, LeadStage, Template } from '../types';
