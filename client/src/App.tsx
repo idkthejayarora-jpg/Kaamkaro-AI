@@ -62,7 +62,7 @@ function AppRoutes() {
         <Route path="/goals"           element={<Goals />} />
         <Route path="/recommendations" element={<PrivateRoute adminOnly><Recommendations /></PrivateRoute>} />
         <Route path="/sales-insights"  element={<PrivateRoute adminOnly><SalesInsights /></PrivateRoute>} />
-        <Route path="/templates"       element={<PrivateRoute adminOnly><Templates /></PrivateRoute>} />
+        <Route path="/templates"       element={<Templates />} />
         <Route path="/webhook"         element={<PrivateRoute adminOnly><WebhookSetup /></PrivateRoute>} />
         <Route path="/audit"           element={<PrivateRoute adminOnly><AuditLog /></PrivateRoute>} />
         <Route path="/teams"             element={<PrivateRoute adminOnly><Teams /></PrivateRoute>} />
