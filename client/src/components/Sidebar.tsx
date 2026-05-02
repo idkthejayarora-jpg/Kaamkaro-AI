@@ -26,6 +26,7 @@ const adminNav = [
   { to: '/goals',           icon: Target,          label: 'Goals' },
   { to: '/recommendations', icon: Sparkles,        label: 'AI Insights' },
   { to: '/sales-insights',  icon: TrendingUp,      label: 'Sales Insights' },
+  { to: '/stock',           icon: Package,         label: 'Stock Tracker' },
   { to: '/templates',       icon: FileText,        label: 'Templates' },
   { to: '/webhook',         icon: Webhook,         label: 'WhatsApp Setup' },
   { to: '/teams',           icon: Users,           label: 'Teams' },
