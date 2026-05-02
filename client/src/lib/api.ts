@@ -161,6 +161,12 @@ export const templatesAPI = {
   update: (id: string, data: Record<string, unknown>) => api.patch(`/templates/${id}`, data).then(r => r.data),
   use: (id: string) => api.post(`/templates/${id}/use`).then(r => r.data),
   delete: (id: string) => api.delete(`/templates/${id}`).then(r => r.data),
+  attach: (id: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post(`/templates/${id}/attach`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
+  },
+  removeAttachment: (id: string, filename: string) => api.delete(`/templates/${id}/attach/${filename}`).then(r => r.data),
 };
 
 export const aiAPI = {
