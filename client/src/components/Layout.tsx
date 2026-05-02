@@ -5,7 +5,7 @@ import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
 import { useSSE } from '../hooks/useSSE';
 import { useAuth } from '../contexts/AuthContext';
-import { X, Radio, CheckCheck } from 'lucide-react';
+import { X, Radio, CheckCheck, Eye, RefreshCw } from 'lucide-react';
 
 // ── Admin broadcast chime — three ascending sine tones ────────────────────────
 function playChime() {
