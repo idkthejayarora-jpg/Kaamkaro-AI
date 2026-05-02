@@ -9,7 +9,7 @@ import {
 import { leadsAPI, templatesAPI } from '../lib/api';
 import type { Lead, LeadNote, LeadStage, Template } from '../types';
 
-const SERVER = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+const SERVER = window.location.origin;
 import { STAGES, STAGE_LABELS, STAGE_COLORS, SOURCE_LABELS } from './CRM';
 import { useVoice } from '../hooks/useVoice';
 
