@@ -221,35 +221,67 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* User pill */}
-        <div className="mx-4 mt-4 mb-2 p-3 rounded-xl bg-dark-300 border border-dark-50">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center">
-                <span className="text-gold text-xs font-bold">{user?.avatar || 'U'}</span>
-              </div>
-              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-dark-300 transition-colors ${
-                isActive ? 'bg-green-400' : 'bg-white/25'
-              }`} />
+        {/* User pill — clickable for admin to open account switcher */}
+        <div className="mx-4 mt-4 mb-2">
+          {/* Switched-mode badge */}
+          {isSwitched && originalAdmin && (
+            <div className="flex items-center justify-between px-3 py-1.5 mb-1.5 rounded-lg bg-gold/10 border border-gold/25">
+              <span className="text-gold text-[10px] font-medium truncate">
+                Viewing as {user?.name}
+              </span>
+              <button
+                onClick={() => { switchBack(); }}
+                className="flex items-center gap-1 text-[10px] text-gold/70 hover:text-gold transition-colors ml-2 flex-shrink-0"
+              >
+                <RefreshCw size={10} /> Back
+              </button>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-white text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-white/30 text-xs capitalize flex items-center gap-1.5">
-                {user?.role}
-                {user?.role === 'staff' && (
-                  <span className={`text-[10px] font-medium ${isActive ? 'text-green-400' : 'text-white/25'}`}>
-                    · {isActive ? 'Active' : 'Inactive'}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
+          )}
 
-          {user?.role === 'staff' && (
+          <button
+            onClick={() => (isAdmin || isSwitched) ? setShowSwitcher(true) : undefined}
+            className={`w-full p-3 rounded-xl bg-dark-300 border border-dark-50 text-left transition-all ${
+              (isAdmin || isSwitched)
+                ? 'hover:border-gold/30 hover:bg-dark-200 cursor-pointer active:scale-[0.99]'
+                : 'cursor-default'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative flex-shrink-0">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                  isSwitched ? 'bg-white/10 border-white/20' : 'bg-gold/20 border-gold/30'
+                }`}>
+                  <span className={`text-xs font-bold ${isSwitched ? 'text-white/70' : 'text-gold'}`}>
+                    {user?.avatar || 'U'}
+                  </span>
+                </div>
+                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-dark-300 transition-colors ${
+                  isActive ? 'bg-green-400' : 'bg-white/25'
+                }`} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white text-sm font-medium truncate">{user?.name}</p>
+                <p className="text-white/30 text-xs capitalize flex items-center gap-1.5">
+                  {user?.role}
+                  {user?.role === 'staff' && (
+                    <span className={`text-[10px] font-medium ${isActive ? 'text-green-400' : 'text-white/25'}`}>
+                      · {isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  )}
+                </p>
+              </div>
+              {/* Switch icon for admins */}
+              {(isAdmin || isSwitched) && (
+                <RefreshCw size={12} className="text-white/20 flex-shrink-0" />
+              )}
+            </div>
+          </button>
+
+          {user?.role === 'staff' && !isSwitched && (
             <button
               onClick={handleAttendance}
               disabled={attendanceLoading}
-              className={`w-full mt-2.5 text-[11px] py-1.5 px-3 rounded-lg border transition-all flex items-center justify-center gap-1.5 font-medium ${
+              className={`w-full mt-1.5 text-[11px] py-1.5 px-3 rounded-lg border transition-all flex items-center justify-center gap-1.5 font-medium ${
                 isActive
                   ? 'border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400'
                   : 'border-green-500/20 text-green-400/80 hover:bg-green-500/10 hover:text-green-400'
