@@ -127,6 +127,50 @@ function TemplatePicker({ lead, onClose, onSent }: {
               <p className="text-white/20 text-[10px] mt-2">
                 Placeholders filled: name, phone, place, stage, date
               </p>
+
+              {/* Catalogue attachments */}
+              {(selected.attachments || []).length > 0 && (
+                <div className="mt-4">
+                  <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Paperclip size={10} /> Catalogue Attachments
+                  </p>
+                  <div className="space-y-2">
+                    {selected.attachments!.map(att => {
+                      const isImage = att.mimetype.startsWith('image/');
+                      const url = `${SERVER}${att.url}`;
+                      return (
+                        <div key={att.name} className="flex items-center gap-3 bg-dark-400 border border-dark-50 rounded-xl p-3">
+                          {isImage
+                            ? <Image size={16} className="text-blue-400 flex-shrink-0" />
+                            : <FileIcon size={16} className="text-red-400 flex-shrink-0" />}
+                          <span className="flex-1 text-white/60 text-xs truncate">{att.originalName}</span>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(url); }}
+                              className="text-[10px] text-white/30 hover:text-white px-2 py-1 bg-dark-300 rounded-lg transition-colors"
+                              title="Copy link"
+                            >Copy link</button>
+                            {lead.phone && (
+                              <button
+                                onClick={() => {
+                                  const phone = '91' + lead.phone!.replace(/\D/g, '');
+                                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${preview}\n\n${url}`)}`, '_blank');
+                                  if (selected) templatesAPI.use(selected.id).catch(() => {});
+                                }}
+                                className="text-[10px] text-green-400/70 hover:text-green-400 px-2 py-1 bg-green-500/8 border border-green-500/20 rounded-lg transition-colors"
+                              >WhatsApp 📎</button>
+                            )}
+                            <a href={url} target="_blank" rel="noopener noreferrer"
+                              className="text-[10px] text-blue-400/70 hover:text-blue-400 px-2 py-1 bg-blue-500/8 border border-blue-500/20 rounded-lg transition-colors">
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
