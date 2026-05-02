@@ -59,6 +59,8 @@ export const authAPI = {
   adminResetPassword: (userId: string, newPassword: string) =>
     api.post('/auth/admin/reset-password', { userId, newPassword }).then(r => r.data),
   adminListUsers: () => api.get('/auth/admin/users').then(r => r.data),
+  switchToStaff: (staffId: string) =>
+    api.post(`/auth/switch/${staffId}`).then(r => r.data),
 };
 
 export const staffAPI = {
