@@ -799,7 +799,8 @@ function extractNamesFromText(text) {
   // Handles Indian names (rahul, priya, sharma) AND foreign names (alex, john, david)
   // for voice text where all letters are lowercase.
   //
-  const ALL_NAMES = (t) => INDIAN_NAMES.has(t) || FOREIGN_NAMES.has(t);
+  // ALL_NAMES: static dicts + runtime cache of known customer name words from DB
+  const ALL_NAMES = (t) => INDIAN_NAMES.has(t) || FOREIGN_NAMES.has(t) || CUSTOMER_NAME_CACHE.has(t);
 
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
