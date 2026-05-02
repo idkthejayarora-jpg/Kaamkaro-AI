@@ -2091,6 +2091,29 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     console.warn('[Diary NLP] CRM sync failed (non-fatal):', e.message);
   }
 
+  // ── Stock auto-detection (runs once per entry, not per customer) ─────────────
+  // Detects patterns like "6 pc bracelet diya" and updates this staff's stock count
+  {
+    const purchases = stockRoute.detectPurchases(content);
+    if (purchases.length > 0) {
+      // Use first resolved customer as attribution (if any)
+      const firstCustomer = resolvedList[0]?.customer || null;
+      for (const { item, qty, unit } of purchases) {
+        sideEffects.push(
+          stockRoute.addStockEntry({
+            staffId, staffName, item, qty, unit,
+            date:         now,
+            customerId:   firstCustomer?.id   || null,
+            customerName: firstCustomer?.name || null,
+            diaryEntryId: entryId,
+            note:         null,
+          }).catch(() => {})
+        );
+      }
+      console.log(`[Diary NLP] 📦 Stock: detected ${purchases.map(p => `${p.qty} ${p.item}`).join(', ')} for ${staffName}`);
+    }
+  }
+
   await Promise.allSettled(sideEffects);
 
   if (newCustomers.length > 0) {
