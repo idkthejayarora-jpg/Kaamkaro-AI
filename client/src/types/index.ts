@@ -116,6 +116,9 @@ export interface Task {
   transferredAt?: string | null;
   teamId?: string | null;
   completedBy?: string | null;
+  isLoop?: boolean;
+  loopInterval?: 'daily' | 'every2days' | 'weekly';
+  loopMerit?: number;
 }
 
 export interface DiaryEntry {
