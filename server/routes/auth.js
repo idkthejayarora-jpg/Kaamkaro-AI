@@ -183,4 +183,28 @@ router.get('/admin/users', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/auth/switch/:staffId — admin switches into a staff account (no password needed)
+// Issues a short-lived JWT for the target staff member, stored client-side.
+// The admin's original session is preserved in localStorage under kk_admin_token.
+router.post('/switch/:staffId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const staff = await readDB('staff');
+    const target = staff.find(s => s.id === req.params.staffId && s.active !== false);
+    if (!target) return res.status(404).json({ error: 'Staff member not found or inactive' });
+
+    const token = jwt.sign(
+      { id: target.id, phone: target.phone, role: target.role, name: target.name },
+      JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+
+    const { password: _, ...safeUser } = target;
+    console.log(`[Auth] Admin ${req.user.name} switched to staff account: ${target.name}`);
+    res.json({ token, user: safeUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
