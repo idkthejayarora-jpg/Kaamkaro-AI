@@ -44,6 +44,7 @@ const staffNav = [
   { to: '/leaderboard', icon: Trophy,          label: 'Leaderboard' },
   { to: '/followup',    icon: Clock,           label: 'Follow-up Queue' },
   { to: '/goals',       icon: Target,          label: 'Goals' },
+  { to: '/templates',   icon: FileText,        label: 'Templates' },
   { to: '/stock',       icon: Package,         label: 'Stock Tracker' },
 ];
 
