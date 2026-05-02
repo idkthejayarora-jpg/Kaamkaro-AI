@@ -44,7 +44,7 @@ function markBroadcastRead(id: string) {
 }
 
 export default function Layout() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSwitched, user, originalAdmin, switchBack } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [broadcast,  setBroadcast]  = useState<BroadcastMsg | null>(null);
 
