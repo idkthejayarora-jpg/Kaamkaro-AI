@@ -33,55 +33,58 @@ function TemplatePicker({ lead, onClose, onSent }: {
   onClose: () => void;
   onSent: (templateTitle: string) => void;
 }) {
+  const navigate               = useNavigate();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState<Template | null>(null);
   const [preview,   setPreview]   = useState('');
-  const [copied,    setCopied]    = useState(false);
+  const [copied,    setCopied]    = useState<string | null>(null); // stores template id
 
-  // Substitutes {name}, {customerName}, {phone}, {place} placeholders
-  const fillTemplate = (tpl: Template) => {
-    return tpl.content
+  const fillTemplate = (tpl: Template) =>
+    tpl.content
       .replace(/\{name\}|\{customerName\}/gi, lead.name)
       .replace(/\{phone\}/gi,  lead.phone  || '')
       .replace(/\{place\}/gi,  lead.place  || '')
       .replace(/\{stage\}/gi,  STAGE_LABELS[lead.stage] || '')
       .replace(/\{date\}/gi,   new Date().toLocaleDateString('en-IN'));
-  };
 
   useEffect(() => {
-    templatesAPI.list()
-      .then(data => setTemplates(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    templatesAPI.list().then(data => setTemplates(data)).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const pick = (tpl: Template) => {
-    setSelected(tpl);
-    setPreview(fillTemplate(tpl));
-    setCopied(false);
+  const pick = (tpl: Template) => { setSelected(tpl); setPreview(fillTemplate(tpl)); setCopied(null); };
+
+  // 1-click actions directly from the list
+  const quickCopy = async (tpl: Template, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const text = fillTemplate(tpl);
+    await navigator.clipboard.writeText(text);
+    setCopied(tpl.id);
+    setTimeout(() => setCopied(id => id === tpl.id ? null : id), 2000);
+    templatesAPI.use(tpl.id).catch(() => {});
+    onSent(tpl.title);
   };
 
+  const quickWhatsApp = (tpl: Template, withAttachment?: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!lead.phone) return;
+    const text = fillTemplate(tpl);
+    const phone = '91' + lead.phone.replace(/\D/g, '');
+    const body  = withAttachment ? `${text}\n\n${withAttachment}` : text;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(body)}`, '_blank');
+    templatesAPI.use(tpl.id).catch(() => {});
+    onSent(tpl.title);
+  };
+
+  // Preview-pane actions
   const handleCopy = async () => {
     await navigator.clipboard.writeText(preview);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    if (selected) {
-      templatesAPI.use(selected.id).catch(() => {});
-      onSent(selected.title);
-    }
+    setCopied(selected?.id || '');
+    setTimeout(() => setCopied(null), 2000);
+    if (selected) { templatesAPI.use(selected.id).catch(() => {}); onSent(selected.title); }
   };
-
-  const handleWhatsApp = () => {
-    if (!lead.phone) return;
-    const phone = '91' + lead.phone.replace(/\D/g, '');
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(preview)}`, '_blank');
-    if (selected) {
-      templatesAPI.use(selected.id).catch(() => {});
-      onSent(selected.title);
-    }
-  };
+  const handleWhatsApp = () => { if (selected) quickWhatsApp(selected); };
 
   const filtered = templates.filter(t =>
     !search || t.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -95,11 +98,12 @@ function TemplatePicker({ lead, onClose, onSent }: {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in">
       <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-lg shadow-2xl max-h-[88vh] flex flex-col animate-slide-up">
+
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50 flex-shrink-0">
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-gold" />
-            <h2 className="text-white font-semibold text-sm">Send Template to {lead.name}</h2>
+            <h2 className="text-white font-semibold text-sm">Send to {lead.name}</h2>
           </div>
           <button onClick={onClose} className="text-white/30 hover:text-white"><X size={17} /></button>
         </div>
@@ -107,32 +111,31 @@ function TemplatePicker({ lead, onClose, onSent }: {
         {selected ? (
           /* ── Preview pane ── */
           <div className="flex flex-col flex-1 min-h-0">
-            <div className="px-5 pt-4 pb-2 border-b border-dark-50 flex-shrink-0">
-              <button
-                onClick={() => setSelected(null)}
-                className="text-white/40 hover:text-white text-xs flex items-center gap-1 mb-2 transition-colors"
-              >
-                ← Back to templates
+            <div className="px-5 pt-4 pb-3 border-b border-dark-50 flex-shrink-0">
+              <button onClick={() => setSelected(null)} className="text-white/40 hover:text-white text-xs flex items-center gap-1 mb-2 transition-colors">
+                ← All templates
               </button>
               <p className="text-white font-medium text-sm">{selected.title}</p>
               <p className="text-white/30 text-xs">{TYPE_ICON[selected.type]} {selected.type}</p>
             </div>
 
-            {/* Message preview */}
-            <div className="flex-1 overflow-y-auto p-5">
-              <p className="text-white/40 text-[10px] uppercase tracking-wider mb-2">Message preview</p>
-              <div className="bg-dark-400 border border-dark-50 rounded-xl p-4">
-                <p className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed">{preview}</p>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Message preview */}
+              <div>
+                <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2">Message</p>
+                <div className="bg-dark-400 border border-dark-50 rounded-xl p-4">
+                  <p className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed">{preview}</p>
+                </div>
+                <p className="text-white/20 text-[10px] mt-1.5">
+                  Placeholders auto-filled: name, phone, place, stage, date
+                </p>
               </div>
-              <p className="text-white/20 text-[10px] mt-2">
-                Placeholders filled: name, phone, place, stage, date
-              </p>
 
               {/* Catalogue attachments */}
               {(selected.attachments || []).length > 0 && (
-                <div className="mt-4">
+                <div>
                   <p className="text-white/30 text-[10px] uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Paperclip size={10} /> Catalogue Attachments
+                    <Paperclip size={10} /> Catalogues
                   </p>
                   <div className="space-y-2">
                     {selected.attachments!.map(att => {
@@ -145,23 +148,18 @@ function TemplatePicker({ lead, onClose, onSent }: {
                             : <FileIcon size={16} className="text-red-400 flex-shrink-0" />}
                           <span className="flex-1 text-white/60 text-xs truncate">{att.originalName}</span>
                           <div className="flex gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(url); }}
-                              className="text-[10px] text-white/30 hover:text-white px-2 py-1 bg-dark-300 rounded-lg transition-colors"
-                              title="Copy link"
-                            >Copy link</button>
+                            <button onClick={() => navigator.clipboard.writeText(url)}
+                              className="text-[10px] text-white/30 hover:text-white px-2 py-1 bg-dark-300 rounded-lg transition-colors">
+                              Copy link
+                            </button>
                             {lead.phone && (
-                              <button
-                                onClick={() => {
-                                  const phone = '91' + lead.phone!.replace(/\D/g, '');
-                                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${preview}\n\n${url}`)}`, '_blank');
-                                  if (selected) templatesAPI.use(selected.id).catch(() => {});
-                                }}
-                                className="text-[10px] text-green-400/70 hover:text-green-400 px-2 py-1 bg-green-500/8 border border-green-500/20 rounded-lg transition-colors"
-                              >WhatsApp 📎</button>
+                              <button onClick={() => quickWhatsApp(selected, url)}
+                                className="text-[10px] text-green-400/70 hover:text-green-400 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-lg transition-colors">
+                                📎 With msg
+                              </button>
                             )}
                             <a href={url} target="_blank" rel="noopener noreferrer"
-                              className="text-[10px] text-blue-400/70 hover:text-blue-400 px-2 py-1 bg-blue-500/8 border border-blue-500/20 rounded-lg transition-colors">
+                              className="text-[10px] text-blue-400/70 hover:text-blue-400 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg transition-colors">
                               View
                             </a>
                           </div>
@@ -175,22 +173,18 @@ function TemplatePicker({ lead, onClose, onSent }: {
 
             {/* Actions */}
             <div className="p-4 border-t border-dark-50 flex gap-2 flex-shrink-0">
-              <button
-                onClick={handleCopy}
+              <button onClick={handleCopy}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                  copied
+                  copied === selected?.id
                     ? 'bg-green-500/15 border-green-500/30 text-green-400'
                     : 'bg-dark-400 border-dark-50 text-white/60 hover:text-white hover:border-gold/30'
-                }`}
-              >
-                {copied ? <><CheckCheck size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
+                }`}>
+                {copied === selected?.id ? <><CheckCheck size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
               </button>
               {lead.phone && (
-                <button
-                  onClick={handleWhatsApp}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-green-500/20 text-green-400/70 hover:text-green-400 hover:bg-green-500/8 hover:border-green-500/40 transition-all"
-                >
-                  <MessageCircle size={14} /> Send via WhatsApp
+                <button onClick={handleWhatsApp}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-green-500/25 bg-green-500/8 text-green-400 hover:bg-green-500/15 hover:border-green-500/40 transition-all">
+                  <MessageCircle size={14} /> WhatsApp
                 </button>
               )}
             </div>
@@ -198,7 +192,6 @@ function TemplatePicker({ lead, onClose, onSent }: {
         ) : (
           /* ── Template list ── */
           <div className="flex flex-col flex-1 min-h-0">
-            {/* Search */}
             <div className="px-5 py-3 border-b border-dark-50 flex-shrink-0">
               <div className="relative">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
@@ -214,47 +207,118 @@ function TemplatePicker({ lead, onClose, onSent }: {
 
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {loading && (
-                <div className="flex items-center justify-center py-8 text-white/30 text-sm gap-2">
-                  <Loader2 size={16} className="animate-spin" /> Loading templates…
+                <div className="flex items-center justify-center py-10 text-white/30 text-sm gap-2">
+                  <Loader2 size={16} className="animate-spin" /> Loading…
                 </div>
               )}
+
               {!loading && filtered.length === 0 && (
-                <div className="text-center py-8">
-                  <FileText size={28} className="text-white/10 mx-auto mb-2" />
+                <div className="text-center py-10 space-y-3">
+                  <FileText size={28} className="text-white/10 mx-auto" />
                   <p className="text-white/30 text-sm">
-                    {search ? 'No templates match your search' : 'No templates yet — create them in the Templates section'}
+                    {search ? 'No templates match your search' : 'No templates yet'}
                   </p>
+                  {!search && (
+                    <button
+                      onClick={() => { onClose(); navigate('/templates'); }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-gold/10 border border-gold/25 text-gold text-xs rounded-xl hover:bg-gold/20 transition-colors"
+                    >
+                      <Plus size={12} /> Create your first template
+                    </button>
+                  )}
                 </div>
               )}
-              {filtered.map(tpl => (
-                <button
-                  key={tpl.id}
-                  onClick={() => pick(tpl)}
-                  className="w-full text-left p-3.5 bg-dark-400 border border-dark-50 rounded-xl hover:border-gold/25 hover:bg-dark-200 transition-all group"
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-base leading-none mt-0.5">{TYPE_ICON[tpl.type]}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium group-hover:text-gold transition-colors">{tpl.title}</p>
-                      <p className="text-white/30 text-xs mt-0.5 line-clamp-2 leading-relaxed">
-                        {tpl.content.replace(/\{name\}|\{customerName\}/gi, lead.name).slice(0, 100)}…
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {tpl.usageCount > 0 && (
-                          <p className="text-white/15 text-[10px]">Used {tpl.usageCount}×</p>
-                        )}
-                        {(tpl.attachments || []).length > 0 && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-blue-400/60">
-                            <Paperclip size={9} /> {tpl.attachments!.length} file{tpl.attachments!.length > 1 ? 's' : ''}
-                          </span>
+
+              {filtered.map(tpl => {
+                const attachments = tpl.attachments || [];
+                const firstAtt    = attachments[0];
+                const firstUrl    = firstAtt ? `${SERVER}${firstAtt.url}` : null;
+                const isCopied    = copied === tpl.id;
+
+                return (
+                  <div
+                    key={tpl.id}
+                    onClick={() => pick(tpl)}
+                    className="p-3.5 bg-dark-400 border border-dark-50 rounded-xl hover:border-gold/25 hover:bg-dark-200 transition-all group cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-base leading-none mt-0.5 flex-shrink-0">{TYPE_ICON[tpl.type]}</span>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium group-hover:text-gold transition-colors leading-tight">
+                          {tpl.title}
+                        </p>
+                        <p className="text-white/30 text-xs mt-0.5 line-clamp-2 leading-relaxed">
+                          {fillTemplate(tpl).slice(0, 90)}{fillTemplate(tpl).length > 90 ? '…' : ''}
+                        </p>
+
+                        {/* Attachment chips + usage */}
+                        {(attachments.length > 0 || tpl.usageCount > 0) && (
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {attachments.map(att => (
+                              <span key={att.name} className="flex items-center gap-1 text-[10px] text-blue-400/60 bg-blue-500/8 border border-blue-500/15 px-1.5 py-0.5 rounded-md">
+                                {att.mimetype.startsWith('image/') ? <Image size={8} /> : <FileIcon size={8} />}
+                                <span className="max-w-[80px] truncate">{att.originalName}</span>
+                              </span>
+                            ))}
+                            {tpl.usageCount > 0 && (
+                              <span className="text-[10px] text-white/20">Used {tpl.usageCount}×</span>
+                            )}
+                          </div>
                         )}
                       </div>
+
+                      {/* Quick action buttons — stop propagation so they don't open preview */}
+                      <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Copy */}
+                        <button
+                          title="Copy message"
+                          onClick={e => quickCopy(tpl, e)}
+                          className={`p-1.5 rounded-lg transition-all ${isCopied ? 'bg-green-500/15 text-green-400' : 'hover:bg-dark-300 text-white/30 hover:text-white'}`}
+                        >
+                          {isCopied ? <CheckCheck size={13} /> : <Copy size={13} />}
+                        </button>
+                        {/* WhatsApp — message only */}
+                        {lead.phone && (
+                          <button
+                            title="Send via WhatsApp"
+                            onClick={e => { quickWhatsApp(tpl, undefined, e); }}
+                            className="p-1.5 rounded-lg hover:bg-green-500/15 text-white/30 hover:text-green-400 transition-all"
+                          >
+                            <MessageCircle size={13} />
+                          </button>
+                        )}
+                        {/* WhatsApp with first attachment */}
+                        {lead.phone && firstUrl && (
+                          <button
+                            title="Send with catalogue"
+                            onClick={e => { quickWhatsApp(tpl, firstUrl, e); }}
+                            className="p-1.5 rounded-lg hover:bg-blue-500/15 text-white/30 hover:text-blue-400 transition-all"
+                          >
+                            <Paperclip size={13} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Arrow to open preview — always visible */}
+                      <Send size={12} className="text-white/15 group-hover:text-gold/50 transition-colors flex-shrink-0 mt-1 group-hover:opacity-0 absolute opacity-0" />
                     </div>
-                    <Send size={12} className="text-white/15 group-hover:text-gold transition-colors flex-shrink-0 mt-1" />
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
+
+            {/* Footer: create template shortcut */}
+            {!loading && filtered.length > 0 && (
+              <div className="px-4 py-3 border-t border-dark-50 flex-shrink-0">
+                <button
+                  onClick={() => { onClose(); navigate('/templates'); }}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs text-white/30 hover:text-gold transition-colors"
+                >
+                  <Plus size={12} /> Create new template
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
