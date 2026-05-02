@@ -78,9 +78,10 @@ function saveOrder(items: NavItem[], role: string, userId: string) {
 interface SidebarProps { mobileOpen: boolean; onClose: () => void; }
 
 export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
-  const { user, logout, isAdmin, updateUser } = useAuth();
+  const { user, logout, isAdmin, updateUser, isSwitched, originalAdmin, switchBack } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
+  const [showSwitcher, setShowSwitcher] = useState(false);
 
   const defaultNav = isAdmin ? adminNav : staffNav;
   const role       = user?.role || 'staff';
