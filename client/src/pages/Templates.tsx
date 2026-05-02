@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, X, Trash2, Copy, FileText, Paperclip, Image, File, CheckCheck, ExternalLink } from 'lucide-react';
+import { Plus, X, Trash2, Copy, FileText, Paperclip, Image, File, CheckCheck, ExternalLink, Lock, Globe } from 'lucide-react';
 import { templatesAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 import type { Template, TemplateAttachment, PipelineStatus } from '../types';
 
 const TYPE_OPTS = ['general', 'call', 'message', 'email', 'meeting'] as const;
@@ -43,7 +44,6 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
     setLoading(true);
     try {
       let t: Template = await templatesAPI.create({ ...form, stage: form.stage || null });
-      // Upload any attached files
       for (const file of files) {
         t = await templatesAPI.attach(t.id, file);
       }
@@ -59,7 +59,7 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-slide-up max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-50 flex-shrink-0">
-          <h2 className="text-white font-semibold">Add Template</h2>
+          <h2 className="text-white font-semibold">New Template</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-4 overflow-y-auto flex-1">
@@ -86,7 +86,7 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
           <div>
             <label className="label">Message / Script *</label>
             <textarea className="input resize-none" rows={5}
-              placeholder="Write the message template. Use {name}, {phone}, {place} for placeholders."
+              placeholder="Write the message. Use {name}, {phone}, {place} for placeholders."
               value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} />
             <p className="text-white/20 text-xs mt-1">{form.content.length} chars</p>
           </div>
@@ -117,7 +117,7 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
         <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
           <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
           <button onClick={submit} disabled={loading} className="btn-primary flex-1">
-            {loading ? 'Saving...' : 'Add Template'}
+            {loading ? 'Saving…' : 'Create Template'}
           </button>
         </div>
       </div>
@@ -126,10 +126,12 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
 }
 
 export default function Templates() {
+  const { user, isAdmin } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading]     = useState(true);
   const [showAdd, setShowAdd]     = useState(false);
   const [filter, setFilter]       = useState('all');
+  const [scope, setScope]         = useState<'all' | 'mine' | 'shared'>('all');
   const [copied, setCopied]       = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileRefs                  = useRef<Record<string, HTMLInputElement | null>>({});
@@ -140,8 +142,12 @@ export default function Templates() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this template?')) return;
-    await templatesAPI.delete(id);
-    setTemplates(t => t.filter(x => x.id !== id));
+    try {
+      await templatesAPI.delete(id);
+      setTemplates(t => t.filter(x => x.id !== id));
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Could not delete');
+    }
   };
 
   const handleCopy = async (id: string, content: string) => {
@@ -157,17 +163,34 @@ export default function Templates() {
     try {
       const updated: Template = await templatesAPI.attach(id, file);
       setTemplates(prev => prev.map(t => t.id === id ? updated : t));
-    } catch { /* silent */ } finally { setUploading(null); }
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Upload failed');
+    } finally { setUploading(null); }
   };
 
   const handleRemoveAttachment = async (templateId: string, filename: string) => {
-    const updated: Template = await templatesAPI.removeAttachment(templateId, filename);
-    setTemplates(prev => prev.map(t => t.id === templateId ? updated : t));
+    try {
+      const updated: Template = await templatesAPI.removeAttachment(templateId, filename);
+      setTemplates(prev => prev.map(t => t.id === templateId ? updated : t));
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to remove');
+    }
   };
 
-  const filtered = templates.filter(t => filter === 'all' || t.type === filter);
+  // Ownership helper
+  const isOwner = (t: Template) => isAdmin || (t as Template & { createdBy?: string }).createdBy === user?.id;
 
-  if (loading) return <div className="space-y-3">{Array(4).fill(0).map((_, i) => <div key={i} className="card h-20 shimmer" />)}</div>;
+  // Filter pipeline
+  let filtered = templates;
+  if (scope === 'mine')   filtered = filtered.filter(t => (t as Template & { createdBy?: string }).createdBy === user?.id);
+  if (scope === 'shared') filtered = filtered.filter(t => (t as Template & { createdBy?: string }).createdBy !== user?.id);
+  if (filter !== 'all')   filtered = filtered.filter(t => t.type === filter);
+
+  if (loading) return (
+    <div className="space-y-3">
+      {Array(4).fill(0).map((_, i) => <div key={i} className="card h-20 shimmer" />)}
+    </div>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -177,18 +200,39 @@ export default function Templates() {
             <FileText size={24} className="text-gold" />
             Templates
           </h1>
-          <p className="text-white/30 text-sm mt-1">Message scripts and catalogues for your team</p>
+          <p className="text-white/30 text-sm mt-1">
+            Message scripts and catalogues — use them in CRM with one tap
+          </p>
         </div>
         <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
-          <Plus size={14} />Add Template
+          <Plus size={14} /> New Template
         </button>
       </div>
 
-      {/* Type filter */}
+      {/* How-to tip */}
+      <div className="flex items-start gap-3 p-3.5 bg-gold/5 border border-gold/20 rounded-xl">
+        <span className="text-gold text-lg flex-shrink-0">💡</span>
+        <p className="text-white/50 text-xs leading-relaxed">
+          Create a template with your message + attach a catalogue PDF or product images.
+          Then open any CRM lead → tap <strong className="text-white/70">Templates</strong> → pick &amp; send to WhatsApp in one tap. Placeholders like <code className="text-gold/70">{'{name}'}</code> are auto-filled.
+        </p>
+      </div>
+
+      {/* Scope + type filter */}
       <div className="flex gap-2 flex-wrap">
+        {/* Scope tabs */}
+        <div className="flex rounded-xl overflow-hidden border border-dark-50">
+          {(['all', 'mine', 'shared'] as const).map(s => (
+            <button key={s} onClick={() => setScope(s)}
+              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${scope === s ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'}`}>
+              {s === 'mine' ? 'My Templates' : s === 'shared' ? 'Shared' : 'All'}
+            </button>
+          ))}
+        </div>
+        {/* Type filter */}
         {['all', ...TYPE_OPTS].map(t => (
           <button key={t} onClick={() => setFilter(t)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium capitalize transition-colors ${filter === t ? 'bg-gold text-dark-500' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium capitalize transition-colors ${filter === t ? 'bg-dark-200 text-white border border-dark-50' : 'border border-dark-50 text-white/30 hover:text-white/60'}`}>
             {t}
           </button>
         ))}
@@ -197,14 +241,23 @@ export default function Templates() {
       {filtered.length === 0 ? (
         <div className="card flex flex-col items-center py-16 text-center">
           <FileText size={36} className="text-white/10 mb-4" />
-          <p className="text-white/40 font-medium">No templates yet</p>
-          <p className="text-white/20 text-sm mt-1">Add scripts, message templates, or catalogue PDFs</p>
-          <button onClick={() => setShowAdd(true)} className="btn-primary mt-4">Add First Template</button>
+          <p className="text-white/40 font-medium">
+            {scope === 'mine' ? 'You haven\'t created any templates yet' : 'No templates found'}
+          </p>
+          <p className="text-white/20 text-sm mt-1">
+            {scope === 'mine' ? 'Create your first template to use in the CRM' : 'Try a different filter'}
+          </p>
+          <button onClick={() => setShowAdd(true)} className="btn-primary mt-4">
+            Create Template
+          </button>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(t => {
             const attachments = t.attachments || [];
+            const mine = isOwner(t);
+            const tWithCreatedBy = t as Template & { createdBy?: string };
+
             return (
               <div key={t.id} className="card group">
                 <div className="flex items-start gap-4">
@@ -213,6 +266,16 @@ export default function Templates() {
                       <p className="text-white font-semibold">{t.title}</p>
                       <span className="badge badge-gold capitalize">{t.type}</span>
                       {t.stage && <span className="badge badge-gray capitalize">{t.stage}</span>}
+                      {/* Ownership badge */}
+                      {tWithCreatedBy.createdBy === user?.id ? (
+                        <span className="flex items-center gap-1 text-[10px] bg-gold/10 text-gold/70 px-1.5 py-0.5 rounded-full border border-gold/20">
+                          <Lock size={8} /> Mine
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] bg-white/5 text-white/30 px-1.5 py-0.5 rounded-full border border-dark-50">
+                          <Globe size={8} /> Shared
+                        </span>
+                      )}
                       {attachments.length > 0 && (
                         <span className="flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-full">
                           <Paperclip size={9} /> {attachments.length}
@@ -227,11 +290,13 @@ export default function Templates() {
                         {attachments.map(att => (
                           <div key={att.name} className="flex items-center gap-1 group/att">
                             <AttachmentThumb att={att} />
-                            <button
-                              onClick={() => handleRemoveAttachment(t.id, att.name)}
-                              className="opacity-0 group-hover/att:opacity-100 p-0.5 text-white/20 hover:text-red-400 transition-all"
-                              title="Remove"
-                            ><X size={10} /></button>
+                            {mine && (
+                              <button
+                                onClick={() => handleRemoveAttachment(t.id, att.name)}
+                                className="opacity-0 group-hover/att:opacity-100 p-0.5 text-white/20 hover:text-red-400 transition-all"
+                                title="Remove"
+                              ><X size={10} /></button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -243,20 +308,24 @@ export default function Templates() {
                   </div>
 
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {/* Attach file */}
-                    <button
-                      onClick={() => fileRefs.current[t.id]?.click()}
-                      disabled={uploading === t.id}
-                      className="p-2 rounded-lg hover:bg-dark-200 text-white/30 hover:text-blue-400 transition-colors"
-                      title="Attach PDF or image"
-                    >
-                      {uploading === t.id ? <span className="text-[10px] text-white/30">…</span> : <Paperclip size={14} />}
-                    </button>
-                    <input
-                      ref={el => { fileRefs.current[t.id] = el; }}
-                      type="file" accept="image/*,application/pdf" className="hidden"
-                      onChange={e => { if (e.target.files?.[0]) handleAttach(t.id, e.target.files[0]); e.target.value = ''; }}
-                    />
+                    {/* Attach file — only owner */}
+                    {mine && (
+                      <>
+                        <button
+                          onClick={() => fileRefs.current[t.id]?.click()}
+                          disabled={uploading === t.id}
+                          className="p-2 rounded-lg hover:bg-dark-200 text-white/30 hover:text-blue-400 transition-colors"
+                          title="Attach PDF or image"
+                        >
+                          {uploading === t.id ? <span className="text-[10px] text-white/30">…</span> : <Paperclip size={14} />}
+                        </button>
+                        <input
+                          ref={el => { fileRefs.current[t.id] = el; }}
+                          type="file" accept="image/*,application/pdf" className="hidden"
+                          onChange={e => { if (e.target.files?.[0]) handleAttach(t.id, e.target.files[0]); e.target.value = ''; }}
+                        />
+                      </>
+                    )}
                     {/* Copy */}
                     <button
                       onClick={() => handleCopy(t.id, t.content)}
@@ -265,11 +334,13 @@ export default function Templates() {
                     >
                       {copied === t.id ? <CheckCheck size={14} /> : <Copy size={14} />}
                     </button>
-                    {/* Delete */}
-                    <button onClick={() => handleDelete(t.id)}
-                      className="p-2 rounded-lg hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
+                    {/* Delete — only owner */}
+                    {mine && (
+                      <button onClick={() => handleDelete(t.id)}
+                        className="p-2 rounded-lg hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
