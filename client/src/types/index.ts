@@ -479,6 +479,31 @@ export interface Lead {
   teamName?:  string;
 }
 
+// ── Stock Tracking ─────────────────────────────────────────────────────────────
+
+export interface StockHistoryEntry {
+  id: string;
+  date: string;
+  qty: number;
+  unit: string;
+  customerId: string | null;
+  customerName: string | null;
+  diaryEntryId: string | null;
+  note: string | null;
+}
+
+export interface StockItem {
+  id: string;
+  staffId: string;
+  staffName: string;
+  itemName: string;
+  totalSold: number;
+  unit: string;
+  history: StockHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
 
 export interface PDFExtractedEntry {
