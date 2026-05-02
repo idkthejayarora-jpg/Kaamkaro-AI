@@ -4,10 +4,12 @@ import {
   ArrowLeft, Phone, MapPin, MessageCircle, Edit2, Trash2,
   Check, X, PhoneOff, BookCheck, CalendarDays, Trophy,
   Clock, Send, Loader2, Mic, MicOff, AlertCircle,
-  FileText, Copy, CheckCheck, Search,
+  FileText, Copy, CheckCheck, Search, Paperclip, Image, File as FileIcon,
 } from 'lucide-react';
 import { leadsAPI, templatesAPI } from '../lib/api';
 import type { Lead, LeadNote, LeadStage, Template } from '../types';
+
+const SERVER = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
 import { STAGES, STAGE_LABELS, STAGE_COLORS, SOURCE_LABELS } from './CRM';
 import { useVoice } from '../hooks/useVoice';
 
