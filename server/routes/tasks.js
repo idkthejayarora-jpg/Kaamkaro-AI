@@ -106,10 +106,39 @@ router.patch('/:id/complete', async (req, res) => {
       const today  = new Date().toISOString().split('T')[0];
       const isLate = t.dueDate && t.dueDate < today;
 
-      if (isLate) {
-        await awardMerit(meritId, resolvedName, -1, `Late completion: ${t.title}`, 'overdue', t.id);
+      if (t.isLoop) {
+        // Loop tasks: fixed partial merit, no late penalty (ongoing update cadence)
+        const loopMerit = t.loopMerit || 0.5;
+        await awardMerit(meritId, resolvedName, loopMerit, `Loop update: ${t.title}`, 'task', t.id);
+
+        // Auto-recreate for next period
+        const intervalDays = { daily: 1, every2days: 2, weekly: 7 }[t.loopInterval] || 1;
+        const nextDue = new Date();
+        nextDue.setDate(nextDue.getDate() + intervalDays);
+        const newTask = {
+          id:           uuidv4(),
+          staffId:      t.staffId,
+          customerId:   t.customerId || null,
+          customerName: t.customerName || null,
+          title:        t.title,
+          notes:        '',
+          dueDate:      nextDue.toISOString().split('T')[0],
+          completed:    false,
+          completedAt:  null,
+          createdAt:    new Date().toISOString(),
+          source:       'loop',
+          isLoop:       true,
+          loopInterval: t.loopInterval,
+          loopMerit:    t.loopMerit || 0.5,
+        };
+        await insertOne('tasks', newTask);
+        broadcast('task:created', newTask);
+      } else {
+        if (isLate) {
+          await awardMerit(meritId, resolvedName, -1, `Late completion: ${t.title}`, 'overdue', t.id);
+        }
+        await awardMerit(meritId, resolvedName, 1, `Task completed: ${t.title}`, 'task', t.id);
       }
-      await awardMerit(meritId, resolvedName, 1, `Task completed: ${t.title}`, 'task', t.id);
     }
 
     res.json(updated);
