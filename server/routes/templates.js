@@ -1,8 +1,28 @@
 const express = require('express');
+const path    = require('path');
+const fs      = require('fs');
+const multer  = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
+
+// ── File upload setup ─────────────────────────────────────────────────────────
+const UPLOAD_DIR = path.join(__dirname, '../uploads/templates');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: UPLOAD_DIR,
+  filename: (req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
+  fileFilter: (req, file, cb) => {
+    const ok = ['image/jpeg','image/png','image/webp','image/gif','application/pdf'].includes(file.mimetype);
+    cb(null, ok);
+  },
+});
 
 const router = express.Router();
 router.use(authMiddleware);
