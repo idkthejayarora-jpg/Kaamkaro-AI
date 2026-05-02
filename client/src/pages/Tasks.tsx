@@ -493,6 +493,12 @@ export default function Tasks() {
                   <Users size={8} />{getTeamName(task.teamId)} Pool
                 </span>
               )}
+              {task.isLoop && (
+                <span className="flex items-center gap-1 bg-teal-500/10 border border-teal-500/25 text-teal-400 text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0 mt-0.5"
+                  title={`Loop task — auto-repeats ${task.loopInterval?.replace('every2days','every 2 days') || 'daily'}`}>
+                  <Repeat2 size={8} />Loop
+                </span>
+              )}
               <p className={`text-sm font-medium ${task.completed ? 'line-through text-white/30' : 'text-white'}`}>
                 {task.title}
               </p>
