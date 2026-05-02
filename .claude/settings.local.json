@@ -92,7 +92,9 @@
       "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
       "Bash(head -851 \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
       "Bash(tail -n +1052 \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(node --check server/routes/stock.js)",
+      "Bash(node --check server/routes/diary.js)"
     ]
   }
 }

@@ -62,6 +62,11 @@ router.post('/', async (req, res) => {
   }
 });
 
+// ── Ownership helper — admin can touch any template, staff only their own ───────
+function canEdit(user, template) {
+  return user.role === 'admin' || template.createdBy === user.id;
+}
+
 // POST /api/templates/:id/attach — upload PDF or image as catalogue attachment
 router.post('/:id/attach', upload.single('file'), async (req, res) => {
   try {
@@ -69,6 +74,7 @@ router.post('/:id/attach', upload.single('file'), async (req, res) => {
     const templates = await readDB('templates');
     const t = templates.find(x => x.id === req.params.id);
     if (!t) { fs.unlinkSync(req.file.path); return res.status(404).json({ error: 'Template not found' }); }
+    if (!canEdit(req.user, t)) { fs.unlinkSync(req.file.path); return res.status(403).json({ error: 'You can only edit your own templates' }); }
     const attachment = {
       name:         req.file.filename,
       originalName: req.file.originalname,
@@ -89,6 +95,7 @@ router.delete('/:id/attach/:filename', async (req, res) => {
     const templates = await readDB('templates');
     const t = templates.find(x => x.id === req.params.id);
     if (!t) return res.status(404).json({ error: 'Not found' });
+    if (!canEdit(req.user, t)) return res.status(403).json({ error: 'You can only edit your own templates' });
     const filePath = path.join(UPLOAD_DIR, req.params.filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     const attachments = (t.attachments || []).filter(a => a.name !== req.params.filename);
@@ -99,12 +106,15 @@ router.delete('/:id/attach/:filename', async (req, res) => {
   }
 });
 
-// PATCH /api/templates/:id — admin only
-router.patch('/:id', adminOnly, async (req, res) => {
+// PATCH /api/templates/:id — owner or admin
+router.patch('/:id', async (req, res) => {
   try {
+    const templates = await readDB('templates');
+    const t = templates.find(x => x.id === req.params.id);
+    if (!t) return res.status(404).json({ error: 'Not found' });
+    if (!canEdit(req.user, t)) return res.status(403).json({ error: 'You can only edit your own templates' });
     const { title, content, stage, type } = req.body;
     const updated = await updateOne('templates', req.params.id, { title, content, stage, type });
-    if (!updated) return res.status(404).json({ error: 'Not found' });
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -124,11 +134,14 @@ router.post('/:id/use', async (req, res) => {
   }
 });
 
-// DELETE /api/templates/:id — admin only
-router.delete('/:id', adminOnly, async (req, res) => {
+// DELETE /api/templates/:id — owner or admin
+router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await deleteOne('templates', req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Not found' });
+    const templates = await readDB('templates');
+    const t = templates.find(x => x.id === req.params.id);
+    if (!t) return res.status(404).json({ error: 'Not found' });
+    if (!canEdit(req.user, t)) return res.status(403).json({ error: 'You can only delete your own templates' });
+    await deleteOne('templates', req.params.id);
     await logAudit(req.user.id, req.user.name, 'delete', 'template', req.params.id, 'Template deleted');
     res.json({ message: 'Deleted' });
   } catch (err) {
