@@ -239,9 +239,16 @@ function TemplatePicker({ lead, onClose, onSent }: {
                       <p className="text-white/30 text-xs mt-0.5 line-clamp-2 leading-relaxed">
                         {tpl.content.replace(/\{name\}|\{customerName\}/gi, lead.name).slice(0, 100)}…
                       </p>
-                      {tpl.usageCount > 0 && (
-                        <p className="text-white/15 text-[10px] mt-1">Used {tpl.usageCount} times</p>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        {tpl.usageCount > 0 && (
+                          <p className="text-white/15 text-[10px]">Used {tpl.usageCount}×</p>
+                        )}
+                        {(tpl.attachments || []).length > 0 && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-blue-400/60">
+                            <Paperclip size={9} /> {tpl.attachments!.length} file{tpl.attachments!.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Send size={12} className="text-white/15 group-hover:text-gold transition-colors flex-shrink-0 mt-1" />
                   </div>
