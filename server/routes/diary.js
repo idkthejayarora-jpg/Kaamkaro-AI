@@ -1662,6 +1662,9 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     } catch { /* non-fatal — NLP still runs on corrected content below */ }
   }
 
+  // Refresh customer name cache so known customer names are detected in Pass 2
+  await refreshCustomerNameCache(staffId);
+
   // ── PHASE 1: Local NLP — parallel reads ────────────────────────────────────
   let allCustomers = [];
   let allVendors   = [];
