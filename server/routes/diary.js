@@ -1846,6 +1846,21 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     // 3a. Loop task auto-detection — runs async, non-blocking
     sideEffects.push(detectAndCreateLoopTask(staffId, staffName, customer, now));
 
+    // 3b-stock. Detect purchases and update individual staff stock counts
+    const purchases = stockRoute.detectPurchases(content);
+    for (const { item, qty, unit } of purchases) {
+      sideEffects.push(
+        stockRoute.addStockEntry({
+          staffId, staffName, item, qty, unit,
+          date:         now,
+          customerId:   customer.id,
+          customerName: customer.name,
+          diaryEntryId: entryId,
+          note:         null,
+        }).catch(() => {})
+      );
+    }
+
     // 3b. Create tasks for detected future-intent phrases
     const detectedTasks = detectTasks(content, customer.name);
     for (const { title, dueDate } of detectedTasks) {
