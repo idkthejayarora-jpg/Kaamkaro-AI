@@ -46,16 +46,54 @@ router.post('/', async (req, res) => {
       id: uuidv4(),
       title,
       content,
-      stage: stage || null, // which pipeline stage this is for (optional)
-      type,                 // 'general' | 'call' | 'message' | 'email' | 'meeting'
+      stage: stage || null,
+      type,
       createdBy: req.user.id,
       createdByName: req.user.name,
       usageCount: 0,
+      attachments: [],         // { name, originalName, url, mimetype }[]
       createdAt: new Date().toISOString(),
     };
     await insertOne('templates', template);
     await logAudit(req.user.id, req.user.name, 'create', 'template', template.id, `Created template: ${title}`);
     res.status(201).json(template);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/templates/:id/attach — upload PDF or image as catalogue attachment
+router.post('/:id/attach', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded or unsupported type (jpg/png/webp/gif/pdf only)' });
+    const templates = await readDB('templates');
+    const t = templates.find(x => x.id === req.params.id);
+    if (!t) { fs.unlinkSync(req.file.path); return res.status(404).json({ error: 'Template not found' }); }
+    const attachment = {
+      name:         req.file.filename,
+      originalName: req.file.originalname,
+      url:          `/uploads/templates/${req.file.filename}`,
+      mimetype:     req.file.mimetype,
+    };
+    const attachments = [...(t.attachments || []), attachment];
+    const updated = await updateOne('templates', req.params.id, { attachments });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// DELETE /api/templates/:id/attach/:filename — remove one attachment
+router.delete('/:id/attach/:filename', async (req, res) => {
+  try {
+    const templates = await readDB('templates');
+    const t = templates.find(x => x.id === req.params.id);
+    if (!t) return res.status(404).json({ error: 'Not found' });
+    const filePath = path.join(UPLOAD_DIR, req.params.filename);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    const attachments = (t.attachments || []).filter(a => a.name !== req.params.filename);
+    const updated = await updateOne('templates', req.params.id, { attachments });
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
