@@ -590,6 +590,25 @@ export default function Tasks() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+
+      {/* ── Loop task notification toast ─────────────────────────────────────── */}
+      {loopToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
+          <div className="flex items-center gap-3 bg-teal-900/90 border border-teal-500/40 rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-sm">
+            <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+              <Repeat2 size={15} className="text-teal-400" />
+            </div>
+            <div>
+              <p className="text-teal-300 text-sm font-semibold">Loop task created</p>
+              <p className="text-teal-400/70 text-xs">
+                {loopToast.customerName} · {loopToast.interval} update pattern detected
+              </p>
+            </div>
+            <button onClick={() => setLoopToast(null)} className="text-teal-500/50 hover:text-teal-300 ml-1"><X size={14} /></button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
