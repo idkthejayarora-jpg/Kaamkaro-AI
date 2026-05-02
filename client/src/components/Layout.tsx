@@ -96,6 +96,28 @@ export default function Layout() {
           <NotificationsBell />
         </div>
 
+        {/* Switched-account banner — full width, always on top of content */}
+        {isSwitched && originalAdmin && (
+          <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-2 bg-gold/10 border-b border-gold/25">
+            <div className="flex items-center gap-2 min-w-0">
+              <Eye size={13} className="text-gold flex-shrink-0" />
+              <span className="text-gold text-xs font-medium truncate">
+                Viewing as <strong className="text-white">{user?.name}</strong>
+              </span>
+              <span className="text-white/30 text-xs hidden sm:inline">
+                — logged in as {originalAdmin.user.name}
+              </span>
+            </div>
+            <button
+              onClick={switchBack}
+              className="flex items-center gap-1.5 px-3 py-1 bg-gold text-dark-500 text-xs font-semibold rounded-lg hover:bg-gold/90 transition-colors flex-shrink-0"
+            >
+              <RefreshCw size={11} />
+              Switch back
+            </button>
+          </div>
+        )}
+
         <main className="flex-1 overflow-y-auto bg-dark-500">
           {/* pb-28 on mobile gives clearance for Kamal button + iOS home bar */}
           <div className="p-4 pb-28 sm:pb-6 md:p-6 lg:p-8 max-w-7xl mx-auto">
