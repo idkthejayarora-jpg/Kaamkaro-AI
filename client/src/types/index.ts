@@ -226,6 +226,13 @@ export interface Goal {
   createdAt: string;
 }
 
+export interface TemplateAttachment {
+  name: string;
+  originalName: string;
+  url: string;
+  mimetype: string;
+}
+
 export interface Template {
   id: string;
   title: string;
@@ -234,6 +241,7 @@ export interface Template {
   type: 'general' | 'call' | 'message' | 'email' | 'meeting';
   createdByName: string;
   usageCount: number;
+  attachments?: TemplateAttachment[];
   createdAt: string;
 }
 
