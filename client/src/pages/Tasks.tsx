@@ -389,8 +389,21 @@ export default function Tasks() {
   const [showVoice,   setShowVoice]   = useState(false);
   const [editing,     setEditing]     = useState<Task | null>(null);
   const [loading,     setLoading]     = useState(true);
+  const [loopToast,   setLoopToast]   = useState<{ customerName: string; interval: string } | null>(null);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // ── SSE: reload task list on any task event; notify on loop task creation ───
+  useSSE({
+    'task:created': () => { tasksAPI.list().then(setTasks).catch(() => {}); },
+    'task:updated': () => { tasksAPI.list().then(setTasks).catch(() => {}); },
+    'task:loop_created': (data: unknown) => {
+      const d = data as { customerName: string; interval: string };
+      tasksAPI.list().then(setTasks).catch(() => {});
+      setLoopToast({ customerName: d.customerName, interval: d.interval });
+      setTimeout(() => setLoopToast(null), 6000);
+    },
+  });
 
   const load = async () => {
     const [t, s, c, tm] = await Promise.all([
