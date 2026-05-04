@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, Calendar, Flame, TrendingUp, Users, Clock, LogIn, LogOut, Timer } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { staffAPI, customersAPI, interactionsAPI, attendanceAPI } from '../lib/api';
-import type { Staff, Customer, Performance, Interaction, AttendanceRecord } from '../types';
+import { staffAPI, customersAPI, interactionsAPI, attendanceAPI, badgesAPI } from '../lib/api';
+import type { Staff, Customer, Performance, Interaction, AttendanceRecord, Badge } from '../types';
+import { BADGE_META } from '../types';
 
 const GOLD = '#D4AF37';
 const DIM  = '#2A2A2A';
