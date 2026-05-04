@@ -162,19 +162,71 @@ export default function Layout() {
       {/* Kamal floating AI assistant */}
       <KamalAssistant />
 
-      {/* ── Badge earned toast — bottom-right, auto-dismisses after 5s ── */}
+      {/* ── Badge earned — full-screen achievement overlay ── */}
       {badgeToast && (
-        <div className="fixed bottom-24 right-4 z-[95] animate-fade-in pointer-events-auto">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-dark-300 border border-gold/50 shadow-2xl shadow-gold/20 max-w-xs">
-            <div className="text-3xl flex-shrink-0">{badgeToast.icon}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-gold text-xs font-semibold uppercase tracking-wide">New Badge Earned!</p>
-              <p className="text-white font-bold text-sm truncate">{badgeToast.label}</p>
-              <p className="text-white/40 text-[11px] capitalize">{badgeToast.tier} tier</p>
+        <div
+          className="fixed inset-0 z-[95] flex items-center justify-center p-4 animate-fade-in"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setBadgeToast(null)}
+        >
+          {/* Burst ring animation */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-64 h-64 rounded-full border-2 border-gold/30 animate-ping" style={{ animationDuration: '1.2s' }} />
+            <div className="absolute w-96 h-96 rounded-full border border-gold/10 animate-ping" style={{ animationDuration: '1.8s', animationDelay: '0.3s' }} />
+          </div>
+
+          {/* Card */}
+          <div
+            className="relative w-full max-w-sm pointer-events-auto animate-fade-in"
+            style={{ animationDelay: '0.1s' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="rounded-3xl bg-dark-300 border-2 border-gold/50 shadow-2xl shadow-gold/30 overflow-hidden">
+              {/* Gold header bar */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-amber-600 via-gold to-amber-400" />
+
+              <div className="px-8 py-8 flex flex-col items-center text-center gap-4">
+                {/* Trophy label */}
+                <p className="text-gold text-xs font-bold uppercase tracking-[0.2em]">🏆 Badge Mili!</p>
+
+                {/* Big icon */}
+                <div className="relative">
+                  <div className="text-8xl leading-none select-none">{badgeToast.icon}</div>
+                  {/* Tier glow ring */}
+                  <div className={`absolute inset-0 rounded-full blur-2xl opacity-40 -z-10 ${
+                    badgeToast.tier === 'gold'   ? 'bg-gold' :
+                    badgeToast.tier === 'silver' ? 'bg-slate-300' :
+                    'bg-amber-500'
+                  }`} />
+                </div>
+
+                {/* Badge name */}
+                <div className="space-y-1">
+                  <h2 className="text-white text-2xl font-black tracking-tight">{badgeToast.label}</h2>
+                  <span className={`inline-block px-3 py-0.5 rounded-full text-xs font-semibold border ${
+                    badgeToast.tier === 'gold'   ? 'bg-gold/15 text-gold border-gold/30' :
+                    badgeToast.tier === 'silver' ? 'bg-slate-400/15 text-slate-300 border-slate-400/30' :
+                    'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  }`}>
+                    {badgeToast.tier === 'bronze' ? '🥉 Kaansy' : badgeToast.tier === 'silver' ? '🥈 Rajat' : '🥇 Swarn'} Tier
+                  </span>
+                </div>
+
+                {/* Description */}
+                <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+                  {(badgeToast as Badge & { description?: string }).description
+                    || 'Badhaai ho — aapne yeh uplabdhi haasil ki!'}
+                </p>
+
+                {/* Dismiss */}
+                <button
+                  onClick={() => setBadgeToast(null)}
+                  className="mt-2 w-full py-3 rounded-2xl bg-gold text-dark-500 font-bold text-sm hover:bg-gold/90 active:scale-[0.97] transition-all"
+                >
+                  Shukriya! 🙏
+                </button>
+              </div>
             </div>
-            <button onClick={() => setBadgeToast(null)} className="text-white/30 hover:text-white transition-colors flex-shrink-0 p-0.5">
-              <X size={14} />
-            </button>
           </div>
         </div>
       )}
