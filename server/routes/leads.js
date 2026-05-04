@@ -169,6 +169,13 @@ router.put('/:id', async (req, res) => {
     }
 
     const updated = await updateOne('leads', req.params.id, updates);
+
+    // ── Badge check when stage advances to 'won' (non-blocking) ───────────────
+    if (updates.stage === 'won' && existing.stage !== 'won') {
+      const recipientId = existing.staffId || req.user.id;
+      checkAndAwardBadges(recipientId, { event: 'lead_won' }).catch(() => {});
+    }
+
     res.json(updated);
   } catch (err) {
     console.error('[Leads] PUT error:', err);
