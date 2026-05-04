@@ -24,37 +24,37 @@ const { broadcast } = require('./sse');
 
 const BADGES = {
   // ── Tasks ─────────────────────────────────────────────────────────────────
-  pehla_qadam:        { tier: 'bronze', label: 'Pehla Qadam',        icon: '👣', description: 'Aapne apna pehla task safaltapoorvak poora kiya' },
-  parishramik:        { tier: 'silver', label: 'Parishramik',        icon: '⚔️',  description: 'Lagaatar mehnat se 50 tasks poore kiye' },
-  karya_ratna:        { tier: 'gold',   label: 'Karya Ratna',        icon: '🏅', description: 'Ek sau tasks poori nishtha se poore kiye' },
+  pehla_qadam:        { tier: 'bronze', label: 'Pehla Kadam',        icon: '👣', description: 'Pehla task complete kiya' },
+  parishramik:        { tier: 'silver', label: 'Kaam ka Baadshah',   icon: '⚔️',  description: '50 tasks complete kiye' },
+  karya_ratna:        { tier: 'gold',   label: 'Kaam ka Legend',     icon: '🏅', description: '100 tasks complete kiye' },
 
   // ── Diary streak ──────────────────────────────────────────────────────────
-  niyamit_karyakarta: { tier: 'bronze', label: 'Niyamit Karyakarta', icon: '🔥', description: 'Lagaatar 7 din diary mein kaam darj kiya' },
-  satat_sevak:        { tier: 'silver', label: 'Satat Sevak',        icon: '⚡', description: 'Lagaatar 30 din niyamit diary likhte rahe' },
-  atulit_parishram:   { tier: 'gold',   label: 'Atulit Parishram',   icon: '💫', description: 'Lagaatar 100 din ki anugamit diary — atulit samarpan' },
+  niyamit_karyakarta: { tier: 'bronze', label: 'Chal Pada',          icon: '🔥', description: '7 din ki diary streak' },
+  satat_sevak:        { tier: 'silver', label: 'Roz Ka Yodha',       icon: '⚡', description: '30 din ki diary streak' },
+  atulit_parishram:   { tier: 'gold',   label: 'Rokna Mushkil Hai',  icon: '💫', description: '100 din ki diary streak' },
 
   // ── Lead conversions ──────────────────────────────────────────────────────
-  pehli_safalta:      { tier: 'bronze', label: 'Pehli Safalta',      icon: '🤝', description: 'Pehla lead safaltapoorvak convert kiya' },
-  vyapar_nipun:       { tier: 'silver', label: 'Vyapar Nipun',       icon: '💼', description: 'Paanch leads convert karne ki kushalta prapt ki' },
-  shresth_vikreta:    { tier: 'gold',   label: 'Shresth Vikreta',    icon: '🏆', description: 'Bees leads convert karke shresth vikreta bane' },
+  pehli_safalta:      { tier: 'bronze', label: 'Pehli Dikki',        icon: '🤝', description: 'Pehla lead close kiya' },
+  vyapar_nipun:       { tier: 'silver', label: 'Deal Baaz',          icon: '💼', description: '5 leads close kiye' },
+  shresth_vikreta:    { tier: 'gold',   label: 'Badi Dikki',         icon: '🏆', description: '20 leads close kiye' },
 
   // ── Merit points ──────────────────────────────────────────────────────────
-  pratham_samman:     { tier: 'bronze', label: 'Pratham Samman',     icon: '🌟', description: '50 merit points arjit kiye — shubh aarambh' },
-  vishisht_samman:    { tier: 'silver', label: 'Vishisht Samman',    icon: '💎', description: '200 merit points ki uplabdhi prapt ki' },
-  param_samman:       { tier: 'gold',   label: 'Param Samman',       icon: '👑', description: '500 merit points — param uplabdhi' },
+  pratham_samman:     { tier: 'bronze', label: 'Points Starter',     icon: '🌟', description: '50 merit points kamaye' },
+  vishisht_samman:    { tier: 'silver', label: 'Points Khiladi',     icon: '💎', description: '200 merit points kamaye' },
+  param_samman:       { tier: 'gold',   label: 'Points ka Raja',     icon: '👑', description: '500 merit points kamaye' },
 
   // ── Tenure ────────────────────────────────────────────────────────────────
-  nav_sadasya:        { tier: 'bronze', label: 'Nav Sadasya',        icon: '🌱', description: 'Team mein ek maah safaltapoorvak poora kiya' },
-  niyamit_sadasya:    { tier: 'silver', label: 'Niyamit Sadasya',   icon: '🎖️',  description: 'Teen maah ki niyamit seva prapt ki' },
-  varishth_sadasya:   { tier: 'gold',   label: 'Varishth Sadasya',  icon: '🏛️',  description: 'Ek varsh ki anugamit seva — varishthata ka praman' },
+  nav_sadasya:        { tier: 'bronze', label: '1 Mahina Hua',       icon: '🌱', description: '30 din team mein' },
+  niyamit_sadasya:    { tier: 'silver', label: '3 Mahine Hua',       icon: '🎖️',  description: '90 din team mein' },
+  varishth_sadasya:   { tier: 'gold',   label: 'Tena Pana',          icon: '🏛️',  description: '1 saal team mein' },
 
   // ── Response rate ─────────────────────────────────────────────────────────
-  uttam_pratikriya:   { tier: 'bronze', label: 'Uttam Pratikriya',   icon: '📞', description: '90%+ response rate ke saath uttam pratikriya' },
-  sanchar_shresth:    { tier: 'gold',   label: 'Sanchar Shresth',    icon: '🎯', description: '98%+ response rate — sanchar mein shresth' },
+  uttam_pratikriya:   { tier: 'bronze', label: 'Call pe Ready',      icon: '📞', description: '90%+ response rate (min 20 calls)' },
+  sanchar_shresth:    { tier: 'gold',   label: 'Call Ka King',       icon: '🎯', description: '98%+ response rate (min 30 calls)' },
 
   // ── Loop tasks ────────────────────────────────────────────────────────────
-  niyamit_sevak:      { tier: 'bronze', label: 'Niyamit Sevak',      icon: '🔄', description: 'Paanch niyamit loop tasks poore kiye' },
-  dhara_karyakarta:   { tier: 'silver', label: 'Dhara Karyakarta',   icon: '♾️',  description: 'Bees loop tasks ki lagaatar poorti' },
+  niyamit_sevak:      { tier: 'bronze', label: 'Baar Baar Karta',    icon: '🔄', description: '5 loop tasks complete' },
+  dhara_karyakarta:   { tier: 'silver', label: 'Loop ka Ustaad',     icon: '♾️',  description: '20 loop tasks complete' },
 };
 
 // ── Default criteria thresholds ───────────────────────────────────────────────

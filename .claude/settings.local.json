@@ -97,7 +97,9 @@
       "Bash(node --check server/routes/diary.js)",
       "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/auth.js\")",
       "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js'\\)\")",
-      "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/index.js'\\)\")"
+      "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/index.js'\\)\")",
+      "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/routes/badges.js'\\)\")",
+      "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/utils/badgeEarner.js'\\)\")"
     ]
   }
 }
