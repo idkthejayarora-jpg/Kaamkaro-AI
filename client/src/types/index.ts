@@ -260,11 +260,14 @@ export interface LeaderboardRow {
   streak: number;
   longestStreak: number;
   closedCount: number;
+  closedThisWeek: number;
   completedTasks: number;
   totalTasks: number;
   taskCompletionRate: number;
   weekPts: number;
   meritTotal: number;
+  weekDelta: number;
+  customerCount: number;
 }
 
 export interface Team {
