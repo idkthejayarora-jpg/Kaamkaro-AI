@@ -159,6 +159,47 @@ export default function Leaderboard() {
         </div>
       </div>
 
+      {/* ── Three-track spotlights ─────────────────────────────────────────── */}
+      {data.spotlights && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { key: 'conversionKing',   icon: '🎯', title: 'Conversion King',   colour: 'border-amber-500/30 bg-amber-500/5' },
+            { key: 'consistencyCrown', icon: '📞', title: 'Consistency Crown', colour: 'border-blue-400/30 bg-blue-400/5'  },
+            { key: 'mostImproved',     icon: '📈', title: 'Most Improved',     colour: 'border-green-500/30 bg-green-500/5' },
+          ].map(({ key, icon, title, colour }) => {
+            const entry = data.spotlights![key as keyof typeof data.spotlights] as SpotlightEntry | null;
+            return (
+              <div key={key} className={`rounded-2xl border p-4 ${colour}`}>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <span className="text-base">{icon}</span>
+                  <p className="text-white/50 text-xs font-semibold uppercase tracking-wide">{title}</p>
+                </div>
+                {entry ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-full bg-dark-300 border border-dark-50 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                      {entry.avatar || entry.name?.[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">{entry.name}</p>
+                      <p className="text-white/40 text-xs">
+                        {key === 'mostImproved' && entry.value >= 0 ? '+' : ''}{entry.value} {entry.label}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-white/20 text-xs">Not enough data yet</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Scoring note ──────────────────────────────────────────────────── */}
+      <p className="text-white/20 text-[11px]">
+        📊 Score adjusted for portfolio size — 2 interactions per customer per week = full score
+      </p>
+
       {/* My position (for staff) */}
       {!isAdmin && myRow && (
         <div className="card border-gold/30 bg-gold/5">
