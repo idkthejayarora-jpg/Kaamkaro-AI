@@ -13,6 +13,8 @@ const AVAILABILITY_CONFIG = {
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
+interface SpotlightEntry { id: string; name: string; avatar?: string; value: number; label: string; }
+
 interface LeaderboardData {
   rows: LeaderboardRow[];
   scopedTeamId:   string | null;
@@ -20,6 +22,12 @@ interface LeaderboardData {
   teams: { id: string; name: string }[];
   myTeamId:   string | null;
   myTeamName: string | null;
+  spotlights?: {
+    conversionKing:   SpotlightEntry | null;
+    consistencyCrown: SpotlightEntry | null;
+    mostImproved:     SpotlightEntry | null;
+  };
+  hallOfFame?: { name: string; avatar?: string }[];
 }
 
 export default function Leaderboard() {
