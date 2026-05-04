@@ -325,7 +325,7 @@ export default function Leaderboard() {
                   </div>
 
                   {/* This week's pts — primary rank driver */}
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
                     <div className={`inline-flex flex-col items-center justify-center w-16 h-16 rounded-full border-2 ${
                       row.weekPts >= 0 ? 'border-gold/40 bg-gold/5' : 'border-red-500/30 bg-red-500/5'
                     }`}>
@@ -335,6 +335,18 @@ export default function Leaderboard() {
                       </span>
                       <span className="text-white/20 text-[8px]">this wk</span>
                     </div>
+                    {/* Week-over-week score delta */}
+                    {(row as LeaderboardRow & { weekDelta?: number }).weekDelta !== undefined && (
+                      <span className={`text-[10px] font-medium ${
+                        ((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) > 0 ? 'text-green-400' :
+                        ((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) < 0 ? 'text-red-400/70' :
+                        'text-white/20'
+                      }`}>
+                        {((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) > 0 ? '▲' :
+                         ((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) < 0 ? '▼' : '—'}
+                        {' '}{Math.abs((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0)} vs last wk
+                      </span>
+                    )}
                   </div>
                 </div>
 
