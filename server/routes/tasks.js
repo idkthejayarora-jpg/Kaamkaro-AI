@@ -140,6 +140,9 @@ router.patch('/:id/complete', async (req, res) => {
         }
         await awardMerit(meritId, resolvedName, 1, `Task completed: ${t.title}`, 'task', t.id);
       }
+
+      // ── Badge check (non-blocking) ─────────────────────────────────────────
+      checkAndAwardBadges(meritId, { event: 'task' }).catch(() => {});
     }
 
     res.json(updated);
