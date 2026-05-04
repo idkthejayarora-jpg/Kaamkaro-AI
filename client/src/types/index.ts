@@ -541,6 +541,7 @@ export interface Badge {
   label: string;
   icon: string;
   tier: 'bronze' | 'silver' | 'gold';
+  description?: string;
   earnedAt: string;
 }
 
