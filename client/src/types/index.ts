@@ -553,23 +553,59 @@ export interface BadgeMeta {
 
 // Full catalogue — mirrors server/utils/badgeEarner.js BADGES object
 export const BADGE_META: Record<string, BadgeMeta> = {
-  first_steps:     { label: 'Pehla Kadam',       icon: '👣', tier: 'bronze', description: 'Pehla task complete kiya' },
-  task_warrior:    { label: 'Kaam ka Baadshah',  icon: '⚔️',  tier: 'silver', description: '50 tasks complete' },
-  task_legend:     { label: 'Kaam ka Legend',    icon: '🏅', tier: 'gold',   description: '100 tasks complete' },
-  on_a_roll:       { label: 'Chal Pada',         icon: '🔥', tier: 'bronze', description: '7 din ki diary streak' },
-  streak_master:   { label: 'Roz Ka Yodha',      icon: '⚡', tier: 'silver', description: '30 din ki diary streak' },
-  unstoppable:     { label: 'Rokna Mushkil Hai', icon: '💫', tier: 'gold',   description: '100 din ki diary streak' },
-  first_deal:      { label: 'Pehli Dikki',       icon: '🤝', tier: 'bronze', description: 'Pehla lead close kiya' },
-  deal_maker:      { label: 'Deal Baaz',         icon: '💼', tier: 'silver', description: '5 leads close kiye' },
-  closer:          { label: 'Badi Dikki',        icon: '🏆', tier: 'gold',   description: '20 leads close kiye' },
-  merit_rookie:    { label: 'Points Starter',    icon: '🌟', tier: 'bronze', description: '50 merit points kamaye' },
-  merit_pro:       { label: 'Points Khiladi',    icon: '💎', tier: 'silver', description: '200 merit points kamaye' },
-  merit_elite:     { label: 'Points ka Raja',    icon: '👑', tier: 'gold',   description: '500 merit points kamaye' },
-  old_timer:       { label: '1 Mahina Hua',      icon: '📅', tier: 'bronze', description: '30 din team mein' },
-  veteran:         { label: '3 Mahine Hua',      icon: '🎖️',  tier: 'silver', description: '90 din team mein' },
-  pillar:          { label: 'Tena Pana',         icon: '🏛️',  tier: 'gold',   description: '1 saal team mein' },
-  sharp_responder: { label: 'Call pe Ready',     icon: '📞', tier: 'bronze', description: '90%+ response rate (min 20 calls)' },
-  call_champion:   { label: 'Call Ka King',      icon: '🎯', tier: 'gold',   description: '98%+ response rate (min 30 calls)' },
-  loop_closer:     { label: 'Baar Baar Karta',   icon: '🔄', tier: 'bronze', description: '5 loop tasks complete' },
-  loop_master:     { label: 'Loop ka Ustaad',    icon: '♾️',  tier: 'silver', description: '20 loop tasks complete' },
+  // Tasks
+  pehla_qadam:        { label: 'Pehla Qadam',        icon: '👣', tier: 'bronze', description: 'Aapne apna pehla task safaltapoorvak poora kiya' },
+  parishramik:        { label: 'Parishramik',        icon: '⚔️',  tier: 'silver', description: 'Lagaatar mehnat se 50 tasks poore kiye' },
+  karya_ratna:        { label: 'Karya Ratna',        icon: '🏅', tier: 'gold',   description: 'Ek sau tasks poori nishtha se poore kiye' },
+  // Streak
+  niyamit_karyakarta: { label: 'Niyamit Karyakarta', icon: '🔥', tier: 'bronze', description: 'Lagaatar 7 din diary mein kaam darj kiya' },
+  satat_sevak:        { label: 'Satat Sevak',        icon: '⚡', tier: 'silver', description: 'Lagaatar 30 din niyamit diary likhte rahe' },
+  atulit_parishram:   { label: 'Atulit Parishram',   icon: '💫', tier: 'gold',   description: 'Lagaatar 100 din ki anugamit diary — atulit samarpan' },
+  // Deals
+  pehli_safalta:      { label: 'Pehli Safalta',      icon: '🤝', tier: 'bronze', description: 'Pehla lead safaltapoorvak convert kiya' },
+  vyapar_nipun:       { label: 'Vyapar Nipun',       icon: '💼', tier: 'silver', description: 'Paanch leads convert karne ki kushalta prapt ki' },
+  shresth_vikreta:    { label: 'Shresth Vikreta',    icon: '🏆', tier: 'gold',   description: 'Bees leads convert karke shresth vikreta bane' },
+  // Merits
+  pratham_samman:     { label: 'Pratham Samman',     icon: '🌟', tier: 'bronze', description: '50 merit points arjit kiye — shubh aarambh' },
+  vishisht_samman:    { label: 'Vishisht Samman',    icon: '💎', tier: 'silver', description: '200 merit points ki uplabdhi prapt ki' },
+  param_samman:       { label: 'Param Samman',       icon: '👑', tier: 'gold',   description: '500 merit points — param uplabdhi' },
+  // Tenure
+  nav_sadasya:        { label: 'Nav Sadasya',        icon: '🌱', tier: 'bronze', description: 'Team mein ek maah safaltapoorvak poora kiya' },
+  niyamit_sadasya:    { label: 'Niyamit Sadasya',   icon: '🎖️',  tier: 'silver', description: 'Teen maah ki niyamit seva prapt ki' },
+  varishth_sadasya:   { label: 'Varishth Sadasya',  icon: '🏛️',  tier: 'gold',   description: 'Ek varsh ki anugamit seva — varishthata ka praman' },
+  // Response
+  uttam_pratikriya:   { label: 'Uttam Pratikriya',   icon: '📞', tier: 'bronze', description: '90%+ response rate ke saath uttam pratikriya' },
+  sanchar_shresth:    { label: 'Sanchar Shresth',    icon: '🎯', tier: 'gold',   description: '98%+ response rate — sanchar mein shresth' },
+  // Loop tasks
+  niyamit_sevak:      { label: 'Niyamit Sevak',      icon: '🔄', tier: 'bronze', description: 'Paanch niyamit loop tasks poore kiye' },
+  dhara_karyakarta:   { label: 'Dhara Karyakarta',   icon: '♾️',  tier: 'silver', description: 'Bees loop tasks ki lagaatar poorti' },
 };
+
+// Badge criteria shape — used by the admin criteria editor
+export interface BadgeCriteria {
+  tasks:     { bronze: number; silver: number; gold: number };
+  streak:    { bronze: number; silver: number; gold: number };
+  deals:     { bronze: number; silver: number; gold: number };
+  merits:    { bronze: number; silver: number; gold: number };
+  tenure:    { bronze: number; silver: number; gold: number };
+  response:  {
+    bronze: { rate: number; minInteractions: number };
+    gold:   { rate: number; minInteractions: number };
+  };
+  loopTasks: { bronze: number; silver: number };
+}
+
+// Human-readable labels for the criteria editor rows
+export const CRITERIA_META: {
+  key: keyof Omit<BadgeCriteria, 'response'>;
+  label: string;
+  unit: string;
+  tiers: { key: string; badge: string }[];
+}[] = [
+  { key: 'tasks',     label: 'Tasks Completed',      unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Pehla Qadam' }, { key: 'silver', badge: 'Parishramik' }, { key: 'gold', badge: 'Karya Ratna' }] },
+  { key: 'streak',    label: 'Diary Streak',         unit: 'days',  tiers: [{ key: 'bronze', badge: 'Niyamit Karyakarta' }, { key: 'silver', badge: 'Satat Sevak' }, { key: 'gold', badge: 'Atulit Parishram' }] },
+  { key: 'deals',     label: 'Leads Closed (Won)',   unit: 'leads', tiers: [{ key: 'bronze', badge: 'Pehli Safalta' }, { key: 'silver', badge: 'Vyapar Nipun' }, { key: 'gold', badge: 'Shresth Vikreta' }] },
+  { key: 'merits',    label: 'Merit Points Earned',  unit: 'pts',   tiers: [{ key: 'bronze', badge: 'Pratham Samman' }, { key: 'silver', badge: 'Vishisht Samman' }, { key: 'gold', badge: 'Param Samman' }] },
+  { key: 'tenure',    label: 'Days on the Team',     unit: 'days',  tiers: [{ key: 'bronze', badge: 'Nav Sadasya' }, { key: 'silver', badge: 'Niyamit Sadasya' }, { key: 'gold', badge: 'Varishth Sadasya' }] },
+  { key: 'loopTasks', label: 'Loop Tasks Completed', unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Niyamit Sevak' }, { key: 'silver', badge: 'Dhara Karyakarta' }] },
+];
