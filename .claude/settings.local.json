@@ -94,7 +94,8 @@
       "Bash(tail -n +1052 \"/Users/jaigopalarora/Kaamkaro AI/server/routes/ai.js\")",
       "Read(//tmp/**)",
       "Bash(node --check server/routes/stock.js)",
-      "Bash(node --check server/routes/diary.js)"
+      "Bash(node --check server/routes/diary.js)",
+      "Bash(node --check \"/Users/jaigopalarora/Kaamkaro AI/server/routes/auth.js\")"
     ]
   }
 }
