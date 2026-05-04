@@ -602,10 +602,10 @@ export const CRITERIA_META: {
   unit: string;
   tiers: { key: string; badge: string }[];
 }[] = [
-  { key: 'tasks',     label: 'Tasks Completed',      unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Pehla Qadam' }, { key: 'silver', badge: 'Parishramik' }, { key: 'gold', badge: 'Karya Ratna' }] },
-  { key: 'streak',    label: 'Diary Streak',         unit: 'days',  tiers: [{ key: 'bronze', badge: 'Niyamit Karyakarta' }, { key: 'silver', badge: 'Satat Sevak' }, { key: 'gold', badge: 'Atulit Parishram' }] },
-  { key: 'deals',     label: 'Leads Closed (Won)',   unit: 'leads', tiers: [{ key: 'bronze', badge: 'Pehli Safalta' }, { key: 'silver', badge: 'Vyapar Nipun' }, { key: 'gold', badge: 'Shresth Vikreta' }] },
-  { key: 'merits',    label: 'Merit Points Earned',  unit: 'pts',   tiers: [{ key: 'bronze', badge: 'Pratham Samman' }, { key: 'silver', badge: 'Vishisht Samman' }, { key: 'gold', badge: 'Param Samman' }] },
-  { key: 'tenure',    label: 'Days on the Team',     unit: 'days',  tiers: [{ key: 'bronze', badge: 'Nav Sadasya' }, { key: 'silver', badge: 'Niyamit Sadasya' }, { key: 'gold', badge: 'Varishth Sadasya' }] },
-  { key: 'loopTasks', label: 'Loop Tasks Completed', unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Niyamit Sevak' }, { key: 'silver', badge: 'Dhara Karyakarta' }] },
+  { key: 'tasks',     label: 'Tasks Completed',      unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Pehla Kadam' }, { key: 'silver', badge: 'Kaam ka Baadshah' }, { key: 'gold', badge: 'Kaam ka Legend' }] },
+  { key: 'streak',    label: 'Diary Streak',         unit: 'days',  tiers: [{ key: 'bronze', badge: 'Chal Pada' }, { key: 'silver', badge: 'Roz Ka Yodha' }, { key: 'gold', badge: 'Rokna Mushkil Hai' }] },
+  { key: 'deals',     label: 'Leads Closed (Won)',   unit: 'leads', tiers: [{ key: 'bronze', badge: 'Pehli Dikki' }, { key: 'silver', badge: 'Deal Baaz' }, { key: 'gold', badge: 'Badi Dikki' }] },
+  { key: 'merits',    label: 'Merit Points Earned',  unit: 'pts',   tiers: [{ key: 'bronze', badge: 'Points Starter' }, { key: 'silver', badge: 'Points Khiladi' }, { key: 'gold', badge: 'Points ka Raja' }] },
+  { key: 'tenure',    label: 'Days on the Team',     unit: 'days',  tiers: [{ key: 'bronze', badge: '1 Mahina Hua' }, { key: 'silver', badge: '3 Mahine Hua' }, { key: 'gold', badge: 'Tena Pana' }] },
+  { key: 'loopTasks', label: 'Loop Tasks Completed', unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Baar Baar Karta' }, { key: 'silver', badge: 'Loop ka Ustaad' }] },
 ];
