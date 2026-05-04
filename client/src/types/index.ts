@@ -527,3 +527,46 @@ export interface PDFEntry {
   uploadedAt: string;
   processedAt?: string;
 }
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
+export interface Badge {
+  id: string;
+  staffId: string;
+  staffName: string;
+  badgeKey: string;
+  label: string;
+  icon: string;
+  tier: 'bronze' | 'silver' | 'gold';
+  earnedAt: string;
+}
+
+export interface BadgeMeta {
+  label: string;
+  icon: string;
+  tier: 'bronze' | 'silver' | 'gold';
+  description: string;
+}
+
+// Full catalogue — mirrors server/utils/badgeEarner.js BADGES object
+export const BADGE_META: Record<string, BadgeMeta> = {
+  first_steps:     { label: 'First Steps',      icon: '✅', tier: 'bronze', description: 'Completed your first task' },
+  task_warrior:    { label: 'Task Warrior',      icon: '⚔️',  tier: 'silver', description: '50 tasks completed' },
+  task_legend:     { label: 'Task Legend',       icon: '🏅', tier: 'gold',   description: '100 tasks completed' },
+  on_a_roll:       { label: 'On a Roll',         icon: '🔥', tier: 'bronze', description: '7-day diary streak' },
+  streak_master:   { label: 'Streak Master',     icon: '⚡', tier: 'silver', description: '30-day diary streak' },
+  unstoppable:     { label: 'Unstoppable',       icon: '💫', tier: 'gold',   description: '100-day diary streak' },
+  first_deal:      { label: 'First Deal',        icon: '🤝', tier: 'bronze', description: 'Closed your first lead' },
+  deal_maker:      { label: 'Deal Maker',        icon: '💼', tier: 'silver', description: '5 leads closed' },
+  closer:          { label: 'Closer',            icon: '🏆', tier: 'gold',   description: '20 leads closed' },
+  merit_rookie:    { label: 'Merit Rookie',      icon: '🌟', tier: 'bronze', description: 'Earned 50 merit points' },
+  merit_pro:       { label: 'Merit Pro',         icon: '💎', tier: 'silver', description: 'Earned 200 merit points' },
+  merit_elite:     { label: 'Merit Elite',       icon: '👑', tier: 'gold',   description: 'Earned 500 merit points' },
+  old_timer:       { label: 'Old Timer',         icon: '📅', tier: 'bronze', description: '30 days on the team' },
+  veteran:         { label: 'Veteran',           icon: '🎖️',  tier: 'silver', description: '90 days on the team' },
+  pillar:          { label: 'Pillar',            icon: '🏛️',  tier: 'gold',   description: '365 days on the team' },
+  sharp_responder: { label: 'Sharp Responder',   icon: '📞', tier: 'bronze', description: '90%+ response rate (min 20 interactions)' },
+  call_champion:   { label: 'Call Champion',     icon: '🎯', tier: 'gold',   description: '98%+ response rate (min 30 interactions)' },
+  loop_closer:     { label: 'Loop Closer',       icon: '🔄', tier: 'bronze', description: '5 loop tasks completed' },
+  loop_master:     { label: 'Loop Master',       icon: '♾️',  tier: 'silver', description: '20 loop tasks completed' },
+};
