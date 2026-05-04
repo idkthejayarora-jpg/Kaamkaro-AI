@@ -212,14 +212,15 @@ async function checkAndAwardBadges(staffId, triggerContext = {}) {
       if (!meta) continue;
 
       const record = {
-        id:        uuidv4(),
+        id:          uuidv4(),
         staffId,
         staffName,
-        badgeKey:  key,
-        label:     meta.label,
-        icon:      meta.icon,
-        tier:      meta.tier,
-        earnedAt:  now,
+        badgeKey:    key,
+        label:       meta.label,
+        icon:        meta.icon,
+        tier:        meta.tier,
+        description: meta.description,
+        earnedAt:    now,
       };
 
       await insertOne('badges', record);
