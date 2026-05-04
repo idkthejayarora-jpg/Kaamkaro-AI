@@ -61,6 +61,12 @@ export default function Layout() {
       setBroadcast({ id: d.id, message: d.message, sentBy: d.sentBy });
       playChime();
     },
+    'badge:earned': (data) => {
+      const d = data as { staffId: string; badge: Badge };
+      if (d.staffId !== user?.id) return;
+      setBadgeToast(d.badge);
+      setTimeout(() => setBadgeToast(null), 5000);
+    },
   });
 
   // No auto-dismiss — broadcast stays until staff clicks "Mark as Read"
