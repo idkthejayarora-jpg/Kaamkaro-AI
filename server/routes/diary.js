@@ -2124,6 +2124,9 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     console.log(`[Diary NLP] Logged ${resolvedVendors.length} vendor interaction(s) for ${staffName}`);
   }
 
+  // ── Badge check after diary entry processing (non-blocking) ───────────────
+  checkAndAwardBadges(staffId, { event: 'diary' }).catch(() => {});
+
   // ── PHASE 2: Optional AI enhancement ──────────────────────────────────────
   // Skipped entirely if no API key. On ANY error, local result stands.
   const client = getClient();
