@@ -249,6 +249,12 @@ export const pdfAPI = {
   },
 };
 
+export const badgesAPI = {
+  list: (staffId?: string) =>
+    api.get('/badges', { params: staffId ? { staffId } : {} }).then(r => r.data),
+  meta: () => api.get('/badges/meta').then(r => r.data),
+};
+
 export const stockAPI = {
   list: (params?: { staffId?: string }) => api.get('/stock', { params }).then(r => r.data),
   addEntry: (data: {
