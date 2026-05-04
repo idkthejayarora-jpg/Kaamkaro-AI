@@ -32,6 +32,31 @@ function playChime() {
   } catch { /* audio not available */ }
 }
 
+// ── Badge achievement fanfare — triumphant ascending arpeggio ─────────────────
+function playBadgeFanfare() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    // C4 E4 G4 C5 — major chord sweep, then held high note
+    const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type            = i < 4 ? 'triangle' : 'sine';
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * 0.13;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(i === 4 ? 0.35 : 0.22, t0 + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + (i === 4 ? 1.2 : 0.55));
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + (i === 4 ? 1.2 : 0.55));
+    });
+    setTimeout(() => ctx.close(), 3000);
+  } catch { /* audio not available */ }
+}
+
 interface BroadcastMsg { id: string; message: string; sentBy: string; }
 
 function getReadBroadcasts(): Set<string> {
