@@ -5,6 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
 const { broadcast } = require('../utils/sse');
 const { awardMerit } = require('../utils/merits');
+const { checkAndAwardBadges } = require('../utils/badgeEarner');
 
 const router = express.Router();
 router.use(authMiddleware);
