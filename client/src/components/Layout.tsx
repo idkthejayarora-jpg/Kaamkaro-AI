@@ -137,6 +137,23 @@ export default function Layout() {
       {/* Kamal floating AI assistant */}
       <KamalAssistant />
 
+      {/* ── Badge earned toast — bottom-right, auto-dismisses after 5s ── */}
+      {badgeToast && (
+        <div className="fixed bottom-24 right-4 z-[95] animate-fade-in pointer-events-auto">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-dark-300 border border-gold/50 shadow-2xl shadow-gold/20 max-w-xs">
+            <div className="text-3xl flex-shrink-0">{badgeToast.icon}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-gold text-xs font-semibold uppercase tracking-wide">New Badge Earned!</p>
+              <p className="text-white font-bold text-sm truncate">{badgeToast.label}</p>
+              <p className="text-white/40 text-[11px] capitalize">{badgeToast.tier} tier</p>
+            </div>
+            <button onClick={() => setBadgeToast(null)} className="text-white/30 hover:text-white transition-colors flex-shrink-0 p-0.5">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Broadcast popup — staff only, persists until "Mark as Read" ── */}
       {!isAdmin && broadcast && (
         <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4 pointer-events-none">
