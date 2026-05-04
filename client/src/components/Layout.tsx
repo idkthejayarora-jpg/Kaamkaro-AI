@@ -48,6 +48,7 @@ export default function Layout() {
   const { isAdmin, isSwitched, user, originalAdmin, switchBack } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [broadcast,  setBroadcast]  = useState<BroadcastMsg | null>(null);
+  const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
 
   // Admins never see the broadcast popup — they sent it and have their own alert system.
   // Staff see it until they explicitly click "Mark as Read".
