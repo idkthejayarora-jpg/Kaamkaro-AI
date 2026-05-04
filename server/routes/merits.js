@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, deleteOne, writeDB } = require('../utils/db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { awardMerit } = require('../utils/merits');
+const { checkAndAwardBadges } = require('../utils/badgeEarner');
 
 const router = express.Router();
 router.use(authMiddleware);
