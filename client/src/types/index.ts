@@ -554,31 +554,31 @@ export interface BadgeMeta {
 // Full catalogue — mirrors server/utils/badgeEarner.js BADGES object
 export const BADGE_META: Record<string, BadgeMeta> = {
   // Tasks
-  pehla_qadam:        { label: 'Pehla Qadam',        icon: '👣', tier: 'bronze', description: 'Aapne apna pehla task safaltapoorvak poora kiya' },
-  parishramik:        { label: 'Parishramik',        icon: '⚔️',  tier: 'silver', description: 'Lagaatar mehnat se 50 tasks poore kiye' },
-  karya_ratna:        { label: 'Karya Ratna',        icon: '🏅', tier: 'gold',   description: 'Ek sau tasks poori nishtha se poore kiye' },
+  pehla_qadam:        { label: 'Pehla Kadam',        icon: '👣', tier: 'bronze', description: 'Pehla task complete kiya' },
+  parishramik:        { label: 'Kaam ka Baadshah',   icon: '⚔️',  tier: 'silver', description: '50 tasks complete kiye' },
+  karya_ratna:        { label: 'Kaam ka Legend',     icon: '🏅', tier: 'gold',   description: '100 tasks complete kiye' },
   // Streak
-  niyamit_karyakarta: { label: 'Niyamit Karyakarta', icon: '🔥', tier: 'bronze', description: 'Lagaatar 7 din diary mein kaam darj kiya' },
-  satat_sevak:        { label: 'Satat Sevak',        icon: '⚡', tier: 'silver', description: 'Lagaatar 30 din niyamit diary likhte rahe' },
-  atulit_parishram:   { label: 'Atulit Parishram',   icon: '💫', tier: 'gold',   description: 'Lagaatar 100 din ki anugamit diary — atulit samarpan' },
+  niyamit_karyakarta: { label: 'Chal Pada',          icon: '🔥', tier: 'bronze', description: '7 din ki diary streak' },
+  satat_sevak:        { label: 'Roz Ka Yodha',       icon: '⚡', tier: 'silver', description: '30 din ki diary streak' },
+  atulit_parishram:   { label: 'Rokna Mushkil Hai',  icon: '💫', tier: 'gold',   description: '100 din ki diary streak' },
   // Deals
-  pehli_safalta:      { label: 'Pehli Safalta',      icon: '🤝', tier: 'bronze', description: 'Pehla lead safaltapoorvak convert kiya' },
-  vyapar_nipun:       { label: 'Vyapar Nipun',       icon: '💼', tier: 'silver', description: 'Paanch leads convert karne ki kushalta prapt ki' },
-  shresth_vikreta:    { label: 'Shresth Vikreta',    icon: '🏆', tier: 'gold',   description: 'Bees leads convert karke shresth vikreta bane' },
+  pehli_safalta:      { label: 'Pehli Dikki',        icon: '🤝', tier: 'bronze', description: 'Pehla lead close kiya' },
+  vyapar_nipun:       { label: 'Deal Baaz',          icon: '💼', tier: 'silver', description: '5 leads close kiye' },
+  shresth_vikreta:    { label: 'Badi Dikki',         icon: '🏆', tier: 'gold',   description: '20 leads close kiye' },
   // Merits
-  pratham_samman:     { label: 'Pratham Samman',     icon: '🌟', tier: 'bronze', description: '50 merit points arjit kiye — shubh aarambh' },
-  vishisht_samman:    { label: 'Vishisht Samman',    icon: '💎', tier: 'silver', description: '200 merit points ki uplabdhi prapt ki' },
-  param_samman:       { label: 'Param Samman',       icon: '👑', tier: 'gold',   description: '500 merit points — param uplabdhi' },
+  pratham_samman:     { label: 'Points Starter',     icon: '🌟', tier: 'bronze', description: '50 merit points kamaye' },
+  vishisht_samman:    { label: 'Points Khiladi',     icon: '💎', tier: 'silver', description: '200 merit points kamaye' },
+  param_samman:       { label: 'Points ka Raja',     icon: '👑', tier: 'gold',   description: '500 merit points kamaye' },
   // Tenure
-  nav_sadasya:        { label: 'Nav Sadasya',        icon: '🌱', tier: 'bronze', description: 'Team mein ek maah safaltapoorvak poora kiya' },
-  niyamit_sadasya:    { label: 'Niyamit Sadasya',   icon: '🎖️',  tier: 'silver', description: 'Teen maah ki niyamit seva prapt ki' },
-  varishth_sadasya:   { label: 'Varishth Sadasya',  icon: '🏛️',  tier: 'gold',   description: 'Ek varsh ki anugamit seva — varishthata ka praman' },
+  nav_sadasya:        { label: '1 Mahina Hua',       icon: '🌱', tier: 'bronze', description: '30 din team mein' },
+  niyamit_sadasya:    { label: '3 Mahine Hua',       icon: '🎖️',  tier: 'silver', description: '90 din team mein' },
+  varishth_sadasya:   { label: 'Tena Pana',          icon: '🏛️',  tier: 'gold',   description: '1 saal team mein' },
   // Response
-  uttam_pratikriya:   { label: 'Uttam Pratikriya',   icon: '📞', tier: 'bronze', description: '90%+ response rate ke saath uttam pratikriya' },
-  sanchar_shresth:    { label: 'Sanchar Shresth',    icon: '🎯', tier: 'gold',   description: '98%+ response rate — sanchar mein shresth' },
+  uttam_pratikriya:   { label: 'Call pe Ready',      icon: '📞', tier: 'bronze', description: '90%+ response rate (min 20 calls)' },
+  sanchar_shresth:    { label: 'Call Ka King',       icon: '🎯', tier: 'gold',   description: '98%+ response rate (min 30 calls)' },
   // Loop tasks
-  niyamit_sevak:      { label: 'Niyamit Sevak',      icon: '🔄', tier: 'bronze', description: 'Paanch niyamit loop tasks poore kiye' },
-  dhara_karyakarta:   { label: 'Dhara Karyakarta',   icon: '♾️',  tier: 'silver', description: 'Bees loop tasks ki lagaatar poorti' },
+  niyamit_sevak:      { label: 'Baar Baar Karta',    icon: '🔄', tier: 'bronze', description: '5 loop tasks complete' },
+  dhara_karyakarta:   { label: 'Loop ka Ustaad',     icon: '♾️',  tier: 'silver', description: '20 loop tasks complete' },
 };
 
 // Badge criteria shape — used by the admin criteria editor
