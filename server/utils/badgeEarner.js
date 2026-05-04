@@ -1,153 +1,191 @@
 /**
  * badgeEarner.js — automatic badge checker and awarder.
  *
- * Call checkAndAwardBadges(staffId, triggerContext) after any qualifying event.
- * Already-earned badges are skipped (idempotent).
- * Newly earned badges are persisted and broadcast over SSE.
+ * Criteria are stored in the config collection under key 'badgeCriteria'.
+ * Admins can edit thresholds via PUT /api/badges/criteria.
+ * Falls back to DEFAULT_CRITERIA if no custom config exists.
  *
- * Badge catalogue — 19 badges across bronze / silver / gold tiers:
- *
- *   Tasks:      first_steps (1), task_warrior (50), task_legend (100)
- *   Streak:     on_a_roll (7d), streak_master (30d), unstoppable (100d)
- *   Deals:      first_deal (1), deal_maker (5), closer (20)
- *   Merits:     merit_rookie (50), merit_pro (200), merit_elite (500)
- *   Tenure:     old_timer (30d), veteran (90d), pillar (365d)
- *   Response:   sharp_responder (≥90%, min 20), call_champion (≥98%, min 30)
- *   Loop tasks: loop_closer (5), loop_master (20)
+ * Badge catalogue — 19 badges, 3 tiers:
+ *   Tasks:      pehla_qadam · parishramik · karya_ratna
+ *   Streak:     niyamit_karyakarta · satat_sevak · atulit_parishram
+ *   Deals:      pehli_safalta · vyapar_nipun · shresth_vikreta
+ *   Merits:     pratham_samman · vishisht_samman · param_samman
+ *   Tenure:     nav_sadasya · niyamit_sadasya · varishth_sadasya
+ *   Response:   uttam_pratikriya · sanchar_shresth
+ *   Loop tasks: niyamit_sevak · dhara_karyakarta
  */
 
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne } = require('./db');
 const { broadcast } = require('./sse');
 
-// ── Badge definitions ─────────────────────────────────────────────────────────
+// ── Badge definitions (labels, icons, tiers) ─────────────────────────────────
+// These never change — only the numeric thresholds are admin-configurable.
 
 const BADGES = {
-  // ── Tasks ──
-  first_steps:    { tier: 'bronze', label: 'Pehla Kadam',       icon: '👣', description: 'Pehla task complete kiya' },
-  task_warrior:   { tier: 'silver', label: 'Kaam ka Baadshah',  icon: '⚔️',  description: '50 tasks complete' },
-  task_legend:    { tier: 'gold',   label: 'Kaam ka Legend',    icon: '🏅', description: '100 tasks complete' },
+  // ── Tasks ─────────────────────────────────────────────────────────────────
+  pehla_qadam:        { tier: 'bronze', label: 'Pehla Qadam',        icon: '👣', description: 'Aapne apna pehla task safaltapoorvak poora kiya' },
+  parishramik:        { tier: 'silver', label: 'Parishramik',        icon: '⚔️',  description: 'Lagaatar mehnat se 50 tasks poore kiye' },
+  karya_ratna:        { tier: 'gold',   label: 'Karya Ratna',        icon: '🏅', description: 'Ek sau tasks poori nishtha se poore kiye' },
 
-  // ── Diary streak ──
-  on_a_roll:      { tier: 'bronze', label: 'Chal Pada',         icon: '🔥', description: '7 din ki diary streak' },
-  streak_master:  { tier: 'silver', label: 'Roz Ka Yodha',      icon: '⚡', description: '30 din ki diary streak' },
-  unstoppable:    { tier: 'gold',   label: 'Rokna Mushkil Hai', icon: '💫', description: '100 din ki diary streak' },
+  // ── Diary streak ──────────────────────────────────────────────────────────
+  niyamit_karyakarta: { tier: 'bronze', label: 'Niyamit Karyakarta', icon: '🔥', description: 'Lagaatar 7 din diary mein kaam darj kiya' },
+  satat_sevak:        { tier: 'silver', label: 'Satat Sevak',        icon: '⚡', description: 'Lagaatar 30 din niyamit diary likhte rahe' },
+  atulit_parishram:   { tier: 'gold',   label: 'Atulit Parishram',   icon: '💫', description: 'Lagaatar 100 din ki anugamit diary — atulit samarpan' },
 
-  // ── Lead conversions ──
-  first_deal:     { tier: 'bronze', label: 'Pehli Dikki',       icon: '🤝', description: 'Pehla lead close kiya' },
-  deal_maker:     { tier: 'silver', label: 'Deal Baaz',         icon: '💼', description: '5 leads close kiye' },
-  closer:         { tier: 'gold',   label: 'Badi Dikki',        icon: '🏆', description: '20 leads close kiye' },
+  // ── Lead conversions ──────────────────────────────────────────────────────
+  pehli_safalta:      { tier: 'bronze', label: 'Pehli Safalta',      icon: '🤝', description: 'Pehla lead safaltapoorvak convert kiya' },
+  vyapar_nipun:       { tier: 'silver', label: 'Vyapar Nipun',       icon: '💼', description: 'Paanch leads convert karne ki kushalta prapt ki' },
+  shresth_vikreta:    { tier: 'gold',   label: 'Shresth Vikreta',    icon: '🏆', description: 'Bees leads convert karke shresth vikreta bane' },
 
-  // ── Merit points ──
-  merit_rookie:   { tier: 'bronze', label: 'Points Starter',    icon: '🌟', description: '50 merit points kamaye' },
-  merit_pro:      { tier: 'silver', label: 'Points Khiladi',    icon: '💎', description: '200 merit points kamaye' },
-  merit_elite:    { tier: 'gold',   label: 'Points ka Raja',    icon: '👑', description: '500 merit points kamaye' },
+  // ── Merit points ──────────────────────────────────────────────────────────
+  pratham_samman:     { tier: 'bronze', label: 'Pratham Samman',     icon: '🌟', description: '50 merit points arjit kiye — shubh aarambh' },
+  vishisht_samman:    { tier: 'silver', label: 'Vishisht Samman',    icon: '💎', description: '200 merit points ki uplabdhi prapt ki' },
+  param_samman:       { tier: 'gold',   label: 'Param Samman',       icon: '👑', description: '500 merit points — param uplabdhi' },
 
-  // ── Tenure ──
-  old_timer:      { tier: 'bronze', label: '1 Mahina Hua',      icon: '📅', description: '30 din team mein' },
-  veteran:        { tier: 'silver', label: '3 Mahine Hua',      icon: '🎖️',  description: '90 din team mein' },
-  pillar:         { tier: 'gold',   label: 'Tena Pana',         icon: '🏛️',  description: '1 saal team mein' },
+  // ── Tenure ────────────────────────────────────────────────────────────────
+  nav_sadasya:        { tier: 'bronze', label: 'Nav Sadasya',        icon: '🌱', description: 'Team mein ek maah safaltapoorvak poora kiya' },
+  niyamit_sadasya:    { tier: 'silver', label: 'Niyamit Sadasya',   icon: '🎖️',  description: 'Teen maah ki niyamit seva prapt ki' },
+  varishth_sadasya:   { tier: 'gold',   label: 'Varishth Sadasya',  icon: '🏛️',  description: 'Ek varsh ki anugamit seva — varishthata ka praman' },
 
-  // ── Response rate ──
-  sharp_responder:{ tier: 'bronze', label: 'Call pe Ready',     icon: '📞', description: '90%+ response rate (min 20 calls)' },
-  call_champion:  { tier: 'gold',   label: 'Call Ka King',      icon: '🎯', description: '98%+ response rate (min 30 calls)' },
+  // ── Response rate ─────────────────────────────────────────────────────────
+  uttam_pratikriya:   { tier: 'bronze', label: 'Uttam Pratikriya',   icon: '📞', description: '90%+ response rate ke saath uttam pratikriya' },
+  sanchar_shresth:    { tier: 'gold',   label: 'Sanchar Shresth',    icon: '🎯', description: '98%+ response rate — sanchar mein shresth' },
 
-  // ── Loop tasks ──
-  loop_closer:    { tier: 'bronze', label: 'Baar Baar Karta',   icon: '🔄', description: '5 loop tasks complete' },
-  loop_master:    { tier: 'silver', label: 'Loop ka Ustaad',    icon: '♾️',  description: '20 loop tasks complete' },
+  // ── Loop tasks ────────────────────────────────────────────────────────────
+  niyamit_sevak:      { tier: 'bronze', label: 'Niyamit Sevak',      icon: '🔄', description: 'Paanch niyamit loop tasks poore kiye' },
+  dhara_karyakarta:   { tier: 'silver', label: 'Dhara Karyakarta',   icon: '♾️',  description: 'Bees loop tasks ki lagaatar poorti' },
 };
+
+// ── Default criteria thresholds ───────────────────────────────────────────────
+// Admin can override any of these via the badge criteria editor.
+
+const DEFAULT_CRITERIA = {
+  tasks:    { bronze: 1,   silver: 50,  gold: 100 },
+  streak:   { bronze: 7,   silver: 30,  gold: 100 },
+  deals:    { bronze: 1,   silver: 5,   gold: 20  },
+  merits:   { bronze: 50,  silver: 200, gold: 500 },
+  tenure:   { bronze: 30,  silver: 90,  gold: 365 },
+  response: {
+    bronze: { rate: 90, minInteractions: 20 },
+    gold:   { rate: 98, minInteractions: 30 },
+  },
+  loopTasks: { bronze: 5, silver: 20 },
+};
+
+/**
+ * Load admin-customised criteria from the config collection.
+ * Falls back to DEFAULT_CRITERIA for any missing fields.
+ */
+async function loadCriteria() {
+  try {
+    const config = await readDB('config');
+    const entry  = config.find(c => c.key === 'badgeCriteria');
+    if (!entry) return DEFAULT_CRITERIA;
+    const saved = JSON.parse(entry.value);
+    // Deep-merge saved over defaults so new criteria added in future code aren't lost
+    return {
+      tasks:     { ...DEFAULT_CRITERIA.tasks,     ...saved.tasks },
+      streak:    { ...DEFAULT_CRITERIA.streak,    ...saved.streak },
+      deals:     { ...DEFAULT_CRITERIA.deals,     ...saved.deals },
+      merits:    { ...DEFAULT_CRITERIA.merits,    ...saved.merits },
+      tenure:    { ...DEFAULT_CRITERIA.tenure,    ...saved.tenure },
+      response:  {
+        bronze: { ...DEFAULT_CRITERIA.response.bronze, ...(saved.response?.bronze || {}) },
+        gold:   { ...DEFAULT_CRITERIA.response.gold,   ...(saved.response?.gold   || {}) },
+      },
+      loopTasks: { ...DEFAULT_CRITERIA.loopTasks, ...saved.loopTasks },
+    };
+  } catch {
+    return DEFAULT_CRITERIA;
+  }
+}
 
 // ── Criteria evaluator ────────────────────────────────────────────────────────
 
-/**
- * Returns the set of badge keys that this staff member has earned.
- * Reads from all relevant collections — called once per check.
- */
 async function computeEarnedKeys(staffId) {
-  const [tasks, leads, merits, staffList, interactions] = await Promise.all([
-    readDB('tasks').catch(() => []),
-    readDB('leads').catch(() => []),
-    readDB('merits').catch(() => []),
-    readDB('staff').catch(() => []),
-    readDB('interactions').catch(() => []),
+  const [[tasks, leads, merits, staffList, interactions], criteria] = await Promise.all([
+    Promise.all([
+      readDB('tasks').catch(() => []),
+      readDB('leads').catch(() => []),
+      readDB('merits').catch(() => []),
+      readDB('staff').catch(() => []),
+      readDB('interactions').catch(() => []),
+    ]),
+    loadCriteria(),
   ]);
 
   const staff = staffList.find(s => s.id === staffId);
   if (!staff) return new Set();
 
-  // ── Tasks ──
   const completedTasks = tasks.filter(t => t.staffId === staffId && t.completed);
   const loopTasks      = completedTasks.filter(t => t.isLoop);
   const taskCount      = completedTasks.length;
   const loopCount      = loopTasks.length;
 
-  // ── Diary streak (from staff.streakData set by streak.js) ──
-  const currentStreak = staff.streakData?.currentStreak || 0;
-  const longestStreak = staff.streakData?.longestStreak  || 0;
-  const bestStreak    = Math.max(currentStreak, longestStreak);
+  const currentStreak  = staff.streakData?.currentStreak || 0;
+  const longestStreak  = staff.streakData?.longestStreak  || 0;
+  const bestStreak     = Math.max(currentStreak, longestStreak);
 
-  // ── Leads closed ──
-  const closedLeads = leads.filter(l => l.staffId === staffId && l.stage === 'won');
-  const closedCount = closedLeads.length;
+  const closedCount    = leads.filter(l => l.staffId === staffId && l.stage === 'won').length;
 
-  // ── Merit total (only positive points count) ──
-  const ownMerits  = merits.filter(m => m.staffId === staffId);
-  const meritTotal = ownMerits.reduce((sum, m) => sum + (m.points || 0), 0);
+  const meritTotal     = merits
+    .filter(m => m.staffId === staffId)
+    .reduce((sum, m) => sum + (m.points || 0), 0);
 
-  // ── Tenure ──
-  const createdAt  = staff.createdAt ? new Date(staff.createdAt) : null;
-  const tenureDays = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 86400000) : 0;
+  const createdAt   = staff.createdAt ? new Date(staff.createdAt) : null;
+  const tenureDays  = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 86400000) : 0;
 
-  // ── Response rate (all-time, same keyword logic as leaderboard) ──
   const RESPONSE_KEYWORDS = /payment|paid|billed|bill|invoice|parcel|delivery|advance|balance|collected|received|planned|follow.?up/i;
-  const staffInteractions = interactions.filter(i => i.staffId === staffId);
-  const responded         = staffInteractions.filter(i => i.responded || (i.notes && RESPONSE_KEYWORDS.test(i.notes))).length;
-  const responseRate      = staffInteractions.length > 0
+  const staffInteractions  = interactions.filter(i => i.staffId === staffId);
+  const responded          = staffInteractions.filter(i => i.responded || (i.notes && RESPONSE_KEYWORDS.test(i.notes))).length;
+  const responseRate       = staffInteractions.length > 0
     ? Math.round(responded / staffInteractions.length * 100) : 0;
-  const interactionCount  = staffInteractions.length;
+  const interactionCount   = staffInteractions.length;
 
-  // ── Evaluate ──
+  const c = criteria;
   const earned = new Set();
 
-  if (taskCount >= 1)   earned.add('first_steps');
-  if (taskCount >= 50)  earned.add('task_warrior');
-  if (taskCount >= 100) earned.add('task_legend');
+  // Tasks
+  if (taskCount >= c.tasks.bronze) earned.add('pehla_qadam');
+  if (taskCount >= c.tasks.silver) earned.add('parishramik');
+  if (taskCount >= c.tasks.gold)   earned.add('karya_ratna');
 
-  if (bestStreak >= 7)   earned.add('on_a_roll');
-  if (bestStreak >= 30)  earned.add('streak_master');
-  if (bestStreak >= 100) earned.add('unstoppable');
+  // Streak
+  if (bestStreak >= c.streak.bronze) earned.add('niyamit_karyakarta');
+  if (bestStreak >= c.streak.silver) earned.add('satat_sevak');
+  if (bestStreak >= c.streak.gold)   earned.add('atulit_parishram');
 
-  if (closedCount >= 1)  earned.add('first_deal');
-  if (closedCount >= 5)  earned.add('deal_maker');
-  if (closedCount >= 20) earned.add('closer');
+  // Deals
+  if (closedCount >= c.deals.bronze) earned.add('pehli_safalta');
+  if (closedCount >= c.deals.silver) earned.add('vyapar_nipun');
+  if (closedCount >= c.deals.gold)   earned.add('shresth_vikreta');
 
-  if (meritTotal >= 50)  earned.add('merit_rookie');
-  if (meritTotal >= 200) earned.add('merit_pro');
-  if (meritTotal >= 500) earned.add('merit_elite');
+  // Merits
+  if (meritTotal >= c.merits.bronze) earned.add('pratham_samman');
+  if (meritTotal >= c.merits.silver) earned.add('vishisht_samman');
+  if (meritTotal >= c.merits.gold)   earned.add('param_samman');
 
-  if (tenureDays >= 30)  earned.add('old_timer');
-  if (tenureDays >= 90)  earned.add('veteran');
-  if (tenureDays >= 365) earned.add('pillar');
+  // Tenure
+  if (tenureDays >= c.tenure.bronze) earned.add('nav_sadasya');
+  if (tenureDays >= c.tenure.silver) earned.add('niyamit_sadasya');
+  if (tenureDays >= c.tenure.gold)   earned.add('varishth_sadasya');
 
-  if (interactionCount >= 20 && responseRate >= 90) earned.add('sharp_responder');
-  if (interactionCount >= 30 && responseRate >= 98) earned.add('call_champion');
+  // Response rate
+  if (interactionCount >= c.response.bronze.minInteractions && responseRate >= c.response.bronze.rate)
+    earned.add('uttam_pratikriya');
+  if (interactionCount >= c.response.gold.minInteractions && responseRate >= c.response.gold.rate)
+    earned.add('sanchar_shresth');
 
-  if (loopCount >= 5)  earned.add('loop_closer');
-  if (loopCount >= 20) earned.add('loop_master');
+  // Loop tasks
+  if (loopCount >= c.loopTasks.bronze) earned.add('niyamit_sevak');
+  if (loopCount >= c.loopTasks.silver) earned.add('dhara_karyakarta');
 
   return earned;
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-/**
- * Check all badge criteria for a staff member and award any newly-earned badges.
- * Safe to call on every qualifying event — duplicate awards are skipped.
- *
- * @param {string} staffId
- * @param {{ event: string }} triggerContext  — for logging only
- * @returns {Promise<Array>} newly awarded badge records
- */
 async function checkAndAwardBadges(staffId, triggerContext = {}) {
   try {
     const [earnedKeys, existingBadges] = await Promise.all([
@@ -166,7 +204,7 @@ async function checkAndAwardBadges(staffId, triggerContext = {}) {
     const staff     = staffList.find(s => s.id === staffId);
     const staffName = staff?.name || 'Staff';
 
-    const now = new Date().toISOString();
+    const now      = new Date().toISOString();
     const newBadges = [];
 
     for (const key of newKeys) {
@@ -187,18 +225,15 @@ async function checkAndAwardBadges(staffId, triggerContext = {}) {
       await insertOne('badges', record);
       newBadges.push(record);
 
-      // SSE — only the staff member who earned it sees the toast
       broadcast('badge:earned', { staffId, badge: record });
-
       console.log(`[Badge] 🏅 ${staffName} earned "${meta.label}" (${meta.tier}) — trigger: ${triggerContext.event || 'unknown'}`);
     }
 
     return newBadges;
   } catch (err) {
-    // Non-fatal — badge checks should never crash the main request
     console.error('[Badge] checkAndAwardBadges error:', err.message);
     return [];
   }
 }
 
-module.exports = { checkAndAwardBadges, BADGES };
+module.exports = { checkAndAwardBadges, BADGES, DEFAULT_CRITERIA, loadCriteria };
