@@ -4,7 +4,7 @@ import {
   BookOpen, Sparkles, LogOut, Menu, X, ChevronRight,
   ClipboardList, Shield, Download, Trophy, Clock, Target,
   Sun, Moon, FileText, Webhook, Radio, MessageSquare, Filter, TrendingUp,
-  GripVertical, Settings2, Settings, Package, RefreshCw,
+  GripVertical, Settings2, Settings, Package, RefreshCw, Award,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
