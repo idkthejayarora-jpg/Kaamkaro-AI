@@ -336,17 +336,14 @@ export default function Leaderboard() {
                       <span className="text-white/20 text-[8px]">this wk</span>
                     </div>
                     {/* Week-over-week score delta */}
-                    {(row as LeaderboardRow & { weekDelta?: number }).weekDelta !== undefined && (
-                      <span className={`text-[10px] font-medium ${
-                        ((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) > 0 ? 'text-green-400' :
-                        ((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) < 0 ? 'text-red-400/70' :
-                        'text-white/20'
-                      }`}>
-                        {((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) > 0 ? '▲' :
-                         ((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0) < 0 ? '▼' : '—'}
-                        {' '}{Math.abs((row as LeaderboardRow & { weekDelta?: number }).weekDelta ?? 0)} vs last wk
-                      </span>
-                    )}
+                    <span className={`text-[10px] font-medium ${
+                      row.weekDelta > 0 ? 'text-green-400' :
+                      row.weekDelta < 0 ? 'text-red-400/70' :
+                      'text-white/20'
+                    }`}>
+                      {row.weekDelta > 0 ? '▲' : row.weekDelta < 0 ? '▼' : '—'}
+                      {row.weekDelta !== 0 && ` ${Math.abs(row.weekDelta)}`}
+                    </span>
                   </div>
                 </div>
 
