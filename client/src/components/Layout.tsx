@@ -90,7 +90,7 @@ export default function Layout() {
       const d = data as { staffId: string; badge: Badge };
       if (d.staffId !== user?.id) return;
       setBadgeToast(d.badge);
-      setTimeout(() => setBadgeToast(null), 5000);
+      playBadgeFanfare();
     },
   });
 
