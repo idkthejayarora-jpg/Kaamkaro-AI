@@ -31,6 +31,7 @@ export default function StaffProfile() {
   const [attendance, setAttendance]   = useState<AttendanceRecord[]>([]);
   const [loading, setLoading]         = useState(true);
   const [activeTab, setActiveTab]     = useState<'activity' | 'attendance' | 'customers'>('activity');
+  const [badges, setBadges]           = useState<Badge[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -40,7 +41,8 @@ export default function StaffProfile() {
       staffAPI.getPerformance(id).catch(() => [] as Performance[]),
       interactionsAPI.list({ staffId: id }).catch(() => [] as Interaction[]),
       attendanceAPI.list({ staffId: id }).catch(() => [] as AttendanceRecord[]),
-    ]).then(([s, c, p, i, a]) => {
+      badgesAPI.list(id).catch(() => [] as Badge[]),
+    ]).then(([s, c, p, i, a, b]) => {
       setStaff(s as Staff | null);
       setCustomers((c as Customer[]).filter(cu =>
         cu.assignedTo === id || (cu.assignedStaff || []).includes(id!)
@@ -48,6 +50,7 @@ export default function StaffProfile() {
       setPerformance((p as Performance[]).sort((a, b) => a.week.localeCompare(b.week)));
       setInteractions(i as Interaction[]);
       setAttendance(a as AttendanceRecord[]);
+      setBadges((b as Badge[]).sort((x, y) => y.earnedAt.localeCompare(x.earnedAt)));
     }).catch(() => { /* show "not found" below */ })
       .finally(() => setLoading(false));
   }, [id]);
