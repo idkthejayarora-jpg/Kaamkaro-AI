@@ -24,37 +24,37 @@ const { broadcast } = require('./sse');
 
 const BADGES = {
   // ── Tasks ──
-  first_steps:    { tier: 'bronze', label: 'First Steps',       icon: '✅', description: 'Completed your first task' },
-  task_warrior:   { tier: 'silver', label: 'Task Warrior',      icon: '⚔️',  description: '50 tasks completed' },
-  task_legend:    { tier: 'gold',   label: 'Task Legend',       icon: '🏅', description: '100 tasks completed' },
+  first_steps:    { tier: 'bronze', label: 'Pehla Kadam',       icon: '👣', description: 'Pehla task complete kiya' },
+  task_warrior:   { tier: 'silver', label: 'Kaam ka Baadshah',  icon: '⚔️',  description: '50 tasks complete' },
+  task_legend:    { tier: 'gold',   label: 'Kaam ka Legend',    icon: '🏅', description: '100 tasks complete' },
 
   // ── Diary streak ──
-  on_a_roll:      { tier: 'bronze', label: 'On a Roll',         icon: '🔥', description: '7-day diary streak' },
-  streak_master:  { tier: 'silver', label: 'Streak Master',     icon: '⚡', description: '30-day diary streak' },
-  unstoppable:    { tier: 'gold',   label: 'Unstoppable',       icon: '💫', description: '100-day diary streak' },
+  on_a_roll:      { tier: 'bronze', label: 'Chal Pada',         icon: '🔥', description: '7 din ki diary streak' },
+  streak_master:  { tier: 'silver', label: 'Roz Ka Yodha',      icon: '⚡', description: '30 din ki diary streak' },
+  unstoppable:    { tier: 'gold',   label: 'Rokna Mushkil Hai', icon: '💫', description: '100 din ki diary streak' },
 
   // ── Lead conversions ──
-  first_deal:     { tier: 'bronze', label: 'First Deal',        icon: '🤝', description: 'Closed your first lead' },
-  deal_maker:     { tier: 'silver', label: 'Deal Maker',        icon: '💼', description: '5 leads closed' },
-  closer:         { tier: 'gold',   label: 'Closer',            icon: '🏆', description: '20 leads closed' },
+  first_deal:     { tier: 'bronze', label: 'Pehli Dikki',       icon: '🤝', description: 'Pehla lead close kiya' },
+  deal_maker:     { tier: 'silver', label: 'Deal Baaz',         icon: '💼', description: '5 leads close kiye' },
+  closer:         { tier: 'gold',   label: 'Badi Dikki',        icon: '🏆', description: '20 leads close kiye' },
 
   // ── Merit points ──
-  merit_rookie:   { tier: 'bronze', label: 'Merit Rookie',      icon: '🌟', description: 'Earned 50 merit points' },
-  merit_pro:      { tier: 'silver', label: 'Merit Pro',         icon: '💎', description: 'Earned 200 merit points' },
-  merit_elite:    { tier: 'gold',   label: 'Merit Elite',       icon: '👑', description: 'Earned 500 merit points' },
+  merit_rookie:   { tier: 'bronze', label: 'Points Starter',    icon: '🌟', description: '50 merit points kamaye' },
+  merit_pro:      { tier: 'silver', label: 'Points Khiladi',    icon: '💎', description: '200 merit points kamaye' },
+  merit_elite:    { tier: 'gold',   label: 'Points ka Raja',    icon: '👑', description: '500 merit points kamaye' },
 
   // ── Tenure ──
-  old_timer:      { tier: 'bronze', label: 'Old Timer',         icon: '📅', description: '30 days on the team' },
-  veteran:        { tier: 'silver', label: 'Veteran',           icon: '🎖️',  description: '90 days on the team' },
-  pillar:         { tier: 'gold',   label: 'Pillar',            icon: '🏛️',  description: '365 days on the team' },
+  old_timer:      { tier: 'bronze', label: '1 Mahina Hua',      icon: '📅', description: '30 din team mein' },
+  veteran:        { tier: 'silver', label: '3 Mahine Hua',      icon: '🎖️',  description: '90 din team mein' },
+  pillar:         { tier: 'gold',   label: 'Tena Pana',         icon: '🏛️',  description: '1 saal team mein' },
 
   // ── Response rate ──
-  sharp_responder:{ tier: 'bronze', label: 'Sharp Responder',   icon: '📞', description: '90%+ response rate (min 20 interactions)' },
-  call_champion:  { tier: 'gold',   label: 'Call Champion',     icon: '🎯', description: '98%+ response rate (min 30 interactions)' },
+  sharp_responder:{ tier: 'bronze', label: 'Call pe Ready',     icon: '📞', description: '90%+ response rate (min 20 calls)' },
+  call_champion:  { tier: 'gold',   label: 'Call Ka King',      icon: '🎯', description: '98%+ response rate (min 30 calls)' },
 
   // ── Loop tasks ──
-  loop_closer:    { tier: 'bronze', label: 'Loop Closer',       icon: '🔄', description: '5 loop tasks completed' },
-  loop_master:    { tier: 'silver', label: 'Loop Master',       icon: '♾️',  description: '20 loop tasks completed' },
+  loop_closer:    { tier: 'bronze', label: 'Baar Baar Karta',   icon: '🔄', description: '5 loop tasks complete' },
+  loop_master:    { tier: 'silver', label: 'Loop ka Ustaad',    icon: '♾️',  description: '20 loop tasks complete' },
 };
 
 // ── Criteria evaluator ────────────────────────────────────────────────────────
