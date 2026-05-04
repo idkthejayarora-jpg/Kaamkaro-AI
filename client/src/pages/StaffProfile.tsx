@@ -146,6 +146,38 @@ export default function StaffProfile() {
         </div>
       )}
 
+      {/* Badges */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold flex items-center gap-2">
+            🏅 Badges
+            {badges.length > 0 && (
+              <span className="bg-gold/15 text-gold text-[10px] font-bold rounded-full px-2 py-0.5">{badges.length}</span>
+            )}
+          </h3>
+        </div>
+        {badges.length === 0 ? (
+          <p className="text-white/25 text-sm text-center py-4">No badges earned yet</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {badges.map(b => {
+              const meta = BADGE_META[b.badgeKey];
+              const tierColour = b.tier === 'gold' ? 'border-gold/40 bg-gold/8' : b.tier === 'silver' ? 'border-slate-400/30 bg-slate-400/8' : 'border-amber-600/30 bg-amber-600/8';
+              return (
+                <div
+                  key={b.id}
+                  title={`${b.label} — ${meta?.description || ''}\nEarned: ${new Date(b.earnedAt).toLocaleDateString('en-IN')}`}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium cursor-default ${tierColour}`}
+                >
+                  <span className="text-base">{b.icon}</span>
+                  <span className="text-white/80">{b.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Weekly streak history */}
       <div className="card">
         <h3 className="text-white font-semibold mb-4">Weekly Streak History</h3>
