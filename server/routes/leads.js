@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne } = require('../utils/db');
 const { authMiddleware } = require('../middleware/auth');
+const { checkAndAwardBadges } = require('../utils/badgeEarner');
 
 const router = express.Router();
 router.use(authMiddleware);
