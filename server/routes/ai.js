@@ -687,13 +687,14 @@ router.get('/sentiment-trend/:customerId', async (req, res) => {
 // Query params: teamId (admin only) — filter by specific team
 router.get('/leaderboard', async (req, res) => {
   try {
-    const [allStaff, interactions, customers, tasks, merits, teams] = await Promise.all([
+    const [allStaff, interactions, customers, tasks, merits, teams, leads] = await Promise.all([
       readDB('staff'),
       readDB('interactions'),
       readDB('customers'),
       readDB('tasks'),
       readDB('merits').catch(() => []),
       readDB('teams').catch(() => []),
+      readDB('leads').catch(() => []),
     ]);
 
     // ── Team scoping ───────────────────────────────────────────────────────────
