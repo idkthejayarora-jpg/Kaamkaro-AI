@@ -253,6 +253,8 @@ export const badgesAPI = {
   list: (staffId?: string) =>
     api.get('/badges', { params: staffId ? { staffId } : {} }).then(r => r.data),
   meta: () => api.get('/badges/meta').then(r => r.data),
+  getCriteria: () => api.get('/badges/criteria').then(r => r.data),
+  saveCriteria: (criteria: unknown) => api.put('/badges/criteria', { criteria }).then(r => r.data),
 };
 
 export const stockAPI = {
