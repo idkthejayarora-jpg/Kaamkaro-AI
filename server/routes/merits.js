@@ -83,6 +83,8 @@ router.post('/award', adminOnly, async (req, res) => {
     if (!s) return res.status(404).json({ error: 'Staff not found' });
 
     const event = await awardMerit(staffId, s.name, Number(points), reason, 'manual', null);
+    // Badge check after any merit award (non-blocking)
+    checkAndAwardBadges(staffId, { event: 'merit' }).catch(() => {});
     res.status(201).json(event);
   } catch {
     res.status(500).json({ error: 'Server error' });
