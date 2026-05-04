@@ -752,6 +752,10 @@ router.get('/leaderboard', async (req, res) => {
     // Response rate: interactions involving productive actions
     const RESPONSE_KEYWORDS = /payment|paid|billed|bill|invoice|parcel|delivery|advance|balance|collected|received|planned|follow.?up/i;
 
+    // Previous week window (7 days before current week window)
+    const prevWeekStart = weekWindowMs - 7 * 86400000;
+    const prevWeekEnd   = weekWindowMs;
+
     const rows = staff.map(s => {
       const weekInteractions  = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > weekWindowMs);
       const monthInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() > monthAgo);
@@ -760,6 +764,11 @@ router.get('/leaderboard', async (req, res) => {
       ).length;
       const responseRate      = weekInteractions.length > 0 ? Math.round(responded / weekInteractions.length * 100) : 0;
       const closedCount       = customers.filter(c => c.assignedTo === s.id && c.status === 'closed' && new Date(c.updatedAt || c.createdAt).getTime() > resetAt).length;
+
+      // Leads closed this week (for Conversion King spotlight)
+      const closedThisWeek    = leads.filter(l => l.staffId === s.id && l.stage === 'won' &&
+        new Date(l.updatedAt || l.createdAt).getTime() > weekWindowMs).length;
+
       const completedTasks    = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() > weekWindowMs).length;
       const totalTasks        = tasks.filter(t => t.staffId === s.id).length;
       const taskCompletionRate = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
@@ -769,12 +778,35 @@ router.get('/leaderboard', async (req, res) => {
       // meritTotal = all-time for profile display
       const meritTotal = merits.filter(m => m.staffId === s.id).reduce((sum, m) => sum + (m.points || 0), 0);
 
+      // Customer count — used for normalised interaction score
+      const customerCount = Math.max(customers.filter(c => c.assignedTo === s.id).length, 1);
+
+      // Normalised interaction score: 2 interactions per assigned customer = full score
+      // This prevents high-portfolio staff from dominating purely through volume
+      const normalisedInteractionScore = Math.min((weekInteractions.length / customerCount) / 2, 1) * 100;
+
       const score = Math.round(
         (responseRate * 0.35) +
-        (Math.min(weekInteractions.length / 20, 1) * 100 * 0.30) +
+        (normalisedInteractionScore * 0.30) +
         (Math.min(closedCount / 5, 1) * 100 * 0.20) +
         (taskCompletionRate * 0.15)
       );
+
+      // Previous week score (for Most Improved spotlight)
+      const prevWeekInteractions = interactions.filter(i => i.staffId === s.id && new Date(i.createdAt).getTime() >= prevWeekStart && new Date(i.createdAt).getTime() < prevWeekEnd);
+      const prevResponded        = prevWeekInteractions.filter(i => i.responded || (i.notes && RESPONSE_KEYWORDS.test(i.notes))).length;
+      const prevResponseRate     = prevWeekInteractions.length > 0 ? Math.round(prevResponded / prevWeekInteractions.length * 100) : 0;
+      const prevClosedCount      = customers.filter(c => c.assignedTo === s.id && c.status === 'closed' && new Date(c.updatedAt || c.createdAt).getTime() >= prevWeekStart && new Date(c.updatedAt || c.createdAt).getTime() < prevWeekEnd).length;
+      const prevCompletedTasks   = tasks.filter(t => t.staffId === s.id && t.completed && t.completedAt && new Date(t.completedAt).getTime() >= prevWeekStart && new Date(t.completedAt).getTime() < prevWeekEnd).length;
+      const prevTaskRate         = totalTasks > 0 ? Math.round(prevCompletedTasks / totalTasks * 100) : 0;
+      const prevNormInteraction  = Math.min((prevWeekInteractions.length / customerCount) / 2, 1) * 100;
+      const prevScore = Math.round(
+        (prevResponseRate * 0.35) +
+        (prevNormInteraction * 0.30) +
+        (Math.min(prevClosedCount / 5, 1) * 100 * 0.20) +
+        (prevTaskRate * 0.15)
+      );
+      const weekDelta = score - prevScore;
 
       const teamInfo = staffTeamMap[s.id] || null;
 
@@ -788,8 +820,8 @@ router.get('/leaderboard', async (req, res) => {
         responseRate,
         streak: s.streakData?.currentStreak || 0,
         longestStreak: s.streakData?.longestStreak || 0,
-        closedCount, completedTasks, totalTasks, taskCompletionRate,
-        weekPts, meritTotal, score,
+        closedCount, closedThisWeek, completedTasks, totalTasks, taskCompletionRate,
+        weekPts, meritTotal, score, weekDelta, customerCount,
         rank: 0,
       };
     });
@@ -797,6 +829,28 @@ router.get('/leaderboard', async (req, res) => {
     // Primary sort: THIS WEEK's merit points (weekly competition); secondary: score
     rows.sort((a, b) => b.weekPts - a.weekPts || b.score - a.score);
     rows.forEach((r, i) => { r.rank = i + 1; });
+
+    // ── Three-track spotlights ─────────────────────────────────────────────────
+    // Conversion King: most leads closed this week
+    const conversionKing = [...rows].sort((a, b) => b.closedThisWeek - a.closedThisWeek)[0] || null;
+
+    // Consistency Crown: best response rate (min 10 interactions this week)
+    const eligibleForCrown = rows.filter(r => r.weekInteractions >= 10);
+    const consistencyCrown = eligibleForCrown.length > 0
+      ? [...eligibleForCrown].sort((a, b) => b.responseRate - a.responseRate)[0]
+      : null;
+
+    // Most Improved: biggest positive delta vs previous week
+    const mostImproved = [...rows].sort((a, b) => b.weekDelta - a.weekDelta)[0] || null;
+
+    // Hall of Fame: staff who have held rank #1 for 3+ consecutive weeks
+    // Stored in config collection under key 'leaderboardHallOfFame'
+    let hallOfFame = [];
+    try {
+      const cfg = await readDB('config');
+      const hofEntry = cfg.find(c => c.key === 'leaderboardHallOfFame');
+      if (hofEntry) hallOfFame = JSON.parse(hofEntry.value || '[]');
+    } catch {}
 
     // Tell the client whether this user has a team (drives team/all toggle visibility)
     const myTeamForUser = req.user.role === 'staff'
@@ -810,6 +864,12 @@ router.get('/leaderboard', async (req, res) => {
       teams: teams.map(t => ({ id: t.id, name: t.name })),
       myTeamId:   myTeamForUser?.id   || null,
       myTeamName: myTeamForUser?.name || null,
+      spotlights: {
+        conversionKing:  conversionKing  ? { id: conversionKing.id,  name: conversionKing.name,  avatar: conversionKing.avatar,  value: conversionKing.closedThisWeek,  label: 'leads closed this week' } : null,
+        consistencyCrown: consistencyCrown ? { id: consistencyCrown.id, name: consistencyCrown.name, avatar: consistencyCrown.avatar, value: consistencyCrown.responseRate,   label: '% response rate' } : null,
+        mostImproved:    mostImproved    ? { id: mostImproved.id,    name: mostImproved.name,    avatar: mostImproved.avatar,    value: mostImproved.weekDelta,          label: 'pts improvement' } : null,
+      },
+      hallOfFame,
     });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
