@@ -297,26 +297,51 @@ function AdminDashboard() {
             <div className="border-t border-red-500/15 max-h-72 overflow-y-auto">
               {staleCustomers.length === 0 ? (
                 <p className="text-red-300/50 text-xs text-center py-4">No data available</p>
-              ) : staleCustomers.slice(0, 20).map(c => (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-3 px-4 py-2.5 border-b border-red-500/10 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
-                  onClick={() => navigate('/customers')}
-                >
-                  <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-red-300 text-[10px] font-bold">{c.name[0]}</span>
+              ) : staleCustomers.slice(0, 20).map(c => {
+                const lastTwo = allInteractions
+                  .filter(i => i.customerId === c.id)
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .slice(0, 2);
+                return (
+                  <div
+                    key={c.id}
+                    className="px-4 py-3 border-b border-red-500/10 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
+                    onClick={() => navigate('/customers')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-red-300 text-[10px] font-bold">{c.name[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-xs font-medium truncate">{c.name}</p>
+                        <p className="text-red-300/50 text-[10px]">{c.assignedStaffName} · {c.phone}</p>
+                      </div>
+                      <span className={`text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${
+                        c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
+                      }`}>
+                        {c.daysSilent >= 9999 ? 'Never contacted' : `${c.daysSilent}d silent`}
+                      </span>
+                    </div>
+                    {lastTwo.length > 0 ? (
+                      <div className="mt-2 ml-10 space-y-1">
+                        {lastTwo.map(i => {
+                          const daysAgo = Math.round((Date.now() - new Date(i.createdAt).getTime()) / 86400000);
+                          return (
+                            <div key={i.id} className="flex items-start gap-1.5">
+                              <span className="text-[10px] text-red-300/40 flex-shrink-0 mt-0.5">
+                                {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
+                              </span>
+                              <p className="text-[10px] text-white/40 leading-relaxed line-clamp-2">{i.notes || `${i.type} logged`}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-1.5 ml-10 text-[10px] text-red-300/30 italic">No entries on record</p>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs font-medium truncate">{c.name}</p>
-                    <p className="text-red-300/50 text-[10px]">{c.assignedStaffName} · {c.phone}</p>
-                  </div>
-                  <span className={`text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${
-                    c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
-                  }`}>
-                    {c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d ago`}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
               {staleCustomers.length > 20 && (
                 <button className="w-full py-2.5 text-red-400/60 text-xs hover:text-red-400 transition-colors" onClick={() => navigate('/customers')}>
                   +{staleCustomers.length - 20} more — View all →
