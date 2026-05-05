@@ -1782,9 +1782,7 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
     localEntries.push({
       spokenName: 'General', customerName: 'General', customerId: null,
       matchedCustomerName: null, isNewCustomer: false, date: null,
-      notes: actions.length > 0
-        ? `General activity logged. Next: ${actions[0]}.`
-        : 'No specific customer names detected in this entry.',
+      notes: content.trim().slice(0, 400),
       originalNotes: content.slice(0, 400),
       actionItems:   actions,
       sentiment,
