@@ -105,8 +105,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const [broadcastMsg,       setBroadcastMsg]       = useState('');
   const [sending,            setSending]            = useState(false);
 
-  const isActive = user?.attendanceStatus === 'active';
-
   // Keep navItems in sync if user switches role (e.g. re-login)
   useEffect(() => {
     setNavItems(loadOrder(defaultNav, role, userId));
