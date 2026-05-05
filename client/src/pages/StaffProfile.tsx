@@ -39,16 +39,14 @@ export default function StaffProfile() {
       customersAPI.list().catch(() => [] as Customer[]),
       staffAPI.getPerformance(id).catch(() => [] as Performance[]),
       interactionsAPI.list({ staffId: id }).catch(() => [] as Interaction[]),
-      attendanceAPI.list({ staffId: id }).catch(() => [] as AttendanceRecord[]),
       badgesAPI.list(id).catch(() => [] as Badge[]),
-    ]).then(([s, c, p, i, a, b]) => {
+    ]).then(([s, c, p, i, b]) => {
       setStaff(s as Staff | null);
       setCustomers((c as Customer[]).filter(cu =>
         cu.assignedTo === id || (cu.assignedStaff || []).includes(id!)
       ));
       setPerformance((p as Performance[]).sort((a, b) => a.week.localeCompare(b.week)));
       setInteractions(i as Interaction[]);
-      setAttendance(a as AttendanceRecord[]);
       setBadges((b as Badge[]).sort((x, y) => y.earnedAt.localeCompare(x.earnedAt)));
     }).catch(() => { /* show "not found" below */ })
       .finally(() => setLoading(false));
