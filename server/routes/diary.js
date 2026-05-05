@@ -1694,11 +1694,8 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
   const resolvedList  = []; // [{customer, isNew}] — used for post-broadcast side effects
   const resolvedVendors = []; // [{vendor}]
 
-  const noteText = sentiment === 'positive'
-    ? 'Positive interaction logged.'
-    : sentiment === 'negative'
-    ? 'Interaction noted — follow up required.'
-    : 'Interaction logged from diary entry.';
+  // Use the actual diary content as the note — no generated labels
+  const noteText = content.trim().slice(0, 400);
 
   for (const name of names) {
     // ── Vendor check first — if staff added this name as a vendor, log there instead ──
