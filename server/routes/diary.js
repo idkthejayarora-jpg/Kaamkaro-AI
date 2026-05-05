@@ -1492,27 +1492,22 @@ function extractAmount(text) {
 }
 
 /**
- * Build a human-readable note for the interaction log entry on the customer profile.
- * Combines sentiment, amount, and next actions into a compact string.
+ * Build a note for the interaction log entry on the customer profile.
+ * Uses the actual diary content — no sentiment labels, no generated prefixes.
  */
 function buildInteractionNote(content, sentiment, amount, actions) {
   const parts = [];
 
-  // Sentiment opening line
-  if (sentiment === 'positive') {
-    parts.push('Positive interaction logged from diary entry.');
-  } else if (sentiment === 'negative') {
-    parts.push('Interaction noted — follow up required.');
-  } else {
-    parts.push('Interaction logged from diary entry.');
-  }
+  // The raw diary content IS the note — trim to a reasonable length
+  const raw = (content || '').trim().slice(0, 400);
+  if (raw) parts.push(raw);
 
   // Deal amount if detected
   if (amount) {
     const formatted = amount >= 100000
       ? `₹${(amount / 100000).toFixed(1).replace(/\.0$/, '')} lakh`
       : `₹${amount.toLocaleString('en-IN')}`;
-    parts.push(`Deal amount: ${formatted}.`);
+    parts.push(`Amount: ${formatted}.`);
   }
 
   // Next action (first one)
