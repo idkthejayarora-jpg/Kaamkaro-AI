@@ -101,7 +101,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   useEffect(() => { navItemsRef.current = navItems; }, [navItems]);
 
   const [exporting,          setExporting]          = useState(false);
-  const [attendanceLoading,  setAttendanceLoading]  = useState(false);
   const [showBroadcast,      setShowBroadcast]      = useState(false);
   const [broadcastMsg,       setBroadcastMsg]       = useState('');
   const [sending,            setSending]            = useState(false);
