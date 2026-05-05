@@ -279,25 +279,98 @@ function AdminDashboard() {
     <div className="space-y-6">
       {/* ── Alert banners ─────────────────────────────────────────────────── */}
       {(summary?.overdueCount ?? 0) > 0 && (
-        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 animate-fade-in">
-          <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
-          <p className="text-red-300 text-sm">
-            <span className="font-semibold">{summary!.overdueCount} customers</span> haven't been contacted in 7+ days.
-          </p>
-          <button onClick={() => navigate('/customers')} className="ml-auto text-red-400 text-xs hover:text-red-300 flex items-center gap-1 flex-shrink-0">
-            View <ChevronRight size={12} />
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 overflow-hidden animate-fade-in">
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/5 transition-colors"
+            onClick={() => setExpandedBanner(expandedBanner === 'customers' ? null : 'customers')}
+          >
+            <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
+            <p className="text-red-300 text-sm text-left flex-1">
+              <span className="font-semibold">{summary!.overdueCount} customers</span> haven't been contacted in 7+ days.
+            </p>
+            <ChevronRight size={14} className={`text-red-400 flex-shrink-0 transition-transform duration-200 ${expandedBanner === 'customers' ? 'rotate-90' : ''}`} />
           </button>
+          {expandedBanner === 'customers' && (
+            <div className="border-t border-red-500/15 max-h-72 overflow-y-auto">
+              {staleCustomers.length === 0 ? (
+                <p className="text-red-300/50 text-xs text-center py-4">No data available</p>
+              ) : staleCustomers.slice(0, 20).map(c => (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-3 px-4 py-2.5 border-b border-red-500/10 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
+                  onClick={() => navigate('/customers')}
+                >
+                  <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-300 text-[10px] font-bold">{c.name[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-xs font-medium truncate">{c.name}</p>
+                    <p className="text-red-300/50 text-[10px]">{c.assignedStaffName} · {c.phone}</p>
+                  </div>
+                  <span className={`text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${
+                    c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
+                  }`}>
+                    {c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d ago`}
+                  </span>
+                </div>
+              ))}
+              {staleCustomers.length > 20 && (
+                <button className="w-full py-2.5 text-red-400/60 text-xs hover:text-red-400 transition-colors" onClick={() => navigate('/customers')}>
+                  +{staleCustomers.length - 20} more — View all →
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
       {(summary?.dueTasksCount ?? 0) > 0 && (
-        <div className="flex items-center gap-3 bg-gold/10 border border-gold/20 rounded-xl px-4 py-3 animate-fade-in">
-          <Clock size={16} className="text-gold flex-shrink-0" />
-          <p className="text-gold/80 text-sm">
-            <span className="font-semibold">{summary!.dueTasksCount} tasks</span> are due today or overdue.
-          </p>
-          <button onClick={() => navigate('/tasks')} className="ml-auto text-gold text-xs hover:text-gold-400 flex items-center gap-1 flex-shrink-0">
-            View <ChevronRight size={12} />
+        <div className="rounded-xl border border-gold/20 bg-gold/10 overflow-hidden animate-fade-in">
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gold/5 transition-colors"
+            onClick={() => setExpandedBanner(expandedBanner === 'tasks' ? null : 'tasks')}
+          >
+            <Clock size={16} className="text-gold flex-shrink-0" />
+            <p className="text-gold/80 text-sm text-left flex-1">
+              <span className="font-semibold">{summary!.dueTasksCount} tasks</span> are due today or overdue.
+            </p>
+            <ChevronRight size={14} className={`text-gold flex-shrink-0 transition-transform duration-200 ${expandedBanner === 'tasks' ? 'rotate-90' : ''}`} />
           </button>
+          {expandedBanner === 'tasks' && (
+            <div className="border-t border-gold/15 max-h-72 overflow-y-auto">
+              {overdueTasks.length === 0 ? (
+                <p className="text-gold/50 text-xs text-center py-4">No overdue tasks</p>
+              ) : overdueTasks.slice(0, 20).map(t => {
+                const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
+                const staffMember = staff.find(s => s.id === t.staffId);
+                return (
+                  <div
+                    key={t.id}
+                    className="flex items-center gap-3 px-4 py-2.5 border-b border-gold/10 last:border-0 cursor-pointer hover:bg-gold/5 transition-colors"
+                    onClick={() => navigate('/tasks')}
+                  >
+                    <div className="w-7 h-7 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
+                      <span className="text-gold text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-medium truncate">{t.title}</p>
+                      <p className="text-gold/50 text-[10px]">
+                        {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
+                        {t.customerName ? ` · ${t.customerName}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
+                      {daysOverdue}d overdue
+                    </span>
+                  </div>
+                );
+              })}
+              {overdueTasks.length > 20 && (
+                <button className="w-full py-2.5 text-gold/60 text-xs hover:text-gold transition-colors" onClick={() => navigate('/tasks')}>
+                  +{overdueTasks.length - 20} more — View all →
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
