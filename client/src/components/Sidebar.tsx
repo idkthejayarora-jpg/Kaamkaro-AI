@@ -259,20 +259,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             </div>
           </button>
 
-          {user?.role === 'staff' && !isSwitched && (
-            <button
-              onClick={handleAttendance}
-              disabled={attendanceLoading}
-              className={`w-full mt-1.5 text-[11px] py-1.5 px-3 rounded-lg border transition-all flex items-center justify-center gap-1.5 font-medium ${
-                isActive
-                  ? 'border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400'
-                  : 'border-green-500/20 text-green-400/80 hover:bg-green-500/10 hover:text-green-400'
-              }`}
-            >
-              <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-red-400' : 'bg-green-400'}`} />
-              {attendanceLoading ? 'Please wait…' : isActive ? 'Check Out' : 'Check In'}
-            </button>
-          )}
         </div>
 
         {/* Navigation */}
