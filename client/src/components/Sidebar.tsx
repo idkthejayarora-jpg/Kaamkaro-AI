@@ -161,15 +161,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       URL.revokeObjectURL(url);
     } finally { setExporting(false); }
   };
-  const handleAttendance  = async () => {
-    if (attendanceLoading) return;
-    setAttendanceLoading(true);
-    try {
-      const updated = isActive ? await staffAPI.checkout() : await staffAPI.checkin();
-      updateUser({ ...user!, ...updated });
-    } catch { /* non-fatal */ }
-    finally { setAttendanceLoading(false); }
-  };
   const sendBroadcast     = async () => {
     if (!broadcastMsg.trim() || sending) return;
     setSending(true);
