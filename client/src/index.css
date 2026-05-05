@@ -67,6 +67,17 @@ html.light .text-white\/20    { color: rgba(28,28,30,0.34) !important; }
 html.light .text-white\/15    { color: rgba(28,28,30,0.28) !important; }
 html.light .text-white\/10    { color: rgba(28,28,30,0.20) !important; }
 
+/* ── Dark mode text contrast boost ─────────────────────────────────────── */
+html:not(.light) .text-white\/70    { color: rgba(255,255,255,0.82) !important; }
+html:not(.light) .text-white\/60    { color: rgba(255,255,255,0.74) !important; }
+html:not(.light) .text-white\/50    { color: rgba(255,255,255,0.66) !important; }
+html:not(.light) .text-white\/40    { color: rgba(255,255,255,0.58) !important; }
+html:not(.light) .text-white\/35    { color: rgba(255,255,255,0.52) !important; }
+html:not(.light) .text-white\/30    { color: rgba(255,255,255,0.48) !important; }
+html:not(.light) .text-white\/25    { color: rgba(255,255,255,0.42) !important; }
+html:not(.light) .text-white\/20    { color: rgba(255,255,255,0.36) !important; }
+html:not(.light) .text-white\/15    { color: rgba(255,255,255,0.30) !important; }
+
 /* ── Accent / gold — darken for readability on white ────────────────────── */
 html.light .text-gold         { color: var(--accent-dark, #8B6914) !important; }
 
