@@ -118,18 +118,20 @@ function AdminDashboard() {
 
   const loadData = useCallback(async () => {
     try {
-      const [s, sum, ms, mg, tasks] = await Promise.all([
+      const [s, sum, ms, mg, tasks, cust] = await Promise.all([
         staffAPI.list().catch(() => [] as Staff[]),
         aiAPI.dashboardSummary().catch(() => null),
         meritsAPI.summary().then(r => Array.isArray(r) ? r : []).catch(() => [] as MeritSummary[]),
         meritsAPI.goals().then(r => Array.isArray(r) ? r : []).catch(() => [] as MeritGoal[]),
         tasksAPI.list().catch(() => [] as Task[]),
+        customersAPI.list().catch(() => [] as Customer[]),
       ]);
       setStaff(s);
       setSummary(sum);
       setMeritSum(ms);
       setMeritGoals(mg);
       setAllTasks(tasks);
+      setCustomers(cust as Customer[]);
       if (s.length > 0) {
         const allPerf = await Promise.all(
           s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => []))
