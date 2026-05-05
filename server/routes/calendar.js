@@ -114,12 +114,11 @@ router.get('/day', async (req, res) => {
 
     const filterStaffId = resolveStaffFilter(req);
 
-    const [tasks, diary, interactions, leads, attendance, staff] = await Promise.all([
+    const [tasks, diary, interactions, leads, staff] = await Promise.all([
       readDB('tasks').catch(() => []),
       readDB('diary').catch(() => []),
       readDB('interactions').catch(() => []),
       readDB('leads').catch(() => []),
-      readDB('attendance').catch(() => []),
       readDB('staff').catch(() => []),
     ]);
 
