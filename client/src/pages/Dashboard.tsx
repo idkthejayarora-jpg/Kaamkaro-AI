@@ -101,7 +101,8 @@ function AdminDashboard() {
   const [meritGoals, setMeritGoals]   = useState<MeritGoal[]>([]);
   const [allTasks, setAllTasks]       = useState<Task[]>([]);
   const [loading, setLoading]         = useState(true);
-  const [customers, setCustomers]     = useState<Customer[]>([]);
+  const [customers, setCustomers]         = useState<Customer[]>([]);
+  const [allInteractions, setAllInteractions] = useState<Interaction[]>([]);
   const [goalModal, setGoalModal]     = useState(false);
   const [gStaffId, setGStaffId]       = useState('');
   const [gTarget, setGTarget]         = useState('');
