@@ -26,6 +26,7 @@ import CRMDetail from './pages/CRMDetail';
 import SalesInsights from './pages/SalesInsights';
 import Stock from './pages/Stock';
 import Badges from './pages/Badges';
+import Calendar from './pages/Calendar';
 import Settings from './pages/Settings';
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
