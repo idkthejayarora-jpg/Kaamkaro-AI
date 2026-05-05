@@ -247,9 +247,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                     {user?.avatar || 'U'}
                   </span>
                 </div>
-                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-dark-300 transition-colors ${
-                  isActive ? 'bg-green-400' : 'bg-white/25'
-                }`} />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-white text-sm font-medium truncate">{user?.name}</p>
