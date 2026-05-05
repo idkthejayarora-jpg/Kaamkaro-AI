@@ -294,59 +294,66 @@ function AdminDashboard() {
             <ChevronRight size={14} className={`text-red-400 flex-shrink-0 transition-transform duration-200 ${expandedBanner === 'customers' ? 'rotate-90' : ''}`} />
           </button>
           {expandedBanner === 'customers' && (
-            <div className="border-t border-red-500/15 max-h-72 overflow-y-auto">
-              {staleCustomers.length === 0 ? (
-                <p className="text-red-300/50 text-xs text-center py-4">No data available</p>
-              ) : staleCustomers.slice(0, 20).map(c => {
-                const lastTwo = allInteractions
-                  .filter(i => i.customerId === c.id)
-                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                  .slice(0, 2);
-                return (
-                  <div
-                    key={c.id}
-                    className="px-4 py-3 border-b border-red-500/10 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
-                    onClick={() => navigate('/customers')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-red-300 text-[10px] font-bold">{c.name[0]}</span>
+            <div className="border-t border-red-500/15">
+              <div className="max-h-64 overflow-y-auto">
+                {staleCustomers.length === 0 ? (
+                  <p className="text-red-400 text-xs text-center py-4 opacity-60">No data available</p>
+                ) : staleCustomers.slice(0, 20).map(c => {
+                  const lastTwo = allInteractions
+                    .filter(i => i.customerId === c.id)
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .slice(0, 2);
+                  return (
+                    <div
+                      key={c.id}
+                      className="px-4 py-3 border-b border-red-500/10 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
+                      onClick={() => navigate('/customers')}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-red-400 text-[10px] font-bold">{c.name[0]}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-medium truncate">{c.name}</p>
+                          <p className="text-red-400 text-[10px] opacity-70">{c.assignedStaffName} · {c.phone}</p>
+                        </div>
+                        <span className={`text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${
+                          c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
+                        }`}>
+                          {c.daysSilent >= 9999 ? 'Never contacted' : `${c.daysSilent}d silent`}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-medium truncate">{c.name}</p>
-                        <p className="text-red-300/50 text-[10px]">{c.assignedStaffName} · {c.phone}</p>
-                      </div>
-                      <span className={`text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${
-                        c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
-                      }`}>
-                        {c.daysSilent >= 9999 ? 'Never contacted' : `${c.daysSilent}d silent`}
-                      </span>
+                      {lastTwo.length > 0 ? (
+                        <div className="mt-2 ml-10 space-y-1.5">
+                          {lastTwo.map(i => {
+                            const daysAgo = Math.round((Date.now() - new Date(i.createdAt).getTime()) / 86400000);
+                            return (
+                              <div key={i.id} className="flex items-start gap-2">
+                                <span className="text-[10px] text-red-400 opacity-60 flex-shrink-0 mt-0.5 whitespace-nowrap">
+                                  {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
+                                </span>
+                                <p className="text-[11px] text-white opacity-70 leading-snug line-clamp-2">{i.notes || `${i.type} logged`}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="mt-1.5 ml-10 text-[10px] text-red-400 opacity-55 italic">No entries on record</p>
+                      )}
                     </div>
-                    {lastTwo.length > 0 ? (
-                      <div className="mt-2 ml-10 space-y-1">
-                        {lastTwo.map(i => {
-                          const daysAgo = Math.round((Date.now() - new Date(i.createdAt).getTime()) / 86400000);
-                          return (
-                            <div key={i.id} className="flex items-start gap-1.5">
-                              <span className="text-[10px] text-red-300/40 flex-shrink-0 mt-0.5">
-                                {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
-                              </span>
-                              <p className="text-[10px] text-white/40 leading-relaxed line-clamp-2">{i.notes || `${i.type} logged`}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="mt-1.5 ml-10 text-[10px] text-red-300/30 italic">No entries on record</p>
-                    )}
-                  </div>
-                );
-              })}
-              {staleCustomers.length > 20 && (
-                <button className="w-full py-2.5 text-red-400/60 text-xs hover:text-red-400 transition-colors" onClick={() => navigate('/customers')}>
-                  +{staleCustomers.length - 20} more — View all →
+                  );
+                })}
+              </div>
+              {/* View all — always visible outside the scroll area */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-red-500/15">
+                <span className="text-red-400 text-[10px] opacity-60">{staleCustomers.length} customers total</span>
+                <button
+                  className="text-red-400 text-xs font-medium hover:text-red-300 flex items-center gap-1 transition-colors"
+                  onClick={() => navigate('/customers')}
+                >
+                  View all <ChevronRight size={12} />
                 </button>
-              )}
+              </div>
             </div>
           )}
         </div>
