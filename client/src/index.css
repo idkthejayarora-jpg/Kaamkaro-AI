@@ -99,7 +99,7 @@ html.light .input:focus {
 html.light .btn-primary       { color: #ffffff !important; }
 html.light .btn-secondary     { border-color: rgba(0,0,0,0.15) !important; }
 html.light .btn-secondary:hover { background: rgba(0,0,0,0.05) !important; }
-html.light .btn-ghost         { color: rgba(28,28,30,0.55) !important; }
+html.light .btn-ghost         { color: rgba(28,28,30,0.68) !important; }
 html.light .btn-ghost:hover   { color: rgba(28,28,30,0.90) !important; background: rgba(0,0,0,0.05) !important; }
 
 /* Badges */
