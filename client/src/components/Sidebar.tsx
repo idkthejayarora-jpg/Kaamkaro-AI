@@ -50,6 +50,7 @@ const staffNav = [
   { to: '/templates',   icon: FileText,        label: 'Templates' },
   { to: '/stock',       icon: Package,         label: 'Stock Tracker' },
   { to: '/badges',      icon: Award,           label: 'Badges' },
+  { to: '/calendar',    icon: Calendar,        label: 'Calendar' },
 ];
 
 type NavItem = typeof adminNav[number];
