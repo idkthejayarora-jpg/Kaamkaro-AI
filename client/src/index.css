@@ -55,17 +55,17 @@ html.light {
 /* ── Text — flip white/alpha to near-black/alpha ─────────────────────────── */
 html.light .text-white        { color: #1C1C1E !important; }
 html.light .text-white\/90    { color: rgba(28,28,30,0.90) !important; }
-html.light .text-white\/80    { color: rgba(28,28,30,0.80) !important; }
-html.light .text-white\/70    { color: rgba(28,28,30,0.70) !important; }
-html.light .text-white\/60    { color: rgba(28,28,30,0.60) !important; }
-html.light .text-white\/50    { color: rgba(28,28,30,0.50) !important; }
-html.light .text-white\/40    { color: rgba(28,28,30,0.40) !important; }
-html.light .text-white\/35    { color: rgba(28,28,30,0.35) !important; }
-html.light .text-white\/30    { color: rgba(28,28,30,0.30) !important; }
-html.light .text-white\/25    { color: rgba(28,28,30,0.25) !important; }
-html.light .text-white\/20    { color: rgba(28,28,30,0.20) !important; }
-html.light .text-white\/15    { color: rgba(28,28,30,0.15) !important; }
-html.light .text-white\/10    { color: rgba(28,28,30,0.10) !important; }
+html.light .text-white\/80    { color: rgba(28,28,30,0.84) !important; }
+html.light .text-white\/70    { color: rgba(28,28,30,0.76) !important; }
+html.light .text-white\/60    { color: rgba(28,28,30,0.68) !important; }
+html.light .text-white\/50    { color: rgba(28,28,30,0.62) !important; }
+html.light .text-white\/40    { color: rgba(28,28,30,0.54) !important; }
+html.light .text-white\/35    { color: rgba(28,28,30,0.50) !important; }
+html.light .text-white\/30    { color: rgba(28,28,30,0.46) !important; }
+html.light .text-white\/25    { color: rgba(28,28,30,0.40) !important; }
+html.light .text-white\/20    { color: rgba(28,28,30,0.34) !important; }
+html.light .text-white\/15    { color: rgba(28,28,30,0.28) !important; }
+html.light .text-white\/10    { color: rgba(28,28,30,0.20) !important; }
 
 /* ── Accent / gold — darken for readability on white ────────────────────── */
 html.light .text-gold         { color: var(--accent-dark, #8B6914) !important; }
