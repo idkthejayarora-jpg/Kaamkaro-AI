@@ -371,39 +371,46 @@ function AdminDashboard() {
             <ChevronRight size={14} className={`text-gold flex-shrink-0 transition-transform duration-200 ${expandedBanner === 'tasks' ? 'rotate-90' : ''}`} />
           </button>
           {expandedBanner === 'tasks' && (
-            <div className="border-t border-gold/15 max-h-72 overflow-y-auto">
-              {overdueTasks.length === 0 ? (
-                <p className="text-gold/50 text-xs text-center py-4">No overdue tasks</p>
-              ) : overdueTasks.slice(0, 20).map(t => {
-                const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
-                const staffMember = staff.find(s => s.id === t.staffId);
-                return (
-                  <div
-                    key={t.id}
-                    className="flex items-center gap-3 px-4 py-2.5 border-b border-gold/10 last:border-0 cursor-pointer hover:bg-gold/5 transition-colors"
-                    onClick={() => navigate('/tasks')}
-                  >
-                    <div className="w-7 h-7 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
-                      <span className="text-gold text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
+            <div className="border-t border-gold/15">
+              <div className="max-h-64 overflow-y-auto">
+                {overdueTasks.length === 0 ? (
+                  <p className="text-gold text-xs text-center py-4 opacity-60">No overdue tasks</p>
+                ) : overdueTasks.slice(0, 20).map(t => {
+                  const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
+                  const staffMember = staff.find(s => s.id === t.staffId);
+                  return (
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-3 px-4 py-2.5 border-b border-gold/10 last:border-0 cursor-pointer hover:bg-gold/5 transition-colors"
+                      onClick={() => navigate('/tasks')}
+                    >
+                      <div className="w-7 h-7 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-gold text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-xs font-medium truncate">{t.title}</p>
+                        <p className="text-gold text-[10px] opacity-70">
+                          {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
+                          {t.customerName ? ` · ${t.customerName}` : ''}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
+                        {daysOverdue}d overdue
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-xs font-medium truncate">{t.title}</p>
-                      <p className="text-gold/50 text-[10px]">
-                        {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
-                        {t.customerName ? ` · ${t.customerName}` : ''}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
-                      {daysOverdue}d overdue
-                    </span>
-                  </div>
-                );
-              })}
-              {overdueTasks.length > 20 && (
-                <button className="w-full py-2.5 text-gold/60 text-xs hover:text-gold transition-colors" onClick={() => navigate('/tasks')}>
-                  +{overdueTasks.length - 20} more — View all →
+                  );
+                })}
+              </div>
+              {/* View all — always visible outside the scroll area */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-gold/15">
+                <span className="text-gold text-[10px] opacity-60">{overdueTasks.length} tasks total</span>
+                <button
+                  className="text-gold text-xs font-medium hover:text-gold/80 flex items-center gap-1 transition-colors"
+                  onClick={() => navigate('/tasks')}
+                >
+                  View all <ChevronRight size={12} />
                 </button>
-              )}
+              </div>
             </div>
           )}
         </div>
