@@ -272,7 +272,7 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
   /* Sidebar links — Apple sidebar style: no tinted bg on active */
   .sidebar-link {
     @apply flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium
-           text-white/40 transition-all duration-150;
+           text-white/60 transition-all duration-150;
   }
   .sidebar-link:hover {
     color: rgba(255,255,255,0.8);
