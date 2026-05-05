@@ -257,6 +257,13 @@ export const badgesAPI = {
   saveCriteria: (criteria: unknown) => api.put('/badges/criteria', { criteria }).then(r => r.data),
 };
 
+export const calendarAPI = {
+  month: (year: number, month: number, staffId?: string) =>
+    api.get('/calendar/month', { params: { year, month, ...(staffId ? { staffId } : {}) } }).then(r => r.data),
+  day: (date: string, staffId?: string) =>
+    api.get('/calendar/day', { params: { date, ...(staffId ? { staffId } : {}) } }).then(r => r.data),
+};
+
 export const stockAPI = {
   list: (params?: { staffId?: string }) => api.get('/stock', { params }).then(r => r.data),
   addEntry: (data: {
