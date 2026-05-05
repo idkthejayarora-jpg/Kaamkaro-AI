@@ -74,8 +74,6 @@ export const staffAPI = {
   setAvailability: (id: string, availability: string) =>
     api.patch(`/staff/${id}/availability`, { availability }).then(r => r.data),
   getPerformance: (id: string) => api.get(`/staff/${id}/performance`).then(r => r.data),
-  checkin:  () => api.post('/staff/checkin').then(r => r.data),
-  checkout: () => api.post('/staff/checkout').then(r => r.data),
 };
 
 export const broadcastAPI = {
