@@ -19,38 +19,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/staff/checkin — staff marks themselves active (must be before /:id)
-router.post('/checkin', async (req, res) => {
-  try {
-    const updated = await updateOne('staff', req.user.id, {
-      attendanceStatus: 'active',
-      availability:     'available',
-      lastCheckinAt:    new Date().toISOString(),
-    });
-    if (!updated) return res.status(404).json({ error: 'Not found' });
-    broadcast('staff:status-changed', { staffId: req.user.id, attendanceStatus: 'active' });
-    const { password: _, ...safe } = updated;
-    res.json(safe);
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// POST /api/staff/checkout — staff marks themselves inactive
-router.post('/checkout', async (req, res) => {
-  try {
-    const updated = await updateOne('staff', req.user.id, {
-      attendanceStatus: 'inactive',
-      lastCheckoutAt:   new Date().toISOString(),
-    });
-    if (!updated) return res.status(404).json({ error: 'Not found' });
-    broadcast('staff:status-changed', { staffId: req.user.id, attendanceStatus: 'inactive' });
-    const { password: _, ...safe } = updated;
-    res.json(safe);
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// checkin / checkout removed — attendance feature wiped
 
 // GET /api/staff/:id
 router.get('/:id', async (req, res) => {
