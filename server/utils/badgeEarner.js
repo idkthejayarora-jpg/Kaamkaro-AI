@@ -39,14 +39,14 @@ const BADGES = {
   shresth_vikreta:    { tier: 'gold',   label: 'Badi Dikki',         icon: '🏆', description: '20 leads close kiye' },
 
   // ── Merit points ──────────────────────────────────────────────────────────
-  pratham_samman:     { tier: 'bronze', label: 'Points Starter',     icon: '🌟', description: '50 merit points kamaye' },
-  vishisht_samman:    { tier: 'silver', label: 'Points Khiladi',     icon: '💎', description: '200 merit points kamaye' },
-  param_samman:       { tier: 'gold',   label: 'Points ka Raja',     icon: '👑', description: '500 merit points kamaye' },
+  pratham_samman:     { tier: 'bronze', label: 'Merit Rookie',       icon: '🌟', description: '50 merit points kamaye' },
+  vishisht_samman:    { tier: 'silver', label: 'Merit Khiladi',      icon: '💎', description: '200 merit points kamaye' },
+  param_samman:       { tier: 'gold',   label: 'Merit ka Raja',      icon: '👑', description: '500 merit points kamaye' },
 
   // ── Tenure ────────────────────────────────────────────────────────────────
-  nav_sadasya:        { tier: 'bronze', label: '1 Mahina Hua',       icon: '🌱', description: '30 din team mein' },
-  niyamit_sadasya:    { tier: 'silver', label: '3 Mahine Hua',       icon: '🎖️',  description: '90 din team mein' },
-  varishth_sadasya:   { tier: 'gold',   label: 'Tena Pana',          icon: '🏛️',  description: '1 saal team mein' },
+  nav_sadasya:        { tier: 'bronze', label: 'Naya Banda',         icon: '🌱', description: '30 din team mein' },
+  niyamit_sadasya:    { tier: 'silver', label: 'Pakka Banda',        icon: '🎖️',  description: '90 din team mein' },
+  varishth_sadasya:   { tier: 'gold',   label: 'Ek Saal Poora',     icon: '🏛️',  description: '1 saal team mein' },
 
   // ── Response rate ─────────────────────────────────────────────────────────
   uttam_pratikriya:   { tier: 'bronze', label: 'Call pe Ready',      icon: '📞', description: '90%+ response rate (min 20 calls)' },
