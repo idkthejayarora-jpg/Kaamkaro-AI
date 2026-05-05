@@ -284,24 +284,6 @@ export interface SentimentPoint {
   confidence: number;
 }
 
-// ── Attendance ────────────────────────────────────────────────────────────────
-export interface AttendanceSession {
-  loginAt: string;
-  logoutAt: string | null;
-  hours?: number;
-}
-
-export interface AttendanceRecord {
-  id: string;
-  staffId: string;
-  staffName: string;
-  date: string;           // YYYY-MM-DD
-  loginAt: string;        // first login of the day
-  logoutAt: string | null;
-  hoursWorked: number;
-  sessions: AttendanceSession[];
-}
-
 // ── Follow-up Queue & Insights ────────────────────────────────────────────────
 
 export interface CustomerInsight {
