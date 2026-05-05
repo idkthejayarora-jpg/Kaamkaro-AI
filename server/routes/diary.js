@@ -961,24 +961,17 @@ function extractActionItemsLocal(text) {
  * This is shown as "English Summary" in the UI when no AI translation is available.
  */
 function buildEnglishSummary(names, lang, sentiment, actions, staffName) {
-  // Return clean context — no meta-text like "recorded in Hindi by..."
   const parts = [];
 
   if (names.length > 0) {
     parts.push(`Interacted with: ${names.join(', ')}.`);
   }
 
-  if (sentiment === 'positive') {
-    parts.push('Positive outcome.');
-  } else if (sentiment === 'negative') {
-    parts.push('Challenges or objections noted.');
-  }
-
   if (actions.length > 0) {
     parts.push(`Next steps: ${actions.join('; ')}.`);
   }
 
-  return parts.length > 0 ? parts.join(' ') : 'Interaction logged.';
+  return parts.length > 0 ? parts.join(' ') : '';
 }
 
 // ── Loop task pattern detection ───────────────────────────────────────────────
