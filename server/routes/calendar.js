@@ -50,12 +50,11 @@ router.get('/month', async (req, res) => {
     const start = `${year}-${mm}-01`;
     const end   = `${year}-${mm}-${String(daysInMonth(year, month)).padStart(2, '0')}`;
 
-    const [tasks, diary, interactions, leads, attendance] = await Promise.all([
+    const [tasks, diary, interactions, leads] = await Promise.all([
       readDB('tasks').catch(() => []),
       readDB('diary').catch(() => []),
       readDB('interactions').catch(() => []),
       readDB('leads').catch(() => []),
-      readDB('attendance').catch(() => []),
     ]);
 
     // Build a map: date → counts
