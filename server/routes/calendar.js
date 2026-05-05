@@ -97,12 +97,6 @@ router.get('/month', async (req, res) => {
       }
     });
 
-    // Attendance
-    attendance.forEach(a => {
-      if (filterStaffId && a.staffId !== filterStaffId) return;
-      bump(toDateStr(a.loginAt || a.createdAt), 'attendance');
-    });
-
     res.json({ year, month, days });
   } catch (err) {
     console.error('[Calendar/month]', err.message);
