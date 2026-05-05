@@ -162,23 +162,12 @@ router.get('/day', async (req, res) => {
       _type: 'lead',
     }));
 
-    // Attendance: login/logout on this date
-    const dayAttendance = attendance.filter(a => {
-      if (filterStaffId && a.staffId !== filterStaffId) return false;
-      return toDateStr(a.loginAt || a.createdAt) === date;
-    }).map(a => ({
-      ...a,
-      staffName: a.staffName || staffMap[a.staffId] || 'Unknown',
-      _type: 'attendance',
-    }));
-
     res.json({
       date,
-      tasks:       dayTasks,
-      diary:       dayDiary,
+      tasks:        dayTasks,
+      diary:        dayDiary,
       interactions: dayInteractions,
-      leads:       dayLeads,
-      attendance:  dayAttendance,
+      leads:        dayLeads,
     });
   } catch (err) {
     console.error('[Calendar/day]', err.message);
