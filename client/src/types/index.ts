@@ -606,7 +606,7 @@ export const CRITERIA_META: {
   { key: 'tasks',     label: 'Tasks Completed',      unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Pehla Kadam' }, { key: 'silver', badge: 'Kaam ka Baadshah' }, { key: 'gold', badge: 'Kaam ka Legend' }] },
   { key: 'streak',    label: 'Diary Streak',         unit: 'days',  tiers: [{ key: 'bronze', badge: 'Chal Pada' }, { key: 'silver', badge: 'Roz Ka Yodha' }, { key: 'gold', badge: 'Rokna Mushkil Hai' }] },
   { key: 'deals',     label: 'Leads Closed (Won)',   unit: 'leads', tiers: [{ key: 'bronze', badge: 'Pehli Dikki' }, { key: 'silver', badge: 'Deal Baaz' }, { key: 'gold', badge: 'Badi Dikki' }] },
-  { key: 'merits',    label: 'Merit Points Earned',  unit: 'pts',   tiers: [{ key: 'bronze', badge: 'Points Starter' }, { key: 'silver', badge: 'Points Khiladi' }, { key: 'gold', badge: 'Points ka Raja' }] },
-  { key: 'tenure',    label: 'Days on the Team',     unit: 'days',  tiers: [{ key: 'bronze', badge: '1 Mahina Hua' }, { key: 'silver', badge: '3 Mahine Hua' }, { key: 'gold', badge: 'Tena Pana' }] },
+  { key: 'merits',    label: 'Merit Points Earned',  unit: 'pts',   tiers: [{ key: 'bronze', badge: 'Merit Rookie' }, { key: 'silver', badge: 'Merit Khiladi' }, { key: 'gold', badge: 'Merit ka Raja' }] },
+  { key: 'tenure',    label: 'Days on the Team',     unit: 'days',  tiers: [{ key: 'bronze', badge: 'Naya Banda' }, { key: 'silver', badge: 'Pakka Banda' }, { key: 'gold', badge: 'Ek Saal Poora' }] },
   { key: 'loopTasks', label: 'Loop Tasks Completed', unit: 'tasks', tiers: [{ key: 'bronze', badge: 'Baar Baar Karta' }, { key: 'silver', badge: 'Loop ka Ustaad' }] },
 ];
