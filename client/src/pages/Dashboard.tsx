@@ -101,6 +101,7 @@ function AdminDashboard() {
   const [meritGoals, setMeritGoals]   = useState<MeritGoal[]>([]);
   const [allTasks, setAllTasks]       = useState<Task[]>([]);
   const [loading, setLoading]         = useState(true);
+  const [customers, setCustomers]     = useState<Customer[]>([]);
   const [goalModal, setGoalModal]     = useState(false);
   const [gStaffId, setGStaffId]       = useState('');
   const [gTarget, setGTarget]         = useState('');
@@ -112,6 +113,7 @@ function AdminDashboard() {
   const [aPoints, setAPoints]         = useState('');
   const [aReason, setAReason]         = useState('');
   const [savingAward, setSavingAward] = useState(false);
+  const [expandedBanner, setExpandedBanner] = useState<'customers' | 'tasks' | null>(null);
   const navigate = useNavigate();
 
   const loadData = useCallback(async () => {
