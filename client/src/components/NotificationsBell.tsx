@@ -122,24 +122,6 @@ export default function NotificationsBell() {
       });
     }
 
-    // Inactive staff: no attendance check-in today AND no recent interaction
-    const today = new Date().toISOString().split('T')[0];
-    const inactiveStaff = (staff as { name: string; attendanceStatus?: string; lastCheckinAt?: string }[]).filter(s => {
-      if (s.attendanceStatus === 'active') return false;
-      if (!s.lastCheckinAt) return true;
-      return s.lastCheckinAt.split('T')[0] < today;
-    });
-    if (inactiveStaff.length > 0) {
-      items.push({
-        id: 'inactive_staff',
-        type: 'warning',
-        title: `${inactiveStaff.length} staff not checked in today`,
-        body: inactiveStaff.map(s => s.name).join(', '),
-        href: '/staff',
-        read: false,
-      });
-    }
-
     // Overdue tasks across all staff
     if (summary.dueTasksCount > 0) {
       items.push({
