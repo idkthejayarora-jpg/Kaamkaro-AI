@@ -2202,6 +2202,19 @@ Provide a complete natural English translation (sentence by sentence, not a summ
 - Be specific: "Send sample to Manish Agra" not just "Send sample"
 - Maximum 3 action items per entry
 
+━━━ SENTIMENT RULES (critical) ━━━
+Sentiment reflects the CUSTOMER'S EMOTIONAL STATE, not whether a transaction happened.
+- "positive" = customer expressed happiness, excitement, satisfaction, or strong agreement
+  Examples: "bahut khush tha", "bilkul pakka hai", "great product", "very interested"
+- "negative" = customer was upset, complained, cancelled, or rejected
+  Examples: "naraaz tha", "complaint ki", "nahi lena", "cancel kar diya"
+- "neutral" = routine business transaction — order placed, goods dispatched, payment received,
+  item kept aside, follow-up scheduled, customer visited or called without emotional signal
+  Examples: "order dia", "maal side kar dena", "parcel bheja", "kal aayegi", "payment pending",
+  "call kiya", "June m aana hai", "maal ready karna hai"
+DEFAULT to "neutral" unless there is an explicit emotional/mood signal. Transactional facts
+(order, payment, dispatch, parcel, invoice, side karna, bhej dena) are ALWAYS neutral.
+
 Respond ONLY with this JSON (no markdown, no text outside the JSON):
 {
   "detectedLanguage": "hindi|english|hinglish",
