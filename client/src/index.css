@@ -124,7 +124,7 @@ html.light .sidebar-link.active:hover {
 html.light ::placeholder      { color: rgba(28,28,30,0.30) !important; }
 
 /* ── Labels ──────────────────────────────────────────────────────────────── */
-html.light .label             { color: rgba(28,28,30,0.45) !important; }
+html.light .label             { color: rgba(28,28,30,0.60) !important; }
 
 /* ── Scrollbars ──────────────────────────────────────────────────────────── */
 html.light ::-webkit-scrollbar-track { background: #F2F2F7; }
