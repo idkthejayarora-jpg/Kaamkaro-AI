@@ -899,19 +899,27 @@ function extractNamesFromText(text) {
 
 /**
  * Detect sentiment from sales-relevant keyword lists.
+ *
+ * RULE: Transactional words (order, payment, received, dispatch, parcel, etc.)
+ * are NEUTRAL business facts — they say nothing about the customer's mood.
+ * Only genuine emotional/relationship signals count as positive or negative.
  */
 function detectSentimentLocal(text) {
   const lower = text.toLowerCase();
+
+  // Only genuine emotional/satisfaction signals — NOT routine transactions
   const positive = [
-    'deal','confirmed','agreed','interested','happy','closed','success','sold',
-    'bought','approved','order','payment','received','signed','contract',
-    'pakki','raazi','khush','haan','accha','bilkul','zaroor','positive',
+    'confirmed','agreed','interested','happy','success','approved',
+    'pakki','raazi','khush','bilkul','zaroor','positive','badhiya','badiya',
+    'great','excellent','wonderful','pleased','excited','impressed',
   ];
+
   const negative = [
     'rejected','angry','upset','cancelled','refused','complaint','problem',
-    'issue','failed','loss','dispute','return','refund','delay','pending',
-    'naraaz','mana','nahi','nahin','bad','difficult',
+    'issue','failed','loss','dispute','return','refund',
+    'naraaz','mana','gussa','pareshan','bad','difficult',
   ];
+
   let score = 0;
   positive.forEach(w => { if (lower.includes(w)) score++; });
   negative.forEach(w => { if (lower.includes(w)) score--; });
