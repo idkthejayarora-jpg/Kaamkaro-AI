@@ -107,7 +107,7 @@ html.light .badge-gray        { background: rgba(0,0,0,0.06) !important; color: 
 html.light .badge-gold        { background: rgb(var(--accent-rgb) / 0.12) !important; }
 
 /* ── Sidebar links ────────────────────────────────────────────────────────── */
-html.light .sidebar-link      { color: rgba(28,28,30,0.50) !important; }
+html.light .sidebar-link      { color: rgba(28,28,30,0.65) !important; }
 html.light .sidebar-link:hover {
   color: rgba(28,28,30,0.85) !important;
   background: rgba(0,0,0,0.05) !important;
