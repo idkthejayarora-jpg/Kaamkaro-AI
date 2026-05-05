@@ -225,7 +225,7 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
   .btn-secondary:hover { background: rgba(255,255,255,0.05); }
 
   .btn-ghost {
-    @apply text-white/50 font-medium px-4 py-2 rounded-xl
+    @apply text-white/65 font-medium px-4 py-2 rounded-xl
            hover:text-white active:scale-95 transition-all duration-150;
   }
   .btn-ghost:hover { background: rgba(255,255,255,0.06); }
