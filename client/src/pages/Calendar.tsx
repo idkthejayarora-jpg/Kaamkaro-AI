@@ -144,22 +144,30 @@ function InteractionsTab({ items }: { items: DayData['interactions'] }) {
   if (!items.length) return <EmptyState tab="interactions" />;
   const typeIcon: Record<string, string> = { call: '📞', meeting: '🤝', email: '📧', message: '💬', diary: '📓' };
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {items.map(i => (
-        <div key={i.id} className="flex gap-3 p-3 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-white/12 transition-colors">
-          <span className="text-lg leading-none flex-shrink-0 mt-0.5">{typeIcon[i.type] || '📞'}</span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-white/80 text-sm capitalize font-medium">{i.type}</span>
-              <span className={`text-[10px] px-1.5 py-px rounded-full border ${
-                i.responded ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
-                            : 'bg-red-400/10 text-red-400 border-red-400/20'
-              }`}>{i.responded ? 'Responded' : 'No response'}</span>
-              <span className="ml-auto text-white/20 text-xs">{fmtTime(i.createdAt)}</span>
-            </div>
-            {i.staffName && <p className="text-white/25 text-xs mt-0.5 flex items-center gap-1"><User size={9}/>{i.staffName}</p>}
-            {i.notes      && <p className="text-white/45 text-xs mt-1 line-clamp-2">{i.notes}</p>}
+        <div key={i.id} className="p-3.5 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-white/12 transition-colors">
+          {/* Meta row */}
+          <div className="flex items-center gap-2 flex-wrap mb-2">
+            <span className="text-base leading-none">{typeIcon[i.type] || '📞'}</span>
+            <span className="text-white/75 text-xs font-semibold capitalize">{i.type}</span>
+            <span className={`text-[10px] px-1.5 py-px rounded-full border ${
+              i.responded ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
+                          : 'bg-red-400/10 text-red-400 border-red-400/20'
+            }`}>{i.responded ? 'Responded' : 'No response'}</span>
+            <span className="ml-auto text-white/20 text-xs">{fmtTime(i.createdAt)}</span>
           </div>
+          {i.staffName && (
+            <p className="text-white/25 text-xs mb-2 flex items-center gap-1"><User size={9}/>{i.staffName}</p>
+          )}
+          {/* Raw notes — full content, no clipping */}
+          {i.notes ? (
+            <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap break-words">
+              {i.notes}
+            </p>
+          ) : (
+            <p className="text-white/20 text-xs italic">No notes recorded</p>
+          )}
         </div>
       ))}
     </div>
