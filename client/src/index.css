@@ -251,7 +251,7 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
 
   /* Label */
   .label {
-    @apply block text-xs font-medium text-white/40 mb-1.5 uppercase tracking-wider;
+    @apply block text-xs font-medium text-white/55 mb-1.5 uppercase tracking-wider;
   }
 
   /* Badge */
