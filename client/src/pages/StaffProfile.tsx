@@ -14,12 +14,6 @@ const TYPE_LABELS: Record<string, string> = { call: '📞', message: '💬', ema
 function fmt(iso: string) {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
-function fmtHrs(h: number) {
-  if (!h) return '—';
-  const hrs = Math.floor(h);
-  const mins = Math.round((h - hrs) * 60);
-  return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-}
 
 export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
