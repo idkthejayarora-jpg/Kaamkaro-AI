@@ -567,13 +567,13 @@ export const BADGE_META: Record<string, BadgeMeta> = {
   vyapar_nipun:       { label: 'Deal Baaz',          icon: '💼', tier: 'silver', description: '5 leads close kiye' },
   shresth_vikreta:    { label: 'Badi Dikki',         icon: '🏆', tier: 'gold',   description: '20 leads close kiye' },
   // Merits
-  pratham_samman:     { label: 'Points Starter',     icon: '🌟', tier: 'bronze', description: '50 merit points kamaye' },
-  vishisht_samman:    { label: 'Points Khiladi',     icon: '💎', tier: 'silver', description: '200 merit points kamaye' },
-  param_samman:       { label: 'Points ka Raja',     icon: '👑', tier: 'gold',   description: '500 merit points kamaye' },
+  pratham_samman:     { label: 'Merit Rookie',       icon: '🌟', tier: 'bronze', description: '50 merit points kamaye' },
+  vishisht_samman:    { label: 'Merit Khiladi',      icon: '💎', tier: 'silver', description: '200 merit points kamaye' },
+  param_samman:       { label: 'Merit ka Raja',      icon: '👑', tier: 'gold',   description: '500 merit points kamaye' },
   // Tenure
-  nav_sadasya:        { label: '1 Mahina Hua',       icon: '🌱', tier: 'bronze', description: '30 din team mein' },
-  niyamit_sadasya:    { label: '3 Mahine Hua',       icon: '🎖️',  tier: 'silver', description: '90 din team mein' },
-  varishth_sadasya:   { label: 'Tena Pana',          icon: '🏛️',  tier: 'gold',   description: '1 saal team mein' },
+  nav_sadasya:        { label: 'Naya Banda',         icon: '🌱', tier: 'bronze', description: '30 din team mein' },
+  niyamit_sadasya:    { label: 'Pakka Banda',        icon: '🎖️',  tier: 'silver', description: '90 din team mein' },
+  varishth_sadasya:   { label: 'Ek Saal Poora',     icon: '🏛️',  tier: 'gold',   description: '1 saal team mein' },
   // Response
   uttam_pratikriya:   { label: 'Call pe Ready',      icon: '📞', tier: 'bronze', description: '90%+ response rate (min 20 calls)' },
   sanchar_shresth:    { label: 'Call Ka King',       icon: '🎯', tier: 'gold',   description: '98%+ response rate (min 30 calls)' },
