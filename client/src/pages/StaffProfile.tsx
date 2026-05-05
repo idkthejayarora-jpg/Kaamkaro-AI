@@ -199,9 +199,8 @@ export default function StaffProfile() {
       {/* ── Tab switcher ── */}
       <div className="flex gap-1 border-b border-dark-50 pb-0">
         {([
-          { key: 'activity',   label: `Activity (${interactions.length})` },
-          { key: 'attendance', label: `Attendance (${attendance.length} days)` },
-          { key: 'customers',  label: `Customers (${customers.length})` },
+          { key: 'activity',  label: `Activity (${interactions.length})` },
+          { key: 'customers', label: `Customers (${customers.length})` },
         ] as const).map(({ key, label }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 ${
