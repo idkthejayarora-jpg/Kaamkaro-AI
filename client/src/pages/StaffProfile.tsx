@@ -28,9 +28,8 @@ export default function StaffProfile() {
   const [customers, setCustomers]     = useState<Customer[]>([]);
   const [performance, setPerformance] = useState<Performance[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
-  const [attendance, setAttendance]   = useState<AttendanceRecord[]>([]);
   const [loading, setLoading]         = useState(true);
-  const [activeTab, setActiveTab]     = useState<'activity' | 'attendance' | 'customers'>('activity');
+  const [activeTab, setActiveTab]     = useState<'activity' | 'customers'>('activity');
   const [badges, setBadges]           = useState<Badge[]>([]);
 
   useEffect(() => {
