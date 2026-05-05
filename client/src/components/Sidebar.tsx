@@ -250,14 +250,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-white text-sm font-medium truncate">{user?.name}</p>
-                <p className="text-white/30 text-xs capitalize flex items-center gap-1.5">
-                  {user?.role}
-                  {user?.role === 'staff' && (
-                    <span className={`text-[10px] font-medium ${isActive ? 'text-green-400' : 'text-white/25'}`}>
-                      · {isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  )}
-                </p>
+                <p className="text-white/30 text-xs capitalize">{user?.role}</p>
               </div>
               {/* Switch icon for admins */}
               {(isAdmin || isSwitched) && (
