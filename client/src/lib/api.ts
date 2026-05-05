@@ -209,13 +209,6 @@ export const teamsAPI = {
   delete: (id: string) => api.delete(`/teams/${id}`).then(r => r.data),
 };
 
-export const attendanceAPI = {
-  login:  () => api.post('/attendance/login').then(r => r.data),
-  logout: () => api.post('/attendance/logout').then(r => r.data),
-  list: (params?: { staffId?: string; from?: string; to?: string }) =>
-    api.get('/attendance', { params }).then(r => r.data),
-};
-
 export const chatAPI = {
   conversations: () => api.get('/chat/conversations').then(r => r.data),
   createConversation: (data: { type: 'direct' | 'group'; name?: string; members: string[] }) =>
