@@ -62,7 +62,7 @@ router.get('/month', async (req, res) => {
 
     const bump = (dateStr, key) => {
       if (!dateStr || dateStr < start || dateStr > end) return;
-      if (!days[dateStr]) days[dateStr] = { tasks: 0, diary: 0, interactions: 0, leads: 0, attendance: 0 };
+      if (!days[dateStr]) days[dateStr] = { tasks: 0, diary: 0, interactions: 0, leads: 0 };
       days[dateStr][key]++;
     };
 
