@@ -30,7 +30,6 @@ router.post('/register', async (req, res) => {
       role:             'staff',
       active:           true,
       avatar:           name.trim()[0].toUpperCase(),
-      attendanceStatus: 'inactive',
       streakData:       { currentStreak: 0, lastActivityDate: null, longestStreak: 0 },
       createdAt:        new Date().toISOString(),
       selfRegistered:   true,   // admin can filter/review these
