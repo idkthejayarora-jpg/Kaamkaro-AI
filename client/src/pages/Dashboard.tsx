@@ -194,6 +194,23 @@ function AdminDashboard() {
     .filter(t => !t.completed && t.dueDate < today)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
+  // Customers not contacted in 7+ days (matches the banner count)
+  const cutoff7 = new Date(Date.now() - 7 * 86400000).toISOString();
+  const staleCustomers = customers
+    .filter(c => !c.lastContact || c.lastContact < cutoff7)
+    .map(c => {
+      const assigneeId = (c as Customer & { assignedTo?: string; staffId?: string }).assignedTo
+        || (c as Customer & { assignedTo?: string; staffId?: string }).staffId || '';
+      return {
+        ...c,
+        daysSilent: c.lastContact
+          ? Math.floor((Date.now() - new Date(c.lastContact).getTime()) / 86400000)
+          : 9999,
+        assignedStaffName: staff.find(s => s.id === assigneeId)?.name || 'Unassigned',
+      };
+    })
+    .sort((a, b) => b.daysSilent - a.daysSilent);
+
   // Red alert groups
   const inactiveStaff = staff.filter(s => {
     const last = s.streakData?.lastActivityDate;
