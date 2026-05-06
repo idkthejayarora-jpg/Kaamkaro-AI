@@ -173,6 +173,45 @@ export default function SalesInsights() {
             </Section>
           )}
 
+          {/* Finish / polish type trends */}
+          {data.finishTrends?.length > 0 && (
+            <Section icon={<Sparkles size={14} className="text-amber-400" />} title="Finish Trends & Cross-Sell Opportunities" color="bg-amber-500/10">
+              <div className="space-y-3">
+                {data.finishTrends.map((f, i) => (
+                  <div key={i} className="bg-dark-300 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white text-sm font-semibold">{f.finish}</span>
+                      <span className="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded-full">
+                        {f.count} mention{f.count !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {f.piecesAlreadySelling?.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {f.piecesAlreadySelling.map((p, j) => (
+                          <span key={j} className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full">✓ {p}</span>
+                        ))}
+                      </div>
+                    )}
+                    {f.crossSellOpportunity?.length > 0 && (
+                      <div>
+                        <p className="text-white opacity-50 text-[10px] mb-1 uppercase tracking-wide">Also pitch in this finish →</p>
+                        <div className="flex flex-wrap gap-1">
+                          {f.crossSellOpportunity.map((p, j) => (
+                            <span key={j} className="text-[10px] bg-gold/10 text-gold px-2 py-0.5 rounded-full border border-gold/20">+ {p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-white opacity-55 text-[11px]">{f.insight}</p>
+                    {f.customers?.length > 0 && (
+                      <p className="text-white opacity-35 text-[10px]">Customers: {f.customers.join(', ')}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
           {/* Customer segments */}
           {data.segments?.length > 0 && (
             <Section icon={<Users size={14} className="text-purple-400" />} title="Customer Segments" color="bg-purple-500/10">
