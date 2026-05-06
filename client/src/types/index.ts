@@ -102,6 +102,7 @@ export interface Task {
   title: string;
   notes: string;
   dueDate: string;
+  dueTime?: string | null;
   completed: boolean;
   completedAt: string | null;
   createdAt: string;
