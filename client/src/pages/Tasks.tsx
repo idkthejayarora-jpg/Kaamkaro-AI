@@ -578,6 +578,12 @@ export default function Tasks() {
                   ? `Overdue · ${task.dueDate}`
                   : isDueToday ? 'Due today' : task.dueDate}
               </span>
+              {task.dueTime && (
+                <span className="text-white/25 text-xs flex items-center gap-1">
+                  <Clock size={10} />
+                  {WORK_SLOTS.find(s => s.value === task.dueTime)?.label ?? task.dueTime}
+                </span>
+              )}
               {/* Reschedule badge */}
               {(task.rescheduledCount ?? 0) > 0 && (
                 <span className="text-amber-400/60 text-[10px] flex items-center gap-0.5">
