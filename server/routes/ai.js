@@ -1191,7 +1191,7 @@ router.get('/sales-insights', async (req, res) => {
       convRate > 0 ? `Conversion rate: ${convRate}%.` : '',
     ].filter(Boolean).join(' ');
 
-    return res.json({ trends, occasionTrends, segments, outreachTips, restockAlerts, summary, rawMode: true, generatedAt: new Date().toISOString() });
+    return res.json({ trends, finishTrends, segments, outreachTips, restockAlerts, summary, rawMode: true, generatedAt: new Date().toISOString() });
 
   } catch (err) {
     console.error('[Sales Insights] error:', err);
