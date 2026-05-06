@@ -182,6 +182,27 @@ function VoiceTaskPanel({ onClose, onTasksChanged }: {
 }
 
 // ── Add Task Modal ─────────────────────────────────────────────────────────────
+// Generate 30-min time slots from 10:00 to 20:00
+const WORK_SLOTS: { value: string; label: string }[] = (() => {
+  const slots = [];
+  for (let h = 10; h <= 20; h++) {
+    for (const m of [0, 30]) {
+      if (h === 20 && m === 30) break;
+      const hh  = String(h).padStart(2, '0');
+      const mm  = String(m).padStart(2, '0');
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12  = h > 12 ? h - 12 : h;
+      slots.push({ value: `${hh}:${mm}`, label: `${h12}:${mm} ${ampm}` });
+    }
+  }
+  return slots;
+})();
+
+function isWithinWorkingHours() {
+  const h = new Date().getHours();
+  return h >= 10 && h < 20;
+}
+
 function AddTaskModal({ staff, customers, onClose, onCreated }: {
   staff: Staff[]; customers: Customer[];
   onClose: () => void; onCreated: (t: Task) => void;
@@ -189,10 +210,12 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
   const { isAdmin, user } = useAuth();
   const [form, setForm] = useState({
     title: '', notes: '', dueDate: new Date().toISOString().split('T')[0],
-    customerId: '', assignedTo: '',
+    dueTime: '', customerId: '', assignedTo: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+
+  const outsideHours = !isAdmin && !isWithinWorkingHours();
 
   const filteredCustomers = isAdmin
     ? customers.filter(c => !form.assignedTo || c.assignedTo === form.assignedTo)
@@ -201,11 +224,16 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.dueDate) { setError('Title and due date required'); return; }
+    if (!isAdmin && !isWithinWorkingHours()) {
+      setError('Tasks can only be created during working hours (10:00 AM – 8:00 PM).');
+      return;
+    }
     setLoading(true);
     try {
       const customerName = customers.find(c => c.id === form.customerId)?.name || null;
       const t = await tasksAPI.create({
         title: form.title, notes: form.notes, dueDate: form.dueDate,
+        dueTime: form.dueTime || null,
         customerId: form.customerId || null, customerName,
         assignedTo: form.assignedTo || user?.id,
       });
@@ -223,13 +251,29 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
           <button onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          {/* Outside-hours warning */}
+          {outsideHours && (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
+              <Clock size={14} className="mt-0.5 flex-shrink-0" />
+              <span>Tasks can only be created during working hours: <strong>10:00 AM – 8:00 PM</strong>.</span>
+            </div>
+          )}
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
           <div><label className="label">Task Title *</label>
             <input className="input" placeholder="e.g. Call back about pricing" value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
-          <div><label className="label">Due Date *</label>
-            <input type="date" className="input" value={form.dueDate}
-              onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="label">Due Date *</label>
+              <input type="date" className="input" value={form.dueDate}
+                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
+            <div><label className="label">Time Slot</label>
+              <select className="input" value={form.dueTime}
+                onChange={e => setForm(f => ({ ...f, dueTime: e.target.value }))}>
+                <option value="">Any time</option>
+                {WORK_SLOTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+          </div>
           {isAdmin && (
             <div><label className="label">Assign to Staff</label>
               <select className="input" value={form.assignedTo}
@@ -252,7 +296,7 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
         </form>
         <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
           <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={submit} disabled={loading} className="btn-primary flex-1">
+          <button onClick={submit} disabled={loading || outsideHours} className="btn-primary flex-1">
             {loading ? 'Adding...' : 'Add Task'}
           </button>
         </div>
