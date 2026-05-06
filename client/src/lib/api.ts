@@ -256,7 +256,12 @@ export const calendarAPI = {
 };
 
 export const fraudAPI = {
-  detect: () => api.get('/fraud/detect').then(r => r.data),
+  detect:  () => api.get('/fraud/detect').then(r => r.data),
+  fine:    (data: { staffId: string; fraudType: string; alertTitle?: string; notes?: string }) =>
+    api.post('/fraud/fine', data).then(r => r.data),
+  dismiss: (data: { staffId: string; fraudType: string; alertTitle?: string; notes?: string }) =>
+    api.post('/fraud/dismiss', data).then(r => r.data),
+  records: () => api.get('/fraud/records').then(r => r.data),
 };
 
 export const stockAPI = {
