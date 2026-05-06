@@ -445,8 +445,8 @@ Return ONLY a valid JSON array — no markdown, no explanation:
   "performanceScore": <0-100, based on activity volume + results + pipeline health>,
   "summary": "<1-2 sentences naming the actual products and customers they are working on>",
   "strengths": ["<name specific products/customers/patterns — e.g. 'Strong follow-up on AD sets for 3 warm leads'>"],
-  "issues": ["<specific gap — e.g. 'Mehendi season opportunity: no bangles or jhumka pitched despite 4 customers mentioning function'>"],
-  "actions": ["<concrete next step — name product + customer — e.g. 'Pitch bridal set to Priya Sharma who visited last week'>"],
+  "issues": ["<specific gap — e.g. 'Customer asked for mehendi-polish bangles but no mehendi jhumka or maang tikka cross-sold'>"],
+  "actions": ["<concrete next step using finish+piece — e.g. 'Pitch silver-polish payal to Ritu who bought silver bangles last week'>"],
   "priority": "high|medium|low"
 }]`;
 
