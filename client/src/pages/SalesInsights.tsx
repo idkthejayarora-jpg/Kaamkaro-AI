@@ -11,6 +11,15 @@ interface Trend {
   count: number;
   customers: string[];
   insight?: string;
+  demandCount?: number;
+}
+interface FinishTrend {
+  finish: string;
+  count: number;
+  customers: string[];
+  piecesAlreadySelling: string[];
+  crossSellOpportunity: string[];
+  insight: string;
 }
 interface Segment {
   segment: string;
