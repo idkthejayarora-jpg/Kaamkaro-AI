@@ -1042,7 +1042,7 @@ router.get('/sales-insights', async (req, res) => {
     // ── Trend analysis ────────────────────────────────────────────────────────
     const trendMap  = {};
     const demandMap = {};
-    const occasionMap = {};
+    const finishMap = {};
 
     for (const entry of corpus) {
       const lc = entry.text.toLowerCase();
@@ -1056,11 +1056,11 @@ router.get('/sales-insights', async (req, res) => {
         if (hasDemand) { trendMap[product].demandCount++; demandMap[product] = (demandMap[product] || 0) + 1; }
       }
 
-      for (const [occasion, aliases] of Object.entries(OCCASION_DICT)) {
+      for (const [finish, aliases] of Object.entries(FINISH_DICT)) {
         if (!aliases.some(alias => lc.includes(alias))) continue;
-        if (!occasionMap[occasion]) occasionMap[occasion] = { count: 0, customers: new Set() };
-        occasionMap[occasion].count++;
-        if (entry.customerName) occasionMap[occasion].customers.add(entry.customerName);
+        if (!finishMap[finish]) finishMap[finish] = { count: 0, customers: new Set() };
+        finishMap[finish].count++;
+        if (entry.customerName) finishMap[finish].customers.add(entry.customerName);
       }
     }
 
@@ -1076,23 +1076,26 @@ router.get('/sales-insights', async (req, res) => {
         return { item, count: v.count, customers: custList, insight, demandCount: v.demandCount };
       });
 
-    // ── Occasion-based cross-sell signals ─────────────────────────────────────
-    const occasionTrends = Object.entries(occasionMap)
+    // ── Finish-type cross-sell signals ────────────────────────────────────────
+    // When a finish is discussed, surface which jewellery pieces in that finish
+    // are being pitched and which are missing opportunities.
+    const finishTrends = Object.entries(finishMap)
       .sort(([, a], [, b]) => b.count - a.count)
-      .slice(0, 5)
-      .map(([occasion, v]) => {
-        const paired   = (OCCASION_COMBOS[occasion] || []).filter(p => trendMap[p]);
-        const missing  = (OCCASION_COMBOS[occasion] || []).filter(p => !trendMap[p]).slice(0, 3);
-        const custList = [...v.customers].slice(0, 4);
+      .slice(0, 6)
+      .map(([finish, v]) => {
+        const allPieces  = FINISH_COMBOS[finish] || [];
+        const pitched    = allPieces.filter(p => trendMap[p]);
+        const notPitched = allPieces.filter(p => !trendMap[p]).slice(0, 3);
+        const custList   = [...v.customers].slice(0, 4);
         return {
-          occasion,
+          finish,
           count:           v.count,
           customers:       custList,
-          pairedProducts:  paired,
-          missingOpportunity: missing,
-          insight: missing.length
-            ? `${occasion} mentioned ${v.count}× — customers may also need ${missing.join(', ')}`
-            : `${occasion} — ${paired.join(', ')} already being pitched`,
+          piecesAlreadySelling: pitched,
+          crossSellOpportunity: notPitched,
+          insight: notPitched.length
+            ? `${finish} mentioned ${v.count}× — also pitch ${notPitched.join(', ')} in this finish`
+            : `${finish} — well covered across ${pitched.join(', ')}`,
         };
       });
 
