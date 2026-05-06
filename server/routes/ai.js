@@ -935,33 +935,73 @@ router.get('/sales-insights', async (req, res) => {
 
     // ── Product keyword dictionary (display name → search aliases) ────────────
     const PRODUCT_DICT = {
-      'AD Set':       ['ad set', 'american diamond set', 'a.d. set', 'ad ka set', 'ad earring', 'ad necklace'],
-      'Bridal Set':   ['bridal set', 'bridal', 'shaadi ka set', 'wedding set', 'dulhan set'],
-      'Gold':         ['gold', 'sona', 'gold set', 'gold earring', 'gold necklace', 'gold ring'],
-      'Diamond':      ['diamond', 'heera', 'diamond set', 'diamond earring', 'diamond ring'],
-      'Earrings':     ['earring', 'earrings', 'jhumka', 'jhumki', 'bali', 'tops', 'studs'],
-      'Necklace':     ['necklace', 'haar', 'mala', 'necklace set', 'choker', 'hasnuli'],
-      'Bracelet':     ['bracelet', 'bangle', 'bangles', 'kangan', 'kada', 'churi', 'churiya'],
-      'Ring':         ['ring', 'rings', 'angoothi', 'finger ring'],
-      'Pendant':      ['pendant', 'mangalsutra', 'mangal sutra', 'locket'],
-      'Anklet':       ['anklet', 'payal', 'pajeb'],
-      'Collection':   ['collection', 'new collection', 'latest collection', 'naya collection', 'new stock'],
-      'Customized':   ['customize', 'customized', 'customize karke', 'custom order', 'banwana', 'banvana'],
-      'Saree':        ['saree', 'sarees', 'sari', 'silk saree', 'cotton saree'],
-      'Suit':         ['suit', 'suits', 'salwar suit', 'salwar kameez', 'churidar'],
-      'Lehenga':      ['lehenga', 'lehnga', 'ghaghra'],
-      'Fabric':       ['fabric', 'kapda', 'kapde', 'cloth', 'material'],
-      'Kurti':        ['kurti', 'kurtis'],
-      'Tiles':        ['tile', 'tiles'],
-      'Marble':       ['marble', 'marbles', 'sangmarmar'],
-      'Granite':      ['granite'],
-      'Flooring':     ['flooring', 'floor'],
-      'Sample':       ['sample', 'samples', 'namoona'],
-      'Design':       ['design', 'designs', 'naya design', 'pattern', 'latest design'],
+      // Jewellery — core
+      'AD Set':         ['ad set', 'american diamond set', 'a.d. set', 'ad ka set', 'ad earring', 'ad necklace', 'ad wala', 'american diamond', 'ad jewelry', 'ad jewellery'],
+      'Bridal Set':     ['bridal set', 'bridal', 'shaadi ka set', 'wedding set', 'dulhan set', 'dulhan ka set', 'bridal jewellery', 'complete bridal', 'full set', 'poora set'],
+      'Gold':           ['gold', 'sona', 'gold set', 'gold earring', 'gold necklace', 'gold ring', 'sone ka', 'gold jewelry'],
+      'Diamond':        ['diamond', 'heera', 'diamond set', 'diamond earring', 'diamond ring', 'real diamond'],
+      'Kundan':         ['kundan', 'kundan set', 'kundan earring', 'kundan necklace', 'kundan jewelry', 'kundhan'],
+      'Meenakari':      ['meenakari', 'meena', 'meenakar', 'enamel', 'meenakari set'],
+      'Oxidised':       ['oxidised', 'oxidized', 'antique', 'antique finish', 'dark finish', 'german silver'],
+      // Earrings — subcategories
+      'Jhumka':         ['jhumka', 'jhumki', 'jhumke', 'jhumka earring'],
+      'Earrings':       ['earring', 'earrings', 'bali', 'tops', 'studs', 'kaan ka', 'ear ring', 'drop earring', 'hoop', 'chandbali'],
+      // Bangles / Kangan
+      'Bangles':        ['bangle', 'bangles', 'kangan', 'kadaa', 'kada', 'churi', 'churiya', 'churiyan', 'choori', 'glass bangles', 'metal bangles', 'bangle set', 'ek dozen', 'dozen bangles', 'bangles set', 'kangan set'],
+      // Sets / necklaces
+      'Necklace':       ['necklace', 'haar', 'mala', 'necklace set', 'choker', 'hasnuli', 'long necklace', 'layered'],
+      'Maang Tikka':    ['maang tikka', 'maang tika', 'tikka', 'tika', 'mang tika', 'forehead'],
+      'Nath':           ['nath', 'nose ring', 'nose pin', 'nathni'],
+      'Payal':          ['payal', 'pajeb', 'anklet', 'pair payal', 'silver payal', 'ghungroo'],
+      'Ring':           ['ring', 'rings', 'angoothi', 'finger ring', 'solitaire', 'cocktail ring'],
+      'Pendant':        ['pendant', 'mangalsutra', 'mangal sutra', 'locket', 'chain pendant'],
+      'Bracelet':       ['bracelet', 'hand bracelet', 'tennis bracelet', 'chain bracelet'],
+      // Sets combos
+      'Jewellery Set':  ['jewellery set', 'jewelry set', 'full set', 'complete set', 'set with earring', '4 piece', '5 piece', 'combo set'],
+      // Clothing
+      'Saree':          ['saree', 'sarees', 'sari', 'silk saree', 'cotton saree', 'designer saree'],
+      'Suit':           ['suit', 'suits', 'salwar suit', 'salwar kameez', 'churidar', 'designer suit'],
+      'Lehenga':        ['lehenga', 'lehnga', 'ghaghra', 'bridal lehenga', 'party lehenga'],
+      'Kurti':          ['kurti', 'kurtis', 'top', 'cotton kurti'],
+      'Fabric':         ['fabric', 'kapda', 'kapde', 'cloth', 'material', 'unstitched'],
+      // Other categories
+      'Tiles':          ['tile', 'tiles', 'ceramic tile', 'vitrified'],
+      'Marble':         ['marble', 'marbles', 'sangmarmar', 'marble slab'],
+      'Granite':        ['granite', 'stone'],
+      'Flooring':       ['flooring', 'floor'],
+      'Collection':     ['collection', 'new collection', 'latest collection', 'naya collection', 'new stock', 'naya maal', 'stock aaya'],
+      'Customised':     ['customize', 'customized', 'customize karke', 'custom order', 'banwana', 'banvana', 'bespoke', 'special order'],
+      'Design':         ['design', 'designs', 'naya design', 'pattern', 'latest design', 'new design'],
+    };
+
+    // ── Occasion / event dictionary (drives cross-product recommendations) ────
+    const OCCASION_DICT = {
+      'Mehendi Function': ['mehendi', 'mehndi', 'mehendi function', 'haldi function', 'haldi ceremony'],
+      'Wedding/Shaadi':   ['wedding', 'shaadi', 'shadi', 'barat', 'dulhan', 'bride', 'vivah', 'byaah', 'doli'],
+      'Navratri/Garba':   ['navratri', 'navaratri', 'dandiya', 'garba', 'navratre'],
+      'Diwali':           ['diwali', 'deepawali', 'deepavali', 'diwali gift', 'tyohar'],
+      'Eid':              ['eid', 'bakra eid', 'eid ul fitr', 'eid mubarak'],
+      'Karwa Chauth':     ['karwa chauth', 'karva chauth', 'karwa', 'karvachauth'],
+      'Birthday/Anniv.':  ['birthday', 'anniversary', 'janamdin', 'saalgirah', 'bday'],
+      'Party/Reception':  ['party', 'function', 'reception', 'sangeet', 'cocktail', 'event', 'programme'],
+      'Puja/Festival':    ['puja', 'pooja', 'teej', 'hartalika', 'ganesh', 'durga', 'festival'],
+    };
+
+    // Occasion → naturally paired products (for cross-sell insights)
+    const OCCASION_COMBOS = {
+      'Mehendi Function': ['Bangles', 'Jhumka', 'Payal', 'Maang Tikka', 'Nath'],
+      'Wedding/Shaadi':   ['Bridal Set', 'Bangles', 'Maang Tikka', 'Jhumka', 'Payal', 'Nath'],
+      'Navratri/Garba':   ['AD Set', 'Jhumka', 'Bangles', 'Earrings'],
+      'Diwali':           ['Gold', 'AD Set', 'Diamond', 'Jewellery Set'],
+      'Eid':              ['Earrings', 'Bangles', 'Necklace', 'AD Set'],
+      'Karwa Chauth':     ['Bangles', 'Ring', 'Necklace', 'Maang Tikka'],
+      'Birthday/Anniv.':  ['Ring', 'Pendant', 'Earrings', 'Bracelet'],
+      'Party/Reception':  ['AD Set', 'Jhumka', 'Necklace', 'Earrings'],
+      'Puja/Festival':    ['Gold', 'Bangles', 'Earrings', 'Pendant'],
     };
 
     // ── Demand / urgency signals ──────────────────────────────────────────────
-    const DEMAND_RE = /chahiye|chahte|chahta|chahti|order karo|mangwao|stock nahi|nahi hai|out of stock|khatam ho|available nahi|dhoondh raha|zaroorat|need|want urgently|urgent order|jaldi chahiye/;
+    const DEMAND_RE = /chahiye|chahte|chahta|chahti|order karo|mangwao|stock nahi|nahi hai|out of stock|khatam ho|available nahi|dhoondh raha|zaroorat|need|want urgently|urgent order|jaldi chahiye|asap|abhi chahiye/;
 
     // ── Build text corpus with customer name context ───────────────────────────
     const corpus = [
