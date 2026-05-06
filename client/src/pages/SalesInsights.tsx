@@ -1,62 +1,81 @@
 import { useEffect, useState } from 'react';
 import {
-  TrendingUp, Lightbulb, MessageSquare, AlertTriangle,
-  RefreshCw, Loader2, BarChart2, Users, Package, Sparkles,
+  TrendingUp, TrendingDown, Minus, Lightbulb, MessageSquare, AlertTriangle,
+  RefreshCw, Loader2, BarChart2, Users, Package, Sparkles, ChevronDown,
+  MapPin, CheckCircle2, BookOpen, Grid3X3,
 } from 'lucide-react';
-import { aiAPI } from '../lib/api';
+import { aiAPI, tasksAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+interface StaffBreakdown { staffId: string; staffName: string; count: number; }
+
 interface Trend {
-  item: string;
-  count: number;
-  customers: string[];
-  insight?: string;
-  demandCount?: number;
+  item: string; count: number; customers: string[]; insight?: string;
+  demandCount?: number; direction?: 'rising' | 'falling' | 'stable';
+  staffBreakdown?: StaffBreakdown[]; excerpts?: string[];
+  recentCount?: number; olderCount?: number;
 }
 interface FinishTrend {
-  finish: string;
-  count: number;
-  customers: string[];
-  piecesAlreadySelling: string[];
-  crossSellOpportunity: string[];
-  insight: string;
+  finish: string; count: number; customers: string[];
+  piecesAlreadySelling: string[]; crossSellOpportunity: string[];
+  insight: string; opportunityGap?: number;
+  staffBreakdown?: StaffBreakdown[]; excerpts?: string[];
 }
 interface Segment {
-  segment: string;
-  preferredProducts: string[];
-  tip: string;
+  segment: string; preferredProducts: string[]; tip: string; customers?: string[];
 }
 interface OutreachTip {
-  leadName: string;
-  product: string;
-  reason: string;
-  message: string;
+  leadName: string; product: string; reason: string; message: string;
+  leadAge?: number | null; daysSinceContact?: number | null;
+  totalNotes?: number; assignedStaffId?: string | null;
 }
-interface RestockAlert {
-  item: string;
-  urgency: 'high' | 'medium';
-  reason: string;
+interface RestockAlert { item: string; urgency: 'high' | 'medium'; reason: string; }
+interface StaffMatrixEntry {
+  staffId: string; staffName: string;
+  topProducts: string[]; topFinishes: string[]; totalMentions: number;
+}
+interface OverallStats {
+  totalEntries: number; uniqueLeadsScanned: number;
+  productKeywordsFound: number; finishKeywordsFound: number;
+  topProduct: string; topFinish: string;
+  wonLeads?: number; activeLeads?: number; convRate?: number;
 }
 interface InsightsData {
-  trends:        Trend[];
-  finishTrends:  FinishTrend[];
-  segments:      Segment[];
-  outreachTips:  OutreachTip[];
-  restockAlerts: RestockAlert[];
-  summary:       string;
-  generatedAt:   string;
-  rawMode?:      boolean;
+  trends: Trend[]; finishTrends: FinishTrend[]; segments: Segment[];
+  outreachTips: OutreachTip[]; restockAlerts: RestockAlert[];
+  summary: string; generatedAt: string; rawMode?: boolean;
+  overallStats?: OverallStats; staffProductMatrix?: StaffMatrixEntry[];
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function DirectionIcon({ d }: { d?: 'rising' | 'falling' | 'stable' }) {
+  if (d === 'rising')  return <TrendingUp  size={12} className="text-green-400 flex-shrink-0" />;
+  if (d === 'falling') return <TrendingDown size={12} className="text-red-400  flex-shrink-0" />;
+  return <Minus size={12} className="text-white/30 flex-shrink-0" />;
+}
+function DirectionBadge({ d }: { d?: 'rising' | 'falling' | 'stable' }) {
+  if (!d) return null;
+  const map = {
+    rising:  { label: '↑ Rising',  cls: 'bg-green-500/10 text-green-400' },
+    falling: { label: '↓ Falling', cls: 'bg-red-500/10   text-red-400'   },
+    stable:  { label: '→ Stable',  cls: 'bg-white/5      text-white/30'   },
+  };
+  const { label, cls } = map[d];
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${cls}`}>{label}</span>;
 }
 
 // ── Section wrapper ────────────────────────────────────────────────────────────
-function Section({ icon, title, color, children }: {
-  icon: React.ReactNode; title: string; color: string; children: React.ReactNode;
+function Section({ icon, title, color, badge, children }: {
+  icon: React.ReactNode; title: string; color: string;
+  badge?: React.ReactNode; children: React.ReactNode;
 }) {
   return (
     <div className="card space-y-3">
       <div className="flex items-center gap-2 mb-1">
         <div className={`p-1.5 rounded-lg ${color}`}>{icon}</div>
-        <h2 className="text-white font-semibold text-sm">{title}</h2>
+        <h2 className="text-white font-semibold text-sm flex-1">{title}</h2>
+        {badge}
       </div>
       {children}
     </div>
@@ -65,29 +84,52 @@ function Section({ icon, title, color, children }: {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function SalesInsights() {
+  const { isAdmin } = useAuth();
   const [data,    setData]    = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [taskDone, setTaskDone] = useState<Record<string, boolean>>({});
+
+  const toggle = (key: string) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
   const load = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await aiAPI.salesInsights();
-      setData(result);
-    } catch (err: unknown) {
+    setLoading(true); setError('');
+    try { setData(await aiAPI.salesInsights()); }
+    catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as { message?: string })?.message || 'Unknown error';
       setError(`Failed to generate insights: ${msg}`);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
 
+  const handleAssignTask = async (tip: OutreachTip, key: string) => {
+    try {
+      await tasksAPI.create({
+        title: `Follow up with ${tip.leadName} re: ${tip.product}`,
+        notes: tip.reason,
+        ...(tip.assignedStaffId ? { assignedTo: tip.assignedStaffId } : {}),
+        customerName: tip.leadName,
+      });
+      setTaskDone(prev => ({ ...prev, [key]: true }));
+      setTimeout(() => setTaskDone(prev => ({ ...prev, [key]: false })), 3000);
+    } catch { /* ignore */ }
+  };
+
+  const handleRestockTask = async (a: RestockAlert, key: string) => {
+    try {
+      await tasksAPI.create({ title: `Restock: ${a.item}`, notes: a.reason });
+      setTaskDone(prev => ({ ...prev, [key]: true }));
+      setTimeout(() => setTaskDone(prev => ({ ...prev, [key]: false })), 3000);
+    } catch { /* ignore */ }
+  };
+
   const genTime = data?.generatedAt
     ? new Date(data.generatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     : '';
+
+  const s = data?.overallStats;
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -103,15 +145,8 @@ export default function SalesInsights() {
             {genTime && <span className="ml-2 text-white/20">· Generated at {genTime}</span>}
           </p>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="btn-primary flex items-center gap-2 flex-shrink-0"
-        >
-          {loading
-            ? <><Loader2 size={14} className="animate-spin" /> Analysing…</>
-            : <><RefreshCw size={14} /> Refresh</>
-          }
+        <button onClick={load} disabled={loading} className="btn-primary flex items-center gap-2 flex-shrink-0">
+          {loading ? <><Loader2 size={14} className="animate-spin" /> Analysing…</> : <><RefreshCw size={14} /> Refresh</>}
         </button>
       </div>
 
@@ -132,7 +167,43 @@ export default function SalesInsights() {
 
       {data && (
         <>
-          {/* Summary banner */}
+          {/* ── KPI bar ─────────────────────────────────────────────────────── */}
+          {s && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Diary entries',   value: s.totalEntries,          sub: 'scanned'              },
+                { label: 'Leads analysed',  value: s.uniqueLeadsScanned,    sub: 'with notes'           },
+                { label: 'Top product',     value: s.topProduct || '—',     sub: `${s.productKeywordsFound} types found`, isText: true },
+                { label: 'Top finish',      value: s.topFinish  || '—',     sub: `${s.finishKeywordsFound} finishes found`, isText: true },
+              ].map(({ label, value, sub, isText }) => (
+                <div key={label} className="card py-3 px-4 space-y-0.5 text-center">
+                  <p className={`font-bold leading-tight ${isText ? 'text-base text-gold' : 'text-2xl text-gold'}`}>{value}</p>
+                  <p className="text-white text-xs font-medium">{label}</p>
+                  <p className="text-white/30 text-[10px]">{sub}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Conversion stats strip (admin) ──────────────────────────────── */}
+          {isAdmin && s && (s.activeLeads ?? 0) > 0 && (
+            <div className="card bg-gold/5 border-gold/15 flex flex-wrap gap-5 py-3 px-4">
+              <div className="text-center">
+                <p className="text-gold text-lg font-bold">{s.activeLeads}</p>
+                <p className="text-white/40 text-[10px]">Active leads</p>
+              </div>
+              <div className="text-center">
+                <p className="text-green-400 text-lg font-bold">{s.wonLeads}</p>
+                <p className="text-white/40 text-[10px]">Won</p>
+              </div>
+              <div className="text-center">
+                <p className="text-blue-400 text-lg font-bold">{s.convRate}%</p>
+                <p className="text-white/40 text-[10px]">Conversion rate</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Summary banner ───────────────────────────────────────────────── */}
           {data.summary && (
             <div className="card bg-gold/5 border-gold/15">
               <div className="flex items-start gap-3">
@@ -142,114 +213,205 @@ export default function SalesInsights() {
             </div>
           )}
 
-          {/* Product trends */}
+          {/* ── Product trends ───────────────────────────────────────────────── */}
           {data.trends?.length > 0 && (
             <Section icon={<TrendingUp size={14} className="text-blue-400" />} title="Top Product Trends" color="bg-blue-500/10">
               <div className="space-y-2">
-                {data.trends.map((t, i) => (
-                  <div key={i} className="flex items-start gap-3 py-2 border-b border-dark-50 last:border-0">
-                    <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-blue-400 text-[10px] font-bold">#{i + 1}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white text-sm font-semibold capitalize">{t.item}</span>
-                        {t.count > 0 && (
-                          <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-full">
-                            {t.count} mention{t.count !== 1 ? 's' : ''}
-                          </span>
-                        )}
-                      </div>
-                      {t.insight && <p className="text-white/40 text-xs mt-0.5">{t.insight}</p>}
-                      {t.customers?.length > 0 && (
-                        <p className="text-white/25 text-[10px] mt-1">
-                          Linked to: {t.customers.join(', ')}
-                        </p>
+                {data.trends.map((t, i) => {
+                  const key = `trend-${i}`;
+                  const open = expanded[key];
+                  return (
+                    <div key={i} className="border border-dark-50 rounded-xl overflow-hidden">
+                      {/* collapsed row */}
+                      <button
+                        onClick={() => toggle(key)}
+                        className="w-full flex items-start gap-3 py-2.5 px-3 hover:bg-white/2 transition-colors text-left"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-blue-400 text-[10px] font-bold">#{i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white text-sm font-semibold capitalize">{t.item}</span>
+                            <DirectionIcon d={t.direction} />
+                            {t.count > 0 && (
+                              <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-full">
+                                {t.count} mention{t.count !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                            <DirectionBadge d={t.direction} />
+                          </div>
+                          {t.insight && <p className="text-white/40 text-xs mt-0.5">{t.insight}</p>}
+                        </div>
+                        <ChevronDown size={14} className={`text-white/20 flex-shrink-0 mt-1 transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {/* expanded analysis */}
+                      {open && (
+                        <div className="px-3 pb-3 space-y-3 border-t border-dark-50 pt-3">
+
+                          {/* trend direction details */}
+                          {(t.recentCount !== undefined || t.olderCount !== undefined) && (
+                            <div className="flex gap-3 text-xs">
+                              <span className="text-white/30">Last 14 days: <span className="text-white/60 font-medium">{t.recentCount ?? 0}</span></span>
+                              <span className="text-white/20">·</span>
+                              <span className="text-white/30">Prior 14 days: <span className="text-white/60 font-medium">{t.olderCount ?? 0}</span></span>
+                              {t.direction && (
+                                <span className={`ml-1 font-medium ${t.direction === 'rising' ? 'text-green-400' : t.direction === 'falling' ? 'text-red-400' : 'text-white/30'}`}>
+                                  {t.direction === 'rising' ? '↑ Demand increasing' : t.direction === 'falling' ? '↓ Interest cooling' : '→ Holding steady'}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* who's mentioning it */}
+                          {t.staffBreakdown && t.staffBreakdown.length > 0 && (
+                            <div>
+                              <p className="text-white/25 text-[10px] uppercase tracking-wide mb-1.5 flex items-center gap-1"><Users size={9} /> Who's mentioning it</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {t.staffBreakdown.map((sb, j) => (
+                                  <span key={j} className="text-[10px] bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-full">
+                                    {sb.staffName} <span className="text-blue-400/60">×{sb.count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* diary excerpts */}
+                          {t.excerpts && t.excerpts.length > 0 && (
+                            <div>
+                              <p className="text-white/25 text-[10px] uppercase tracking-wide mb-1.5 flex items-center gap-1"><BookOpen size={9} /> From the diary</p>
+                              <div className="space-y-1.5">
+                                {t.excerpts.map((ex, j) => (
+                                  <div key={j} className="bg-dark-400 rounded-lg px-3 py-2 border-l-2 border-blue-500/30">
+                                    <p className="text-white/55 text-xs italic leading-relaxed">"{ex}"</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* linked customers */}
+                          {t.customers?.length > 0 && (
+                            <p className="text-white/25 text-[10px]">
+                              Linked customers: {t.customers.join(', ')}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Section>
           )}
 
-          {/* Finish / polish type trends */}
+          {/* ── Finish trends ────────────────────────────────────────────────── */}
           {data.finishTrends?.length > 0 && (
             <Section icon={<Sparkles size={14} className="text-amber-400" />} title="Finish Trends & Cross-Sell Opportunities" color="bg-amber-500/10">
               <div className="space-y-3">
-                {data.finishTrends.map((f, i) => (
-                  <div key={i} className="bg-dark-300 rounded-xl p-3 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-white text-sm font-semibold">{f.finish}</span>
-                      <span className="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded-full">
-                        {f.count} mention{f.count !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    {f.piecesAlreadySelling?.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {f.piecesAlreadySelling.map((p, j) => (
-                          <span key={j} className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full">✓ {p}</span>
-                        ))}
-                      </div>
-                    )}
-                    {f.crossSellOpportunity?.length > 0 && (
-                      <div>
-                        <p className="text-white opacity-50 text-[10px] mb-1 uppercase tracking-wide">Also pitch in this finish →</p>
-                        <div className="flex flex-wrap gap-1">
-                          {f.crossSellOpportunity.map((p, j) => (
-                            <span key={j} className="text-[10px] bg-gold/10 text-gold px-2 py-0.5 rounded-full border border-gold/20">+ {p}</span>
-                          ))}
+                {data.finishTrends.map((f, i) => {
+                  const key = `finish-${i}`;
+                  const open = expanded[key];
+                  return (
+                    <div key={i} className="bg-dark-300 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => toggle(key)}
+                        className="w-full flex items-start gap-3 p-3 text-left hover:bg-white/2 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white text-sm font-semibold">{f.finish}</span>
+                            <span className="text-[10px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded-full">
+                              {f.count} mention{f.count !== 1 ? 's' : ''}
+                            </span>
+                            {(f.opportunityGap ?? 0) > 0 && (
+                              <span className="text-[10px] bg-gold/10 text-gold px-1.5 py-0.5 rounded-full border border-gold/20">
+                                gap-{f.opportunityGap}
+                              </span>
+                            )}
+                          </div>
+                          {(f.opportunityGap ?? 0) > 0 && (
+                            <p className="text-amber-400/60 text-[10px]">
+                              Opportunity: {f.opportunityGap} piece{f.opportunityGap !== 1 ? 's' : ''} you could cross-sell in this finish
+                            </p>
+                          )}
+                          {f.piecesAlreadySelling?.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {f.piecesAlreadySelling.map((p, j) => (
+                                <span key={j} className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full">✓ {p}</span>
+                              ))}
+                            </div>
+                          )}
+                          {f.crossSellOpportunity?.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {f.crossSellOpportunity.map((p, j) => (
+                                <span key={j} className="text-[10px] bg-gold/10 text-gold px-2 py-0.5 rounded-full border border-gold/20">+ {p}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                    <p className="text-white opacity-55 text-[11px]">{f.insight}</p>
-                    {f.customers?.length > 0 && (
-                      <p className="text-white opacity-35 text-[10px]">Customers: {f.customers.join(', ')}</p>
-                    )}
-                  </div>
-                ))}
+                        <ChevronDown size={14} className={`text-white/20 flex-shrink-0 mt-1 transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {open && (
+                        <div className="px-3 pb-3 space-y-2.5 border-t border-dark-50 pt-2.5">
+                          <p className="text-white/50 text-[11px]">{f.insight}</p>
+
+                          {f.staffBreakdown && f.staffBreakdown.length > 0 && (
+                            <div>
+                              <p className="text-white/25 text-[10px] uppercase tracking-wide mb-1.5 flex items-center gap-1"><Users size={9} /> Staff breakdown</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {f.staffBreakdown.map((sb, j) => (
+                                  <span key={j} className="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded-full">
+                                    {sb.staffName} <span className="text-amber-400/60">×{sb.count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {f.excerpts && f.excerpts.length > 0 && (
+                            <div>
+                              <p className="text-white/25 text-[10px] uppercase tracking-wide mb-1.5 flex items-center gap-1"><BookOpen size={9} /> From the diary</p>
+                              <div className="space-y-1.5">
+                                {f.excerpts.map((ex, j) => (
+                                  <div key={j} className="bg-dark-400 rounded-lg px-3 py-2 border-l-2 border-amber-500/30">
+                                    <p className="text-white/55 text-xs italic leading-relaxed">"{ex}"</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {f.customers?.length > 0 && (
+                            <p className="text-white/25 text-[10px]">Customers: {f.customers.join(', ')}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </Section>
           )}
 
-          {/* Customer segments */}
+          {/* ── Customer segments ────────────────────────────────────────────── */}
           {data.segments?.length > 0 && (
             <Section icon={<Users size={14} className="text-purple-400" />} title="Customer Segments" color="bg-purple-500/10">
               <div className="space-y-3">
-                {data.segments.map((s, i) => (
+                {data.segments.map((seg, i) => (
                   <div key={i} className="bg-dark-300 rounded-xl p-3 space-y-1.5">
-                    <p className="text-white text-sm font-semibold">{s.segment}</p>
+                    <p className="text-white text-sm font-semibold">{seg.segment}</p>
                     <div className="flex flex-wrap gap-1">
-                      {s.preferredProducts.map((p, j) => (
+                      {seg.preferredProducts.map((p, j) => (
                         <span key={j} className="text-[10px] bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-full capitalize">{p}</span>
                       ))}
                     </div>
-                    <p className="text-white/50 text-xs">{s.tip}</p>
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Outreach tips */}
-          {data.outreachTips?.length > 0 && (
-            <Section icon={<MessageSquare size={14} className="text-green-400" />} title="Outreach Tips — Who to Contact & What to Say" color="bg-green-500/10">
-              <div className="space-y-3">
-                {data.outreachTips.map((tip, i) => (
-                  <div key={i} className="bg-dark-300 rounded-xl p-3 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-white text-sm font-semibold">{tip.leadName}</p>
-                        <p className="text-gold text-xs">→ Pitch: <span className="capitalize">{tip.product}</span></p>
-                      </div>
-                      <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5">Tip</span>
-                    </div>
-                    <p className="text-white/40 text-xs">{tip.reason}</p>
-                    {tip.message && (
-                      <div className="bg-dark-400 rounded-lg px-3 py-2 border border-dark-50">
-                        <p className="text-[10px] text-white/20 mb-1 uppercase tracking-wide">Suggested message</p>
-                        <p className="text-white/60 text-xs leading-relaxed italic">"{tip.message}"</p>
-                      </div>
+                    <p className="text-white/50 text-xs">{seg.tip}</p>
+                    {seg.customers && seg.customers.length > 0 && (
+                      <p className="text-white/25 text-[10px]">Leads: {seg.customers.join(', ')}</p>
                     )}
                   </div>
                 ))}
@@ -257,24 +419,94 @@ export default function SalesInsights() {
             </Section>
           )}
 
-          {/* Restock alerts */}
-          {data.restockAlerts?.length > 0 && (
-            <Section icon={<Package size={14} className="text-amber-400" />} title="Restock Alerts" color="bg-amber-500/10">
+          {/* ── Outreach tips ────────────────────────────────────────────────── */}
+          {data.outreachTips?.length > 0 && (
+            <Section icon={<MessageSquare size={14} className="text-green-400" />} title="Outreach Tips — Who to Contact & What to Say" color="bg-green-500/10">
+              <div className="space-y-3">
+                {data.outreachTips.map((tip, i) => {
+                  const key = `tip-${i}`;
+                  return (
+                    <div key={i} className="bg-dark-300 rounded-xl p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="text-white text-sm font-semibold">{tip.leadName}</p>
+                          <p className="text-gold text-xs">→ Pitch: <span className="capitalize">{tip.product}</span></p>
+                        </div>
+                        <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5">Tip</span>
+                      </div>
+
+                      {/* context pills */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {tip.leadAge !== null && tip.leadAge !== undefined && (
+                          <span className="text-[10px] bg-dark-400 text-white/35 px-2 py-0.5 rounded-full">
+                            Lead age: {tip.leadAge}d
+                          </span>
+                        )}
+                        {tip.daysSinceContact !== null && tip.daysSinceContact !== undefined ? (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${tip.daysSinceContact > 14 ? 'bg-red-500/10 text-red-400' : 'bg-dark-400 text-white/35'}`}>
+                            Last contact: {tip.daysSinceContact}d ago
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full">Never contacted</span>
+                        )}
+                        {(tip.totalNotes ?? 0) > 0 && (
+                          <span className="text-[10px] bg-dark-400 text-white/35 px-2 py-0.5 rounded-full">
+                            {tip.totalNotes} note{tip.totalNotes !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-white/40 text-xs">{tip.reason}</p>
+
+                      {tip.message && (
+                        <div className="bg-dark-400 rounded-lg px-3 py-2 border border-dark-50">
+                          <p className="text-[10px] text-white/20 mb-1 uppercase tracking-wide">Suggested message</p>
+                          <p className="text-white/60 text-xs leading-relaxed italic">"{tip.message}"</p>
+                        </div>
+                      )}
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleAssignTask(tip, key)}
+                          disabled={taskDone[key]}
+                          className={`flex items-center gap-1.5 text-xs mt-1 transition-colors ${taskDone[key] ? 'text-green-400 cursor-default' : 'btn-ghost text-white/40 hover:text-white/70'}`}
+                        >
+                          {taskDone[key]
+                            ? <><CheckCircle2 size={12} /> Task created ✓</>
+                            : <><Lightbulb size={12} /> Assign Follow-up Task</>
+                          }
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {/* ── Admin: Staff Coverage Map ─────────────────────────────────────── */}
+          {isAdmin && data.staffProductMatrix && data.staffProductMatrix.length > 0 && (
+            <Section
+              icon={<Grid3X3 size={14} className="text-indigo-400" />}
+              title="Staff Coverage Map"
+              color="bg-indigo-500/10"
+              badge={<span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full">Admin only</span>}
+            >
+              <p className="text-white/30 text-xs -mt-1">Which staff members are mentioning which products & finishes in diary/notes</p>
               <div className="space-y-2">
-                {data.restockAlerts.map((a, i) => (
-                  <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${
-                    a.urgency === 'high'
-                      ? 'bg-red-500/5 border-red-500/20'
-                      : 'bg-amber-500/5 border-amber-500/20'
-                  }`}>
-                    <AlertTriangle size={14} className={a.urgency === 'high' ? 'text-red-400 mt-0.5' : 'text-amber-400 mt-0.5'} />
-                    <div>
-                      <p className="text-white text-sm font-semibold capitalize">{a.item}
-                        <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-full ${
-                          a.urgency === 'high' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
-                        }`}>{a.urgency}</span>
-                      </p>
-                      <p className="text-white/40 text-xs mt-0.5">{a.reason}</p>
+                {data.staffProductMatrix.map((s, i) => (
+                  <div key={i} className="bg-dark-300 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-white text-sm font-semibold">{s.staffName}</p>
+                      <span className="text-white/30 text-xs">{s.totalMentions} mention{s.totalMentions !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {s.topProducts.map((p, j) => (
+                        <span key={j} className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full">{p}</span>
+                      ))}
+                      {s.topFinishes.map((f, j) => (
+                        <span key={j} className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full">{f}</span>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -282,7 +514,43 @@ export default function SalesInsights() {
             </Section>
           )}
 
-          {/* No data state */}
+          {/* ── Restock alerts ───────────────────────────────────────────────── */}
+          {data.restockAlerts?.length > 0 && (
+            <Section icon={<Package size={14} className="text-amber-400" />} title="Restock Alerts" color="bg-amber-500/10">
+              <div className="space-y-2">
+                {data.restockAlerts.map((a, i) => {
+                  const key = `restock-${i}`;
+                  return (
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${
+                      a.urgency === 'high' ? 'bg-red-500/5 border-red-500/20' : 'bg-amber-500/5 border-amber-500/20'
+                    }`}>
+                      <AlertTriangle size={14} className={`${a.urgency === 'high' ? 'text-red-400' : 'text-amber-400'} mt-0.5 flex-shrink-0`} />
+                      <div className="flex-1">
+                        <p className="text-white text-sm font-semibold capitalize">{a.item}
+                          <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-full ${a.urgency === 'high' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>{a.urgency}</span>
+                        </p>
+                        <p className="text-white/40 text-xs mt-0.5">{a.reason}</p>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleRestockTask(a, key)}
+                            disabled={taskDone[key]}
+                            className={`flex items-center gap-1.5 text-xs mt-1.5 transition-colors ${taskDone[key] ? 'text-green-400 cursor-default' : 'btn-ghost text-white/40 hover:text-white/70'}`}
+                          >
+                            {taskDone[key]
+                              ? <><CheckCircle2 size={12} /> Task created ✓</>
+                              : <><MapPin size={12} /> Create Purchase Task</>
+                            }
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Section>
+          )}
+
+          {/* ── No data state ─────────────────────────────────────────────────── */}
           {!data.trends?.length && !data.outreachTips?.length && (
             <div className="card text-center py-14">
               <BarChart2 size={36} className="text-white/10 mx-auto mb-3" />
