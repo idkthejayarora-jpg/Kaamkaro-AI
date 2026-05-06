@@ -135,6 +135,7 @@ function AdminDashboard() {
         tasksAPI.list().catch(() => [] as Task[]),
         customersAPI.list().catch(() => [] as Customer[]),
         interactionsAPI.list({}).catch(() => [] as Interaction[]),
+        fraudAPI.detect().catch(() => ({ alerts: [] })),
       ]);
       setStaff(s);
       setSummary(sum);
@@ -143,6 +144,7 @@ function AdminDashboard() {
       setAllTasks(tasks);
       setCustomers(cust as Customer[]);
       setAllInteractions(ints as Interaction[]);
+      setFraudAlerts((fraud as { alerts: FraudAlert[] }).alerts || []);
       if (s.length > 0) {
         const allPerf = await Promise.all(
           s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => []))
