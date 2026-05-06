@@ -41,8 +41,16 @@ router.get('/', async (req, res) => {
 // POST /api/tasks
 router.post('/', async (req, res) => {
   try {
-    const { title, notes, dueDate, customerId, customerName, assignedTo } = req.body;
+    const { title, notes, dueDate, dueTime, customerId, customerName, assignedTo } = req.body;
     if (!title || !dueDate) return res.status(400).json({ error: 'Title and dueDate required' });
+
+    // Enforce working hours 10:00–20:00 for non-admin staff
+    if (req.user.role === 'staff') {
+      const nowHour = new Date().getHours();
+      if (nowHour < 10 || nowHour >= 20) {
+        return res.status(403).json({ error: 'Tasks can only be created during working hours (10:00 AM – 8:00 PM).' });
+      }
+    }
 
     const staffId = (req.user.role === 'admin' && assignedTo) ? assignedTo : req.user.id;
 
@@ -54,6 +62,7 @@ router.post('/', async (req, res) => {
       title,
       notes: notes || '',
       dueDate,
+      dueTime: dueTime || null,
       completed: false,
       completedAt: null,
       createdAt: new Date().toISOString(),
