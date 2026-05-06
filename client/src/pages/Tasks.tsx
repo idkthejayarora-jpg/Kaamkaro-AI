@@ -315,6 +315,7 @@ function EditTaskModal({ task, onClose, onSaved }: {
   const [title,    setTitle]    = useState(task.title);
   const [notes,    setNotes]    = useState(task.notes || '');
   const [dueDate,  setDueDate]  = useState(task.dueDate);
+  const [dueTime,  setDueTime]  = useState(task.dueTime || '');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
@@ -328,6 +329,7 @@ function EditTaskModal({ task, onClose, onSaved }: {
         title: title.trim(),
         notes: notes.trim(),
         dueDate,
+        dueTime: dueTime || null,
       });
       onSaved(updated);
     } catch {
