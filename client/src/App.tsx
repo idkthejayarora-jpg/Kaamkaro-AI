@@ -68,6 +68,7 @@ function AppRoutes() {
         <Route path="/templates"       element={<Templates />} />
         <Route path="/webhook"         element={<PrivateRoute adminOnly><WebhookSetup /></PrivateRoute>} />
         <Route path="/audit"           element={<PrivateRoute adminOnly><AuditLog /></PrivateRoute>} />
+        <Route path="/anti-fraud"      element={<PrivateRoute adminOnly><AntiFraud /></PrivateRoute>} />
         <Route path="/teams"             element={<PrivateRoute adminOnly><Teams /></PrivateRoute>} />
         <Route path="/crm"             element={<CRM />} />
         <Route path="/crm/new"         element={<CRMForm />} />
