@@ -402,30 +402,39 @@ router.get('/recommendations', async (req, res) => {
     }
 
     // ── Full AI analysis — entire database, no cutoffs ─────────────────────────
-    const prompt = `You are a sales performance AI for an Indian jewellery/fashion/retail business. Analyze the COMPLETE database for each staff member — every diary entry, every CRM lead, every customer, every task. There are NO time filters; use all historical data.
+    const prompt = `You are a sales intelligence AI for an Indian jewellery/fashion retail business. Analyze EVERY diary entry, lead, customer, and task for each staff member — no time limits, use all historical data.
 
-LANGUAGE: Diary entries are in Hinglish (Hindi+English mix). Read them naturally as plain business notes.
-Examples: "shop pe aayi" = came to shop, "maal liya" = took goods/made purchase, "AD set" = American Diamond set, "bridal set bheja" = sent bridal set, "follow up karna" = need to follow up.
+LANGUAGE — Diary entries are Hinglish (Hindi+English mix). Read naturally:
+"shop pe aayi/aaye" = came to shop | "maal liya/bheja" = goods purchased/sent | "order nikla" = order placed
+"follow up karna" = needs follow-up | "side kar dena" = keep aside / reserve | "nahin aayi" = didn't come
+"baat ki" = spoke with | "interested hai" = interested | "dekh ke jaayegi" = will come back after seeing
+
+PRODUCT VOCABULARY (use these exact terms in your response):
+Jewellery: AD set (American Diamond), Kundan set, Meenakari, Bridal set, Bangles/Kangan, Jhumka, Payal,
+  Maang tikka, Nath, Necklace/Haar, Ring, Pendant, Earrings, Oxidised jewellery, Gold jewellery
+Clothing: Saree, Lehenga, Suit/Salwar, Kurti, Fabric
+Occasions: Mehendi function → bangles + jhumka + payal | Wedding/Shaadi → bridal set + maang tikka |
+  Navratri → AD set + jhumka | Diwali → gold + AD set | Karwa Chauth → bangles + necklace
 
 STAFF DATABASE (complete):
 ${JSON.stringify(staffMetrics, null, 2)}
 
-Analyze each staff member's FULL history:
-- What products/items are being sold or discussed most?
-- Which customers/leads are hot, warm, or cold?
-- What patterns emerge from the diary entries over time?
-- What follow-ups are overdue or urgent?
-- How active and effective is this person?
+For each staff member, analyze their FULL history and identify:
+- Which specific products (bangles, AD sets, jhumka, bridal sets, etc.) appear most in their diary/leads?
+- Which customers are ready to buy vs going cold — mention names where possible
+- Occasion signals: mehendi/wedding/festival mentioned → cross-sell opportunity
+- Are there products being repeatedly requested but not followed up?
+- How consistent and effective is their outreach rhythm?
 
-Return ONLY valid JSON array — no markdown, no explanation:
+Return ONLY a valid JSON array — no markdown, no explanation:
 [{
   "staffId": "id",
   "staffName": "name",
-  "performanceScore": <0-100, based on total activity volume + lead pipeline + results>,
-  "summary": "<1-2 sentences: what they're actively working on, based on actual diary/lead data>",
-  "strengths": ["<specific strength derived from real entries — name products, customers, patterns>"],
-  "issues": ["<specific gap or risk — overdue leads, silent customers, patterns of concern>"],
-  "actions": ["<concrete next step — name real leads/customers where possible, 2-3 items>"],
+  "performanceScore": <0-100, based on activity volume + results + pipeline health>,
+  "summary": "<1-2 sentences naming the actual products and customers they are working on>",
+  "strengths": ["<name specific products/customers/patterns — e.g. 'Strong follow-up on AD sets for 3 warm leads'>"],
+  "issues": ["<specific gap — e.g. 'Mehendi season opportunity: no bangles or jhumka pitched despite 4 customers mentioning function'>"],
+  "actions": ["<concrete next step — name product + customer — e.g. 'Pitch bridal set to Priya Sharma who visited last week'>"],
   "priority": "high|medium|low"
 }]`;
 
