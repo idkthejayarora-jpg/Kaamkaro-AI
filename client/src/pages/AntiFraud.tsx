@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   AlertTriangle, ShieldOff, RefreshCw, Loader2,
   ChevronDown, Zap, Clock, ToggleLeft, TrendingUp,
-  Award, Copy, BookOpen, X, CheckCircle2, Gavel,
-  Eye, EyeOff, History, User,
+  Award, Copy, BookOpen, CheckCircle2, Gavel,
+  Eye, EyeOff, History, User, type LucideIcon,
 } from 'lucide-react';
 import { fraudAPI } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
