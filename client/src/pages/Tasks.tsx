@@ -372,11 +372,22 @@ function EditTaskModal({ task, onClose, onSaved }: {
               onChange={e => setTitle(e.target.value)} />
           </div>
 
-          {/* Due date + reschedule warning */}
+          {/* Due date + time + reschedule warning */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Due Date</label>
+              <input type="date" className="input" value={dueDate}
+                onChange={e => setDueDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Time Slot</label>
+              <select className="input" value={dueTime} onChange={e => setDueTime(e.target.value)}>
+                <option value="">Any time</option>
+                {WORK_SLOTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+          </div>
           <div>
-            <label className="label">Due Date</label>
-            <input type="date" className="input" value={dueDate}
-              onChange={e => setDueDate(e.target.value)} />
             {dateChanged && (
               <div className="mt-2 flex items-center gap-2 text-amber-400 bg-amber-500/8 border border-amber-500/20 rounded-lg px-3 py-2">
                 <RotateCcw size={12} className="flex-shrink-0" />
