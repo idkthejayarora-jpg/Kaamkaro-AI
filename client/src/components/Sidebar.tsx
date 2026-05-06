@@ -34,6 +34,7 @@ const adminNav = [
   { to: '/templates',       icon: FileText,        label: 'Templates' },
   { to: '/webhook',         icon: Webhook,         label: 'WhatsApp Setup' },
   { to: '/teams',           icon: Users,           label: 'Teams' },
+  { to: '/anti-fraud',      icon: ShieldOff,       label: 'Anti-Fraud' },
   { to: '/audit',           icon: Shield,          label: 'Audit Log' },
 ];
 
