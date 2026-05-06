@@ -36,6 +36,12 @@ function playNotifBeep() {
 
 interface BroadcastMsg { id: string; message: string; sentBy: string; sentAt: string; }
 
+interface FraudAlert {
+  id: string; staffId: string; staffName: string;
+  type: string; severity: 'high' | 'medium' | 'low';
+  title: string; detail: string; evidence: string; detectedAt: string;
+}
+
 function getBcastReadSet(userId: string): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem(`kk_bcast_read_${userId}`) || '[]')); }
   catch { return new Set(); }
