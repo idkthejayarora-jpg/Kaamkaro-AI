@@ -597,6 +597,72 @@ function AdminDashboard() {
         </div>
       )}
 
+      {/* ── Anti-Fraud Alerts ─────────────────────────────────────────────── */}
+      {fraudAlerts.length > 0 && (
+        <div className="card border-orange-500/25">
+          <button
+            className="w-full flex items-center justify-between group"
+            onClick={() => setFraudExpanded(e => !e)}
+          >
+            <h3 className="text-orange-400 font-semibold text-sm flex items-center gap-2">
+              <AlertCircle size={14} className="text-orange-400" />
+              Anti-Fraud Alerts
+              <span className="text-[10px] bg-orange-500/20 text-orange-300 rounded-full px-2 py-0.5">{fraudAlerts.length}</span>
+              {fraudAlerts.some(a => a.severity === 'high') && (
+                <span className="text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">
+                  {fraudAlerts.filter(a => a.severity === 'high').length} HIGH
+                </span>
+              )}
+            </h3>
+            <ChevronRight size={14} className={`text-orange-400 transition-transform duration-200 ${fraudExpanded ? 'rotate-90' : ''}`} />
+          </button>
+          <p className="text-white opacity-55 text-[11px] mt-1">Suspicious patterns detected — review before taking action</p>
+
+          {fraudExpanded && (
+            <div className="mt-4 space-y-3">
+              {fraudAlerts.map(alert => {
+                const sevColor = alert.severity === 'high'
+                  ? 'border-red-500/30 bg-red-500/5'
+                  : alert.severity === 'medium'
+                  ? 'border-orange-500/30 bg-orange-500/5'
+                  : 'border-yellow-500/20 bg-yellow-500/5';
+                const sevBadge = alert.severity === 'high'
+                  ? 'bg-red-500/20 text-red-300'
+                  : alert.severity === 'medium'
+                  ? 'bg-orange-500/20 text-orange-300'
+                  : 'bg-yellow-500/15 text-yellow-300';
+                return (
+                  <div key={alert.id} className={`rounded-xl border p-3 ${sevColor}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white text-xs font-semibold">{alert.title}</p>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${sevBadge}`}>
+                            {alert.severity}
+                          </span>
+                        </div>
+                        <p className="text-white opacity-70 text-[11px] mt-1">{alert.detail}</p>
+                        <p className="text-white opacity-45 text-[10px] mt-1 font-mono">{alert.evidence}</p>
+                      </div>
+                      <button
+                        className="flex-shrink-0 w-7 h-7 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center hover:bg-gold/20 transition-colors"
+                        title="Go to staff profile"
+                        onClick={() => navigate(`/staff/${alert.staffId}`)}
+                      >
+                        <span className="text-gold text-[10px] font-bold">
+                          {staff.find(s => s.id === alert.staffId)?.avatar || alert.staffName[0]}
+                        </span>
+                      </button>
+                    </div>
+                    <p className="text-white opacity-35 text-[10px] mt-2">Staff: {alert.staffName}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Overdue Tasks list ────────────────────────────────────────────── */}
       {overdueTasks.length > 0 && (
         <div className="card">
