@@ -983,30 +983,41 @@ router.get('/sales-insights', async (req, res) => {
       'Design':         ['design', 'designs', 'naya design', 'pattern', 'latest design', 'new design'],
     };
 
-    // ── Occasion / event dictionary (drives cross-product recommendations) ────
-    const OCCASION_DICT = {
-      'Mehendi Function': ['mehendi', 'mehndi', 'mehendi function', 'haldi function', 'haldi ceremony'],
-      'Wedding/Shaadi':   ['wedding', 'shaadi', 'shadi', 'barat', 'dulhan', 'bride', 'vivah', 'byaah', 'doli'],
-      'Navratri/Garba':   ['navratri', 'navaratri', 'dandiya', 'garba', 'navratre'],
-      'Diwali':           ['diwali', 'deepawali', 'deepavali', 'diwali gift', 'tyohar'],
-      'Eid':              ['eid', 'bakra eid', 'eid ul fitr', 'eid mubarak'],
-      'Karwa Chauth':     ['karwa chauth', 'karva chauth', 'karwa', 'karvachauth'],
-      'Birthday/Anniv.':  ['birthday', 'anniversary', 'janamdin', 'saalgirah', 'bday'],
-      'Party/Reception':  ['party', 'function', 'reception', 'sangeet', 'cocktail', 'event', 'programme'],
-      'Puja/Festival':    ['puja', 'pooja', 'teej', 'hartalika', 'ganesh', 'durga', 'festival'],
+    // ── Finish / type dictionary (artificial jewellery polish & finish types) ──
+    // "Mehendi" here = mehendi-polished finish, "silver" = silver-polished, etc.
+    const FINISH_DICT = {
+      'Mehendi Polish':   ['mehendi', 'mehndi', 'mehendi polish', 'mehendi finish', 'mehendi set', 'mehendi wala', 'mehendi plated', 'mehendi color', 'mehendi coloured', 'mehendi tone'],
+      'Silver Polish':    ['silver polish', 'silver finish', 'silver plated', 'silver wala', 'silver set', 'chandi wala', 'chandi polish', 'silver tone', 'silver coated'],
+      'Gold Polish':      ['gold polish', 'gold finish', 'gold plated', 'gold wala', 'gold tone', 'gold coated', 'golden finish', 'gold dipped', 'sone jaisa', 'gold colour'],
+      'Oxidised':         ['oxidised', 'oxidized', 'antique finish', 'black polish', 'dark finish', 'antique look', 'oxidised set', 'black wala'],
+      'Rose Gold':        ['rose gold', 'pink gold', 'rose finish', 'rose tone', 'rose polish', 'rosegold'],
+      'Rhodium':          ['rhodium', 'white gold look', 'rhodium polish', 'rhodium finish', 'bright silver'],
+      'AD Work':          ['ad', 'american diamond', 'a.d.', 'ad set', 'ad work', 'ad stones', 'ad earring', 'ad necklace', 'ad wala', 'ad finish'],
+      'Kundan Work':      ['kundan', 'kundhan', 'kundan set', 'kundan work', 'kundan finish', 'kundan jewellery'],
+      'Meenakari':        ['meenakari', 'meena work', 'meena finish', 'enamel work', 'meenakari set'],
+      'Pearl/Moti':       ['pearl', 'moti', 'pearl work', 'moti wala', 'pearl finish', 'pearl set', 'mother of pearl'],
+      'Stone Work':       ['stone work', 'stone set', 'colored stone', 'colour stone', 'pathar', 'stone finish', 'semi precious', 'stone studded'],
+      'Two-tone':         ['two tone', 'dual tone', 'mix finish', 'gold silver', 'bi colour', 'two colour', 'dual finish'],
+      'Matte Finish':     ['matte', 'matte finish', 'dull finish', 'brushed finish', 'non shiny', 'satin finish'],
+      'Bridal Finish':    ['bridal finish', 'bridal polish', 'heavy finish', 'bridal look', 'dulhan finish', 'wedding finish'],
     };
 
-    // Occasion → naturally paired products (for cross-sell insights)
-    const OCCASION_COMBOS = {
-      'Mehendi Function': ['Bangles', 'Jhumka', 'Payal', 'Maang Tikka', 'Nath'],
-      'Wedding/Shaadi':   ['Bridal Set', 'Bangles', 'Maang Tikka', 'Jhumka', 'Payal', 'Nath'],
-      'Navratri/Garba':   ['AD Set', 'Jhumka', 'Bangles', 'Earrings'],
-      'Diwali':           ['Gold', 'AD Set', 'Diamond', 'Jewellery Set'],
-      'Eid':              ['Earrings', 'Bangles', 'Necklace', 'AD Set'],
-      'Karwa Chauth':     ['Bangles', 'Ring', 'Necklace', 'Maang Tikka'],
-      'Birthday/Anniv.':  ['Ring', 'Pendant', 'Earrings', 'Bracelet'],
-      'Party/Reception':  ['AD Set', 'Jhumka', 'Necklace', 'Earrings'],
-      'Puja/Festival':    ['Gold', 'Bangles', 'Earrings', 'Pendant'],
+    // Finish → jewellery pieces most commonly sold in that finish (cross-sell)
+    const FINISH_COMBOS = {
+      'Mehendi Polish':   ['Bangles', 'Jhumka', 'Necklace', 'Maang Tikka', 'Payal', 'Earrings'],
+      'Silver Polish':    ['Bangles', 'Payal', 'Earrings', 'Necklace', 'Nath', 'Ring'],
+      'Gold Polish':      ['Bangles', 'Jhumka', 'Necklace', 'Maang Tikka', 'Bridal Set', 'Earrings'],
+      'Oxidised':         ['Earrings', 'Necklace', 'Bangles', 'Bracelet', 'Ring'],
+      'Rose Gold':        ['Earrings', 'Ring', 'Bracelet', 'Pendant', 'Bangles'],
+      'Rhodium':          ['Earrings', 'Ring', 'Pendant', 'Necklace', 'Bracelet'],
+      'AD Work':          ['Earrings', 'Necklace', 'Ring', 'Maang Tikka', 'Bridal Set', 'Pendant'],
+      'Kundan Work':      ['Earrings', 'Necklace', 'Maang Tikka', 'Bridal Set', 'Bangles'],
+      'Meenakari':        ['Earrings', 'Bangles', 'Necklace', 'Ring'],
+      'Pearl/Moti':       ['Earrings', 'Necklace', 'Maang Tikka', 'Bracelet', 'Ring'],
+      'Stone Work':       ['Earrings', 'Ring', 'Pendant', 'Bracelet', 'Necklace'],
+      'Two-tone':         ['Earrings', 'Necklace', 'Bangles', 'Ring'],
+      'Matte Finish':     ['Earrings', 'Ring', 'Bracelet', 'Necklace'],
+      'Bridal Finish':    ['Bridal Set', 'Maang Tikka', 'Bangles', 'Jhumka', 'Payal', 'Nath'],
     };
 
     // ── Demand / urgency signals ──────────────────────────────────────────────
