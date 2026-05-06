@@ -409,12 +409,24 @@ LANGUAGE — Diary entries are Hinglish (Hindi+English mix). Read naturally:
 "follow up karna" = needs follow-up | "side kar dena" = keep aside / reserve | "nahin aayi" = didn't come
 "baat ki" = spoke with | "interested hai" = interested | "dekh ke jaayegi" = will come back after seeing
 
+BUSINESS CONTEXT: This is an ARTIFICIAL / IMITATION JEWELLERY business. All jewellery terms refer to artificial pieces, not real gold/diamond.
+
 PRODUCT VOCABULARY (use these exact terms in your response):
-Jewellery: AD set (American Diamond), Kundan set, Meenakari, Bridal set, Bangles/Kangan, Jhumka, Payal,
-  Maang tikka, Nath, Necklace/Haar, Ring, Pendant, Earrings, Oxidised jewellery, Gold jewellery
-Clothing: Saree, Lehenga, Suit/Salwar, Kurti, Fabric
-Occasions: Mehendi function → bangles + jhumka + payal | Wedding/Shaadi → bridal set + maang tikka |
-  Navratri → AD set + jhumka | Diwali → gold + AD set | Karwa Chauth → bangles + necklace
+Jewellery pieces: Bangles/Kangan, Jhumka, Earrings, Necklace/Haar, Maang Tikka, Payal, Nath, Ring, Pendant, Bracelet, Bridal Set, Jewellery Set
+
+Finish/Polish types (critical — "mehendi" means mehendi-polish finish, NOT an occasion):
+  Mehendi polish = antique golden-brown coloured artificial jewellery
+  Silver polish  = silver-plated/silver-toned artificial jewellery
+  Gold polish    = gold-toned artificial jewellery
+  Oxidised       = dark/antique black-finish artificial jewellery
+  AD (American Diamond) = cubic-zirconia stone work in artificial jewellery
+  Kundan         = traditional Kundan-stone setting in artificial jewellery
+  Meenakari      = enamel/colour work on artificial jewellery
+  Rose gold      = pink/rose-gold toned artificial jewellery
+  Two-tone       = mixed finish (e.g. gold + silver in same piece)
+  Pearl/Moti     = pearl-beaded or pearl-studded artificial jewellery
+
+Cross-sell by finish: if a customer wants "mehendi bangles" → pitch mehendi jhumka, mehendi maang tikka, mehendi payal (same finish set)
 
 STAFF DATABASE (complete):
 ${JSON.stringify(staffMetrics, null, 2)}
