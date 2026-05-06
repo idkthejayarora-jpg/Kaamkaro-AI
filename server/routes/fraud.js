@@ -1,23 +1,17 @@
 /**
  * fraud.js — Anti-farming / anti-fraud detection for merit and task systems.
  *
- * GET /api/fraud/detect   (admin only)
- *   Scans merits, tasks, and diary collections for suspicious patterns.
- *   Returns an array of FraudAlert objects sorted by severity.
- *
- * FraudAlert {
- *   id, staffId, staffName,
- *   type: 'task_speed'|'task_burst'|'task_toggle'|'merit_haul'|'merit_repeat'|
- *         'merit_duplicate_reason'|'loop_abuse'|'diary_spam',
- *   severity: 'high'|'medium'|'low',
- *   title, detail, evidence,  // human-readable
- *   detectedAt
- * }
+ * GET  /api/fraud/detect         (admin only) — scan & return live alerts
+ * POST /api/fraud/fine           (admin only) — deduct -10 merit points from staff
+ * POST /api/fraud/dismiss        (admin only) — dismiss an alert (logged, not actioned)
+ * GET  /api/fraud/records        (admin only) — history of fines + dismissals
  */
 
-const express        = require('express');
-const { readDB }     = require('../utils/db');
-const { authMiddleware } = require('../middleware/auth');
+const express         = require('express');
+const { v4: uuidv4 } = require('uuid');
+const { readDB, insertOne } = require('../utils/db');
+const { authMiddleware }    = require('../middleware/auth');
+const { awardMerit }        = require('../utils/merits');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -28,16 +22,28 @@ function adminOnly(req, res, next) {
 }
 
 function dateStr(iso) { return (iso || '').substring(0, 10); }
-function hourStr(iso)  { return (iso || '').substring(0, 13); } // "YYYY-MM-DDTHH"
+
+function isoWeek(iso) {
+  const date = new Date(iso);
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + 4 - (date.getDay() || 7));
+  const yearStart = new Date(date.getFullYear(), 0, 1);
+  return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+}
+function weekKey(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-W${String(isoWeek(iso)).padStart(2, '0')}`;
+}
 
 // ── GET /api/fraud/detect ─────────────────────────────────────────────────────
 router.get('/detect', adminOnly, async (req, res) => {
   try {
-    const [tasks, merits, diary, staff] = await Promise.all([
+    const [tasks, merits, diary, staff, records] = await Promise.all([
       readDB('tasks').catch(() => []),
       readDB('merits').catch(() => []),
       readDB('diary').catch(() => []),
       readDB('staff').catch(() => []),
+      readDB('fraud_records').catch(() => []),
     ]);
 
     const staffMap = Object.fromEntries(staff.map(s => [s.id, s.name]));
@@ -45,8 +51,21 @@ router.get('/detect', adminOnly, async (req, res) => {
     let   alertIdx = 0;
     const mkId = () => `fraud_${++alertIdx}_${Date.now()}`;
 
+    // Build repeat lookup: staffId+type → array of past week keys where a fine was issued
+    const finesByKey = {};
+    for (const r of records) {
+      if (r.action !== 'fine') continue;
+      const k = `${r.staffId}::${r.fraudType}`;
+      if (!finesByKey[k]) finesByKey[k] = [];
+      finesByKey[k].push(r.week || '');
+    }
+    function repeatInfo(staffId, type) {
+      const k     = `${staffId}::${type}`;
+      const weeks = finesByKey[k] || [];
+      return { isRepeat: weeks.length > 0, weekCount: weeks.length + 1, pastWeeks: weeks };
+    }
+
     // ── 1. TASK SPEED FARMING ─────────────────────────────────────────────────
-    // Task created AND completed within < 4 minutes
     for (const t of tasks) {
       if (!t.completed || !t.completedAt || !t.createdAt) continue;
       const createdMs   = new Date(t.createdAt).getTime();
@@ -54,48 +73,50 @@ router.get('/detect', adminOnly, async (req, res) => {
       const diffMins    = (completedMs - createdMs) / 60000;
       if (diffMins >= 0 && diffMins < 4) {
         const name = staffMap[t.staffId] || t.staffId;
+        const ri   = repeatInfo(t.staffId, 'task_speed');
         alerts.push({
           id: mkId(), staffId: t.staffId, staffName: name,
           type: 'task_speed', severity: 'high',
           title: 'Lightning task completion',
-          detail: `"${t.title}" was created and completed within ${Math.round(diffMins * 10) / 10} minutes.`,
-          evidence: `Task ID: ${t.id} · Created: ${t.createdAt.substring(0,16)} · Completed: ${t.completedAt.substring(0,16)}`,
-          detectedAt: new Date().toISOString(),
+          detail: `"${t.title}" was created and completed within ${Math.round(diffMins * 10) / 10} min. No genuine task can be completed in under 4 minutes — this is a strong farming signal.`,
+          evidence: `Task: "${t.title}" · Created: ${t.createdAt.substring(0,16)} · Completed: ${t.completedAt.substring(0,16)}`,
+          taskId: t.id, taskTitle: t.title,
+          ...ri, detectedAt: new Date().toISOString(),
         });
       }
     }
 
     // ── 2. TASK BURST ─────────────────────────────────────────────────────────
-    // > 10 tasks completed by one staff in any rolling 2-hour window
     const completedByStaff = {};
     for (const t of tasks) {
       if (!t.completed || !t.completedAt) continue;
       const sid = t.completedBy || t.staffId;
       if (!sid) continue;
       if (!completedByStaff[sid]) completedByStaff[sid] = [];
-      completedByStaff[sid].push(new Date(t.completedAt).getTime());
+      completedByStaff[sid].push({ ts: new Date(t.completedAt).getTime(), title: t.title, id: t.id });
     }
-    for (const [sid, timestamps] of Object.entries(completedByStaff)) {
-      timestamps.sort((a, b) => a - b);
-      for (let i = 0; i < timestamps.length; i++) {
-        const window = timestamps.filter(ts => ts - timestamps[i] <= 2 * 3600000);
+    for (const [sid, entries] of Object.entries(completedByStaff)) {
+      entries.sort((a, b) => a.ts - b.ts);
+      for (let i = 0; i < entries.length; i++) {
+        const window = entries.filter(e => e.ts - entries[i].ts <= 2 * 3600000);
         if (window.length > 10) {
           const name = staffMap[sid] || sid;
+          const ri   = repeatInfo(sid, 'task_burst');
           alerts.push({
             id: mkId(), staffId: sid, staffName: name,
             type: 'task_burst', severity: 'high',
             title: 'Suspicious task burst',
-            detail: `${window.length} tasks completed within a 2-hour window.`,
-            evidence: `Window start: ${new Date(timestamps[i]).toLocaleString('en-IN')}`,
-            detectedAt: new Date().toISOString(),
+            detail: `${window.length} tasks completed within a 2-hour window — this volume is humanly impossible for genuine work. Classic bulk-completion farming pattern.`,
+            evidence: `Window start: ${new Date(entries[i].ts).toLocaleString('en-IN')} · Tasks: ${window.slice(0,3).map(e => `"${e.title}"`).join(', ')}${window.length > 3 ? ` +${window.length - 3} more` : ''}`,
+            taskTitles: window.slice(0, 6).map(e => e.title),
+            ...ri, detectedAt: new Date().toISOString(),
           });
-          break; // one alert per staff per run
+          break;
         }
       }
     }
 
     // ── 3. TASK TOGGLE ABUSE ──────────────────────────────────────────────────
-    // Same relatedId (taskId) earns merit from 'task' category more than once
     const meritByTask = {};
     for (const m of merits) {
       if (m.category !== 'task' || !m.relatedId) continue;
@@ -107,21 +128,22 @@ router.get('/detect', adminOnly, async (req, res) => {
       const sid  = events[0].staffId;
       const name = staffMap[sid] || sid;
       const task = tasks.find(t => t.id === taskId);
+      const ri   = repeatInfo(sid, 'task_toggle');
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
         type: 'task_toggle', severity: 'medium',
         title: 'Task toggle farming',
-        detail: `Task "${task?.title || taskId}" has been completed and merit-awarded ${events.length} times — likely toggled complete/incomplete repeatedly.`,
+        detail: `Task "${task?.title || taskId}" earned merit ${events.length} separate times. The only way this happens is repeatedly toggling a task complete → incomplete → complete to collect points each time.`,
         evidence: events.map(e => `+${e.points} on ${e.createdAt.substring(0,10)}`).join(' · '),
-        detectedAt: new Date().toISOString(),
+        taskId, taskTitle: task?.title || taskId,
+        ...ri, detectedAt: new Date().toISOString(),
       });
     }
 
     // ── 4. MERIT DAILY HAUL ───────────────────────────────────────────────────
-    // Staff earning > 15 points from task/auto sources in a single calendar day
     const meritByStaffDay = {};
     for (const m of merits) {
-      if (m.category === 'manual') continue; // admin awards excluded — tracked separately
+      if (m.category === 'manual') continue;
       const key = `${m.staffId}::${dateStr(m.createdAt)}`;
       meritByStaffDay[key] = (meritByStaffDay[key] || 0) + (m.points || 0);
     }
@@ -129,40 +151,40 @@ router.get('/detect', adminOnly, async (req, res) => {
       if (total <= 15) continue;
       const [sid, day] = key.split('::');
       const name = staffMap[sid] || sid;
+      const ri   = repeatInfo(sid, 'merit_haul');
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
         type: 'merit_haul', severity: total > 30 ? 'high' : 'medium',
         title: 'Abnormal daily merit haul',
-        detail: `Earned ${total} merit points in a single day from task/auto sources — significantly above normal.`,
-        evidence: `Date: ${day}`,
-        detectedAt: new Date().toISOString(),
+        detail: `Earned ${total} auto-merit points in a single day. Normal daily ceiling under genuine work patterns is 10–12 points. Scores above 15 indicate bulk task farming.`,
+        evidence: `Date: ${day} · Total: ${total} pts from task/auto sources`,
+        ...ri, detectedAt: new Date().toISOString(),
       });
     }
 
     // ── 5. REPEAT MANUAL AWARDS ───────────────────────────────────────────────
-    // Same admin awarding same staff > 4 times in a single day (possible favouritism)
-    const manualByAwdStaff = {};
+    const manualByStaffDay = {};
     for (const m of merits) {
       if (m.category !== 'manual') continue;
       const key = `${m.staffId}::${dateStr(m.createdAt)}`;
-      manualByAwdStaff[key] = (manualByAwdStaff[key] || 0) + 1;
+      manualByStaffDay[key] = (manualByStaffDay[key] || 0) + 1;
     }
-    for (const [key, count] of Object.entries(manualByAwdStaff)) {
+    for (const [key, count] of Object.entries(manualByStaffDay)) {
       if (count < 5) continue;
       const [sid, day] = key.split('::');
       const name = staffMap[sid] || sid;
+      const ri   = repeatInfo(sid, 'merit_repeat');
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
         type: 'merit_repeat', severity: 'medium',
         title: 'Excessive manual merit awards',
-        detail: `${count} separate manual merit awards received in a single day — may indicate favouritism or collusion.`,
+        detail: `${count} manual merit awards received in a single day. This suggests admin favouritism, collusion, or an admin account being misused to inflate a specific staff member's score.`,
         evidence: `Date: ${day}`,
-        detectedAt: new Date().toISOString(),
+        ...ri, detectedAt: new Date().toISOString(),
       });
     }
 
     // ── 6. DUPLICATE REASON FARMING ───────────────────────────────────────────
-    // Same merit reason appearing > 4 times for same staff in any 7-day window
     const meritsByStaff = {};
     for (const m of merits) {
       if (!m.staffId) continue;
@@ -179,19 +201,19 @@ router.get('/detect', adminOnly, async (req, res) => {
       for (const [reason, count] of Object.entries(reasonCounts)) {
         if (count < 5) continue;
         const name = staffMap[sid] || sid;
+        const ri   = repeatInfo(sid, 'merit_duplicate_reason');
         alerts.push({
           id: mkId(), staffId: sid, staffName: name,
           type: 'merit_duplicate_reason', severity: 'low',
           title: 'Repeated merit reason',
-          detail: `The reason "${reason}" has been used ${count} times to award merits — may indicate repetitive or copy-paste farming.`,
-          evidence: `Repeated reason appears ${count} times in merit history`,
-          detectedAt: new Date().toISOString(),
+          detail: `The reason "${reason}" appears ${count} times in merit history. Genuine merit reasons vary — identical copy-pasted reasons suggest scripted or artificially repeated activity.`,
+          evidence: `Reason used ${count}× in merit history`,
+          ...ri, detectedAt: new Date().toISOString(),
         });
       }
     }
 
     // ── 7. LOOP TASK ABUSE ────────────────────────────────────────────────────
-    // Loop task merit earned > 1 time in a single day (shouldn't happen — daily loops complete once/day)
     const loopMeritByDay = {};
     for (const m of merits) {
       if (!m.reason?.startsWith('Loop update:') || !m.relatedId) continue;
@@ -203,18 +225,19 @@ router.get('/detect', adminOnly, async (req, res) => {
       const [sid, taskId, day] = key.split('::');
       const name = staffMap[sid] || sid;
       const task = tasks.find(t => t.id === taskId);
+      const ri   = repeatInfo(sid, 'loop_abuse');
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
         type: 'loop_abuse', severity: 'high',
         title: 'Loop task completion abuse',
-        detail: `Loop task "${task?.title || taskId}" was completed and merit-awarded ${count} times on the same day — each loop task should only complete once per interval.`,
-        evidence: `Date: ${day} · Task: ${task?.title || taskId}`,
-        detectedAt: new Date().toISOString(),
+        detail: `Loop task "${task?.title || taskId}" was merit-awarded ${count} times on the same day. Loop tasks are designed to award merit once per interval — multiple same-day awards mean the loop was artificially reset.`,
+        evidence: `Date: ${day} · Task: "${task?.title || taskId}" · Awarded ${count}×`,
+        taskId, taskTitle: task?.title || taskId,
+        ...ri, detectedAt: new Date().toISOString(),
       });
     }
 
     // ── 8. DIARY SPAM ─────────────────────────────────────────────────────────
-    // > 3 diary entries from the same staff on the same day (likely streak farming)
     const diaryByStaffDay = {};
     for (const d of diary) {
       const day = dateStr(d.date || d.createdAt);
@@ -225,19 +248,22 @@ router.get('/detect', adminOnly, async (req, res) => {
       if (count < 4) continue;
       const [sid, day] = key.split('::');
       const name = staffMap[sid] || sid;
+      const ri   = repeatInfo(sid, 'diary_spam');
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
         type: 'diary_spam', severity: 'low',
         title: 'Diary entry flooding',
-        detail: `${count} diary entries submitted on the same day — may be bulk-logging to maintain streak artificially.`,
-        evidence: `Date: ${day}`,
-        detectedAt: new Date().toISOString(),
+        detail: `${count} diary entries submitted on ${day}. Normal usage is 1 entry per day. Submitting multiple entries on the same date is the classic streak-farming trick — each new entry looks like a fresh day.`,
+        evidence: `Date: ${day} · ${count} entries in one day`,
+        ...ri, detectedAt: new Date().toISOString(),
       });
     }
 
-    // ── Sort: high → medium → low, then by staffName ──────────────────────────
+    // ── Sort: repeats first, then high → medium → low ─────────────────────────
     const SEV = { high: 0, medium: 1, low: 2 };
     alerts.sort((a, b) => {
+      const rd = (b.isRepeat ? 1 : 0) - (a.isRepeat ? 1 : 0);
+      if (rd !== 0) return rd;
       const sd = SEV[a.severity] - SEV[b.severity];
       return sd !== 0 ? sd : a.staffName.localeCompare(b.staffName);
     });
@@ -245,6 +271,79 @@ router.get('/detect', adminOnly, async (req, res) => {
     res.json({ alerts, scannedAt: new Date().toISOString(), total: alerts.length });
   } catch (err) {
     console.error('[Fraud] detect error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/fraud/fine ──────────────────────────────────────────────────────
+router.post('/fine', adminOnly, async (req, res) => {
+  try {
+    const { staffId, fraudType, alertTitle, notes } = req.body;
+    if (!staffId || !fraudType) return res.status(400).json({ error: 'staffId and fraudType required' });
+
+    const staff = await readDB('staff').catch(() => []);
+    const s     = staff.find(m => m.id === staffId);
+    if (!s) return res.status(404).json({ error: 'Staff not found' });
+
+    const reason = `Anti-fraud penalty: ${alertTitle || fraudType}${notes ? ' — ' + notes : ''}`;
+    const merit  = await awardMerit(staffId, s.name, -10, reason, 'manual', null);
+
+    const record = {
+      id:        uuidv4(),
+      staffId,
+      staffName: s.name,
+      fraudType,
+      alertTitle: alertTitle || fraudType,
+      notes:      notes || '',
+      action:     'fine',
+      points:     -10,
+      meritId:    merit.id,
+      week:       weekKey(new Date().toISOString()),
+      issuedAt:   new Date().toISOString(),
+      issuedBy:   req.user.id,
+    };
+    await insertOne('fraud_records', record);
+
+    res.json({ success: true, record, merit });
+  } catch (err) {
+    console.error('[Fraud] fine error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/fraud/dismiss ───────────────────────────────────────────────────
+router.post('/dismiss', adminOnly, async (req, res) => {
+  try {
+    const { staffId, fraudType, alertTitle, notes } = req.body;
+    if (!staffId || !fraudType) return res.status(400).json({ error: 'staffId and fraudType required' });
+
+    const record = {
+      id:        uuidv4(),
+      staffId,
+      fraudType,
+      alertTitle: alertTitle || fraudType,
+      notes:      notes || '',
+      action:     'dismiss',
+      week:       weekKey(new Date().toISOString()),
+      issuedAt:   new Date().toISOString(),
+      issuedBy:   req.user.id,
+    };
+    await insertOne('fraud_records', record);
+
+    res.json({ success: true, record });
+  } catch (err) {
+    console.error('[Fraud] dismiss error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── GET /api/fraud/records ────────────────────────────────────────────────────
+router.get('/records', adminOnly, async (req, res) => {
+  try {
+    const records = await readDB('fraud_records').catch(() => []);
+    records.sort((a, b) => new Date(b.issuedAt) - new Date(a.issuedAt));
+    res.json(records);
+  } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
