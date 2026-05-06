@@ -39,6 +39,7 @@ interface RestockAlert {
 }
 interface InsightsData {
   trends:        Trend[];
+  finishTrends:  FinishTrend[];
   segments:      Segment[];
   outreachTips:  OutreachTip[];
   restockAlerts: RestockAlert[];
