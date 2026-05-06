@@ -1035,21 +1035,46 @@ router.get('/sales-insights', async (req, res) => {
     // ── Demand / urgency signals ──────────────────────────────────────────────
     const DEMAND_RE = /chahiye|chahte|chahta|chahti|order karo|mangwao|stock nahi|nahi hai|out of stock|khatam ho|available nahi|dhoondh raha|zaroorat|need|want urgently|urgent order|jaldi chahiye|asap|abhi chahiye/;
 
-    // ── Build text corpus with customer name context ───────────────────────────
+    const staffById = Object.fromEntries(staff.map(s => [s.id, s.name || s.fullName || 'Unknown']));
+    const nowMs = Date.now();
+    const RECENT_CUTOFF = new Date(nowMs - 14 * 86400000).toISOString();
+    const OLDER_CUTOFF  = new Date(nowMs - 28 * 86400000).toISOString();
+
+    // ── Build text corpus with staff/date context ─────────────────────────────
     const corpus = [
       ...diaryEntries.map(d => ({
         text: (d.content || '') + ' ' + (d.aiEntries || []).map(e => e.text || e.task || '').join(' '),
+        rawText: d.content || (d.aiEntries || []).map(e => e.text || '').join(' '),
         customerName: d.customerName || null,
+        staffId: d.staffId || null,
+        date: d.date || d.createdAt || null,
       })),
       ...leads.filter(l => l.isActive !== false).map(l => ({
         text: (l.notes || []).map(n => n.text || '').join(' '),
+        rawText: (l.notes || []).map(n => n.text || '').join(' '),
         customerName: l.name || null,
+        staffId: l.staffId || null,
+        date: l.updatedAt || l.createdAt || null,
       })),
       ...customers.map(c => ({
         text: typeof c.notes === 'string' ? c.notes : '',
+        rawText: typeof c.notes === 'string' ? c.notes : '',
         customerName: c.name || null,
+        staffId: c.assignedTo || c.assignedStaff || null,
+        date: c.updatedAt || c.createdAt || null,
       })),
     ].filter(e => e.text.trim());
+
+    function extractSnippet(text, alias) {
+      const idx = text.toLowerCase().indexOf(alias);
+      if (idx < 0) return null;
+      const start   = Math.max(0, idx - 18);
+      const end     = Math.min(text.length, idx + alias.length + 40);
+      let snippet   = text.slice(start, end).replace(/\n/g, ' ').trim();
+      if (start > 0)           snippet = '…' + snippet;
+      if (end < text.length)   snippet = snippet + '…';
+      return snippet.length > 5 ? snippet : null;
+    }
 
     // ── Trend analysis ────────────────────────────────────────────────────────
     const trendMap  = {};
@@ -1057,22 +1082,40 @@ router.get('/sales-insights', async (req, res) => {
     const finishMap = {};
 
     for (const entry of corpus) {
-      const lc = entry.text.toLowerCase();
+      const lc        = entry.text.toLowerCase();
       const hasDemand = DEMAND_RE.test(lc);
+      const isRecent  = entry.date && entry.date >= RECENT_CUTOFF;
+      const isOlder   = entry.date && entry.date >= OLDER_CUTOFF && entry.date < RECENT_CUTOFF;
 
       for (const [product, aliases] of Object.entries(PRODUCT_DICT)) {
-        if (!aliases.some(alias => lc.includes(alias))) continue;
-        if (!trendMap[product]) trendMap[product] = { count: 0, customers: new Set(), demandCount: 0 };
-        trendMap[product].count++;
-        if (entry.customerName) trendMap[product].customers.add(entry.customerName);
-        if (hasDemand) { trendMap[product].demandCount++; demandMap[product] = (demandMap[product] || 0) + 1; }
+        const matched = aliases.find(alias => lc.includes(alias));
+        if (!matched) continue;
+        if (!trendMap[product]) trendMap[product] = { count: 0, customers: new Set(), demandCount: 0, staffCounts: {}, excerpts: [], recentCount: 0, olderCount: 0 };
+        const t = trendMap[product];
+        t.count++;
+        if (entry.customerName) t.customers.add(entry.customerName);
+        if (hasDemand) { t.demandCount++; demandMap[product] = (demandMap[product] || 0) + 1; }
+        if (entry.staffId) t.staffCounts[entry.staffId] = (t.staffCounts[entry.staffId] || 0) + 1;
+        if (isRecent) t.recentCount++;
+        else if (isOlder) t.olderCount++;
+        if (t.excerpts.length < 2 && entry.rawText) {
+          const snip = extractSnippet(entry.rawText, matched);
+          if (snip) t.excerpts.push(snip);
+        }
       }
 
       for (const [finish, aliases] of Object.entries(FINISH_DICT)) {
-        if (!aliases.some(alias => lc.includes(alias))) continue;
-        if (!finishMap[finish]) finishMap[finish] = { count: 0, customers: new Set() };
-        finishMap[finish].count++;
-        if (entry.customerName) finishMap[finish].customers.add(entry.customerName);
+        const matched = aliases.find(alias => lc.includes(alias));
+        if (!matched) continue;
+        if (!finishMap[finish]) finishMap[finish] = { count: 0, customers: new Set(), staffCounts: {}, excerpts: [] };
+        const f = finishMap[finish];
+        f.count++;
+        if (entry.customerName) f.customers.add(entry.customerName);
+        if (entry.staffId) f.staffCounts[entry.staffId] = (f.staffCounts[entry.staffId] || 0) + 1;
+        if (f.excerpts.length < 2 && entry.rawText) {
+          const snip = extractSnippet(entry.rawText, matched);
+          if (snip) f.excerpts.push(snip);
+        }
       }
     }
 
@@ -1085,12 +1128,18 @@ router.get('/sales-insights', async (req, res) => {
         if (v.demandCount >= 2)         insight += ' — high demand signal';
         else if (custList.length >= 3)  insight += ` across ${custList.length} customers`;
         if (v.demandCount >= 1)         insight += ` · ${v.demandCount} urgent request${v.demandCount > 1 ? 's' : ''}`;
-        return { item, count: v.count, customers: custList, insight, demandCount: v.demandCount };
+        let direction = 'stable';
+        if (v.recentCount > 0 || v.olderCount > 0) {
+          if (v.recentCount > v.olderCount * 1.3)                      direction = 'rising';
+          else if (v.olderCount > 0 && v.recentCount < v.olderCount * 0.7) direction = 'falling';
+        }
+        const staffBreakdown = Object.entries(v.staffCounts)
+          .sort((a, b) => b[1] - a[1]).slice(0, 4)
+          .map(([sid, count]) => ({ staffId: sid, staffName: staffById[sid] || 'Unknown', count }));
+        return { item, count: v.count, customers: custList, insight, demandCount: v.demandCount, direction, staffBreakdown, excerpts: v.excerpts, recentCount: v.recentCount, olderCount: v.olderCount };
       });
 
     // ── Finish-type cross-sell signals ────────────────────────────────────────
-    // When a finish is discussed, surface which jewellery pieces in that finish
-    // are being pitched and which are missing opportunities.
     const finishTrends = Object.entries(finishMap)
       .sort(([, a], [, b]) => b.count - a.count)
       .slice(0, 6)
@@ -1099,12 +1148,13 @@ router.get('/sales-insights', async (req, res) => {
         const pitched    = allPieces.filter(p => trendMap[p]);
         const notPitched = allPieces.filter(p => !trendMap[p]).slice(0, 3);
         const custList   = [...v.customers].slice(0, 4);
+        const staffBreakdown = Object.entries(v.staffCounts)
+          .sort((a, b) => b[1] - a[1]).slice(0, 3)
+          .map(([sid, count]) => ({ staffId: sid, staffName: staffById[sid] || 'Unknown', count }));
         return {
-          finish,
-          count:           v.count,
-          customers:       custList,
-          piecesAlreadySelling: pitched,
-          crossSellOpportunity: notPitched,
+          finish, count: v.count, customers: custList,
+          piecesAlreadySelling: pitched, crossSellOpportunity: notPitched,
+          opportunityGap: notPitched.length, staffBreakdown, excerpts: v.excerpts,
           insight: notPitched.length
             ? `${finish} mentioned ${v.count}× — also pitch ${notPitched.join(', ')} in this finish`
             : `${finish} — well covered across ${pitched.join(', ')}`,
@@ -1115,8 +1165,9 @@ router.get('/sales-insights', async (req, res) => {
     const sourceMap = {};
     for (const lead of leads.filter(l => l.isActive !== false)) {
       const src = (lead.source || 'Direct').replace(/_/g, ' ');
-      if (!sourceMap[src]) sourceMap[src] = { count: 0, products: {} };
+      if (!sourceMap[src]) sourceMap[src] = { count: 0, products: {}, names: [] };
       sourceMap[src].count++;
+      if (lead.name && sourceMap[src].names.length < 5) sourceMap[src].names.push(lead.name);
       const notesLc = (lead.notes || []).map(n => n.text || '').join(' ').toLowerCase();
       for (const [prod, aliases] of Object.entries(PRODUCT_DICT)) {
         if (aliases.some(a => notesLc.includes(a)))
@@ -1135,6 +1186,7 @@ router.get('/sales-insights', async (req, res) => {
           tip: topProds.length
             ? `Focus ${source} leads on ${topProds[0]} — most requested by this group`
             : `${v.count} leads from ${source} — pitch your top sellers`,
+          customers: v.names.slice(0, 3),
         };
       });
 
@@ -1169,6 +1221,11 @@ router.get('/sales-insights', async (req, res) => {
         const isOverdue  = lead.nextFollowUp && lead.nextFollowUp < today;
         const isHot      = HOT_STAGES.has(lead.stage);
         const stageLabel = STAGE_LABELS[lead.stage] || lead.stage || 'Active';
+        const createdAt  = lead.createdAt ? new Date(lead.createdAt) : null;
+        const leadAge    = createdAt ? Math.floor((nowMs - createdAt.getTime()) / 86400000) : null;
+        const matched    = customers.find(c => c.name?.toLowerCase() === lead.name?.toLowerCase() || (lead.phone && (c.phone === lead.phone || c.mobile === lead.phone)));
+        const lastCt     = matched?.lastContact;
+        const daysSinceContact = lastCt ? Math.floor((nowMs - new Date(lastCt).getTime()) / 86400000) : null;
         return {
           leadName: lead.name,
           product:  pitch,
@@ -1178,6 +1235,10 @@ router.get('/sales-insights', async (req, res) => {
           message: isHot
             ? `Hi ${firstName} ji! ${pitch} ke baare mein baat karni thi — kya aaj ya kal ka time milega?`
             : `Hi ${firstName} ji, ${pitch.toLowerCase()} ka naya collection aa gaya hai — aapko zaroor pasand aayega! Kab aayenge milne?`,
+          leadAge,
+          daysSinceContact,
+          totalNotes: (lead.notes || []).length,
+          assignedStaffId: lead.staffId || lead.assignedTo || null,
         };
       });
 
@@ -1191,11 +1252,56 @@ router.get('/sales-insights', async (req, res) => {
         reason:  `${count} entr${count !== 1 ? 'ies' : 'y'} with demand/urgency signals`,
       }));
 
+    // ── Overall stats ─────────────────────────────────────────────────────────
+    const activeLeads          = leads.filter(l => l.isActive !== false).length;
+    const wonLeads             = leads.filter(l => l.stage === 'won').length;
+    const convRate             = activeLeads > 0 ? Math.round((wonLeads / activeLeads) * 100) : 0;
+    const uniqueLeadsScanned   = leads.filter(l => l.isActive !== false && (l.notes || []).some(n => n.text)).length;
+    const overallStats = {
+      totalEntries:          diaryEntries.length,
+      uniqueLeadsScanned,
+      productKeywordsFound:  Object.keys(trendMap).length,
+      finishKeywordsFound:   Object.keys(finishMap).length,
+      topProduct:            trends[0]?.item || '',
+      topFinish:             finishTrends[0]?.finish || '',
+      wonLeads,
+      activeLeads,
+      convRate,
+    };
+
+    // ── Admin-only: staff product coverage matrix ─────────────────────────────
+    let staffProductMatrix;
+    if (req.user.role === 'admin') {
+      const staffMap = {};
+      for (const [product, v] of Object.entries(trendMap)) {
+        for (const [sid, cnt] of Object.entries(v.staffCounts)) {
+          if (!staffMap[sid]) staffMap[sid] = { products: {}, finishes: {} };
+          staffMap[sid].products[product] = (staffMap[sid].products[product] || 0) + cnt;
+        }
+      }
+      for (const [finish, v] of Object.entries(finishMap)) {
+        for (const [sid, cnt] of Object.entries(v.staffCounts)) {
+          if (!staffMap[sid]) staffMap[sid] = { products: {}, finishes: {} };
+          staffMap[sid].finishes[finish] = (staffMap[sid].finishes[finish] || 0) + cnt;
+        }
+      }
+      staffProductMatrix = Object.entries(staffMap)
+        .map(([staffId, v]) => {
+          const totalMentions = Object.values(v.products).reduce((a, b) => a + b, 0) + Object.values(v.finishes).reduce((a, b) => a + b, 0);
+          return {
+            staffId,
+            staffName:   staffById[staffId] || 'Unknown',
+            topProducts: Object.entries(v.products).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p]) => p),
+            topFinishes: Object.entries(v.finishes).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([f]) => f),
+            totalMentions,
+          };
+        })
+        .filter(s => s.totalMentions > 0)
+        .sort((a, b) => b.totalMentions - a.totalMentions);
+    }
+
     // ── Summary ───────────────────────────────────────────────────────────────
-    const activeLeads = leads.filter(l => l.isActive !== false).length;
-    const wonLeads    = leads.filter(l => l.stage === 'won').length;
-    const convRate    = activeLeads > 0 ? Math.round((wonLeads / activeLeads) * 100) : 0;
-    const topItems    = trends.slice(0, 3).map(t => t.item).join(', ');
+    const topItems = trends.slice(0, 3).map(t => t.item).join(', ');
     const summary = [
       `Analysed ${diaryEntries.length} diary entries, ${activeLeads} active leads, ${customers.length} customers.`,
       topItems ? `Most discussed: ${topItems}.` : '',
@@ -1203,7 +1309,7 @@ router.get('/sales-insights', async (req, res) => {
       convRate > 0 ? `Conversion rate: ${convRate}%.` : '',
     ].filter(Boolean).join(' ');
 
-    return res.json({ trends, finishTrends, segments, outreachTips, restockAlerts, summary, rawMode: true, generatedAt: new Date().toISOString() });
+    return res.json({ trends, finishTrends, segments, outreachTips, restockAlerts, summary, overallStats, staffProductMatrix, rawMode: true, generatedAt: new Date().toISOString() });
 
   } catch (err) {
     console.error('[Sales Insights] error:', err);
