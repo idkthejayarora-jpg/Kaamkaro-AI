@@ -255,6 +255,10 @@ export const calendarAPI = {
     api.get('/calendar/day', { params: { date, ...(staffId ? { staffId } : {}) } }).then(r => r.data),
 };
 
+export const fraudAPI = {
+  detect: () => api.get('/fraud/detect').then(r => r.data),
+};
+
 export const stockAPI = {
   list: (params?: { staffId?: string }) => api.get('/stock', { params }).then(r => r.data),
   addEntry: (data: {
