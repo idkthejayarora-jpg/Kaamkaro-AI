@@ -1020,8 +1020,9 @@ router.get('/sales-insights', async (req, res) => {
     ].filter(e => e.text.trim());
 
     // ── Trend analysis ────────────────────────────────────────────────────────
-    const trendMap = {};
+    const trendMap  = {};
     const demandMap = {};
+    const occasionMap = {};
 
     for (const entry of corpus) {
       const lc = entry.text.toLowerCase();
@@ -1034,17 +1035,45 @@ router.get('/sales-insights', async (req, res) => {
         if (entry.customerName) trendMap[product].customers.add(entry.customerName);
         if (hasDemand) { trendMap[product].demandCount++; demandMap[product] = (demandMap[product] || 0) + 1; }
       }
+
+      for (const [occasion, aliases] of Object.entries(OCCASION_DICT)) {
+        if (!aliases.some(alias => lc.includes(alias))) continue;
+        if (!occasionMap[occasion]) occasionMap[occasion] = { count: 0, customers: new Set() };
+        occasionMap[occasion].count++;
+        if (entry.customerName) occasionMap[occasion].customers.add(entry.customerName);
+      }
     }
 
     const trends = Object.entries(trendMap)
       .sort(([, a], [, b]) => b.count - a.count)
-      .slice(0, 10)
+      .slice(0, 12)
       .map(([item, v]) => {
         const custList = [...v.customers].slice(0, 5);
         let insight = `Mentioned ${v.count} time${v.count !== 1 ? 's' : ''}`;
-        if (v.demandCount >= 2)    insight += ' — high demand signal';
-        else if (custList.length >= 3) insight += ` across ${custList.length} customers`;
-        return { item, count: v.count, customers: custList, insight };
+        if (v.demandCount >= 2)         insight += ' — high demand signal';
+        else if (custList.length >= 3)  insight += ` across ${custList.length} customers`;
+        if (v.demandCount >= 1)         insight += ` · ${v.demandCount} urgent request${v.demandCount > 1 ? 's' : ''}`;
+        return { item, count: v.count, customers: custList, insight, demandCount: v.demandCount };
+      });
+
+    // ── Occasion-based cross-sell signals ─────────────────────────────────────
+    const occasionTrends = Object.entries(occasionMap)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([occasion, v]) => {
+        const paired   = (OCCASION_COMBOS[occasion] || []).filter(p => trendMap[p]);
+        const missing  = (OCCASION_COMBOS[occasion] || []).filter(p => !trendMap[p]).slice(0, 3);
+        const custList = [...v.customers].slice(0, 4);
+        return {
+          occasion,
+          count:           v.count,
+          customers:       custList,
+          pairedProducts:  paired,
+          missingOpportunity: missing,
+          insight: missing.length
+            ? `${occasion} mentioned ${v.count}× — customers may also need ${missing.join(', ')}`
+            : `${occasion} — ${paired.join(', ')} already being pitched`,
+        };
       });
 
     // ── Segments by lead source ───────────────────────────────────────────────
