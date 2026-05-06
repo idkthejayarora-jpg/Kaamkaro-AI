@@ -25,7 +25,7 @@ interface FraudRecord {
 }
 
 // ── Config ─────────────────────────────────────────────────────────────────────
-const TYPE_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
+const TYPE_META: Record<string, { label: string; icon: LucideIcon }> = {
   task_speed:             { label: 'Speed Farming',     icon: Zap         },
   task_burst:             { label: 'Task Burst',        icon: Clock       },
   task_toggle:            { label: 'Toggle Abuse',      icon: ToggleLeft  },
