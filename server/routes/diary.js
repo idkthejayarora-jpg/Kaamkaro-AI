@@ -175,6 +175,22 @@ function titleCase(str) {
   return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 }
 
+// Removes accidentally-doubled names: "Raju Panipat Raju Panipat" → "Raju Panipat"
+function deduplicateName(str) {
+  if (!str) return str;
+  const s = str.trim();
+  const words = s.split(/\s+/);
+  if (words.length < 2) return s;
+  // Exact word-level repeat: [A, B, A, B] → [A, B]
+  const half = Math.floor(words.length / 2);
+  if (words.length % 2 === 0) {
+    const first  = words.slice(0, half).join(' ').toLowerCase();
+    const second = words.slice(half).join(' ').toLowerCase();
+    if (first === second) return words.slice(0, half).join(' ');
+  }
+  return s;
+}
+
 // ── Stop words — words that look like names but aren't ────────────────────────
 const STOP_WORDS = new Set([
   // English common words
