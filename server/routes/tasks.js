@@ -44,11 +44,15 @@ router.post('/', async (req, res) => {
     const { title, notes, dueDate, dueTime, customerId, customerName, assignedTo } = req.body;
     if (!title || !dueDate) return res.status(400).json({ error: 'Title and dueDate required' });
 
-    // Enforce working hours 10:00–20:00 for non-admin staff
+    // Enforce working hours 10:00–20:00 IST for non-admin staff
+    // getHours() is UTC on cloud servers — derive IST hour explicitly
     if (req.user.role === 'staff') {
-      const nowHour = new Date().getHours();
-      if (nowHour < 10 || nowHour >= 20) {
-        return res.status(403).json({ error: 'Tasks can only be created during working hours (10:00 AM – 8:00 PM).' });
+      const istHour = parseInt(
+        new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false }),
+        10
+      );
+      if (istHour < 10 || istHour >= 20) {
+        return res.status(403).json({ error: 'Tasks can only be created during working hours (10:00 AM – 8:00 PM IST).' });
       }
     }
 
