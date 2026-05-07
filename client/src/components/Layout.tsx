@@ -98,7 +98,7 @@ export default function Layout() {
   // No auto-dismiss — broadcast stays until staff clicks "Mark as Read"
 
   return (
-    <div className="flex h-screen bg-dark-500 overflow-hidden">
+    <div className="flex h-svh bg-dark-500 overflow-hidden">
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       {/* Main content */}
