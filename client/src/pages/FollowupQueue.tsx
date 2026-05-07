@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TabBar, AnimatedTabPanel } from '../components/TabBar';
 import {
   BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
