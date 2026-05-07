@@ -112,10 +112,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-  const clockTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-  const clockDate = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-  const hour      = now.getHours();
-  const withinWork = hour >= 10 && hour < 20;
+  const tz        = 'Asia/Kolkata';
+  const clockTime = now.toLocaleTimeString('en-IN', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const clockDate = now.toLocaleDateString('en-IN', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' });
+  const istHour   = parseInt(now.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', hour12: false }), 10);
+  const withinWork = istHour >= 10 && istHour < 20;
 
   // Keep navItems in sync if user switches role (e.g. re-login)
   useEffect(() => {
