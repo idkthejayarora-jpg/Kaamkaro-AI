@@ -71,6 +71,7 @@ function markBroadcastRead(id: string) {
 
 export default function Layout() {
   const { isAdmin, isSwitched, user, originalAdmin, switchBack } = useAuth();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [broadcast,  setBroadcast]  = useState<BroadcastMsg | null>(null);
   const [badgeToast, setBadgeToast] = useState<Badge | null>(null);
