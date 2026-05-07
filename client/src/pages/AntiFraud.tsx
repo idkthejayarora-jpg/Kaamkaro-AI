@@ -506,6 +506,8 @@ export default function AntiFraud() {
           ))}
         </div>
       )}
+
+      </AnimatedTabPanel>
     </div>
   );
 }
