@@ -355,3 +355,71 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
 .voice-bar:nth-child(3)       { animation-delay: 0.2s; }
 .voice-bar:nth-child(4)       { animation-delay: 0.3s; }
 .voice-bar:nth-child(5)       { animation-delay: 0.4s; }
+
+/* ── Page & element enter animations ─────────────────────────────────────────*/
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes subtlePop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* Utility classes */
+.animate-fade-in-up  { animation: fadeInUp  0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-scale-in    { animation: scaleIn   0.22s cubic-bezier(0.175, 0.885, 0.32, 1.1) both; }
+.animate-slide-down  { animation: slideDown 0.22s ease-out both; }
+.animate-subtle-pop  { animation: subtlePop 0.3s ease-out; }
+
+/* Stagger helpers — combine with .animate-fade-in-up */
+.stagger-1 { animation-delay: 60ms; }
+.stagger-2 { animation-delay: 120ms; }
+.stagger-3 { animation-delay: 180ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 300ms; }
+
+/* ── Floating label / number badge micro-animation ───────────────────────────*/
+@keyframes countPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.count-pop { animation: countPop 0.25s ease-out; }
+
+/* ── Smooth focus ring on any focusable element (keyboard nav) ───────────────*/
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-rgb) / 0.7);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Glass-morphism helper ───────────────────────────────────────────────────*/
+.glass {
+  background: rgba(28, 28, 30, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+html.light .glass {
+  background: rgba(255,255,255,0.72);
+  border-color: rgba(0,0,0,0.08);
+}
+
+/* ── Subtle gradient separator ───────────────────────────────────────────────*/
+.gradient-sep {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+html.light .gradient-sep {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.10), transparent);
+}
