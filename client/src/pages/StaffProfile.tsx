@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { TabBar, AnimatedTabPanel } from '../components/TabBar';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, Calendar, Flame, TrendingUp, Users } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
