@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, RefreshCw, BarChart3 } from 'lucide-react';
+import { TabBar, AnimatedTabPanel } from '../components/TabBar';
 import { aiAPI } from '../lib/api';
 import type { Recommendation } from '../types';
 
