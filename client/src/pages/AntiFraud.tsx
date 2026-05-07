@@ -367,21 +367,18 @@ export default function AntiFraud() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-dark-300 p-1 rounded-xl w-fit">
-        {([['live', 'Live Alerts', liveCount], ['history', 'Action History', records.length]] as const).map(([key, label, count]) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-dark-100 text-white' : 'text-white/30 hover:text-white/60'}`}
-          >
-            {key === 'live' ? <AlertTriangle size={13} /> : <History size={13} />}
-            {label}
-            {(count as number) > 0 && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tab === key ? 'bg-white/10 text-white/60' : 'bg-dark-100 text-white/30'}`}>{count}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={[
+          { id: 'live',    label: 'Live Alerts',    icon: AlertTriangle, count: liveCount      },
+          { id: 'history', label: 'Action History', icon: History,       count: records.length },
+        ]}
+        active={tab}
+        onChange={id => setTab(id as 'live' | 'history')}
+        variant="pill-dark"
+        className="w-fit"
+      />
+
+      <AnimatedTabPanel key={tab} className="space-y-4">
 
       {/* ── Live alerts tab ─────────────────────────────────────────────────── */}
       {tab === 'live' && (
