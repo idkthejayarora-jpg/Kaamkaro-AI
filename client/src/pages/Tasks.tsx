@@ -225,7 +225,7 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
     e.preventDefault();
     if (!form.title || !form.dueDate) { setError('Title and due date required'); return; }
     if (!isAdmin && !isWithinWorkingHours()) {
-      setError('Tasks can only be created during working hours (10:00 AM – 8:00 PM).');
+      setError('Tasks can only be created during working hours (10:00 AM – 11:59 PM).');
       return;
     }
     setLoading(true);
