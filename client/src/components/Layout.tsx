@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import Sidebar, { MobileMenuButton } from './Sidebar';
 import KamalAssistant from './KamalAssistant';
