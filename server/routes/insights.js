@@ -327,6 +327,7 @@ router.get('/staff-behavior', async (req, res) => {
         totalInteractions: myInteractions.length,
         recentInteractions: recentIxs.length,
         coverage,
+        avgInteractions,
         sentimentScore:    sentScore,
         responseRate,
         qualityScore,
