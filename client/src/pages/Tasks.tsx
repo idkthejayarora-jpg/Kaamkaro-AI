@@ -199,8 +199,8 @@ const WORK_SLOTS: { value: string; label: string }[] = (() => {
 })();
 
 function isWithinWorkingHours() {
-  const h = new Date().getHours();
-  return h >= 10 && h < 20;
+  const h = parseInt(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false }), 10);
+  return h >= 10;
 }
 
 function AddTaskModal({ staff, customers, onClose, onCreated }: {
