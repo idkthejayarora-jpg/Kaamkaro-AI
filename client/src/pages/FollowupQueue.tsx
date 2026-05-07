@@ -981,6 +981,8 @@ export default function FollowupQueue() {
       {/* ── Trends tab ─────────────────────────────────────────────────── */}
       {tab === 'trends' && <TrendsTab />}
 
+      </AnimatedTabPanel>
+
       {/* ── Log modal ──────────────────────────────────────────────────── */}
       {logging && (
         <QuickLogModal
