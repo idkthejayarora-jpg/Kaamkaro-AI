@@ -20,7 +20,8 @@
     <style>
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; background: #0A0A0A; color: #fff; font-family: 'Inter', sans-serif; }
-      #root { min-height: 100vh; }
+      /* Use svh so Safari doesn't over-extend past the visible viewport */
+      #root { min-height: 100svh; }
     </style>
   </head>
   <body>
