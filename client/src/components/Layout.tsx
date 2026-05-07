@@ -156,8 +156,12 @@ export default function Layout() {
         )}
 
         <main className="flex-1 overflow-y-auto bg-dark-500">
-          {/* pb-28 on mobile gives clearance for Kamal button + iOS home bar */}
-          <div key={location.pathname} className="p-4 pb-28 sm:pb-6 md:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in-up">
+          {/* pb accounts for Kamal button + iOS home bar (safe-area-inset-bottom) */}
+          <div
+            key={location.pathname}
+            className="p-4 sm:pb-6 md:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in-up"
+            style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}
+          >
             <Outlet />
           </div>
         </main>
