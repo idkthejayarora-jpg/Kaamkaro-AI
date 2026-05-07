@@ -898,24 +898,12 @@ export default function FollowupQueue() {
       </div>
 
       {/* ── Tab bar ────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-2xl p-1">
-        {tabs.filter(t => !t.adminOnly || isAdmin).map(t => {
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
-                tab === t.id
-                  ? 'bg-gold text-black'
-                  : 'text-white/40 hover:text-white'
-              }`}
-            >
-              <Icon size={14} /> <span className="hidden sm:inline">{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <TabBar
+        tabs={tabs.filter(t => !t.adminOnly || isAdmin)}
+        active={tab}
+        onChange={id => setTab(id as Tab)}
+        variant="pill-gold"
+      />
 
       {/* ── Queue tab ──────────────────────────────────────────────────── */}
       {tab === 'queue' && (
