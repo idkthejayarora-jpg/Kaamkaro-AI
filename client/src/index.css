@@ -249,17 +249,18 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
     border: 1px solid rgba(239,68,68,0.2);
   }
 
-  /* Input — Apple style: dark fill, clean white focus ring (no colour tint) */
+  /* Input — Apple style: dark fill, accent focus ring */
   .input {
     @apply w-full bg-dark-200 text-white placeholder-white/25
-           rounded-xl px-4 py-2.5 text-sm
-           transition-all duration-150;
+           rounded-xl px-4 py-2.5 text-sm;
     border: 1px solid rgba(255,255,255,0.08);
     outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease,
+                background-color 0.25s ease;
   }
   .input:focus {
-    border-color: rgba(255,255,255,0.2);
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+    border-color: rgb(var(--accent-rgb) / 0.5);
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.1);
   }
 
   /* Label */
