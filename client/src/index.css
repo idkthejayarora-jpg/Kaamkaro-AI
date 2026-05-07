@@ -201,14 +201,20 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
 /* ── Components ───────────────────────────────────────────────────────────────*/
 @layer components {
 
-  /* Cards — Apple style: flat with subtle separator border, NO colour on hover */
+  /* Cards — Apple style: flat with subtle separator border */
   .card {
-    @apply bg-dark-300 rounded-2xl p-5 transition-colors duration-200;
+    @apply bg-dark-300 rounded-2xl p-5;
     border: 1px solid rgba(255,255,255,0.06);
+    transition: border-color 0.2s ease, box-shadow 0.25s ease,
+                transform 0.2s ease, background-color 0.25s ease;
+    will-change: transform;
   }
   .card:hover {
-    border-color: rgba(255,255,255,0.10);
+    border-color: rgba(255,255,255,0.11);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12);
   }
+  .card:active { transform: translateY(0); }
 
   /* Buttons */
   .btn-primary {
