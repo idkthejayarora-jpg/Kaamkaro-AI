@@ -51,8 +51,8 @@ router.post('/', async (req, res) => {
         new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false }),
         10
       );
-      if (istHour < 10 || istHour >= 20) {
-        return res.status(403).json({ error: 'Tasks can only be created during working hours (10:00 AM – 8:00 PM IST).' });
+      if (istHour < 10) {
+        return res.status(403).json({ error: 'Tasks can only be created during working hours (10:00 AM – 11:59 PM IST).' });
       }
     }
 
