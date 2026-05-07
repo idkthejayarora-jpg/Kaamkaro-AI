@@ -261,6 +261,8 @@ export default function Recommendations() {
         </div>
       )}
       </>}
+
+      </AnimatedTabPanel>
     </div>
   );
 }
