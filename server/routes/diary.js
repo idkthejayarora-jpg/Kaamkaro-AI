@@ -2276,7 +2276,7 @@ Respond ONLY with this JSON (no markdown, no text outside the JSON):
     const aiSideEffects = [];
 
     for (const e of aiResult.entries) {
-      const spokenName = (e.spokenName || '').trim();
+      const spokenName = deduplicateName((e.spokenName || '').trim());
       const nameLower  = spokenName.toLowerCase();
       if (!spokenName || STOP_WORDS.has(nameLower) || spokenName.length < 3) continue;
 
