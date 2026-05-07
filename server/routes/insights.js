@@ -277,10 +277,14 @@ router.get('/staff-behavior', async (req, res) => {
       const myInteractions = interactions.filter(i => i.staffId === s.id);
       const recentIxs      = myInteractions.filter(i => i.createdAt >= sevenDaysAgo);
 
-      // Coverage: % of assigned customers contacted in last 7 days
-      const recentCustIds  = new Set(recentIxs.map(i => i.customerId));
+      // Coverage: % of assigned customers contacted in last 7 days (capped at 100)
+      const assignedIds    = new Set(myCustomers.map(c => c.id));
+      const recentCustIds  = new Set(recentIxs.filter(i => assignedIds.has(i.customerId)).map(i => i.customerId));
       const coverage       = myCustomers.length > 0
-        ? Math.round((recentCustIds.size / myCustomers.length) * 100)
+        ? Math.min(100, Math.round((recentCustIds.size / myCustomers.length) * 100))
+        : 0;
+      const avgInteractions = myCustomers.length > 0
+        ? Math.round((recentIxs.length / myCustomers.length) * 10) / 10
         : 0;
 
       // Sentiment score
