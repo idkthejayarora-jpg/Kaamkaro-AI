@@ -185,7 +185,7 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
 
   body {
     @apply bg-dark-500 text-white font-sans antialiased;
-    min-height: 100vh;
+    min-height: 100svh;
     /* Smooth dark ↔ light theme switch */
     transition: background-color 0.28s ease, color 0.2s ease;
   }
