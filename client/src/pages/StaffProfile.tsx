@@ -271,6 +271,8 @@ export default function StaffProfile() {
           )}
         </div>
       )}
+
+      </AnimatedTabPanel>
     </div>
   );
 }
