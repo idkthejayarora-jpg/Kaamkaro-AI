@@ -273,6 +273,19 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
         </div>
 
+        {/* Live clock */}
+        <div className={`mx-3 mb-1 mt-1 rounded-xl px-3 py-2 border ${withinWork ? 'bg-green-500/5 border-green-500/15' : 'bg-dark-300 border-dark-50'}`}>
+          <p className={`text-lg font-mono font-semibold tracking-tight leading-none ${withinWork ? 'text-green-400' : 'text-white/40'}`}>
+            {clockTime}
+          </p>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-white/25 text-[10px]">{clockDate}</p>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${withinWork ? 'bg-green-500/10 text-green-400' : 'bg-dark-400 text-white/20'}`}>
+              {withinWork ? 'Working hours' : 'Off hours'}
+            </span>
+          </div>
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto">
           {/* Section header + customize toggle */}
