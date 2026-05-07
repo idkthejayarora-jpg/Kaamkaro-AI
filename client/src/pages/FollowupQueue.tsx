@@ -516,7 +516,7 @@ function StaffBehaviorTab() {
                 {/* Metrics grid */}
                 <div className="grid grid-cols-3 gap-2 text-center mb-3">
                   {[
-                    { label: 'Coverage',      value: `${s.coverage}%`,      sub: '7-day' },
+                    { label: 'Coverage',      value: `${s.coverage}%`,      sub: `${s.avgInteractions ?? '—'}× avg/customer` },
                     { label: 'Response Rate', value: `${s.responseRate}%`,   sub: 'customers' },
                     { label: 'Sentiment',     value: `${s.sentimentScore}%`, sub: 'positive' },
                   ].map(m => (
