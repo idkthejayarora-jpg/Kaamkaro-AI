@@ -122,14 +122,18 @@ export default function Recommendations() {
       )}
 
       {/* Tab toggle */}
-      <div className="flex gap-1 bg-dark-400 border border-dark-50 rounded-xl p-1 w-fit">
-        {([['recs', 'Recommendations', Sparkles], ['report', 'Weekly Report', BarChart3]] as const).map(([tab, label, Icon]) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'}`}>
-            <Icon size={14} />{label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={[
+          { id: 'recs',   label: 'Recommendations', icon: Sparkles  },
+          { id: 'report', label: 'Weekly Report',   icon: BarChart3 },
+        ]}
+        active={activeTab}
+        onChange={id => setActiveTab(id as 'recs' | 'report')}
+        variant="pill-gold"
+        className="w-fit"
+      />
+
+      <AnimatedTabPanel key={activeTab} className="space-y-4">
 
       {/* Weekly Report Tab */}
       {activeTab === 'report' && (
