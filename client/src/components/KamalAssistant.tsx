@@ -254,12 +254,13 @@ export default function KamalAssistant() {
 
   return (
     <>
-      {/* Floating button — bottom-20 on mobile to clear iOS home bar + browser nav */}
+      {/* Floating button — clears iOS home bar via safe-area-inset-bottom */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 ${
+        className={`fixed right-4 sm:right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 ${
           open ? 'bg-dark-200 border-2 border-gold/50 rotate-0' : 'bg-gold hover:scale-105 animate-pulse-gold'
         }`}
+        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
         title="Kamal AI Agent"
       >
         {open ? <X size={20} className="text-gold" /> : <Sparkles size={22} className="text-dark-500" />}
@@ -267,7 +268,7 @@ export default function KamalAssistant() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-36 sm:bottom-24 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[340px] md:w-[390px] bg-dark-300 border border-dark-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up" style={{ maxHeight: '75vh', minHeight: '400px' }}>
+        <div className="fixed right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[340px] md:w-[390px] bg-dark-300 border border-dark-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up" style={{ bottom: 'calc(9rem + env(safe-area-inset-bottom))', maxHeight: '75svh', minHeight: '360px' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-dark-50 bg-dark-400 flex-shrink-0">
             <div className="flex items-center gap-2.5">
