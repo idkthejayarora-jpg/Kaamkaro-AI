@@ -905,6 +905,9 @@ export default function FollowupQueue() {
         variant="pill-gold"
       />
 
+      {/* ── Tab content — keyed so AnimatedTabPanel remounts on switch ── */}
+      <AnimatedTabPanel key={tab} className="space-y-6">
+
       {/* ── Queue tab ──────────────────────────────────────────────────── */}
       {tab === 'queue' && (
         <>
