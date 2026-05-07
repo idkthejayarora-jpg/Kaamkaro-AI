@@ -192,14 +192,17 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-full w-64 z-50 flex flex-col
+        fixed top-0 left-0 h-svh w-64 z-50 flex flex-col
         bg-dark-400 border-r border-dark-50
         transform transition-transform duration-300 ease-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-auto
+        lg:translate-x-0 lg:static lg:z-auto lg:h-full
       `}>
-        {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-dark-50">
+        {/* Logo — pt includes notch safe-area on mobile */}
+        <div
+          className="flex items-center justify-between px-5 border-b border-dark-50 flex-shrink-0"
+          style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top))', paddingBottom: '1.25rem' }}
+        >
           <div className="flex items-center gap-3">
             <img
               src="/logo.png"
