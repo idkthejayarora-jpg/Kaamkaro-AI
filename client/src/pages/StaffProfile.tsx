@@ -192,21 +192,17 @@ export default function StaffProfile() {
       </div>
 
       {/* ── Tab switcher ── */}
-      <div className="flex gap-1 border-b border-dark-50 pb-0">
-        {([
-          { key: 'activity',  label: `Activity (${interactions.length})` },
-          { key: 'customers', label: `Customers (${customers.length})` },
-        ] as const).map(({ key, label }) => (
-          <button key={key} onClick={() => setActiveTab(key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 ${
-              activeTab === key
-                ? 'border-gold text-gold bg-gold/5'
-                : 'border-transparent text-white/30 hover:text-white'
-            }`}>
-            {label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={[
+          { id: 'activity',  label: `Activity (${interactions.length})`  },
+          { id: 'customers', label: `Customers (${customers.length})` },
+        ]}
+        active={activeTab}
+        onChange={id => setActiveTab(id as 'activity' | 'customers')}
+        variant="pill-gold"
+      />
+
+      <AnimatedTabPanel key={activeTab} className="space-y-4">
 
       {/* ── Activity tab ── */}
       {activeTab === 'activity' && (
