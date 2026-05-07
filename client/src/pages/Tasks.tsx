@@ -255,7 +255,7 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
           {outsideHours && (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
               <Clock size={14} className="mt-0.5 flex-shrink-0" />
-              <span>Tasks can only be created during working hours: <strong>10:00 AM – 8:00 PM</strong>.</span>
+              <span>Tasks can only be created during working hours: <strong>10:00 AM – 11:59 PM</strong>.</span>
             </div>
           )}
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
