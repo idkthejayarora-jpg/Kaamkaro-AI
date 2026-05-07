@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTabSlider, AnimatedTabPanel } from '../components/TabBar';
 import {
   ChevronLeft, ChevronRight, BookOpen, ClipboardList,
   Phone, TrendingUp, X, User, CheckCircle2, Circle, Clock,
