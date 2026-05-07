@@ -78,7 +78,14 @@ function nameSimilarity(a, b) {
 
   const dist = levenshtein(na, nb);
   const maxLen = Math.max(na.length, nb.length);
-  return maxLen === 0 ? 1 : 1 - dist / maxLen;
+  const raw = maxLen === 0 ? 1 : 1 - dist / maxLen;
+
+  // Short-name guard: single tokens ≤5 chars normalized must be near-identical.
+  // Prevents "Nidhi"→"nidi" matching "Nishi"→"nisi" (1 edit, 75% → penalised to ~52%).
+  // Does NOT affect multi-token names or exact matches (already returned 1.0 above).
+  if (na.length <= 5 && nb.length <= 5 && dist >= 1) return raw * 0.7;
+
+  return raw;
 }
 
 // ── Task content matcher — semantic word-overlap between diary text and task title ─
