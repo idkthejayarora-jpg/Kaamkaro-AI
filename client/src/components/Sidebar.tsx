@@ -116,7 +116,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const clockTime = now.toLocaleTimeString('en-IN', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const clockDate = now.toLocaleDateString('en-IN', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' });
   const istHour   = parseInt(now.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', hour12: false }), 10);
-  const withinWork = istHour >= 10 && istHour < 20;
+  const withinWork = istHour >= 10;
 
   // Keep navItems in sync if user switches role (e.g. re-login)
   useEffect(() => {
