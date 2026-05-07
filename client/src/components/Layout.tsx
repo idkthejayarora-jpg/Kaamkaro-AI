@@ -154,7 +154,7 @@ export default function Layout() {
 
         <main className="flex-1 overflow-y-auto bg-dark-500">
           {/* pb-28 on mobile gives clearance for Kamal button + iOS home bar */}
-          <div className="p-4 pb-28 sm:pb-6 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          <div key={location.pathname} className="p-4 pb-28 sm:pb-6 md:p-6 lg:p-8 max-w-7xl mx-auto animate-fade-in-up">
             <Outlet />
           </div>
         </main>
