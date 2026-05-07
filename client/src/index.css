@@ -221,6 +221,11 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
     @apply bg-gold text-white font-semibold px-4 py-2 rounded-xl
            active:scale-95 transition-all duration-150
            disabled:opacity-35 disabled:cursor-not-allowed;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset;
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset,
+                0 4px 16px rgb(var(--accent-rgb) / 0.35);
   }
   .btn-secondary {
     @apply font-medium px-4 py-2 rounded-xl
