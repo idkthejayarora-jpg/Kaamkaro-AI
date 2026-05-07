@@ -327,6 +327,7 @@ export interface StaffBehavior {
   totalInteractions: number;
   recentInteractions: number;
   coverage: number;
+  avgInteractions?: number;
   sentimentScore: number;
   responseRate: number;
   qualityScore: number;
