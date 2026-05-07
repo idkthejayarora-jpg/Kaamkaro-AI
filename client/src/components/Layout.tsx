@@ -103,8 +103,11 @@ export default function Layout() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-dark-50 bg-dark-400 flex-shrink-0">
+        {/* Mobile header — pt accounts for notch/Dynamic Island via safe-area-inset-top */}
+        <header
+          className="lg:hidden flex items-center justify-between px-4 border-b border-dark-50 bg-dark-400 flex-shrink-0"
+          style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))', paddingBottom: '0.75rem' }}
+        >
           <MobileMenuButton onClick={() => setMobileOpen(true)} />
           <div className="flex items-center gap-2">
             <svg width="26" height="26" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
