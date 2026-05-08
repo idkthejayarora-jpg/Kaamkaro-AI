@@ -311,8 +311,7 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
     }));
   };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSubmit = async () => {
     if (!form.name) { setError('Name required'); return; }
     setLoading(true);
     try {
@@ -332,15 +331,15 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-50 flex-shrink-0">
           <div>
             <h2 className="text-white font-semibold">Add Customer</h2>
             {!isAdmin && <p className="text-white/30 text-xs mt-0.5">Will be assigned to you</p>}
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
+          <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={e => { e.preventDefault(); doSubmit(); }} className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
           <div><label className="label">Name *</label><input className="input" placeholder="Full name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
           <div className="grid grid-cols-2 gap-3">
