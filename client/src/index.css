@@ -214,8 +214,11 @@ html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
   }
   .card:hover {
     border-color: rgba(255,255,255,0.11);
-    transform: translateY(-1px);
     box-shadow: 0 6px 24px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12);
+  }
+  /* Only lift cards that don't contain focused inputs — prevents jarring jump on interactive cards */
+  .card:not(:focus-within):hover {
+    transform: translateY(-1px);
   }
   .card:active { transform: translateY(0); }
 
