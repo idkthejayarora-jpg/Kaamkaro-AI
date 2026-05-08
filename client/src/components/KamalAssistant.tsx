@@ -390,7 +390,7 @@ export default function KamalAssistant() {
               disabled={!input.trim() || loading}
               className="w-9 h-9 rounded-xl bg-gold hover:bg-gold-400 disabled:opacity-30 flex items-center justify-center flex-shrink-0 transition-all"
             >
-              <Send size={14} className="text-dark-500" />
+              <Send size={14} className="text-white" />
             </button>
           </div>
         </div>
