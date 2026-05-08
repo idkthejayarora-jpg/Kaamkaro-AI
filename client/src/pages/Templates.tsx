@@ -115,8 +115,8 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
           </div>
         </form>
         <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
-          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={submit} disabled={loading} className="btn-primary flex-1">
+          <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={doSubmit} disabled={loading} className="btn-primary flex-1">
             {loading ? 'Saving…' : 'Create Template'}
           </button>
         </div>
