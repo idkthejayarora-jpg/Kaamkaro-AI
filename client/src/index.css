@@ -94,6 +94,8 @@ html.light .card {
 html.light .card:hover {
   border-color: rgba(0,0,0,0.14) !important;
   box-shadow: 0 6px 20px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+html.light .card:not(:focus-within):hover {
   transform: translateY(-1px);
 }
 
