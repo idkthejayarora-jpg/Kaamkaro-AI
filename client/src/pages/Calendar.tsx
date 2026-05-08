@@ -236,16 +236,21 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
         </button>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex border-b border-white/[0.08] flex-shrink-0">
+      {/* Tab bar — sliding gold underline indicator */}
+      <div ref={containerRef} className="relative flex border-b border-white/[0.08] flex-shrink-0">
+        {/* Sliding underline */}
+        <div
+          className="absolute bottom-0 h-[2px] bg-gold"
+          style={sliderStyle}
+          aria-hidden
+        />
         {CATS.map(c => (
           <button
             key={c.key}
+            ref={setRef(c.key)}
             onClick={() => setTab(c.key)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors border-b-2 ${
-              tab === c.key
-                ? 'border-gold text-gold'
-                : 'border-transparent text-white/25 hover:text-white/60'
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${
+              tab === c.key ? 'text-gold' : 'text-white/25 hover:text-white/60'
             }`}
           >
             <c.icon size={13} />
@@ -267,12 +272,12 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
           </div>
         )}
         {!loading && data && (
-          <>
+          <AnimatedTabPanel key={tab}>
             {tab === 'tasks'        && <TasksTab        items={data.tasks}        />}
             {tab === 'diary'        && <DiaryTab        items={data.diary}        />}
             {tab === 'interactions' && <InteractionsTab items={data.interactions} />}
             {tab === 'leads'        && <LeadsTab        items={data.leads}        />}
-          </>
+          </AnimatedTabPanel>
         )}
       </div>
     </div>
