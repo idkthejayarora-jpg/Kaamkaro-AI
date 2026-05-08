@@ -56,12 +56,12 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-slide-up max-h-[92vh] flex flex-col">
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-50 flex-shrink-0">
           <h2 className="text-white font-semibold">New Template</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
+          <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={e => { e.preventDefault(); doSubmit(); }} className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
           <div>
             <label className="label">Title *</label>
