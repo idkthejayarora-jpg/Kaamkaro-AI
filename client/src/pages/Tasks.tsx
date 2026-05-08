@@ -706,16 +706,16 @@ export default function Tasks() {
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex rounded-xl border border-dark-50 overflow-hidden w-fit">
-          {(['pending', 'done'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`px-5 py-2 text-xs font-medium capitalize transition-colors ${
-                filter === f ? 'bg-gold text-white' : 'text-white/40 hover:text-white'
-              }`}>
-              {f === 'pending' ? `Pending (${pending.length})` : `Done (${done.length})`}
-            </button>
-          ))}
-        </div>
+        <TabBar
+          tabs={[
+            { id: 'pending', label: `Pending (${pending.length})` },
+            { id: 'done',    label: `Done (${done.length})` },
+          ]}
+          active={filter}
+          onChange={id => setFilter(id as 'pending' | 'done')}
+          variant="pill-gold"
+          className="w-fit"
+        />
 
         {isAdmin && staff.length > 0 && (
           <div className="flex items-center gap-2">
