@@ -673,7 +673,7 @@ function CSVImportModal({ staff, onClose, onImported }: {
         <div className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
           <p className="text-white/40 text-xs">CSV format: <span className="font-mono text-white/60">Name, Phone, Email, Status</span></p>
-          <input ref={fileRef} type="file" accept=".csv" className="input py-2 cursor-pointer file:bg-gold file:text-dark-500 file:border-0 file:rounded-lg file:px-3 file:py-1 file:text-xs file:font-semibold file:mr-3 file:cursor-pointer"
+          <input ref={fileRef} type="file" accept=".csv" className="input py-2 cursor-pointer file:bg-gold file:text-white file:border-0 file:rounded-lg file:px-3 file:py-1 file:text-xs file:font-semibold file:mr-3 file:cursor-pointer"
             onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
           <div>
             <label className="label">Assign all to staff (optional)</label>

@@ -100,7 +100,9 @@
       "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/index.js'\\)\")",
       "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/routes/badges.js'\\)\")",
       "Bash(node -e \"require\\('/Users/jaigopalarora/Kaamkaro AI/server/utils/badgeEarner.js'\\)\")",
-      "Bash(xargs sed *)"
+      "Bash(xargs sed *)",
+      "Bash(sed -i '' \"s/dragging ? 'text-dark-500'/dragging ? 'text-white'/\" \"/Users/jaigopalarora/Kaamkaro AI/client/src/pages/PDFUpload.tsx\")",
+      "Bash(sed -i '' \"s/file:text-dark-500/file:text-white/\" \"/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Customers.tsx\")"
     ]
   }
 }

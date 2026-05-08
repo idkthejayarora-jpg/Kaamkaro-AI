@@ -193,7 +193,7 @@ export default function PDFUpload() {
         ) : (
           <>
             <div className={`w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center transition-colors ${dragging ? 'bg-gold' : 'bg-dark-200'}`}>
-              <Upload size={24} className={dragging ? 'text-dark-500' : 'text-white/40'} />
+              <Upload size={24} className={dragging ? 'text-white' : 'text-white/40'} />
             </div>
             <p className="text-white font-semibold mb-1">Drop your PDF diary here</p>
             <p className="text-white/40 text-sm">or click to browse · Max 20MB</p>
