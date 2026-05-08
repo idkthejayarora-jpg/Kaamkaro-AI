@@ -388,10 +388,11 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
           )}
           <div><label className="label">Tags (comma-separated)</label><input className="input" placeholder="hot-lead, follow-up, priority" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} /></div>
           <div><label className="label">Notes</label><textarea className="input resize-none" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+          <button type="submit" className="sr-only" aria-hidden>Submit</button>
         </form>
         <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
-          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={submit} disabled={loading} className="btn-primary flex-1">{loading ? 'Adding...' : 'Add Customer'}</button>
+          <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={doSubmit} disabled={loading} className="btn-primary flex-1">{loading ? 'Adding...' : 'Add Customer'}</button>
         </div>
       </div>
     </div>
