@@ -203,6 +203,7 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
   const [data,    setData]    = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab,     setTab]     = useState<CatKey>('tasks');
+  const { containerRef, setRef, sliderStyle } = useTabSlider(tab);
 
   useEffect(() => {
     setLoading(true);
