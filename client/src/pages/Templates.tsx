@@ -38,8 +38,7 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
   const [error, setError]     = useState('');
   const fileRef               = useRef<HTMLInputElement>(null);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSubmit = async () => {
     if (!form.title || !form.content) { setError('Title and content required'); return; }
     setLoading(true);
     try {
