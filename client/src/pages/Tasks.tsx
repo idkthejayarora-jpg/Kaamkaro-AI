@@ -709,7 +709,7 @@ export default function Tasks() {
           {(['pending', 'done'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-5 py-2 text-xs font-medium capitalize transition-colors ${
-                filter === f ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+                filter === f ? 'bg-gold text-white' : 'text-white/40 hover:text-white'
               }`}>
               {f === 'pending' ? `Pending (${pending.length})` : `Done (${done.length})`}
             </button>
