@@ -100,6 +100,7 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
             </button>
             <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden"
               onChange={e => { if (e.target.files) setFiles(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ''; }} />
+            <button type="submit" className="sr-only" aria-hidden>Submit</button>
             {files.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {files.map((f, i) => (
