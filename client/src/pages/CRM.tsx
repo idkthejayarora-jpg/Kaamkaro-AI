@@ -547,7 +547,7 @@ export default function CRM() {
               <CalendarDays size={11} /> Today
               {todayLeads.length > 0 && (
                 <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-                  tab === 'today' ? 'bg-dark-500/40 text-dark-500' : 'bg-red-500/20 text-red-400'
+                  tab === 'today' ? 'bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
                 }`}>{todayLeads.length}</span>
               )}
             </button>
