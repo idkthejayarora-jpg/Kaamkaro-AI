@@ -52,7 +52,7 @@ function NewConvModal({
           {(['direct', 'group'] as const).map(m => (
             <button key={m} onClick={() => setMode(m)}
               className={`flex-1 py-2 text-xs font-medium capitalize transition-colors ${
-                mode === m ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+                mode === m ? 'bg-gold text-white' : 'text-white/40 hover:text-white'
               }`}>
               {m === 'direct' ? 'Direct Message' : 'Group Chat'}
             </button>
@@ -451,7 +451,7 @@ function Bubble({ msg, isMe, myId }: { msg: ChatMessage; isMe: boolean; myId: st
         {!isMe && <span className="text-white/30 text-[10px] px-1">{msg.senderName}</span>}
         <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
           isMe
-            ? 'bg-gold text-dark-500 rounded-br-sm'
+            ? 'bg-gold text-white rounded-br-sm'
             : 'bg-dark-300 border border-dark-50 text-white rounded-bl-sm'
         }`}>
           {msg.text}
@@ -815,7 +815,7 @@ export default function Chat() {
                 <button onClick={send} disabled={!draft.trim() || sending}
                   className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${
                     draft.trim() && !sending
-                      ? 'bg-gold text-dark-500 hover:bg-gold-light'
+                      ? 'bg-gold text-white hover:bg-gold-light'
                       : 'bg-dark-300 text-white/20 cursor-not-allowed'
                   }`}>
                   <Send size={16} />

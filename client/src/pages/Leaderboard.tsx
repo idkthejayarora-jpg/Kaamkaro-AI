@@ -122,7 +122,7 @@ export default function Leaderboard() {
                   key={s}
                   onClick={() => handleStaffScope(s)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    staffScope === s ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+                    staffScope === s ? 'bg-gold text-white' : 'text-white/40 hover:text-white'
                   }`}
                 >
                   {s === 'team' ? `My Team` : 'All Staff'}

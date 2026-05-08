@@ -89,7 +89,7 @@ export default function Login() {
           <button
             onClick={() => switchMode('login')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              mode === 'login' ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+              mode === 'login' ? 'bg-gold text-white' : 'text-white/40 hover:text-white'
             }`}
           >
             <LogIn size={14} /> Sign In
@@ -97,7 +97,7 @@ export default function Login() {
           <button
             onClick={() => switchMode('signup')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              mode === 'signup' ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'
+              mode === 'signup' ? 'bg-gold text-white' : 'text-white/40 hover:text-white'
             }`}
           >
             <UserPlus size={14} /> Create Account

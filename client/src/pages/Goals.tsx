@@ -201,12 +201,12 @@ export default function Goals() {
       {isAdmin && staff.length > 1 && (
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => setStaffFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${staffFilter === 'all' ? 'bg-gold text-dark-500' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${staffFilter === 'all' ? 'bg-gold text-white' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
             All Staff
           </button>
           {staff.map(s => (
             <button key={s.id} onClick={() => setStaffFilter(s.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${staffFilter === s.id ? 'bg-gold text-dark-500' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${staffFilter === s.id ? 'bg-gold text-white' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
               {s.name}
             </button>
           ))}

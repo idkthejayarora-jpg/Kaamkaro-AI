@@ -263,7 +263,7 @@ export default function KamalAssistant() {
         style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
         title="Kamal AI Agent"
       >
-        {open ? <X size={20} className="text-gold" /> : <Sparkles size={22} className="text-dark-500" />}
+        {open ? <X size={20} className="text-gold" /> : <Sparkles size={22} className="text-white" />}
       </button>
 
       {/* Chat panel */}
@@ -308,7 +308,7 @@ export default function KamalAssistant() {
                 <div className="max-w-[82%]">
                   <div className={`rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
                     msg.role === 'user'
-                      ? 'bg-gold text-dark-500 font-medium rounded-br-sm'
+                      ? 'bg-gold text-white font-medium rounded-br-sm'
                       : 'bg-dark-200 text-white/85 rounded-bl-sm border border-dark-50'
                   }`}>
                     {msg.content}

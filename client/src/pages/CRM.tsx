@@ -418,11 +418,11 @@ export default function CRM() {
           <div className="flex bg-dark-400 border border-dark-50 rounded-lg p-0.5">
             <button
               onClick={() => switchView('list')}
-              className={`p-1.5 rounded-md transition-colors ${view === 'list' ? 'bg-gold text-dark-500' : 'text-white/30 hover:text-white'}`}
+              className={`p-1.5 rounded-md transition-colors ${view === 'list' ? 'bg-gold text-white' : 'text-white/30 hover:text-white'}`}
             ><List size={14} /></button>
             <button
               onClick={() => switchView('kanban')}
-              className={`p-1.5 rounded-md transition-colors ${view === 'kanban' ? 'bg-gold text-dark-500' : 'text-white/30 hover:text-white'}`}
+              className={`p-1.5 rounded-md transition-colors ${view === 'kanban' ? 'bg-gold text-white' : 'text-white/30 hover:text-white'}`}
             ><LayoutGrid size={14} /></button>
           </div>
           <button
@@ -541,7 +541,7 @@ export default function CRM() {
             <button
               onClick={() => setTab('today')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                tab === 'today' ? 'bg-gold text-dark-500 border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
+                tab === 'today' ? 'bg-gold text-white border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
               }`}
             >
               <CalendarDays size={11} /> Today
@@ -554,7 +554,7 @@ export default function CRM() {
             <button
               onClick={() => setTab('all')}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                tab === 'all' ? 'bg-gold text-dark-500 border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
+                tab === 'all' ? 'bg-gold text-white border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
               }`}
             >All ({leads.length})</button>
             {STAGES.map(s => stageCounts[s] ? (
@@ -562,7 +562,7 @@ export default function CRM() {
                 key={s}
                 onClick={() => setTab(s)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
-                  tab === s ? 'bg-gold text-dark-500 border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
+                  tab === s ? 'bg-gold text-white border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
                 }`}
               >{STAGE_LABELS[s]} ({stageCounts[s]})</button>
             ) : null)}

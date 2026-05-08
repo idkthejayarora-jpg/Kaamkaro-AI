@@ -309,8 +309,8 @@ function DayCell({
       {/* Day number */}
       <span className={`
         text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full transition-colors
-        ${isToday && isSelected ? 'bg-gold text-dark-500 font-bold' :
-          isToday               ? 'bg-gold text-dark-500 font-bold' :
+        ${isToday && isSelected ? 'bg-gold text-white font-bold' :
+          isToday               ? 'bg-gold text-white font-bold' :
           isSelected            ? 'bg-white/15 text-white'           :
           hasActivity           ? 'text-white/80'                    : 'text-white/20'}
       `}>

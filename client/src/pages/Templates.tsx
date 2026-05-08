@@ -224,7 +224,7 @@ export default function Templates() {
         <div className="flex rounded-xl overflow-hidden border border-dark-50">
           {(['all', 'mine', 'shared'] as const).map(s => (
             <button key={s} onClick={() => setScope(s)}
-              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${scope === s ? 'bg-gold text-dark-500' : 'text-white/40 hover:text-white'}`}>
+              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${scope === s ? 'bg-gold text-white' : 'text-white/40 hover:text-white'}`}>
               {s === 'mine' ? 'My Templates' : s === 'shared' ? 'Shared' : 'All'}
             </button>
           ))}

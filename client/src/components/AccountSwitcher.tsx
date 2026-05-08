@@ -88,7 +88,7 @@ export default function AccountSwitcher({ onClose }: Props) {
                   <div className="w-10 h-10 rounded-full bg-gold/20 border-2 border-gold/40 flex items-center justify-center">
                     <span className="text-gold font-bold text-sm">{user?.avatar || user?.name?.[0]}</span>
                   </div>
-                  <Check size={10} className="absolute -bottom-0.5 -right-0.5 bg-gold text-dark-500 rounded-full p-0.5" />
+                  <Check size={10} className="absolute -bottom-0.5 -right-0.5 bg-gold text-white rounded-full p-0.5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm truncate">{user?.name}</p>

@@ -180,7 +180,7 @@ export default function Vendors() {
         <div className="flex gap-1 flex-wrap">
           {categories.map(c => (
             <button key={c} onClick={() => setCategory(c)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${category === c ? 'bg-gold text-dark-500' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${category === c ? 'bg-gold text-white' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
               {c}
             </button>
           ))}

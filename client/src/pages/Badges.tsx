@@ -250,7 +250,7 @@ function CriteriaEditor() {
                   disabled={saving || !isDirty}
                   className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all
                     ${saved ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                      isDirty ? 'bg-gold text-dark-500 hover:bg-gold/90' :
+                      isDirty ? 'bg-gold text-white hover:bg-gold/90' :
                       'bg-dark-300 text-white/20 border border-dark-50 cursor-default'
                     }`}
                 >

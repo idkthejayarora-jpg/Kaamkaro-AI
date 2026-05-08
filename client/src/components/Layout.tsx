@@ -147,7 +147,7 @@ export default function Layout() {
             </div>
             <button
               onClick={switchBack}
-              className="flex items-center gap-1.5 px-3 py-1 bg-gold text-dark-500 text-xs font-semibold rounded-lg hover:bg-gold/90 transition-colors flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1 bg-gold text-white text-xs font-semibold rounded-lg hover:bg-gold/90 transition-colors flex-shrink-0"
             >
               <RefreshCw size={11} />
               Switch back
@@ -229,7 +229,7 @@ export default function Layout() {
                 {/* Dismiss */}
                 <button
                   onClick={() => setBadgeToast(null)}
-                  className="mt-2 w-full py-3 rounded-2xl bg-gold text-dark-500 font-bold text-sm hover:bg-gold/90 active:scale-[0.97] transition-all"
+                  className="mt-2 w-full py-3 rounded-2xl bg-gold text-white font-bold text-sm hover:bg-gold/90 active:scale-[0.97] transition-all"
                 >
                   Shukriya! 🙏
                 </button>
