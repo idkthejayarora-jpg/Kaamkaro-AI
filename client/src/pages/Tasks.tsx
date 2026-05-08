@@ -217,12 +217,15 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
 
   const outsideHours = !isAdmin && !isWithinWorkingHours();
 
-  const filteredCustomers = isAdmin
-    ? customers.filter(c => !form.assignedTo || c.assignedTo === form.assignedTo)
+  // Show customers assigned to selected staff (checks both primary assignee and assignedStaff[])
+  const filteredCustomers = isAdmin && form.assignedTo
+    ? customers.filter(c =>
+        c.assignedTo === form.assignedTo ||
+        (Array.isArray(c.assignedStaff) && c.assignedStaff.includes(form.assignedTo))
+      )
     : customers;
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSubmit = async () => {
     if (!form.title || !form.dueDate) { setError('Title and due date required'); return; }
     if (!isAdmin && !isWithinWorkingHours()) {
       setError('Tasks can only be created during working hours (10:00 AM – 11:59 PM).');
@@ -245,12 +248,12 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-slide-up max-h-[90vh] flex flex-col">
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-50 flex-shrink-0">
           <h2 className="text-white font-semibold">Add Task</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
+          <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
-        <form onSubmit={submit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={e => { e.preventDefault(); doSubmit(); }} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Outside-hours warning */}
           {outsideHours && (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
@@ -293,10 +296,12 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
           <div><label className="label">Notes</label>
             <textarea className="input resize-none" rows={2} placeholder="Additional details..."
               value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+          {/* Hidden submit so Enter key works naturally */}
+          <button type="submit" className="sr-only" aria-hidden>Submit</button>
         </form>
         <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
-          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={submit} disabled={loading || outsideHours} className="btn-primary flex-1">
+          <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={doSubmit} disabled={loading || outsideHours} className="btn-primary flex-1">
             {loading ? 'Adding...' : 'Add Task'}
           </button>
         </div>
