@@ -5,6 +5,7 @@ import {
   Save, RotateCcw, StickyNote, Users, Mic, MicOff, Send, Repeat2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { TabBar } from '../components/TabBar';
 import { tasksAPI, staffAPI, customersAPI, teamsAPI, diaryAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useVoice } from '../hooks/useVoice';
