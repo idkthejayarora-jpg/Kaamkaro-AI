@@ -626,5 +626,6 @@ export default function Calendar() {
         color={userColor}
       />
     )}
+    </>
   );
 }
