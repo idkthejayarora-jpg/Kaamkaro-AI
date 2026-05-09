@@ -371,13 +371,6 @@ function QueueCard({
             <span className="text-[10px] capitalize text-white/30 bg-white/5 border border-white/8 rounded-full px-2 py-0.5">
               {item.status}
             </span>
-            {item.dealValue && (
-              <span className="text-[10px] text-gold/70 font-medium">
-                ₹{item.dealValue >= 100000
-                  ? `${(item.dealValue / 100000).toFixed(1)}L`
-                  : item.dealValue.toLocaleString('en-IN')}
-              </span>
-            )}
           </div>
 
           {/* Sub-row: staff + phone + last contact */}
