@@ -9,8 +9,9 @@ let Anthropic;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
 
 function getAI() {
-  if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!Anthropic || !key || key.startsWith('your-')) return null;
+  return new Anthropic({ apiKey: key });
 }
 
 const VALID_STAGES = ['new', 'contacted', 'interested', 'catalogue_sent', 'follow_up', 'visit_scheduled', 'won', 'lost'];
