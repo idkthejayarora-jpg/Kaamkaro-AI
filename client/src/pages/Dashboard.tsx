@@ -1174,7 +1174,7 @@ function StaffDashboard() {
             <div className="flex items-end gap-2">
               <span className="text-5xl font-black text-white">{streak}</span>
               <span className="text-gold text-lg font-bold mb-1">days</span>
-              <Flame size={28} className={`mb-1 ${streak > 0 ? 'text-gold' : 'text-white/20'}`} />
+              <Flame size={28} className={`mb-1 transition-all ${streak > 0 ? 'text-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]' : 'text-white/20'}`} />
             </div>
             <p className="text-white/30 text-xs mt-1">Longest: {longestStreak}d · Log a contact to keep it going</p>
           </div>
