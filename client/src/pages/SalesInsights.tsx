@@ -309,7 +309,7 @@ export default function SalesInsights() {
 
           {/* ── Finish trends ────────────────────────────────────────────────── */}
           {data.finishTrends?.length > 0 && (
-            <Section icon={<Sparkles size={14} className="text-amber-400" />} title="Finish Trends & Cross-Sell Opportunities" color="bg-amber-500/10">
+            <Section icon={<Sparkles size={14} className="text-amber-400" />} title="Finish Trends & Cross-Sell Opportunities" color="bg-amber-500/10" glow="0 0 12px rgba(251,191,36,0.4)">
               <div className="space-y-3">
                 {data.finishTrends.map((f, i) => {
                   const key = `finish-${i}`;
