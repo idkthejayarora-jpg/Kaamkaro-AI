@@ -215,7 +215,7 @@ export default function SalesInsights() {
 
           {/* ── Product trends ───────────────────────────────────────────────── */}
           {data.trends?.length > 0 && (
-            <Section icon={<TrendingUp size={14} className="text-blue-400" />} title="Top Product Trends" color="bg-blue-500/10">
+            <Section icon={<TrendingUp size={14} className="text-blue-400" />} title="Top Product Trends" color="bg-blue-500/10" glow="0 0 12px rgba(96,165,250,0.4)">
               <div className="space-y-2">
                 {data.trends.map((t, i) => {
                   const key = `trend-${i}`;
