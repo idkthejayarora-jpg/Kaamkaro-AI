@@ -221,17 +221,32 @@ router.post('/bulk-import', async (req, res) => {
 });
 
 // ── POST /api/leads/bulk-actions ───────────────────────────────────────────────
-// Admin-only. Actions: assign | stage | followup | delete
-router.post('/bulk-actions', adminOnly, async (req, res) => {
+// Actions: assign | stage | followup | delete
+// Staff can only act on their own leads; assign action is admin-only.
+router.post('/bulk-actions', async (req, res) => {
   try {
     const { ids, action, value } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: 'ids array required' });
     }
+
+    // Staff ownership guard: filter ids to only their own leads
+    let allowedIds = ids;
+    if (req.user.role === 'staff') {
+      const allLeads = await readDB('leads');
+      allowedIds = ids.filter(id => {
+        const lead = allLeads.find(l => l.id === id);
+        return lead && lead.staffId === req.user.id;
+      });
+    }
+
     let updated = 0;
 
     if (action === 'assign') {
-      for (const id of ids) {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Only admins can reassign leads' });
+      }
+      for (const id of allowedIds) {
         await updateOne('leads', id, { staffId: value, updatedAt: new Date().toISOString() });
         updated++;
       }
