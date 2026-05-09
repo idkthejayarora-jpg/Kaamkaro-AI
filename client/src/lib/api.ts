@@ -275,4 +275,21 @@ export const stockAPI = {
   deleteEntry: (id: string, entryId: string) => api.delete(`/stock/${id}/entry/${entryId}`).then(r => r.data),
 };
 
+export const holdingStockAPI = {
+  list: (params?: { status?: 'pending' | 'dispatched' }) =>
+    api.get('/stock/holding', { params }).then(r => r.data),
+  create: (data: {
+    customerName: string; customerId?: string;
+    items: { itemName: string; qty: number; unit: string; amount: number }[];
+    note?: string;
+  }) => api.post('/stock/holding', data).then(r => r.data),
+  update: (id: string, data: {
+    customerName?: string; customerId?: string;
+    items?: { id?: string; itemName: string; qty: number; unit: string; amount: number }[];
+    note?: string;
+  }) => api.put(`/stock/holding/${id}`, data).then(r => r.data),
+  dispatch: (id: string) => api.post(`/stock/holding/${id}/dispatch`).then(r => r.data),
+  delete: (id: string) => api.delete(`/stock/holding/${id}`).then(r => r.data),
+};
+
 export default api;
