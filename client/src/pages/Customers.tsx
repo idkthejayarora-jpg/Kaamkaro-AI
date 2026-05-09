@@ -838,9 +838,7 @@ export default function Customers() {
     return acc;
   }, {} as Record<string, number>);
 
-  const pipelineValue = customers
-    .filter(c => !['closed','churned'].includes(c.status) && c.dealValue)
-    .reduce((sum, c) => sum + (c.dealValue || 0), 0);
+  const activeCount = customers.filter(c => !['churned'].includes(c.status)).length;
 
   const getStaffName = (id: string | null) => id ? staff.find(s => s.id === id)?.name || 'Unknown' : 'Unassigned';
 
