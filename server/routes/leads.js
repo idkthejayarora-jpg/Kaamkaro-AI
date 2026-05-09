@@ -355,7 +355,10 @@ ${text.trim()}`,
     res.json({ leads });
   } catch (err) {
     console.error('[Leads] parse-text error:', err);
-    res.status(500).json({ error: 'Failed to parse text' });
+    const msg = err?.status === 401 ? 'AI API key is invalid — check ANTHROPIC_API_KEY'
+      : err?.status === 529 ? 'AI service is temporarily overloaded — try again shortly'
+      : 'Failed to parse text';
+    res.status(500).json({ error: msg });
   }
 });
 
