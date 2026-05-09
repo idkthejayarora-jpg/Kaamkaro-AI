@@ -153,7 +153,6 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
     assignedTo:          customer.assignedTo,
     assignedStaffName:   staffMap[customer.assignedTo]?.name   || 'Unassigned',
     assignedStaffAvatar: staffMap[customer.assignedTo]?.avatar || '?',
-    dealValue:           customer.dealValue,
     lastContactDays,
     priorityScore,
     priority,
