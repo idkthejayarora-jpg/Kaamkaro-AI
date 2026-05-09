@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import {
   Plus, Search, Phone, Mail, X, Check, ChevronDown, ChevronUp,
   Upload, Clock, MessageSquare, Calendar, TrendingUp, TrendingDown,
-  Minus, DollarSign, Trash2, Users, Tag, UserPlus, StickyNote, Send,
+  Minus, Trash2, Users, Tag, UserPlus, StickyNote, Send,
   BookOpen, Pencil, Filter,
 } from 'lucide-react';
 import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI } from '../lib/api';
