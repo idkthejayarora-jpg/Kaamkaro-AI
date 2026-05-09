@@ -156,8 +156,14 @@ router.post('/bulk-actions', adminOnly, async (req, res) => {
       }
       await logAudit(req.user.id, req.user.name, 'update', 'customer', null, `Bulk stage change to ${value} for ${updated} customers`);
     } else if (action === 'delete') {
+      const allLeads = await readDB('leads');
       for (const id of ids) {
         await deleteOne('customers', id);
+        // Soft-delete any CRM leads linked to this customer
+        const linked = allLeads.filter(l => l.linkedCustomerId === id && l.isActive !== false);
+        for (const lead of linked) {
+          await updateOne('leads', lead.id, { isActive: false, updatedAt: new Date().toISOString() });
+        }
         updated++;
       }
       await logAudit(req.user.id, req.user.name, 'delete', 'customer', null, `Bulk deleted ${updated} customers`);
