@@ -417,7 +417,7 @@ function QueueCard({
             <div className="mt-3 space-y-1.5">
               {item.insight && (
                 <div className="flex items-start gap-2 text-[11px] text-white/55 leading-relaxed">
-                  <Brain size={11} className="text-gold/60 flex-shrink-0 mt-0.5" />
+                  <Brain size={11} className="text-gold/70 flex-shrink-0 mt-0.5 drop-shadow-[0_0_8px_rgba(212,175,55,0.65)]" />
                   <span>{item.insight}</span>
                 </div>
               )}
