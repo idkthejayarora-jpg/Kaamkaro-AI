@@ -766,11 +766,6 @@ function TrendsTab() {
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <p className="text-white text-sm font-medium truncate group-hover:text-gold transition-colors">{c.name}</p>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {c.dealValue && c.dealValue > 0 && (
-                      <span className="text-gold/60 text-[10px] font-medium">
-                        ₹{c.dealValue >= 100000 ? `${(c.dealValue/100000).toFixed(1)}L` : `${(c.dealValue/1000).toFixed(0)}K`}
-                      </span>
-                    )}
                     <span className="text-white/50 text-xs font-semibold">{c.interactions}</span>
                   </div>
                 </div>
