@@ -422,7 +422,7 @@ export default function Calendar() {
     : null;
 
   return (
-    <div className="flex flex-col gap-5 h-full">
+    <div className="flex flex-col gap-5 h-full animate-fade-in">
       {/* ── Header ── */}
       <div className="flex items-center gap-3 flex-wrap">
         <div>
@@ -433,7 +433,7 @@ export default function Calendar() {
           <select
             value={filterStaff}
             onChange={e => { setFilterStaff(e.target.value); setSelected(null); }}
-            className="ml-auto px-3 py-2 rounded-xl bg-dark-300 border border-white/10 text-white/70 text-sm focus:outline-none focus:border-gold/40"
+            className="ml-auto input w-auto pr-8"
           >
             <option value="">All Staff</option>
             {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -443,40 +443,66 @@ export default function Calendar() {
 
       {/* ── Layout: calendar + panel ── */}
       <div className="flex gap-4 min-h-0 flex-col lg:flex-row">
-        {/* Calendar card */}
-        <div className={`flex flex-col rounded-2xl bg-dark-300 border border-white/[0.06] overflow-hidden transition-all ${
+
+        {/* ── Calendar card ── */}
+        <div className={`flex flex-col rounded-2xl bg-dark-300 border border-white/[0.07] overflow-hidden transition-all duration-300 ${
           selected ? 'lg:flex-1' : 'w-full'
         }`}>
+
           {/* Month nav */}
-          <div className="flex items-center gap-2 px-4 py-3.5 border-b border-white/[0.06]">
-            <button onClick={goPrev} className="p-1.5 rounded-lg hover:bg-white/[0.07] text-white/40 hover:text-white transition-colors">
-              <ChevronLeft size={16} />
+          <div className="flex items-center px-3 py-3 border-b border-white/[0.07]">
+            <button
+              onClick={goPrev}
+              className="p-2 rounded-xl hover:bg-white/[0.07] text-white/35 hover:text-white transition-all active:scale-90"
+            >
+              <ChevronLeft size={18} />
             </button>
-            <div className="flex-1 flex items-center justify-center gap-2.5">
-              <span className="text-white font-bold text-base">{MONTHS[month-1]} {year}</span>
+
+            <div className="flex-1 flex items-center justify-center gap-2">
+              <span className="text-white font-bold text-base tracking-tight">{MONTHS[month - 1]}</span>
+              <span className="text-white/35 font-medium text-base">{year}</span>
               {!isCurrentMonth && (
-                <button onClick={goToday} className="text-[10px] text-gold border border-gold/30 rounded-md px-2 py-0.5 hover:bg-gold/10 transition-colors">
+                <button
+                  onClick={goToday}
+                  className="ml-1 text-[10px] text-gold border border-gold/30 rounded-lg px-2.5 py-1 hover:bg-gold/10 transition-colors font-semibold"
+                >
                   Today
                 </button>
               )}
             </div>
-            <button onClick={goNext} className="p-1.5 rounded-lg hover:bg-white/[0.07] text-white/40 hover:text-white transition-colors">
-              <ChevronRight size={16} />
+
+            <button
+              onClick={goNext}
+              className="p-2 rounded-xl hover:bg-white/[0.07] text-white/35 hover:text-white transition-all active:scale-90"
+            >
+              <ChevronRight size={18} />
             </button>
           </div>
 
-          {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-white/[0.06]">
+          {/* Day-of-week headers */}
+          <div className="grid grid-cols-7 border-b border-white/[0.07]">
             {DAY_ABBR.map((d, i) => (
-              <div key={i} className="py-2 text-center text-white/20 text-[11px] font-semibold tracking-wide">{d}</div>
+              <div
+                key={i}
+                className={`py-2 text-center text-[10px] font-bold tracking-wider uppercase ${
+                  i === 0 ? 'text-red-400/50' : 'text-white/18'
+                }`}
+              >
+                {d}
+              </div>
             ))}
           </div>
 
           {/* Grid */}
-          <div className={`grid grid-cols-7 flex-1 transition-opacity ${loadingMonth ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+          <div className={`grid grid-cols-7 flex-1 transition-opacity duration-200 ${loadingMonth ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
             {cells.map((day, idx) => {
               if (!day) {
-                return <div key={`e${idx}`} className="border-r border-b border-white/[0.04] min-h-[64px]" />;
+                return (
+                  <div
+                    key={`e${idx}`}
+                    className="border-r border-b border-white/[0.04] min-h-[68px] sm:min-h-[76px] bg-white/[0.01]"
+                  />
+                );
               }
               const ds = cellDate(day);
               return (
@@ -493,24 +519,24 @@ export default function Calendar() {
             })}
           </div>
 
-          {/* Legend + summary strip */}
-          <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-4 flex-wrap">
+          {/* Legend strip */}
+          <div className="px-4 py-2.5 border-t border-white/[0.07] flex items-center gap-3 flex-wrap">
             {CATS.map(c => (
               <div key={c.key} className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.dot }} />
-                <span className="text-white/30 text-xs">{c.label}</span>
+                <span className="text-white/25 text-[11px]">{c.label}</span>
                 {monthTotals && monthTotals[c.key] > 0 && (
-                  <span className="text-white/20 text-[10px]">({monthTotals[c.key]})</span>
+                  <span className="text-white/18 text-[10px] font-medium">({monthTotals[c.key]})</span>
                 )}
               </div>
             ))}
-            <span className="ml-auto text-white/15 text-xs italic">Tap a day to view</span>
+            <span className="ml-auto text-white/15 text-[10px]">Tap a day</span>
           </div>
         </div>
 
-        {/* Day detail panel */}
+        {/* ── Day detail panel ── */}
         {selected && (
-          <div className="lg:w-[360px] w-full rounded-2xl bg-dark-300 border border-white/[0.06] overflow-hidden flex flex-col lg:max-h-[calc(100vh-12rem)] max-h-[500px]">
+          <div className="lg:w-[360px] w-full rounded-2xl bg-dark-300 border border-white/[0.07] overflow-hidden flex flex-col lg:max-h-[calc(100vh-12rem)] max-h-[520px]">
             <DayPanel
               date={selected}
               staffId={filterStaff}
