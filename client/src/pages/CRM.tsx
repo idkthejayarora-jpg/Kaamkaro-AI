@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Phone, MapPin, Clock, AlertTriangle, CalendarDays,
   Filter as Funnel, User, Users, PhoneOff, ChevronRight,
   LayoutGrid, List, Trophy, ChevronDown, ChevronUp,
+  Search, Upload, X, Trash2, Loader2, FileText,
+  CheckCircle2, ChevronLeft, Sparkles, Keyboard,
 } from 'lucide-react';
 import { leadsAPI, staffAPI, teamsAPI, meritsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -47,8 +49,8 @@ export const SOURCE_LABELS: Record<string, string> = {
   other:     'Other',
 };
 
-// Pipeline order (terminal stages always last)
 const PIPELINE: LeadStage[] = ['new','contacted','interested','catalogue_sent','follow_up','visit_scheduled'];
+const PAGE_SIZE = 50;
 
 function nextStage(s: LeadStage): LeadStage | null {
   const i = PIPELINE.indexOf(s);
@@ -56,7 +58,6 @@ function nextStage(s: LeadStage): LeadStage | null {
   return i < PIPELINE.length - 1 ? PIPELINE[i + 1] : 'won';
 }
 
-// ── Heat signal ────────────────────────────────────────────────────────────────
 function getLeadHeat(lead: Lead, today: string): 'hot' | 'warm' | 'cold' {
   if (lead.stage === 'won' || lead.stage === 'lost') return 'cold';
   if ((lead.nextFollowUp && lead.nextFollowUp < today) || lead.noPickupCount >= 3) return 'hot';
@@ -70,7 +71,51 @@ const HEAT_DOT: Record<string, string> = {
   cold: 'bg-white/15',
 };
 
-// ── Win celebration overlay ───────────────────────────────────────────────────
+// ── CSV helpers ────────────────────────────────────────────────────────────────
+
+function splitCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { field += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if ((ch === ',' || ch === '\t') && !inQuotes) {
+      result.push(field.trim()); field = '';
+    } else {
+      field += ch;
+    }
+  }
+  result.push(field.trim());
+  return result;
+}
+
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const headers = splitCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+  const rows = lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
+    return Object.fromEntries(headers.map((h, i) => [h, vals[i]?.replace(/^"|"$/g, '').trim() ?? '']));
+  });
+  return { headers, rows };
+}
+
+function autoDetectCol(headers: string[], field: string): string {
+  const synonyms: Record<string, string[]> = {
+    name:   ['name', 'customer', 'client', 'lead', 'contact', 'person', 'shop', 'firm', 'company'],
+    phone:  ['phone', 'mobile', 'cell', 'number', 'tel', 'whatsapp', 'mob', 'contact no'],
+    place:  ['place', 'city', 'location', 'area', 'address', 'town', 'district', 'region'],
+    source: ['source', 'from', 'channel', 'via', 'medium', 'referred'],
+    stage:  ['stage', 'status', 'pipeline', 'step', 'progress'],
+  };
+  const words = synonyms[field] || [field];
+  return headers.find(h => words.some(w => h.toLowerCase().includes(w))) || '';
+}
+
+// ── Win celebration ────────────────────────────────────────────────────────────
 function WinCelebration({ active, onDone }: { active: boolean; onDone: () => void }) {
   useEffect(() => {
     if (!active) return;
@@ -89,7 +134,6 @@ function WinCelebration({ active, onDone }: { active: boolean; onDone: () => voi
   );
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────────
 function Toast({ msg }: { msg: string }) {
   if (!msg) return null;
   return (
@@ -101,21 +145,434 @@ function Toast({ msg }: { msg: string }) {
 
 interface Team { id: string; name: string; members: string[]; }
 
+// ── Bulk Import Modal ──────────────────────────────────────────────────────────
+type ImportTab = 'csv' | 'paste' | 'quick';
+
+interface ParsedLead { name: string; phone: string; place: string; source?: string; stage?: string; }
+
+function BulkImportModal({ staffList, onClose, onImported }: {
+  staffList: Staff[];
+  onClose: () => void;
+  onImported: (count: number) => void;
+}) {
+  const [tab, setTab]             = useState<ImportTab>('csv');
+  const [assignedTo, setAssignedTo] = useState('');
+
+  // CSV tab state
+  const [csvHeaders, setCsvHeaders]   = useState<string[]>([]);
+  const [csvRows, setCsvRows]         = useState<Record<string, string>[]>([]);
+  const [colMap, setColMap]           = useState<Record<string, string>>({});
+  const [dragOver, setDragOver]       = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Paste tab state
+  const [pasteText, setPasteText]     = useState('');
+  const [parsedLeads, setParsedLeads] = useState<ParsedLead[]>([]);
+  const [parsing, setParsing]         = useState(false);
+  const [parseError, setParseError]   = useState('');
+
+  // Quick type state
+  const [quickRows, setQuickRows]     = useState<ParsedLead[]>([{ name: '', phone: '', place: '' }]);
+
+  // Shared
+  const [importing, setImporting]     = useState(false);
+  const [importError, setImportError] = useState('');
+
+  // ── CSV helpers ──────────────────────────────────────────────────────────────
+  const loadCSVText = (text: string) => {
+    const { headers, rows } = parseCSV(text);
+    setCsvHeaders(headers);
+    setCsvRows(rows);
+    // Auto-detect column mapping
+    const detected: Record<string, string> = {};
+    ['name', 'phone', 'place', 'source', 'stage'].forEach(f => {
+      detected[f] = autoDetectCol(headers, f);
+    });
+    setColMap(detected);
+  };
+
+  const handleFileLoad = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => { if (e.target?.result) loadCSVText(e.target.result as string); };
+    reader.readAsText(file);
+  };
+
+  const mappedRows = csvRows
+    .map(row => ({
+      name:   colMap.name  ? row[colMap.name]  || '' : '',
+      phone:  colMap.phone ? row[colMap.phone] || '' : '',
+      place:  colMap.place ? row[colMap.place] || '' : '',
+      source: colMap.source ? row[colMap.source] || '' : '',
+      stage:  colMap.stage  ? row[colMap.stage]  || '' : '',
+    }))
+    .filter(r => r.name.trim());
+
+  // ── Paste / AI parse ─────────────────────────────────────────────────────────
+  const handleParseText = async () => {
+    if (!pasteText.trim()) return;
+    setParsing(true); setParseError('');
+    try {
+      const res = await leadsAPI.parseText(pasteText);
+      setParsedLeads(res.leads || []);
+      if ((res.leads || []).length === 0) setParseError('No contacts found. Try a different format.');
+    } catch {
+      setParseError('Failed to parse. Check your connection and try again.');
+    } finally { setParsing(false); }
+  };
+
+  const updateParsedLead = (i: number, field: keyof ParsedLead, value: string) => {
+    setParsedLeads(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: value } : l));
+  };
+
+  // ── Quick type ───────────────────────────────────────────────────────────────
+  const updateQuickRow = (i: number, field: keyof ParsedLead, value: string) => {
+    setQuickRows(prev => {
+      const next = [...prev];
+      next[i] = { ...next[i], [field]: value };
+      return next;
+    });
+  };
+
+  const handleQuickKeyDown = (e: React.KeyboardEvent, rowIdx: number, field: 'name' | 'phone' | 'place') => {
+    if (e.key === 'Enter' || (e.key === 'Tab' && field === 'place' && !e.shiftKey)) {
+      e.preventDefault();
+      if (field === 'place' || e.key === 'Enter') {
+        // Advance to next row
+        if (rowIdx === quickRows.length - 1) {
+          setQuickRows(prev => [...prev, { name: '', phone: '', place: '' }]);
+          setTimeout(() => {
+            const inputs = document.querySelectorAll('[data-quick-name]');
+            (inputs[rowIdx + 1] as HTMLInputElement)?.focus();
+          }, 50);
+        } else {
+          setTimeout(() => {
+            const inputs = document.querySelectorAll('[data-quick-name]');
+            (inputs[rowIdx + 1] as HTMLInputElement)?.focus();
+          }, 50);
+        }
+      }
+    }
+  };
+
+  // Paste TSV into quick type table
+  const handleQuickPaste = (e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData('text');
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return;
+    // Check if it looks like TSV (multiple tabs)
+    if (!text.includes('\t')) return;
+    e.preventDefault();
+    const newRows = lines.map(line => {
+      const parts = line.split('\t').map(p => p.trim());
+      return { name: parts[0] || '', phone: parts[1] || '', place: parts[2] || '' };
+    }).filter(r => r.name);
+    if (newRows.length > 0) setQuickRows([...newRows, { name: '', phone: '', place: '' }]);
+  };
+
+  // ── Import ────────────────────────────────────────────────────────────────────
+  const doImport = async (leads: ParsedLead[]) => {
+    if (leads.length === 0) return;
+    setImporting(true); setImportError('');
+    try {
+      const res = await leadsAPI.bulkImport(
+        leads as Record<string, string>[],
+        assignedTo || undefined
+      );
+      onImported(res.imported);
+    } catch {
+      setImportError('Import failed. Please try again.');
+    } finally { setImporting(false); }
+  };
+
+  const getImportLeads = (): ParsedLead[] => {
+    if (tab === 'csv')   return mappedRows;
+    if (tab === 'paste') return parsedLeads.filter(l => l.name.trim());
+    if (tab === 'quick') return quickRows.filter(r => r.name.trim());
+    return [];
+  };
+
+  const importLeads = getImportLeads();
+  const canImport = importLeads.length > 0 && !importing;
+
+  const TABS: { id: ImportTab; label: string; icon: React.ElementType }[] = [
+    { id: 'csv',   label: 'CSV File',    icon: FileText },
+    { id: 'paste', label: 'Paste & AI',  icon: Sparkles },
+    { id: 'quick', label: 'Quick Type',  icon: Keyboard },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-2xl shadow-2xl animate-scale-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-dark-50 flex-shrink-0">
+          <div>
+            <h2 className="text-white font-semibold flex items-center gap-2">
+              <Upload size={16} className="text-gold" /> Import Leads
+            </h2>
+            <p className="text-white/30 text-xs mt-0.5">Add hundreds of leads at once from any format</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-dark-50 flex-shrink-0 px-6">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { setTab(id); setImportError(''); }}
+              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium border-b-2 transition-colors ${
+                tab === id
+                  ? 'border-gold text-gold'
+                  : 'border-transparent text-white/40 hover:text-white/70'
+              }`}
+            >
+              <Icon size={12} />{label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
+          {/* ── CSV tab ───────────────────────────────────────────────────────── */}
+          {tab === 'csv' && (
+            <div className="space-y-4">
+              <p className="text-white/40 text-xs">
+                Upload a <strong className="text-white/60">.csv</strong> or <strong className="text-white/60">.txt</strong> file.
+                First row must be column headers. Works with Excel exports too.
+              </p>
+
+              {/* Drop zone */}
+              <div
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFileLoad(f); }}
+                onClick={() => fileRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                  dragOver ? 'border-gold bg-gold/5' : 'border-dark-50 hover:border-gold/40 hover:bg-dark-200'
+                }`}
+              >
+                <Upload size={28} className={`mx-auto mb-2 ${dragOver ? 'text-gold' : 'text-white/20'}`} />
+                <p className="text-white/40 text-sm">Drop your CSV file here</p>
+                <p className="text-white/20 text-xs mt-1">or click to browse</p>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".csv,.txt,.tsv"
+                  className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFileLoad(f); }}
+                />
+              </div>
+
+              {/* Column mapper */}
+              {csvHeaders.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-white/50 text-xs font-semibold uppercase tracking-wider">
+                    Map Columns ({csvRows.length} rows detected, {mappedRows.length} valid)
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {['name', 'phone', 'place', 'source', 'stage'].map(field => (
+                      <div key={field}>
+                        <label className="label capitalize">{field === 'place' ? 'City / Place' : field}</label>
+                        <select
+                          className="input text-xs"
+                          value={colMap[field] || ''}
+                          onChange={e => setColMap(m => ({ ...m, [field]: e.target.value }))}
+                        >
+                          <option value="">— Skip —</option>
+                          {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Preview */}
+                  {mappedRows.length > 0 && (
+                    <div className="border border-dark-50 rounded-xl overflow-hidden">
+                      <div className="bg-dark-400 px-3 py-2 text-[10px] text-white/30 font-semibold uppercase tracking-wider flex gap-3">
+                        <span className="w-32">Name</span><span className="w-28">Phone</span><span className="flex-1">City</span>
+                      </div>
+                      <div className="divide-y divide-dark-50 max-h-40 overflow-y-auto">
+                        {mappedRows.slice(0, 5).map((r, i) => (
+                          <div key={i} className="px-3 py-2 flex gap-3 text-xs">
+                            <span className="w-32 text-white/70 truncate">{r.name || <span className="text-red-400 italic">missing</span>}</span>
+                            <span className="w-28 text-white/40 truncate">{r.phone || '—'}</span>
+                            <span className="flex-1 text-white/40 truncate">{r.place || '—'}</span>
+                          </div>
+                        ))}
+                        {mappedRows.length > 5 && (
+                          <div className="px-3 py-2 text-xs text-white/20 text-center">
+                            +{mappedRows.length - 5} more rows
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Paste & AI tab ────────────────────────────────────────────────── */}
+          {tab === 'paste' && (
+            <div className="space-y-4">
+              <p className="text-white/40 text-xs">
+                Paste anything — a WhatsApp contact dump, an Excel copy-paste, a list of names and numbers — Claude will extract the contacts automatically.
+              </p>
+              <textarea
+                className="input resize-none text-sm font-mono text-white/70 leading-relaxed"
+                rows={7}
+                placeholder={"Rahul Verma, 9876543210, Delhi\nPriya Sharma — Mumbai — 9123456789\nSunita (9988776655) Jaipur\n...anything works"}
+                value={pasteText}
+                onChange={e => { setPasteText(e.target.value); setParsedLeads([]); setParseError(''); }}
+              />
+              <button
+                type="button"
+                onClick={handleParseText}
+                disabled={!pasteText.trim() || parsing}
+                className="btn-primary flex items-center gap-2"
+              >
+                {parsing ? <><Loader2 size={14} className="animate-spin" />Parsing…</> : <><Sparkles size={14} />Parse with AI</>}
+              </button>
+              {parseError && <p className="text-red-400 text-xs">{parseError}</p>}
+
+              {/* Editable preview */}
+              {parsedLeads.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-green-400 text-xs font-medium flex items-center gap-1.5">
+                    <CheckCircle2 size={12} /> {parsedLeads.length} contacts extracted — review and edit below
+                  </p>
+                  <div className="border border-dark-50 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                    <div className="bg-dark-400 px-3 py-2 text-[10px] text-white/30 font-semibold uppercase tracking-wider grid grid-cols-3 gap-2">
+                      <span>Name *</span><span>Phone</span><span>City</span>
+                    </div>
+                    {parsedLeads.map((l, i) => (
+                      <div key={i} className="border-t border-dark-50 px-2 py-1.5 grid grid-cols-3 gap-2">
+                        <input className="input py-1 text-xs" value={l.name}  onChange={e => updateParsedLead(i, 'name',  e.target.value)} placeholder="Name *" />
+                        <input className="input py-1 text-xs" value={l.phone} onChange={e => updateParsedLead(i, 'phone', e.target.value)} placeholder="Phone" />
+                        <input className="input py-1 text-xs" value={l.place} onChange={e => updateParsedLead(i, 'place', e.target.value)} placeholder="City" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Quick type tab ────────────────────────────────────────────────── */}
+          {tab === 'quick' && (
+            <div className="space-y-3">
+              <p className="text-white/40 text-xs">
+                Type leads one by one. Press <kbd className="bg-dark-200 border border-dark-50 rounded px-1 text-[10px]">Enter</kbd> or <kbd className="bg-dark-200 border border-dark-50 rounded px-1 text-[10px]">Tab</kbd> after City to jump to the next row. Paste a copied Excel range to fill all at once.
+              </p>
+
+              <div className="border border-dark-50 rounded-xl overflow-hidden">
+                <div className="bg-dark-400 px-3 py-2 text-[10px] text-white/30 font-semibold uppercase tracking-wider grid grid-cols-3 gap-2">
+                  <span>Name *</span><span>Phone</span><span>City / Place</span>
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-dark-50/50">
+                  {quickRows.map((row, i) => {
+                    const isDone = row.name.trim() && i < quickRows.length - 1;
+                    return (
+                      <div key={i} className={`px-2 py-1.5 grid grid-cols-3 gap-2 transition-colors ${isDone ? 'bg-green-500/3' : ''}`}>
+                        <div className="flex items-center gap-1.5">
+                          {isDone
+                            ? <CheckCircle2 size={12} className="text-green-400 flex-shrink-0" />
+                            : <span className="w-3 flex-shrink-0" />}
+                          <input
+                            data-quick-name
+                            className="input py-1 text-xs flex-1"
+                            value={row.name}
+                            onChange={e => updateQuickRow(i, 'name', e.target.value)}
+                            onPaste={i === 0 ? handleQuickPaste : undefined}
+                            placeholder={i === 0 ? 'e.g. Rahul Verma' : ''}
+                            autoFocus={i === 0}
+                          />
+                        </div>
+                        <input
+                          className="input py-1 text-xs"
+                          value={row.phone}
+                          onChange={e => updateQuickRow(i, 'phone', e.target.value)}
+                          placeholder="9876543210"
+                          type="tel"
+                        />
+                        <input
+                          className="input py-1 text-xs"
+                          value={row.place}
+                          onChange={e => updateQuickRow(i, 'place', e.target.value)}
+                          placeholder="Delhi"
+                          onKeyDown={e => handleQuickKeyDown(e, i, 'place')}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <p className="text-white/20 text-[10px]">
+                {quickRows.filter(r => r.name.trim()).length} lead{quickRows.filter(r => r.name.trim()).length !== 1 ? 's' : ''} ready
+              </p>
+            </div>
+          )}
+
+          {importError && <p className="text-red-400 text-xs">{importError}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 pt-3 border-t border-dark-50 flex-shrink-0 space-y-3">
+          {/* Assign to staff (admin) */}
+          {staffList.length > 0 && (
+            <div className="flex items-center gap-3">
+              <label className="text-white/40 text-xs whitespace-nowrap">Assign to:</label>
+              <select className="input py-1.5 text-xs flex-1" value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
+                <option value="">Default (me / auto)</option>
+                {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+            <button
+              type="button"
+              onClick={() => doImport(importLeads)}
+              disabled={!canImport}
+              className="btn-primary flex-1 flex items-center justify-center gap-2"
+            >
+              {importing
+                ? <><Loader2 size={14} className="animate-spin" />Importing…</>
+                : <><Upload size={14} />Import {importLeads.length > 0 ? `${importLeads.length} Lead${importLeads.length !== 1 ? 's' : ''}` : 'Leads'}</>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Lead card ──────────────────────────────────────────────────────────────────
 interface LeadCardProps {
   lead: Lead;
   today: string;
   isAdmin: boolean;
   onAction: (id: string, patch: Partial<Lead>, checkWin?: boolean) => void;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
-function LeadCard({ lead, today, isAdmin, onAction }: LeadCardProps) {
+function LeadCard({ lead, today, isAdmin, onAction, isSelectMode, isSelected, onSelect }: LeadCardProps) {
   const navigate = useNavigate();
   const isOverdue  = lead.nextFollowUp && lead.nextFollowUp < today;
   const isDueToday = lead.nextFollowUp === today;
   const heat       = getLeadHeat(lead, today);
   const lastNote   = lead.notes?.length ? lead.notes[lead.notes.length - 1] : null;
   const nxt        = nextStage(lead.stage);
+
+  const handleClick = () => {
+    if (isSelectMode && onSelect) { onSelect(lead.id); return; }
+    navigate(`/crm/${lead.id}`);
+  };
 
   const handleLogCall = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -135,11 +592,22 @@ function LeadCard({ lead, today, isAdmin, onAction }: LeadCardProps) {
 
   return (
     <div
-      onClick={() => navigate(`/crm/${lead.id}`)}
+      onClick={handleClick}
       className={`card cursor-pointer hover:border-gold/30 transition-all group relative ${
-        isOverdue ? 'border-red-500/20' : isDueToday ? 'border-orange-500/20' : ''
+        isSelected    ? 'border-gold/50 bg-gold/3' :
+        isOverdue     ? 'border-red-500/20' :
+        isDueToday    ? 'border-orange-500/20' : ''
       }`}
     >
+      {/* Select mode checkbox */}
+      {isSelectMode && (
+        <div className={`absolute top-3 left-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+          isSelected ? 'bg-gold border-gold' : 'border-white/30 bg-dark-200'
+        }`}>
+          {isSelected && <CheckCircle2 size={12} className="text-white" />}
+        </div>
+      )}
+
       {/* Heat dot */}
       <span
         className={`absolute top-3 right-3 w-2 h-2 rounded-full ${HEAT_DOT[heat]} ${heat === 'hot' ? 'animate-pulse' : ''}`}
@@ -147,7 +615,7 @@ function LeadCard({ lead, today, isAdmin, onAction }: LeadCardProps) {
         style={heat === 'hot' ? { boxShadow: '0 0 8px rgba(239,68,68,0.8)' } : heat === 'warm' ? { boxShadow: '0 0 7px rgba(251,146,60,0.7)' } : undefined}
       />
 
-      <div className="flex items-start gap-3">
+      <div className={`flex items-start gap-3 ${isSelectMode ? 'pl-7' : ''}`}>
         <div className="w-9 h-9 rounded-xl bg-dark-200 border border-dark-50 flex items-center justify-center flex-shrink-0 group-hover:border-gold/20 transition-colors">
           <span className="text-white/50 text-sm font-bold">{lead.name[0].toUpperCase()}</span>
         </div>
@@ -197,32 +665,34 @@ function LeadCard({ lead, today, isAdmin, onAction }: LeadCardProps) {
         </div>
       </div>
 
-      {/* Quick actions — visible on hover (always on mobile) */}
-      <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-dark-50 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-0 opacity-100">
-        <button
-          onClick={handleLogCall}
-          title="Log call — clear follow-up"
-          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 text-[10px] font-medium transition-colors"
-        >
-          <Phone size={11} /> Logged
-        </button>
-        <button
-          onClick={handleNoPickup}
-          title="No pickup — follow up in 3 days"
-          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-[10px] font-medium transition-colors"
-        >
-          <PhoneOff size={11} /> No pickup
-        </button>
-        {nxt && (
+      {/* Quick actions — hidden in select mode */}
+      {!isSelectMode && (
+        <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-dark-50 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-0 opacity-100">
           <button
-            onClick={handleNextStage}
-            title={`Move to ${STAGE_LABELS[nxt]}`}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 text-[10px] font-medium transition-colors ml-auto"
+            onClick={handleLogCall}
+            title="Log call — clear follow-up"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 text-[10px] font-medium transition-colors"
           >
-            → {STAGE_LABELS[nxt]}
+            <Phone size={11} /> Logged
           </button>
-        )}
-      </div>
+          <button
+            onClick={handleNoPickup}
+            title="No pickup — follow up in 3 days"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-[10px] font-medium transition-colors"
+          >
+            <PhoneOff size={11} /> No pickup
+          </button>
+          {nxt && (
+            <button
+              onClick={handleNextStage}
+              title={`Move to ${STAGE_LABELS[nxt]}`}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gold/10 text-gold hover:bg-gold/20 text-[10px] font-medium transition-colors ml-auto"
+            >
+              → {STAGE_LABELS[nxt]}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -236,7 +706,7 @@ function KanbanColumn({ stage, leads, today, isAdmin, onAction, onOpen }: {
   const nxt = nextStage(stage);
   return (
     <div className="flex-shrink-0 w-56 bg-dark-400 border border-dark-50 rounded-xl overflow-hidden">
-      <div className={`px-3 py-2 border-b border-dark-50 flex items-center justify-between`}>
+      <div className="px-3 py-2 border-b border-dark-50 flex items-center justify-between">
         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STAGE_COLORS[stage]}`}>
           {STAGE_LABELS[stage]}
         </span>
@@ -285,7 +755,7 @@ export default function CRM() {
   const [staffList,     setStaffList]     = useState<Staff[]>([]);
   const [teams,         setTeams]         = useState<Team[]>([]);
   const [teamFilter,    setTeamFilter]    = useState<string>('all');
-  const [staffFilter,   setStaffFilter]  = useState<string>('all');
+  const [staffFilter,   setStaffFilter]   = useState<string>('all');
   const [loading,       setLoading]       = useState(true);
   const [tab,           setTab]           = useState<'today' | 'all' | LeadStage>('today');
   const [view,          setView]          = useState<'list' | 'kanban'>(() =>
@@ -294,15 +764,26 @@ export default function CRM() {
   const [showAttention, setShowAttention] = useState(true);
   const [celebration,   setCelebration]   = useState(false);
   const [toast,         setToast]         = useState('');
+
+  // New state
+  const [search,        setSearch]        = useState('');
+  const [sortBy,        setSortBy]        = useState<string>('followup');
+  const [page,          setPage]          = useState(0);
+  const [selectMode,    setSelectMode]    = useState(false);
+  const [selectedIds,   setSelectedIds]   = useState<Set<string>>(new Set());
+  const [showImport,    setShowImport]    = useState(false);
+  const [bulkLoading,   setBulkLoading]   = useState(false);
+  const [followupDate,  setFollowupDate]  = useState('');
+
   const navigate = useNavigate();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
@@ -320,9 +801,9 @@ export default function CRM() {
       setTeams(teamsData as Team[]);
     } catch {}
     setLoading(false);
-  };
+  }, [teamFilter, staffFilter, isAdmin]);
 
-  useEffect(() => { load(); }, [teamFilter, staffFilter]);
+  useEffect(() => { load(); }, [load]);
 
   const handleTeamChange = (val: string) => { setTeamFilter(val); setStaffFilter('all'); };
 
@@ -337,7 +818,6 @@ export default function CRM() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // ── Quick-action handler (optimistic update) ─────────────────────────────────
   const handleAction = useCallback(async (id: string, patch: Partial<Lead>, triggerWin = false) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
     try {
@@ -359,30 +839,94 @@ export default function CRM() {
         showToast(actionLabel);
       }
     } catch {
-      // revert on failure
       load();
       showToast('Action failed — refreshing');
     }
-  }, [leads]);
+  }, [leads, load]);
+
+  // ── Bulk actions ─────────────────────────────────────────────────────────────
+  const handleBulkAction = async (action: string, value?: string) => {
+    if (selectedIds.size === 0) return;
+    const ids = [...selectedIds];
+    setBulkLoading(true);
+    try {
+      await leadsAPI.bulkActions(ids, action, value);
+      await load();
+      setSelectedIds(new Set());
+      if (action === 'delete') {
+        setSelectMode(false);
+        showToast(`Deleted ${ids.length} leads`);
+      } else {
+        showToast(`Updated ${ids.length} leads`);
+      }
+    } catch {
+      showToast('Bulk action failed');
+    } finally { setBulkLoading(false); }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllPage = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      paginated.forEach(l => next.add(l.id));
+      return next;
+    });
+  };
 
   // ── Stats ────────────────────────────────────────────────────────────────────
-  const thisMonth  = today.slice(0, 7); // YYYY-MM
-  const needsAttn  = leads.filter(l => l.nextFollowUp && l.nextFollowUp <= today && l.stage !== 'won' && l.stage !== 'lost');
-  const active     = leads.filter(l => l.stage !== 'won' && l.stage !== 'lost');
-  const wonMonth   = leads.filter(l => l.stage === 'won' && l.updatedAt?.startsWith(thisMonth));
-  const lostCount  = leads.filter(l => l.stage === 'lost').length;
-  const wonCount   = leads.filter(l => l.stage === 'won').length;
-  const conversion = wonCount + lostCount > 0 ? Math.round(wonCount / (wonCount + lostCount) * 100) : 0;
-
-  // ── Tab filtering ────────────────────────────────────────────────────────────
-  const todayLeads   = leads.filter(l => l.nextFollowUp && l.nextFollowUp <= today);
+  const thisMonth      = today.slice(0, 7);
+  const needsAttn      = leads.filter(l => l.nextFollowUp && l.nextFollowUp <= today && l.stage !== 'won' && l.stage !== 'lost');
+  const active         = leads.filter(l => l.stage !== 'won' && l.stage !== 'lost');
+  const wonMonth       = leads.filter(l => l.stage === 'won' && l.updatedAt?.startsWith(thisMonth));
+  const lostCount      = leads.filter(l => l.stage === 'lost').length;
+  const wonCount       = leads.filter(l => l.stage === 'won').length;
+  const conversion     = wonCount + lostCount > 0 ? Math.round(wonCount / (wonCount + lostCount) * 100) : 0;
   const overdueTodayCount = leads.filter(l => l.nextFollowUp && l.nextFollowUp < today).length;
 
-  const visibleLeads = (() => {
+  // ── Tab + search + sort + paginate ───────────────────────────────────────────
+  const todayLeads = leads.filter(l => l.nextFollowUp && l.nextFollowUp <= today);
+
+  const tabFiltered = (() => {
     if (tab === 'today') return todayLeads;
     if (tab === 'all')   return leads;
     return leads.filter(l => l.stage === tab);
   })();
+
+  const q = search.trim().toLowerCase();
+  const searched = q
+    ? tabFiltered.filter(l =>
+        l.name.toLowerCase().includes(q) ||
+        l.phone.includes(search.trim()) ||
+        (l.place || '').toLowerCase().includes(q)
+      )
+    : tabFiltered;
+
+  const sorted = [...searched].sort((a, b) => {
+    if (sortBy === 'name')    return a.name.localeCompare(b.name);
+    if (sortBy === 'stage')   return STAGES.indexOf(a.stage) - STAGES.indexOf(b.stage);
+    if (sortBy === 'newest')  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (sortBy === 'heat') {
+      const hOrder = { hot: 0, warm: 1, cold: 2 };
+      return hOrder[getLeadHeat(a, today)] - hOrder[getLeadHeat(b, today)];
+    }
+    // followup (default): nulls last
+    const aF = a.nextFollowUp || 'z';
+    const bF = b.nextFollowUp || 'z';
+    return aF.localeCompare(bF);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const safePage   = Math.min(page, totalPages - 1);
+  const paginated  = sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  const resetPage = () => setPage(0);
 
   const stageCounts: Partial<Record<LeadStage, number>> = {};
   STAGES.forEach(s => {
@@ -397,9 +941,22 @@ export default function CRM() {
   );
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in pb-24">
       <WinCelebration active={celebration} onDone={() => setCelebration(false)} />
       <Toast msg={toast} />
+
+      {/* ── Bulk Import Modal ──────────────────────────────────────────────────── */}
+      {showImport && (
+        <BulkImportModal
+          staffList={staffList}
+          onClose={() => setShowImport(false)}
+          onImported={count => {
+            setShowImport(false);
+            load();
+            showToast(`✓ ${count} lead${count !== 1 ? 's' : ''} imported!`);
+          }}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -417,7 +974,7 @@ export default function CRM() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {/* View toggle */}
           <div className="flex bg-dark-400 border border-dark-50 rounded-lg p-0.5">
             <button
@@ -429,6 +986,26 @@ export default function CRM() {
               className={`p-1.5 rounded-md transition-colors ${view === 'kanban' ? 'bg-gold text-white' : 'text-white/30 hover:text-white'}`}
             ><LayoutGrid size={14} /></button>
           </div>
+          {/* Select mode (list only) */}
+          {view === 'list' && (
+            <button
+              onClick={() => { setSelectMode(s => !s); setSelectedIds(new Set()); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                selectMode ? 'bg-gold/15 border-gold/40 text-gold' : 'border-dark-50 text-white/40 hover:text-white'
+              }`}
+            >
+              <CheckCircle2 size={13} /> {selectMode ? 'Done' : 'Select'}
+            </button>
+          )}
+          {/* Import */}
+          {isAdmin && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="btn-ghost flex items-center gap-1.5 text-sm"
+            >
+              <Upload size={14} /> Import
+            </button>
+          )}
           <button
             onClick={() => navigate('/crm/new')}
             className="btn-primary flex items-center gap-2 flex-shrink-0"
@@ -441,12 +1018,10 @@ export default function CRM() {
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <button
-          onClick={() => setTab('today')}
+          onClick={() => { setTab('today'); resetPage(); }}
           className="card text-left hover:border-gold/20 transition-colors cursor-pointer"
         >
-          <p className="text-red-400 text-xs font-medium mb-1 flex items-center gap-1">
-            🔥 Needs Attention
-          </p>
+          <p className="text-red-400 text-xs font-medium mb-1">🔥 Needs Attention</p>
           <p className="text-white font-bold text-xl">{needsAttn.length}</p>
         </button>
         <div className="card">
@@ -462,6 +1037,41 @@ export default function CRM() {
           <p className="text-white font-bold text-xl">{conversion}%</p>
         </div>
       </div>
+
+      {/* Search + Sort bar */}
+      {view === 'list' && (
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+            <input
+              className="input pl-9 pr-8"
+              placeholder="Search by name, phone, or city…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); resetPage(); }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => { setSearch(''); resetPage(); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+          <select
+            className="input w-36 text-sm"
+            value={sortBy}
+            onChange={e => { setSortBy(e.target.value); resetPage(); }}
+          >
+            <option value="followup">Follow-up date</option>
+            <option value="heat">Heat (hot first)</option>
+            <option value="name">Name A–Z</option>
+            <option value="stage">Stage</option>
+            <option value="newest">Newest first</option>
+          </select>
+        </div>
+      )}
 
       {/* Admin filters */}
       {isAdmin && (
@@ -493,7 +1103,7 @@ export default function CRM() {
         </div>
       )}
 
-      {/* ── KANBAN VIEW ──────────────────────────────────────────────────────────── */}
+      {/* ── KANBAN VIEW ─────────────────────────────────────────────────────────── */}
       {view === 'kanban' && (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
@@ -512,11 +1122,11 @@ export default function CRM() {
         </div>
       )}
 
-      {/* ── LIST VIEW ────────────────────────────────────────────────────────────── */}
+      {/* ── LIST VIEW ───────────────────────────────────────────────────────────── */}
       {view === 'list' && (
         <>
           {/* 🔥 Needs Attention section */}
-          {needsAttn.length > 0 && (
+          {needsAttn.length > 0 && !search && (
             <div className="space-y-2">
               <button
                 onClick={() => setShowAttention(s => !s)}
@@ -531,7 +1141,10 @@ export default function CRM() {
                   {needsAttn
                     .sort((a, b) => (a.nextFollowUp || '').localeCompare(b.nextFollowUp || ''))
                     .map(l => (
-                      <LeadCard key={l.id} lead={l} today={today} isAdmin={isAdmin} onAction={handleAction} />
+                      <LeadCard
+                        key={l.id} lead={l} today={today} isAdmin={isAdmin} onAction={handleAction}
+                        isSelectMode={selectMode} isSelected={selectedIds.has(l.id)} onSelect={toggleSelect}
+                      />
                     ))
                   }
                 </div>
@@ -543,7 +1156,7 @@ export default function CRM() {
           {/* Stage tabs */}
           <div className="flex gap-1.5 flex-wrap">
             <button
-              onClick={() => setTab('today')}
+              onClick={() => { setTab('today'); resetPage(); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
                 tab === 'today' ? 'bg-gold text-white border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
               }`}
@@ -556,7 +1169,7 @@ export default function CRM() {
               )}
             </button>
             <button
-              onClick={() => setTab('all')}
+              onClick={() => { setTab('all'); resetPage(); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
                 tab === 'all' ? 'bg-gold text-white border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
               }`}
@@ -564,7 +1177,7 @@ export default function CRM() {
             {STAGES.map(s => stageCounts[s] ? (
               <button
                 key={s}
-                onClick={() => setTab(s)}
+                onClick={() => { setTab(s); resetPage(); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
                   tab === s ? 'bg-gold text-white border-gold' : 'bg-dark-400 border-dark-50 text-white/40 hover:text-white'
                 }`}
@@ -572,29 +1185,169 @@ export default function CRM() {
             ) : null)}
           </div>
 
+          {/* Search result info */}
+          {search && (
+            <p className="text-white/30 text-xs">
+              {sorted.length === 0
+                ? `No leads match "${search}"`
+                : `${sorted.length} lead${sorted.length !== 1 ? 's' : ''} match "${search}"`}
+            </p>
+          )}
+
           {/* Lead list */}
-          {visibleLeads.length === 0 ? (
+          {sorted.length === 0 ? (
             <div className="card text-center py-14">
               <Funnel size={36} className="text-white/10 mx-auto mb-3" />
-              <p className="text-white/40 font-medium">
-                {tab === 'today' ? 'No follow-ups due today' :
-                 tab === 'all'   ? 'No leads yet' :
-                 `No leads in "${STAGE_LABELS[tab as LeadStage]}" stage`}
-              </p>
-              {tab === 'all' && (
-                <button onClick={() => navigate('/crm/new')} className="btn-primary mt-4 mx-auto flex items-center gap-2">
-                  <Plus size={14} /> Add First Lead
-                </button>
+              {search ? (
+                <>
+                  <p className="text-white/40 font-medium">No leads match "{search}"</p>
+                  <button onClick={() => setSearch('')} className="text-gold text-sm mt-2 hover:text-gold/80">Clear search</button>
+                </>
+              ) : (
+                <>
+                  <p className="text-white/40 font-medium">
+                    {tab === 'today' ? 'No follow-ups due today' :
+                     tab === 'all'   ? 'No leads yet' :
+                     `No leads in "${STAGE_LABELS[tab as LeadStage]}" stage`}
+                  </p>
+                  {tab === 'all' && (
+                    <div className="flex items-center gap-2 mt-4 justify-center">
+                      <button onClick={() => navigate('/crm/new')} className="btn-primary flex items-center gap-2">
+                        <Plus size={14} /> Add Lead
+                      </button>
+                      {isAdmin && (
+                        <button onClick={() => setShowImport(true)} className="btn-ghost flex items-center gap-2">
+                          <Upload size={14} /> Import List
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : (
-            <div className="space-y-2">
-              {visibleLeads.map(l => (
-                <LeadCard key={l.id} lead={l} today={today} isAdmin={isAdmin} onAction={handleAction} />
-              ))}
-            </div>
+            <>
+              <div className="space-y-2">
+                {paginated.map(l => (
+                  <LeadCard
+                    key={l.id} lead={l} today={today} isAdmin={isAdmin} onAction={handleAction}
+                    isSelectMode={selectMode} isSelected={selectedIds.has(l.id)} onSelect={toggleSelect}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-white/25 text-xs">
+                    {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, sorted.length)} of {sorted.length} leads
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={safePage === 0}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-dark-50 text-white/40 text-xs hover:text-white hover:border-gold/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft size={12} /> Prev
+                    </button>
+                    <span className="text-white/30 text-xs px-2">
+                      {safePage + 1} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={safePage >= totalPages - 1}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-dark-50 text-white/40 text-xs hover:text-white hover:border-gold/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next <ChevronRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {/* ── Floating bulk action bar ─────────────────────────────────────────────── */}
+      {selectMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-dark-300/95 backdrop-blur-sm border-t border-gold/20 px-4 py-3 shadow-2xl animate-slide-up">
+          <div className="max-w-4xl mx-auto flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 mr-1">
+              <span className="text-white font-semibold text-sm">{selectedIds.size} selected</span>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="text-white/30 hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={selectAllPage}
+              className="text-gold/60 text-xs hover:text-gold transition-colors"
+            >
+              Select all {paginated.length}
+            </button>
+            <div className="flex-1" />
+
+            {/* Set stage */}
+            <select
+              className="input py-1.5 text-xs w-auto"
+              defaultValue=""
+              onChange={e => { if (e.target.value) handleBulkAction('stage', e.target.value); e.target.value = ''; }}
+              disabled={bulkLoading}
+            >
+              <option value="">Set Stage…</option>
+              {STAGES.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
+            </select>
+
+            {/* Assign staff (admin) */}
+            {isAdmin && staffList.length > 0 && (
+              <select
+                className="input py-1.5 text-xs w-auto"
+                defaultValue=""
+                onChange={e => { if (e.target.value) handleBulkAction('assign', e.target.value); e.target.value = ''; }}
+                disabled={bulkLoading}
+              >
+                <option value="">Assign Staff…</option>
+                {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            )}
+
+            {/* Set follow-up */}
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                className="input py-1.5 text-xs w-36"
+                value={followupDate}
+                onChange={e => setFollowupDate(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => { if (followupDate) { handleBulkAction('followup', followupDate); setFollowupDate(''); } }}
+                disabled={!followupDate || bulkLoading}
+                className="px-2.5 py-1.5 rounded-lg bg-gold/15 text-gold text-xs hover:bg-gold/25 disabled:opacity-40 transition-colors"
+              >
+                📅 Set
+              </button>
+            </div>
+
+            {/* Delete */}
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(`Delete ${selectedIds.size} lead${selectedIds.size !== 1 ? 's' : ''}? This cannot be undone.`))
+                  handleBulkAction('delete');
+              }}
+              disabled={bulkLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs hover:bg-red-500/20 disabled:opacity-40 transition-colors"
+            >
+              {bulkLoading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+              Delete
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
