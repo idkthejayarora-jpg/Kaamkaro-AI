@@ -261,7 +261,7 @@ function BulkImportModal({ staffList, onClose, onImported }: {
   // Paste tab state
   const [pasteText, setPasteText]     = useState('');
   const [parsedLeads, setParsedLeads] = useState<ParsedLead[]>([]);
-  const [parsing, setParsing]         = useState(false);
+  const [parsing] = useState(false); // kept for type compat, unused now
   const [parseError, setParseError]   = useState('');
 
   // Quick type state
