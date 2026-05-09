@@ -143,7 +143,7 @@ function LogInteractionModal({ customer, onClose, onLogged }: {
             <h2 className="text-white font-semibold text-sm">Log Interaction</h2>
             <p className="text-white/30 text-xs mt-0.5">{customer.name}</p>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={16} /></button>
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
