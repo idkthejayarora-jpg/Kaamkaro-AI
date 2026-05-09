@@ -903,7 +903,7 @@ function QuickLogModal({ customer, onClose, onLogged }: {
           </div>
           <div className="flex gap-3">
             {[{ v: true, l: 'Responded ✓' }, { v: false, l: 'No response ✗' }].map(({ v, l }) => (
-              <button key={String(v)} onClick={() => setResp(v)}
+              <button type="button" key={String(v)} onClick={() => setResp(v)}
                 className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-all ${
                   responded === v
                     ? v ? 'border-green-500/50 bg-green-500/10 text-green-400' : 'border-red-500/50 bg-red-500/10 text-red-400'
