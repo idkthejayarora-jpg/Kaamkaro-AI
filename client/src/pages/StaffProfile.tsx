@@ -129,24 +129,46 @@ export default function StaffProfile() {
         </div>
       </div>
 
-      {/* Chart */}
-      {chartData.length > 0 && (
+      {/* Chart — Weekly Activity from actual logged interactions */}
+      {weeklyActivity.length > 0 && (
         <div className="card">
-          <h3 className="text-white font-semibold mb-4">Response Rate Over Time</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="staffGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={GOLD} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={GOLD} stopOpacity={0}   />
-                </linearGradient>
-              </defs>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-white font-semibold text-sm">Weekly Activity</h3>
+              <p className="text-white/30 text-xs mt-0.5">Interactions logged per week</p>
+            </div>
+            <div className="text-right">
+              <p className="text-gold font-bold text-lg">{weeklyActivity[weeklyActivity.length - 1]?.total ?? 0}</p>
+              <p className="text-white/25 text-[10px]">this week</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyActivity} barSize={20}>
               <CartesianGrid vertical={false} stroke={DIM} />
               <XAxis dataKey="week" tick={{ fill: '#666', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fill: '#666', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '8px', color: '#fff', fontSize: '12px' }} />
-              <Area type="monotone" dataKey="responseRate" stroke={GOLD} strokeWidth={2} fill="url(#staffGrad)" name="Response %" dot={{ fill: GOLD, r: 3, strokeWidth: 0 }} />
-            </AreaChart>
+              <YAxis tick={{ fill: '#666', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload as { total: number; calls: number; messages: number; meetings: number };
+                  return (
+                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl space-y-1">
+                      <p className="text-white/50 mb-1 font-medium">{label}</p>
+                      <p className="text-gold font-semibold">{d.total} total interactions</p>
+                      {d.calls    > 0 && <p className="text-blue-400">📞 {d.calls} calls</p>}
+                      {d.messages > 0 && <p className="text-purple-400">💬 {d.messages} messages</p>}
+                      {d.meetings > 0 && <p className="text-emerald-400">🤝 {d.meetings} meetings</p>}
+                    </div>
+                  );
+                }}
+                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+              />
+              <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                {weeklyActivity.map((_, i) => (
+                  <Cell key={i} fill={i === weeklyActivity.length - 1 ? GOLD : '#2A2A2A'} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}
