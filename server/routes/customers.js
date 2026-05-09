@@ -266,6 +266,16 @@ router.delete('/:id', adminOnly, async (req, res) => {
     const deleted = await deleteOne('customers', req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
     await logAudit(req.user.id, req.user.name, 'delete', 'customer', req.params.id, 'Customer deleted');
+
+    // Soft-delete any CRM leads linked to this customer
+    try {
+      const allLeads = await readDB('leads');
+      const linked = allLeads.filter(l => l.linkedCustomerId === req.params.id && l.isActive !== false);
+      for (const lead of linked) {
+        await updateOne('leads', lead.id, { isActive: false, updatedAt: new Date().toISOString() });
+      }
+    } catch { /* non-blocking */ }
+
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
