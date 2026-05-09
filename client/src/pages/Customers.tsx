@@ -997,15 +997,17 @@ export default function Customers() {
       {/* Pipeline stage pills */}
       <div className="flex gap-2 flex-wrap">
         <button onClick={() => setStageFilter('all')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${stageFilter === 'all' ? 'bg-gold text-white' : 'border border-dark-50 text-white/40 hover:text-white'}`}>
-          All {staffFiltered.length}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${stageFilter === 'all' ? 'bg-gold text-black shadow-[0_0_12px_rgba(212,175,55,0.4)]' : 'border border-dark-50 text-white/40 hover:text-white hover:border-white/20'}`}>
+          🌐 All {staffFiltered.length}
         </button>
         {STAGES.map(s => (
           <button key={s.key} onClick={() => setStageFilter(s.key)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-              stageFilter === s.key ? `${s.bg} ${s.color} border border-current/30` : 'border border-dark-50 text-white/40 hover:text-white'
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              stageFilter === s.key
+                ? `${s.bg} ${s.color} border border-current/40 shadow-[0_0_10px_currentColor/20]`
+                : 'border border-dark-50 text-white/40 hover:text-white hover:border-white/20'
             }`}>
-            {s.label} {stageCounts[s.key] || 0}
+            {s.emoji} {s.label} <span className={`ml-1 ${stageFilter === s.key ? 'opacity-70' : 'opacity-50'}`}>{stageCounts[s.key] || 0}</span>
           </button>
         ))}
       </div>
