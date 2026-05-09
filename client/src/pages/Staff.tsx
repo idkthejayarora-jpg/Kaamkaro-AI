@@ -212,7 +212,7 @@ export default function StaffPage() {
         <div className="space-y-2">
           {filtered.map(s => (
             <div key={s.id} className="card group flex items-center gap-4 cursor-pointer" onClick={() => navigate(`/staff/${s.id}`)}>
-              <div className="w-10 h-10 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(212,175,55,0.65)]" style={{ boxShadow: '0 0 10px rgba(212,175,55,0.4)' }}>
                 <span className="text-gold font-bold text-sm">{s.avatar}</span>
               </div>
               <div className="flex-1 min-w-0">
