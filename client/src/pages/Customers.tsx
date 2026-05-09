@@ -44,7 +44,7 @@ function getHeat(days: number | null): { color: string; label: string; glow: str
   if (days === 0)   return { color: 'text-emerald-400', label: 'Today', glow: '0 0 10px rgba(52,211,153,0.5)', pulse: false };
   if (days <= 3)    return { color: 'text-blue-400',    label: `${days}d ago`, glow: '0 0 8px rgba(96,165,250,0.4)', pulse: false };
   if (days <= 7)    return { color: 'text-amber-400',   label: `${days}d ago`, glow: '0 0 8px rgba(251,191,36,0.4)', pulse: false };
-  return { color: 'text-red-400', label: `${days}d ago ⚠️`, glow: '0 0 10px rgba(248,113,113,0.5)', pulse: true };
+  return { color: 'text-red-400', label: `${days}d ago`, glow: '0 0 10px rgba(248,113,113,0.5)', pulse: true };
 }
 
 // Stage left-border color
