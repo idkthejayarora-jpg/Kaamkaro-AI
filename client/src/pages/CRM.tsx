@@ -215,8 +215,9 @@ function BulkImportModal({ staffList, onClose, onImported }: {
       const res = await leadsAPI.parseText(pasteText);
       setParsedLeads(res.leads || []);
       if ((res.leads || []).length === 0) setParseError('No contacts found. Try a different format.');
-    } catch {
-      setParseError('Failed to parse. Check your connection and try again.');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setParseError(msg || 'Failed to parse. Check your connection and try again.');
     } finally { setParsing(false); }
   };
 
