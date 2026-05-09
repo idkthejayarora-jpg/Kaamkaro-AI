@@ -919,43 +919,73 @@ export default function Customers() {
 
   if (loading) return <div className="space-y-3">{Array(5).fill(0).map((_, i) => <div key={i} className="card h-16 shimmer" />)}</div>;
 
+  const overdueCount = customers.filter(c => {
+    const days = c.lastContact ? Math.round((Date.now() - new Date(c.lastContact).getTime()) / 86400000) : null;
+    return days !== null && days > 7;
+  }).length;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Customers</h1>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <p className="text-white/30 text-sm">
-              {isAdmin && staffFilter !== 'all'
-                ? `${filtered.length} of ${customers.length} customers`
-                : `${customers.length} total`}
-            </p>
+          <p className="text-white/30 text-sm mt-0.5">
+            {isAdmin && staffFilter !== 'all'
+              ? `Showing ${filtered.length} of ${customers.length}`
+              : `${customers.length} contacts`}
             {isAdmin && staffFilter !== 'all' && (
-              <span className="badge bg-gold/10 text-gold border-gold/20 text-[10px]">
-                {staffFilter === 'unassigned'
-                  ? 'Unassigned'
-                  : staff.find(s => s.id === staffFilter)?.name || 'Staff'}
+              <span className="ml-2 badge bg-gold/10 text-gold border-gold/20 text-[10px]">
+                {staffFilter === 'unassigned' ? 'Unassigned' : staff.find(s => s.id === staffFilter)?.name || 'Staff'}
               </span>
             )}
-            {pipelineValue > 0 && (
-              <span className="flex items-center gap-1 text-gold text-sm">
-                <DollarSign size={12} />₹{pipelineValue.toLocaleString('en-IN')} pipeline
-              </span>
-            )}
-          </div>
+          </p>
         </div>
         <div className="flex gap-2">
-          {/* CSV import is admin-only */}
           {isAdmin && (
             <button onClick={() => setShowCSV(true)} className="btn-secondary flex items-center gap-2">
               <Upload size={14} /><span className="hidden sm:inline">Import CSV</span>
             </button>
           )}
-          {/* All users can add a customer */}
           <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2">
             <Plus size={14} /><span className="hidden sm:inline">Add Customer</span>
           </button>
+        </div>
+      </div>
+
+      {/* Mini stat row */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="card py-3 px-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-500/15 flex items-center justify-center flex-shrink-0"
+            style={{ boxShadow: '0 0 12px rgba(96,165,250,0.2)' }}>
+            <Users size={16} className="text-blue-400" />
+          </div>
+          <div>
+            <p className="text-white font-bold text-lg leading-none">{customers.length}</p>
+            <p className="text-white/30 text-[10px] mt-0.5">Total</p>
+          </div>
+        </div>
+        <div className="card py-3 px-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gold/15 flex items-center justify-center flex-shrink-0"
+            style={{ boxShadow: '0 0 12px rgba(212,175,55,0.25)' }}>
+            <DollarSign size={16} className="text-gold" />
+          </div>
+          <div>
+            <p className="text-white font-bold text-lg leading-none">
+              {pipelineValue > 0 ? `₹${(pipelineValue/1000).toFixed(0)}k` : '—'}
+            </p>
+            <p className="text-white/30 text-[10px] mt-0.5">Pipeline</p>
+          </div>
+        </div>
+        <div className="card py-3 px-4 flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${overdueCount > 0 ? 'bg-red-500/15' : 'bg-white/5'}`}
+            style={overdueCount > 0 ? { boxShadow: '0 0 12px rgba(248,113,113,0.25)' } : undefined}>
+            <Clock size={16} className={overdueCount > 0 ? 'text-red-400' : 'text-white/20'} />
+          </div>
+          <div>
+            <p className={`font-bold text-lg leading-none ${overdueCount > 0 ? 'text-red-400' : 'text-white/30'}`}>{overdueCount}</p>
+            <p className="text-white/30 text-[10px] mt-0.5">Overdue</p>
+          </div>
         </div>
       </div>
 
