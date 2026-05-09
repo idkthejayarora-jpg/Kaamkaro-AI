@@ -275,7 +275,7 @@ function BulkImportModal({ staffList, onClose, onImported }: {
     setImporting(true); setImportError('');
     try {
       const res = await leadsAPI.bulkImport(
-        leads as Record<string, string>[],
+        leads as unknown as Record<string, string>[],
         assignedTo || undefined
       );
       onImported(res.imported);
