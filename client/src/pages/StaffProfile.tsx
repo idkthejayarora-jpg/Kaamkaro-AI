@@ -60,13 +60,26 @@ export default function StaffProfile() {
   );
 
   const latest  = performance[performance.length - 1];
-  const chartData = performance.slice(-8).map(p => ({
-    week: `W${p.week.split('-W')[1] || p.week}`,
-    responseRate: p.responseRate,
-    contacts: p.customersContacted,
-  }));
-  const avgResponse = performance.length
-    ? Math.round(performance.reduce((s, p) => s + p.responseRate, 0) / performance.length) : 0;
+
+  // Weekly interaction activity — computed from actual logged interactions (never flat)
+  const weeklyActivity = (() => {
+    const map: Record<string, { total: number; calls: number; messages: number; meetings: number }> = {};
+    for (const ix of interactions) {
+      const d  = new Date(ix.createdAt);
+      const yr = d.getFullYear();
+      const wk = Math.ceil(((d.getTime() - new Date(yr, 0, 1).getTime()) / 86400000 + new Date(yr, 0, 1).getDay() + 1) / 7);
+      const key = `${yr}-W${String(wk).padStart(2, '0')}`;
+      if (!map[key]) map[key] = { total: 0, calls: 0, messages: 0, meetings: 0 };
+      map[key].total++;
+      if      (ix.type === 'call')    map[key].calls++;
+      else if (ix.type === 'message') map[key].messages++;
+      else if (ix.type === 'meeting') map[key].meetings++;
+    }
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-8)
+      .map(([key, v]) => ({ week: `W${key.split('-W')[1]}`, ...v }));
+  })();
 
   // Recent interactions (last 10)
   const recentInteractions = [...interactions]
