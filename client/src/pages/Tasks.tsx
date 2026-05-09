@@ -344,15 +344,15 @@ function EditTaskModal({ task, onClose, onSaved }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-md shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-50">
           <div className="flex items-center gap-2">
             <Edit2 size={15} className="text-gold" />
             <h2 className="text-white font-semibold">Edit Task</h2>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
+          <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
 
         <div className="p-6 space-y-4">
