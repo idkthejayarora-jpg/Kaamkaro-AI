@@ -240,6 +240,146 @@ router.post('/entry', async (req, res) => {
   }
 });
 
+// ── Holding Stock (set aside for dispatch) ─────────────────────────────────────
+
+// GET /api/stock/holding — list holding entries
+router.get('/holding', async (req, res) => {
+  try {
+    let items = await readDB('holdingStock');
+    if (req.user.role !== 'admin') {
+      items = items.filter(s => s.staffId === req.user.id);
+    }
+    const { status } = req.query; // 'pending' | 'dispatched' | omit = all
+    if (status) items = items.filter(s => s.status === status);
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/stock/holding — create a new holding entry
+router.post('/holding', async (req, res) => {
+  try {
+    const { customerName, customerId, items, note } = req.body;
+    if (!customerName?.trim() || !items?.length) {
+      return res.status(400).json({ error: 'customerName and at least one item are required' });
+    }
+    const parsedItems = items.map(item => ({
+      id:       uuidv4(),
+      itemName: String(item.itemName || '').trim(),
+      qty:      parseInt(item.qty, 10)    || 1,
+      unit:     item.unit                 || 'pc',
+      amount:   parseFloat(item.amount)   || 0,
+    }));
+    const totalAmount = parsedItems.reduce((s, i) => s + i.amount, 0);
+    const entry = await insertOne('holdingStock', {
+      id:           uuidv4(),
+      customerName: customerName.trim(),
+      customerId:   customerId || null,
+      staffId:      req.user.id,
+      staffName:    req.user.name,
+      items:        parsedItems,
+      totalAmount,
+      note:         note?.trim() || null,
+      status:       'pending',
+      createdAt:    new Date().toISOString(),
+      dispatchedAt: null,
+    });
+    res.json(entry);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/stock/holding/:id — update items / note
+router.put('/holding/:id', async (req, res) => {
+  try {
+    const all     = await readDB('holdingStock');
+    const holding = all.find(s => s.id === req.params.id);
+    if (!holding) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role !== 'admin' && holding.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { customerName, customerId, items: newItems, note } = req.body;
+    const parsedItems = (newItems || holding.items).map(item => ({
+      id:       item.id || uuidv4(),
+      itemName: String(item.itemName || '').trim(),
+      qty:      parseInt(item.qty, 10)  || 1,
+      unit:     item.unit               || 'pc',
+      amount:   parseFloat(item.amount) || 0,
+    }));
+    const totalAmount = parsedItems.reduce((s, i) => s + i.amount, 0);
+    const updated = await updateOne('holdingStock', holding.id, {
+      customerName: customerName?.trim()       ?? holding.customerName,
+      customerId:   customerId !== undefined ? (customerId || null) : holding.customerId,
+      items:        parsedItems,
+      totalAmount,
+      note:         note !== undefined ? (note?.trim() || null) : holding.note,
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/stock/holding/:id/dispatch — mark dispatched + log CRM interaction
+router.post('/holding/:id/dispatch', async (req, res) => {
+  try {
+    const all     = await readDB('holdingStock');
+    const holding = all.find(s => s.id === req.params.id);
+    if (!holding) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role !== 'admin' && holding.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const dispatchedAt = new Date().toISOString();
+    const updated = await updateOne('holdingStock', holding.id, { status: 'dispatched', dispatchedAt });
+
+    // Log a CRM interaction if linked to a customer
+    if (holding.customerId) {
+      const itemsSummary = holding.items
+        .map(i => `${i.qty} ${i.unit} ${i.itemName}${i.amount > 0 ? ` (₹${i.amount.toLocaleString('en-IN')})` : ''}`)
+        .join(', ');
+      const totalStr = holding.totalAmount > 0
+        ? ` — Total: ₹${holding.totalAmount.toLocaleString('en-IN')}` : '';
+      const noteStr = holding.note ? `. Note: ${holding.note}` : '';
+      await insertOne('interactions', {
+        id:          uuidv4(),
+        customerId:  holding.customerId,
+        staffId:     req.user.id,
+        staffName:   req.user.name,
+        type:        'delivery',
+        responded:   true,
+        notes:       `📦 Order dispatched: ${itemsSummary}${totalStr}${noteStr}.`,
+        followUpDate: null,
+        createdAt:   dispatchedAt,
+      });
+      await updateOne('customers', holding.customerId, { lastContact: dispatchedAt });
+    }
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/stock/holding/:id — remove a holding entry
+router.delete('/holding/:id', async (req, res) => {
+  try {
+    const all     = await readDB('holdingStock');
+    const holding = all.find(s => s.id === req.params.id);
+    if (!holding) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role !== 'admin' && holding.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    await deleteOne('holdingStock', holding.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Legacy stock-item routes ───────────────────────────────────────────────────
+
 // DELETE /api/stock/:id — delete entire stock item record
 router.delete('/:id', async (req, res) => {
   try {
