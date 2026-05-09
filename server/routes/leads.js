@@ -255,7 +255,7 @@ router.post('/bulk-actions', async (req, res) => {
 
     } else if (action === 'stage') {
       if (!VALID_STAGES.includes(value)) return res.status(400).json({ error: 'Invalid stage' });
-      for (const id of ids) {
+      for (const id of allowedIds) {
         await updateOne('leads', id, { stage: value, updatedAt: new Date().toISOString() });
         updated++;
       }
@@ -263,7 +263,7 @@ router.post('/bulk-actions', async (req, res) => {
         `Bulk stage → ${value} for ${updated} leads`);
 
     } else if (action === 'followup') {
-      for (const id of ids) {
+      for (const id of allowedIds) {
         await updateOne('leads', id, { nextFollowUp: value || null, updatedAt: new Date().toISOString() });
         updated++;
       }
@@ -271,7 +271,7 @@ router.post('/bulk-actions', async (req, res) => {
         `Bulk follow-up set to ${value} for ${updated} leads`);
 
     } else if (action === 'delete') {
-      for (const id of ids) {
+      for (const id of allowedIds) {
         await updateOne('leads', id, { isActive: false, updatedAt: new Date().toISOString() });
         updated++;
       }
