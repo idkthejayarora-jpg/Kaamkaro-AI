@@ -131,9 +131,6 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   const stageBonus = { lead: 5, contacted: 3, interested: 8, negotiating: 15, closed: -35, churned: -15 };
   score += stageBonus[customer.status] || 0;
 
-  if (customer.dealValue > 50000)  score += 8;
-  if (customer.dealValue > 200000) score += 5;
-
   score += Math.round((negCount / total) * 15);
 
   const priorityScore = Math.max(0, Math.min(100, score));
