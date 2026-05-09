@@ -445,13 +445,6 @@ router.get('/trends', async (req, res) => {
         responseRate: d.count > 0 ? Math.round((d.responded / d.count) * 100) : 0,
       }));
 
-    // Pipeline value by stage
-    const pipelineValueByStage = {};
-    for (const c of filtered) {
-      if (!pipelineValueByStage[c.status]) pipelineValueByStage[c.status] = 0;
-      pipelineValueByStage[c.status] += (c.dealValue || 0);
-    }
-
     // Daily activity for last 30 days (for heatmap / sparkline)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
     const dailyActivity = {};
