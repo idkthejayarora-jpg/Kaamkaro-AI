@@ -352,7 +352,14 @@ function QueueCard({
       <div className="flex items-start gap-3">
         {/* Priority dot */}
         <div className="flex-shrink-0 pt-1">
-          <div className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
+          <div
+            className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`}
+            style={
+              item.priority === 'urgent' ? { boxShadow: '0 0 8px rgba(239,68,68,0.85)' } :
+              item.priority === 'high'   ? { boxShadow: '0 0 7px rgba(251,146,60,0.7)' } :
+              item.priority === 'medium' ? { boxShadow: '0 0 7px rgba(212,175,55,0.6)' } : undefined
+            }
+          />
         </div>
 
         {/* Main content */}
