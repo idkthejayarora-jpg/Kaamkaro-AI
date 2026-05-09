@@ -576,9 +576,16 @@ function StaffBehaviorTab() {
 
 // ── Trends tab ────────────────────────────────────────────────────────────────
 
+const STAGE_ORDER = ['lead', 'contacted', 'interested', 'negotiating', 'closed', 'churned'];
+const TYPE_COLORS: Record<string, string> = {
+  call: '#60a5fa', message: '#c084fc', email: '#34d399',
+  meeting: GOLD, diary: '#f97316', delivery: '#4ade80', other: '#6b7280',
+};
+
 function TrendsTab() {
   const [data, setData]    = useState<InsightsTrends | null>(null);
   const [loading, setLoad] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     insightsAPI.trends()
@@ -590,149 +597,235 @@ function TrendsTab() {
   if (loading) return <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{Array(4).fill(0).map((_, i) => <div key={i} className="card h-52 shimmer" />)}</div>;
   if (!data)   return <p className="text-white/30 text-sm text-center py-12">Could not load trends.</p>;
 
-  const pipelineData = Object.entries(data.pipelineBreakdown).map(([status, count]) => ({ status, count }));
+  // Ordered pipeline data with deal values
+  const pipelineData = STAGE_ORDER
+    .filter(s => data.pipelineBreakdown[s] != null)
+    .map(status => ({
+      status,
+      count: data.pipelineBreakdown[status] || 0,
+      value: Math.round((data.pipelineValueByStage?.[status] || 0) / 1000),
+      pct: data.totalCustomers > 0
+        ? Math.round(((data.pipelineBreakdown[status] || 0) / data.totalCustomers) * 100)
+        : 0,
+    }));
+
+  // Win rate
+  const closedCount = data.pipelineBreakdown['closed'] || 0;
+  const churnedCount = data.pipelineBreakdown['churned'] || 0;
+  const winRate = (closedCount + churnedCount) > 0
+    ? Math.round((closedCount / (closedCount + churnedCount)) * 100)
+    : null;
 
   return (
     <div className="space-y-4">
-      {/* Summary stats */}
+      {/* ── KPI strip ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total Customers',   value: data.totalCustomers,                         sub: 'in pipeline' },
-          { label: 'Total Interactions', value: data.totalInteractions,                     sub: 'all time' },
-          { label: 'Pipeline Value',     value: `₹${(data.pipelineValue / 100000).toFixed(1)}L`, sub: 'total' },
-          { label: 'Closed Value',       value: `₹${(data.closedValue   / 100000).toFixed(1)}L`, sub: 'won' },
+          { label: 'Total Customers',    value: data.totalCustomers,    sub: 'in pipeline',   color: 'text-white' },
+          { label: 'Total Interactions', value: data.totalInteractions, sub: 'all time',       color: 'text-white' },
+          { label: 'Pipeline Value',     value: data.pipelineValue >= 100000 ? `₹${(data.pipelineValue/100000).toFixed(1)}L` : `₹${(data.pipelineValue/1000).toFixed(0)}K`, sub: 'active deals', color: 'text-gold' },
+          { label: 'Win Rate',           value: winRate !== null ? `${winRate}%` : '—',        sub: 'closed vs churned', color: winRate !== null && winRate >= 50 ? 'text-emerald-400' : 'text-red-400' },
         ].map(s => (
           <div key={s.label} className="card text-center py-3">
-            <p className="text-xl font-bold text-gold">{s.value}</p>
+            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-white/40 text-xs mt-0.5">{s.label}</p>
             <p className="text-white/20 text-[10px]">{s.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Sentiment + Response rate trend */}
+      {/* ── Weekly Activity — bars (volume) + line (response rate) ── */}
       {data.sentimentByWeek.length > 0 && (
         <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-            <TrendingUp size={14} className="text-gold" /> Weekly Engagement Trend
-          </h3>
-          <p className="text-white/30 text-xs mb-4">Positive sentiment % and response rate by week</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={data.sentimentByWeek}>
-              <defs>
-                <linearGradient id="posGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={GOLD}     stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={GOLD}     stopOpacity={0}   />
-                </linearGradient>
-                <linearGradient id="resGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#60a5fa" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}    />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="week" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  return (
-                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-                      <p className="text-white/50 mb-1">{label}</p>
-                      {payload.map((p, i) => (
-                        <p key={i} style={{ color: p.stroke as string }} className="font-semibold">
-                          {p.dataKey === 'positiveRate' ? `Positive: ${p.value}%` : `Response: ${p.value}%`}
-                        </p>
-                      ))}
-                    </div>
-                  );
-                }}
-              />
-              <Area type="monotone" dataKey="positiveRate"  stroke={GOLD}     strokeWidth={2} fill="url(#posGrad)" dot={{ fill: GOLD,     r: 3, strokeWidth: 0 }} />
-              <Area type="monotone" dataKey="responseRate"  stroke="#60a5fa"  strokeWidth={2} fill="url(#resGrad)" dot={{ fill: '#60a5fa', r: 3, strokeWidth: 0 }} />
-            </AreaChart>
-          </ResponsiveContainer>
-          <div className="flex items-center gap-4 mt-1 justify-end">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-gold" /><span className="text-white/30 text-[10px]">Positive %</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-blue-400" /><span className="text-white/30 text-[10px]">Response %</span></div>
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                <TrendingUp size={14} className="text-gold" /> Weekly Activity
+              </h3>
+              <p className="text-white/30 text-xs mt-0.5">Interactions logged per week · response rate %</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white font-bold text-lg">{data.sentimentByWeek[data.sentimentByWeek.length - 1]?.total ?? 0}</p>
+              <p className="text-white/30 text-[10px]">this week</p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={data.sentimentByWeek} barSize={22}>
+                <CartesianGrid vertical={false} stroke={DIM} />
+                <XAxis dataKey="week" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="count" tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="rate" orientation="right" domain={[0, 100]} tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const bar  = payload.find(p => p.dataKey === 'total');
+                    const line = payload.find(p => p.dataKey === 'responseRate');
+                    return (
+                      <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
+                        <p className="text-white/50 mb-1.5 font-medium">{label}</p>
+                        {bar  && <p className="text-gold font-semibold">{bar.value} interactions logged</p>}
+                        {line && <p className="text-blue-400 font-semibold">{line.value}% customers responded</p>}
+                      </div>
+                    );
+                  }}
+                  cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+                />
+                <Bar yAxisId="count" dataKey="total" radius={[3, 3, 0, 0]} fill={GOLD} fillOpacity={0.25}>
+                  {data.sentimentByWeek.map((_, i) => (
+                    <Cell key={i} fill={i === data.sentimentByWeek.length - 1 ? GOLD : GOLD} fillOpacity={i === data.sentimentByWeek.length - 1 ? 0.8 : 0.25} />
+                  ))}
+                </Bar>
+                <Line yAxisId="rate" type="monotone" dataKey="responseRate" stroke="#60a5fa" strokeWidth={2} dot={{ fill: '#60a5fa', r: 3, strokeWidth: 0 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 mt-1 justify-end">
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/70" /><span className="text-white/30 text-[10px]">Interactions</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-blue-400" /><span className="text-white/30 text-[10px]">Response %</span></div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Pipeline breakdown + Top customers */}
+      {/* ── Pipeline funnel + Interaction types ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Pipeline */}
+        {/* Pipeline — ordered funnel with % and deal value */}
         <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-            <BarChart2 size={14} className="text-gold" /> Pipeline Distribution
-          </h3>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={pipelineData} barSize={28}>
-              <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="status" tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  return (
-                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-                      <p className="text-white/50 capitalize">{label}</p>
-                      <p className="text-white font-semibold">{payload[0].value} customers</p>
-                    </div>
-                  );
-                }}
-                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
-              />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {pipelineData.map((entry, i) => (
-                  <Cell key={i} fill={PIPELINE_COLORS[entry.status] || '#2A2A2A'} fillOpacity={0.8} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Top customers by engagement */}
-        <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-            <Activity size={14} className="text-gold" /> Most Engaged Customers
+          <h3 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+            <BarChart2 size={14} className="text-gold" /> Pipeline Funnel
           </h3>
           <div className="space-y-2">
-            {data.topCustomers.slice(0, 6).map((c, i) => (
-              <div key={c.id} className="flex items-center gap-3">
-                <span className="text-white/25 text-xs w-4 text-right">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-white text-xs font-medium truncate">{c.name}</p>
-                    <span className="text-white/30 text-[10px] flex-shrink-0">{c.interactions}</span>
-                  </div>
-                  <div className="h-1 bg-dark-200 rounded-full mt-1">
-                    <div
-                      className="h-full rounded-full bg-gold"
-                      style={{ width: `${Math.round((c.interactions / (data.topCustomers[0]?.interactions || 1)) * 100)}%` }}
-                    />
+            {pipelineData.map(d => (
+              <div key={d.status} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="capitalize font-medium" style={{ color: PIPELINE_COLORS[d.status] || '#666' }}>{d.status}</span>
+                  <div className="flex items-center gap-2">
+                    {d.value > 0 && <span className="text-white/30">₹{d.value}K</span>}
+                    <span className="text-white/60 font-semibold">{d.count}</span>
+                    <span className="text-white/25 text-[10px] w-8 text-right">{d.pct}%</span>
                   </div>
                 </div>
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIPELINE_COLORS[c.status] || '#666' }} />
+                <div className="h-2 bg-dark-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${d.pct}%`,
+                      background: PIPELINE_COLORS[d.status] || '#666',
+                      opacity: 0.8,
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </div>
+          {closedCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
+              <span className="text-white/30">Closed deal value</span>
+              <span className="text-emerald-400 font-semibold">
+                {data.closedValue >= 100000 ? `₹${(data.closedValue/100000).toFixed(1)}L` : `₹${(data.closedValue/1000).toFixed(0)}K`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Interaction type breakdown */}
+        <div className="card">
+          <h3 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+            <Activity size={14} className="text-gold" /> How You Contact
+          </h3>
+          {data.interactionTypeBreakdown?.length > 0 ? (
+            <div className="space-y-2.5">
+              {data.interactionTypeBreakdown.slice(0, 6).map(t => (
+                <div key={t.type} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="capitalize font-medium" style={{ color: TYPE_COLORS[t.type] || '#666' }}>{t.type}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/25 text-[10px]">{t.responseRate}% responded</span>
+                      <span className="text-white/60 font-semibold">{t.count}</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 bg-dark-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.round((t.count / (data.interactionTypeBreakdown[0]?.count || 1)) * 100)}%`,
+                        background: TYPE_COLORS[t.type] || '#666',
+                        opacity: 0.75,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <p className="text-white/20 text-[10px] pt-1">Total: {data.totalInteractions} contacts logged</p>
+            </div>
+          ) : (
+            <p className="text-white/25 text-sm text-center py-8">No interaction data yet</p>
+          )}
         </div>
       </div>
 
-      {/* Ghost customers */}
+      {/* ── Most Engaged Customers ── */}
+      <div className="card">
+        <h3 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+          <Activity size={14} className="text-gold" /> Most Engaged Customers
+          <span className="text-white/20 text-xs font-normal ml-1">by interaction count</span>
+        </h3>
+        <div className="space-y-2">
+          {data.topCustomers.slice(0, 8).map((c, i) => (
+            <div
+              key={c.id}
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.03] transition-colors cursor-pointer group"
+              onClick={() => navigate(`/crm?search=${encodeURIComponent(c.name)}`)}
+            >
+              <span className="text-white/20 text-xs w-5 text-right flex-shrink-0">#{i + 1}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="text-white text-sm font-medium truncate group-hover:text-gold transition-colors">{c.name}</p>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {c.dealValue && c.dealValue > 0 && (
+                      <span className="text-gold/60 text-[10px] font-medium">
+                        ₹{c.dealValue >= 100000 ? `${(c.dealValue/100000).toFixed(1)}L` : `${(c.dealValue/1000).toFixed(0)}K`}
+                      </span>
+                    )}
+                    <span className="text-white/50 text-xs font-semibold">{c.interactions}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1 bg-dark-200 rounded-full">
+                    <div
+                      className="h-full rounded-full bg-gold"
+                      style={{ width: `${Math.round((c.interactions / (data.topCustomers[0]?.interactions || 1)) * 100)}%`, opacity: 0.7 }}
+                    />
+                  </div>
+                  <span className="capitalize text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color: PIPELINE_COLORS[c.status] || '#666', background: `${PIPELINE_COLORS[c.status] || '#666'}18` }}>
+                    {c.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Ghost customers ── */}
       {data.ghostCustomers.length > 0 && (
         <div className="card border-red-500/15">
-          <h3 className="text-red-400 font-semibold text-sm mb-3 flex items-center gap-2">
-            <Ghost size={14} /> Ghost Customers
-            <span className="text-[10px] bg-red-500/15 text-red-300 rounded-full px-2 py-0.5 ml-1">{data.ghostCustomers.length}</span>
-          </h3>
-          <p className="text-white/30 text-xs mb-3">Active pipeline customers not contacted in 30+ days</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-red-400 font-semibold text-sm flex items-center gap-2">
+              <Ghost size={14} /> Ghost Customers
+              <span className="text-[10px] bg-red-500/15 text-red-300 rounded-full px-2 py-0.5">{data.ghostCustomers.length}</span>
+            </h3>
+            <button onClick={() => navigate('/crm')} className="text-red-400/60 text-xs hover:text-red-400 flex items-center gap-1">
+              View in CRM <ChevronRight size={11} />
+            </button>
+          </div>
+          <p className="text-white/30 text-xs mb-3">Active pipeline customers with zero contact in 30+ days — they may go cold</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {data.ghostCustomers.map(c => (
-              <span key={c.id} className="inline-flex items-center gap-1.5 text-[11px] text-red-300/80 bg-red-500/8 border border-red-500/15 rounded-lg px-2.5 py-1.5">
-                <Ghost size={10} /> {c.name}
-                <span className="text-red-400/50">{c.daysSince === null ? '— never' : `${c.daysSince}d`}</span>
-              </span>
+              <div key={c.id} className="flex items-center justify-between gap-2 text-[11px] text-red-300/80 bg-red-500/5 border border-red-500/15 rounded-lg px-2.5 py-2">
+                <span className="truncate">{c.name}</span>
+                <span className="text-red-400/50 flex-shrink-0 font-semibold">{c.daysSince === null ? 'never' : `${c.daysSince}d`}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -747,7 +840,7 @@ function TrendsTab() {
           <div className="flex flex-wrap gap-2">
             {data.topTags.map(({ tag, count }) => (
               <span key={tag} className="inline-flex items-center gap-1.5 text-xs text-gold/70 bg-gold/8 border border-gold/20 rounded-full px-3 py-1">
-                {tag} <span className="text-gold/40">{count}</span>
+                {tag} <span className="text-gold/40 font-semibold">{count}</span>
               </span>
             ))}
           </div>
