@@ -11,8 +11,8 @@ function AddVendorModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!form.name) { setError('Name is required'); return; }
     setLoading(true);
     try {
