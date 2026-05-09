@@ -616,7 +616,7 @@ function TrendsTab() {
         {[
           { label: 'Total Customers',    value: data.totalCustomers,    sub: 'in pipeline',   color: 'text-white' },
           { label: 'Total Interactions', value: data.totalInteractions, sub: 'all time',       color: 'text-white' },
-          { label: 'Pipeline Value',     value: data.pipelineValue >= 100000 ? `₹${(data.pipelineValue/100000).toFixed(1)}L` : `₹${(data.pipelineValue/1000).toFixed(0)}K`, sub: 'active deals', color: 'text-gold' },
+          { label: 'Closed',             value: closedCount,            sub: 'deals won',      color: 'text-emerald-400' },
           { label: 'Win Rate',           value: winRate !== null ? `${winRate}%` : '—',        sub: 'closed vs churned', color: winRate !== null && winRate >= 50 ? 'text-emerald-400' : 'text-red-400' },
         ].map(s => (
           <div key={s.label} className="card text-center py-3">
