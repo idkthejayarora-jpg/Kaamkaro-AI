@@ -307,44 +307,54 @@ function DayCell({
     <button
       onClick={onClick}
       className={`
-        group relative flex flex-col items-center pt-2 pb-1.5 min-h-[64px] sm:min-h-[72px]
-        border-r border-b border-white/[0.04] last:border-r-0
-        transition-all duration-150
-        ${isSelected  ? 'bg-gold/8 z-10'           : 'hover:bg-white/[0.03]'}
+        group relative flex flex-col items-center pt-2 pb-2 min-h-[68px] sm:min-h-[76px]
+        border-r border-b border-white/[0.05] last:border-r-0
+        transition-all duration-150 outline-none focus-visible:ring-1 focus-visible:ring-gold/40
+        ${isSelected ? 'bg-gold/10 z-10' : 'hover:bg-white/[0.04]'}
       `}
     >
-      {/* Day number */}
+      {/* Gold accent bar at top of selected cell */}
+      {isSelected && (
+        <span className="absolute inset-x-0 top-0 h-[2px] bg-gold rounded-b-sm" aria-hidden />
+      )}
+
+      {/* Day number pill */}
       <span className={`
-        text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full transition-colors
-        ${isToday && isSelected ? 'bg-gold text-white font-bold' :
-          isToday               ? 'bg-gold text-white font-bold' :
-          isSelected            ? 'bg-white/15 text-white'           :
-          hasActivity           ? 'text-white/80'                    : 'text-white/20'}
+        text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full
+        transition-all duration-150
+        ${isToday
+          ? 'bg-gold text-white font-bold shadow-[0_0_12px_rgb(var(--accent-rgb)/0.45)]'
+          : isSelected
+            ? 'bg-gold/20 text-gold font-bold ring-1 ring-gold/50'
+            : hasActivity
+              ? 'text-white/80 group-hover:bg-white/[0.08] group-hover:text-white'
+              : 'text-white/30 group-hover:text-white/60'}
       `}>
         {day}
       </span>
 
       {/* Activity dots */}
       {hasActivity && (
-        <div className="flex gap-[3px] mt-1.5 justify-center flex-wrap max-w-[44px]">
+        <div className="flex gap-[3px] mt-1.5 justify-center flex-wrap max-w-[40px]">
           {(CATS as readonly { key: CatKey; dot: string }[]).map(c =>
             counts && counts[c.key] > 0 ? (
               <span
                 key={c.key}
-                className="w-[5px] h-[5px] rounded-full flex-shrink-0"
-                style={{ background: c.dot }}
+                className="w-[5px] h-[5px] rounded-full flex-shrink-0 transition-transform group-hover:scale-125"
+                style={{ background: c.dot, opacity: isSelected ? 1 : 0.75 }}
               />
             ) : null
           )}
         </div>
       )}
 
-      {/* Total count — small corner badge */}
+      {/* Activity count — bottom right corner */}
       {hasActivity && (
         <span className={`
-          absolute bottom-1 right-1.5 text-[9px] font-semibold leading-none
-          transition-opacity
-          ${isSelected ? 'text-gold/80 opacity-100' : 'text-white/15 group-hover:text-white/35 opacity-100'}
+          absolute bottom-1 right-1.5 text-[9px] font-bold leading-none transition-all
+          ${isSelected
+            ? 'text-gold'
+            : 'text-white/15 group-hover:text-white/45'}
         `}>
           {total}
         </span>
