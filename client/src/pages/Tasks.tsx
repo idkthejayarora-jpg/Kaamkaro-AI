@@ -579,7 +579,7 @@ export default function Tasks() {
               <span className={`text-xs flex items-center gap-1 ${
                 isOverdueTask ? 'text-red-400' : isDueToday ? 'text-gold' : 'text-white/30'
               }`}>
-                <Calendar size={10} />
+                <Calendar size={10} className={isOverdueTask ? 'drop-shadow-[0_0_5px_rgba(248,113,113,0.7)] animate-pulse' : isDueToday ? 'drop-shadow-[0_0_5px_rgba(212,175,55,0.6)]' : ''} />
                 {isOverdueTask
                   ? `Overdue · ${task.dueDate}`
                   : isDueToday ? 'Due today' : task.dueDate}
