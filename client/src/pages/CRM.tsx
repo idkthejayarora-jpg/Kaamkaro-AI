@@ -507,7 +507,7 @@ function BulkImportModal({ staffList, onClose, onImported }: {
           {tab === 'paste' && (
             <div className="space-y-4">
               <p className="text-white/40 text-xs">
-                Paste anything — a WhatsApp contact dump, an Excel copy-paste, a list of names and numbers — Claude will extract the contacts automatically.
+                Paste anything — WhatsApp exports, Excel copy-paste, names and numbers in any order. Contacts are extracted automatically.
               </p>
               <textarea
                 className="input resize-none text-sm font-mono text-white/70 leading-relaxed"
