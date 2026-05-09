@@ -69,11 +69,14 @@ function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false
       className={`stat-card ${alert ? 'border-red-500/30' : ''} ${onClick ? 'cursor-pointer hover:border-gold/30 transition-colors' : ''}`}
       onClick={onClick}
     >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-        alert ? 'bg-red-500/10 border border-red-500/20' :
-        accent ? 'bg-gold/15 border border-gold/25' : 'bg-dark-200 border border-dark-50'
-      }`}>
-        <Icon size={16} className={alert ? 'text-red-400' : accent ? 'text-gold' : 'text-white/40'} />
+      <div
+        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+          alert ? 'bg-red-500/10 border border-red-500/20' :
+          accent ? 'bg-gold/15 border border-gold/25' : 'bg-dark-200 border border-dark-50'
+        }`}
+        style={alert ? { boxShadow: '0 0 12px rgba(248,113,113,0.35)' } : accent ? { boxShadow: '0 0 12px rgba(212,175,55,0.35)' } : undefined}
+      >
+        <Icon size={16} className={`${alert ? 'text-red-400' : accent ? 'text-gold' : 'text-white/40'}`} />
       </div>
       <div className="mt-3">
         <p className="text-2xl font-bold text-white">{value}</p>
