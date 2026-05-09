@@ -407,7 +407,8 @@ function DayCell({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Calendar() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  const userColor = getUserColor(user?.name || 'U');
 
   const now   = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
@@ -417,6 +418,33 @@ export default function Calendar() {
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [staffList,   setStaffList]   = useState<Staff[]>([]);
   const [filterStaff, setFilterStaff] = useState('');
+  const [ball, setBall] = useState<{ sx: number; sy: number; tx: number; ty: number; key: number } | null>(null);
+  const ballTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDayClick = useCallback((ds: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    const next = selected === ds ? null : ds;
+
+    // Launch ball only when switching from one date to another
+    if (selected && next) {
+      const prevEl = document.querySelector(`[data-date="${selected}"]`) as HTMLElement | null;
+      const nextEl = e.currentTarget;
+      if (prevEl && nextEl && prevEl !== nextEl) {
+        const pr = prevEl.getBoundingClientRect();
+        const nr = nextEl.getBoundingClientRect();
+        if (ballTimerRef.current) clearTimeout(ballTimerRef.current);
+        setBall({
+          sx: pr.left + pr.width  / 2,
+          sy: pr.top  + pr.height / 2,
+          tx: nr.left + nr.width  / 2,
+          ty: nr.top  + nr.height / 2,
+          key: Date.now(),
+        });
+        ballTimerRef.current = setTimeout(() => setBall(null), 750);
+      }
+    }
+
+    setSelected(next);
+  }, [selected]);
 
   // Load staff for admin filter
   useEffect(() => {
