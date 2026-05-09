@@ -28,7 +28,7 @@ interface DayData {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const DAY_ABBR  = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_ABBR  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS    = ['January','February','March','April','May','June',
                    'July','August','September','October','November','December'];
 
