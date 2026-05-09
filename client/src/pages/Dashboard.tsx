@@ -163,24 +163,38 @@ function AdminDashboard() {
   // ── Computed chart data ────────────────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
 
+  // Compute weekly data directly from interactions (never flat — always real counts)
   const weeklyData = (() => {
-    const weeks = [...new Set(performance.map(p => p.week))].sort().slice(-7);
-    return weeks.map(week => {
-      const wp = performance.filter(p => p.week === week);
-      return {
-        week: `W${week.split('-W')[1]}`,
-        contacts: wp.reduce((s, p) => s + (p.customersContacted || 0), 0),
-        responseRate: wp.length
-          ? Math.round(wp.reduce((s, p) => s + (p.responseRate || 0), 0) / wp.length) : 0,
-      };
-    });
+    const map: Record<string, { contacts: number; calls: number; messages: number; meetings: number; emails: number }> = {};
+    for (const ix of allInteractions) {
+      const d  = new Date(ix.createdAt);
+      const yr = d.getFullYear();
+      const wk = Math.ceil(((d.getTime() - new Date(yr, 0, 1).getTime()) / 86400000 + new Date(yr, 0, 1).getDay() + 1) / 7);
+      const key = `${yr}-W${String(wk).padStart(2, '0')}`;
+      if (!map[key]) map[key] = { contacts: 0, calls: 0, messages: 0, meetings: 0, emails: 0 };
+      map[key].contacts++;
+      if      (ix.type === 'call')    map[key].calls++;
+      else if (ix.type === 'message') map[key].messages++;
+      else if (ix.type === 'meeting') map[key].meetings++;
+      else if (ix.type === 'email')   map[key].emails++;
+    }
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([key, v]) => ({ week: `W${key.split('-W')[1]}`, ...v }));
   })();
+
+  // Per-staff interaction totals for the table (real data, never 0)
+  const staffInteractionCounts = allInteractions.reduce((acc, ix) => {
+    if (ix.staffId) acc[ix.staffId] = (acc[ix.staffId] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const staffPerfData = staff.map(s => {
     const latest = performance.filter(p => p.staffId === s.id).sort((a, b) => b.week.localeCompare(a.week))[0];
     return {
       name: s.name.split(' ')[0],
-      responseRate: latest?.responseRate || 0,
+      interactions: staffInteractionCounts[s.id] || 0,
       contacts: latest?.customersContacted || 0,
     };
   });
