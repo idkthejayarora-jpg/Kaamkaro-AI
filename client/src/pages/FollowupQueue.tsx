@@ -884,14 +884,14 @@ function QuickLogModal({ customer, onClose, onLogged }: {
             <p className="text-white font-semibold text-sm">Log Interaction</p>
             <p className="text-white/30 text-xs">{customer.customerName}</p>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="text-white/30 hover:text-white transition-colors"><X size={16} /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-4 gap-2">
             {(['call', 'message', 'email', 'meeting'] as const).map(t => {
               const Icon = TYPE_ICON[t] || Phone;
               return (
-                <button key={t} onClick={() => setType(t)}
+                <button type="button" key={t} onClick={() => setType(t)}
                   className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-medium transition-all ${
                     type === t ? 'border-gold bg-gold/10 text-gold' : 'border-dark-50 text-white/40 hover:text-white'
                   }`}
