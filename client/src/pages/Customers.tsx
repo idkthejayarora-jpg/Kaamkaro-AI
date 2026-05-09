@@ -11,13 +11,13 @@ import { useSSE } from '../hooks/useSSE';
 import type { Customer, CustomerNote, Staff, Interaction, PipelineStatus, Template, SentimentPoint } from '../types';
 
 // ── Pipeline config ────────────────────────────────────────────────────────────
-const STAGES: { key: PipelineStatus; label: string; color: string; bg: string }[] = [
-  { key: 'lead',        label: 'Lead',        color: 'text-white/50',  bg: 'bg-white/5' },
-  { key: 'contacted',   label: 'Contacted',   color: 'text-blue-400',  bg: 'bg-blue-500/10' },
-  { key: 'interested',  label: 'Interested',  color: 'text-gold',      bg: 'bg-gold/10' },
-  { key: 'negotiating', label: 'Negotiating', color: 'text-orange-400',bg: 'bg-orange-500/10' },
-  { key: 'closed',      label: 'Closed',      color: 'text-green-400', bg: 'bg-green-500/10' },
-  { key: 'churned',     label: 'Churned',     color: 'text-red-400',   bg: 'bg-red-500/10' },
+const STAGES: { key: PipelineStatus; label: string; color: string; bg: string; emoji: string }[] = [
+  { key: 'lead',        label: 'Lead',        emoji: '🌱', color: 'text-white/50',   bg: 'bg-white/5' },
+  { key: 'contacted',   label: 'Contacted',   emoji: '📞', color: 'text-blue-400',   bg: 'bg-blue-500/10' },
+  { key: 'interested',  label: 'Interested',  emoji: '✨', color: 'text-gold',       bg: 'bg-gold/10' },
+  { key: 'negotiating', label: 'Negotiating', emoji: '🤝', color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  { key: 'closed',      label: 'Closed',      emoji: '🏆', color: 'text-green-400',  bg: 'bg-green-500/10' },
+  { key: 'churned',     label: 'Churned',     emoji: '💔', color: 'text-red-400',    bg: 'bg-red-500/10' },
 ];
 
 function stageBadge(status: PipelineStatus) {
