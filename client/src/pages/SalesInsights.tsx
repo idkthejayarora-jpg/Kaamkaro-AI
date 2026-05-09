@@ -421,7 +421,7 @@ export default function SalesInsights() {
 
           {/* ── Outreach tips ────────────────────────────────────────────────── */}
           {data.outreachTips?.length > 0 && (
-            <Section icon={<MessageSquare size={14} className="text-green-400" />} title="Outreach Tips — Who to Contact & What to Say" color="bg-green-500/10">
+            <Section icon={<MessageSquare size={14} className="text-green-400" />} title="Outreach Tips — Who to Contact & What to Say" color="bg-green-500/10" glow="0 0 12px rgba(74,222,128,0.4)">
               <div className="space-y-3">
                 {data.outreachTips.map((tip, i) => {
                   const key = `tip-${i}`;
