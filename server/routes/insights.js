@@ -429,14 +429,50 @@ router.get('/trends', async (req, res) => {
       .slice(0, 8)
       .map(([tag, count]) => ({ tag, count }));
 
+    // Interaction type breakdown (call / message / email / meeting / other)
+    const typeBreakdown = {};
+    for (const ix of filteredIxs) {
+      const t = ix.type || 'other';
+      if (!typeBreakdown[t]) typeBreakdown[t] = { count: 0, responded: 0 };
+      typeBreakdown[t].count++;
+      if (ix.responded) typeBreakdown[t].responded++;
+    }
+    const interactionTypeBreakdown = Object.entries(typeBreakdown)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .map(([type, d]) => ({
+        type,
+        count: d.count,
+        responseRate: d.count > 0 ? Math.round((d.responded / d.count) * 100) : 0,
+      }));
+
+    // Pipeline value by stage
+    const pipelineValueByStage = {};
+    for (const c of filtered) {
+      if (!pipelineValueByStage[c.status]) pipelineValueByStage[c.status] = 0;
+      pipelineValueByStage[c.status] += (c.dealValue || 0);
+    }
+
+    // Daily activity for last 30 days (for heatmap / sparkline)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+    const dailyActivity = {};
+    for (const ix of filteredIxs) {
+      if (ix.createdAt < thirtyDaysAgo) continue;
+      const day = ix.createdAt.split('T')[0];
+      if (!dailyActivity[day]) dailyActivity[day] = 0;
+      dailyActivity[day]++;
+    }
+
     res.json({
       pipelineBreakdown,
+      pipelineValueByStage,
       pipelineValue:     filtered.reduce((s, c) => s + (c.dealValue || 0), 0),
       closedValue:       filtered.filter(c => c.status === 'closed').reduce((s, c) => s + (c.dealValue || 0), 0),
       sentimentByWeek,
       topCustomers,
       ghostCustomers,
       topTags,
+      interactionTypeBreakdown,
+      dailyActivity,
       totalCustomers:    filtered.length,
       totalInteractions: filteredIxs.length,
     });
