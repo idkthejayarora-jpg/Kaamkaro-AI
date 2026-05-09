@@ -48,7 +48,7 @@ function AddVendorModal({ onClose, onCreated }: { onClose: () => void; onCreated
         </form>
         <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
           <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button type="button" onClick={handleSubmit as unknown as React.MouseEventHandler} disabled={loading} className="btn-primary flex-1">{loading ? 'Adding...' : 'Add Vendor'}</button>
+          <button type="button" onClick={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)} disabled={loading} className="btn-primary flex-1">{loading ? 'Adding...' : 'Add Vendor'}</button>
         </div>
       </div>
     </div>
