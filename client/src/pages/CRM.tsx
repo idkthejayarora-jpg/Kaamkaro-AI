@@ -948,7 +948,7 @@ export default function CRM() {
       {/* ── Bulk Import Modal ──────────────────────────────────────────────────── */}
       {showImport && (
         <BulkImportModal
-          staffList={staffList}
+          staffList={isAdmin ? staffList : []}
           onClose={() => setShowImport(false)}
           onImported={count => {
             setShowImport(false);
