@@ -1213,11 +1213,9 @@ export default function CRM() {
                       <button onClick={() => navigate('/crm/new')} className="btn-primary flex items-center gap-2">
                         <Plus size={14} /> Add Lead
                       </button>
-                      {isAdmin && (
-                        <button onClick={() => setShowImport(true)} className="btn-ghost flex items-center gap-2">
-                          <Upload size={14} /> Import List
-                        </button>
-                      )}
+                      <button onClick={() => setShowImport(true)} className="btn-ghost flex items-center gap-2">
+                        <Upload size={14} /> Import List
+                      </button>
                     </div>
                   )}
                 </>
