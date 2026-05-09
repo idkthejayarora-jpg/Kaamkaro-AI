@@ -525,7 +525,10 @@ export default function SalesInsights() {
                     <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${
                       a.urgency === 'high' ? 'bg-red-500/5 border-red-500/20' : 'bg-amber-500/5 border-amber-500/20'
                     }`}>
-                      <AlertTriangle size={14} className={`${a.urgency === 'high' ? 'text-red-400' : 'text-amber-400'} mt-0.5 flex-shrink-0`} />
+                      <AlertTriangle
+                        size={14}
+                        className={`mt-0.5 flex-shrink-0 animate-pulse ${a.urgency === 'high' ? 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.7)]' : 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.6)]'}`}
+                      />
                       <div className="flex-1">
                         <p className="text-white text-sm font-semibold capitalize">{a.item}
                           <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-full ${a.urgency === 'high' ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'}`}>{a.urgency}</span>
