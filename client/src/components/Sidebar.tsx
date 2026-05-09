@@ -83,6 +83,13 @@ function saveOrder(items: NavItem[], role: string, userId: string) {
 // ── Sidebar component ──────────────────────────────────────────────────────────
 interface SidebarProps { mobileOpen: boolean; onClose: () => void; }
 
+// Deterministic color from user name — drives all glow in the UI
+function getUserColor(name: string): string {
+  const palette = ['#a855f7','#3b82f6','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899'];
+  const idx = ((name.charCodeAt(0) || 0) + (name.charCodeAt(1) || 0)) % palette.length;
+  return palette[idx];
+}
+
 export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const { user, logout, isAdmin, updateUser, isSwitched, originalAdmin, switchBack } = useAuth();
   const { theme, toggle } = useTheme();
@@ -92,6 +99,8 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const defaultNav = isAdmin ? adminNav : staffNav;
   const role       = user?.role || 'staff';
   const userId     = user?.id   || 'unknown';
+
+  const userColor  = getUserColor(user?.name || 'U');
 
   const [navItems,   setNavItems]   = useState<NavItem[]>(() => loadOrder(defaultNav, role, userId));
   const [editMode,   setEditMode]   = useState(false);
