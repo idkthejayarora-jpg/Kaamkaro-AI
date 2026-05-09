@@ -187,7 +187,6 @@ async function enrichWithAI(customers) {
       orders:       c.patterns.orderFrequency,
       sentiment:    c.patterns.sentimentTrend,
       paymentDelay: c.patterns.hasPaymentDelay,
-      dealValue:    c.dealValue ? `₹${c.dealValue}` : null,
       notes:        c.contextSnippet || null,
     }));
 
