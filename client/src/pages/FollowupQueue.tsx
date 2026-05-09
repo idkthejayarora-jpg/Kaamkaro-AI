@@ -693,7 +693,6 @@ function TrendsTab() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="capitalize font-medium" style={{ color: PIPELINE_COLORS[d.status] || '#666' }}>{d.status}</span>
                   <div className="flex items-center gap-2">
-                    {d.value > 0 && <span className="text-white/30">₹{d.value}K</span>}
                     <span className="text-white/60 font-semibold">{d.count}</span>
                     <span className="text-white/25 text-[10px] w-8 text-right">{d.pct}%</span>
                   </div>
