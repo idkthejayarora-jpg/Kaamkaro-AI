@@ -115,10 +115,10 @@ export default function StaffProfile() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-dark-50">
           {[
-            { label: 'Customers',    value: customers.length,                          icon: Users },
-            { label: 'Avg Response', value: `${avgResponse}%`,                        icon: TrendingUp },
-            { label: 'Streak',       value: `${staff.streakData?.currentStreak || 0}d`, icon: Flame },
-            { label: 'Best Streak',  value: `${staff.streakData?.longestStreak || 0}d`, icon: Flame },
+            { label: 'Customers',     value: customers.length,                           icon: Users },
+            { label: 'Interactions',  value: interactions.length,                        icon: TrendingUp },
+            { label: 'Streak',        value: `${staff.streakData?.currentStreak || 0}d`, icon: Flame },
+            { label: 'Best Streak',   value: `${staff.streakData?.longestStreak || 0}d`, icon: Flame },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="bg-dark-200 rounded-xl p-3 text-center">
               <Icon size={16} className="text-gold mx-auto mb-1" />
