@@ -710,14 +710,6 @@ function TrendsTab() {
               </div>
             ))}
           </div>
-          {closedCount > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
-              <span className="text-white/30">Closed deal value</span>
-              <span className="text-emerald-400 font-semibold">
-                {data.closedValue >= 100000 ? `₹${(data.closedValue/100000).toFixed(1)}L` : `₹${(data.closedValue/1000).toFixed(0)}K`}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Interaction type breakdown */}
