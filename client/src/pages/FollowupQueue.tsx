@@ -147,13 +147,6 @@ function CustomerDetailPanel({ item, onClose, onLog, onNavigate }: {
             </div>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               {item.phone && <span className="text-white/30 text-xs">{item.phone}</span>}
-              {item.dealValue && (
-                <span className="text-gold/70 text-xs font-medium">
-                  ₹{item.dealValue >= 100000
-                    ? `${(item.dealValue / 100000).toFixed(1)}L`
-                    : item.dealValue.toLocaleString('en-IN')}
-                </span>
-              )}
               <span className={`text-[11px] font-medium ${
                 item.lastContactDays === null ? 'text-red-400' :
                 item.lastContactDays > 14    ? 'text-red-400' :
