@@ -957,15 +957,13 @@ export default function Customers() {
           </div>
         </div>
         <div className="card py-3 px-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gold/15 flex items-center justify-center flex-shrink-0"
-            style={{ boxShadow: '0 0 12px rgba(212,175,55,0.25)' }}>
-            <DollarSign size={16} className="text-gold" />
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0"
+            style={{ boxShadow: '0 0 12px rgba(52,211,153,0.2)' }}>
+            <TrendingUp size={16} className="text-emerald-400" />
           </div>
           <div>
-            <p className="text-white font-bold text-lg leading-none">
-              {pipelineValue > 0 ? `₹${(pipelineValue/1000).toFixed(0)}k` : '—'}
-            </p>
-            <p className="text-white/30 text-[10px] mt-0.5">Pipeline</p>
+            <p className="text-white font-bold text-lg leading-none">{activeCount}</p>
+            <p className="text-white/30 text-[10px] mt-0.5">Active</p>
           </div>
         </div>
         <div className="card py-3 px-4 flex items-center gap-3">
