@@ -490,6 +490,7 @@ export default function SalesInsights() {
               icon={<Grid3X3 size={14} className="text-indigo-400" />}
               title="Staff Coverage Map"
               color="bg-indigo-500/10"
+              glow="0 0 12px rgba(129,140,248,0.4)"
               badge={<span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full">Admin only</span>}
             >
               <p className="text-white/30 text-xs -mt-1">Which staff members are mentioning which products & finishes in diary/notes</p>
