@@ -145,6 +145,99 @@ function Toast({ msg }: { msg: string }) {
 
 interface Team { id: string; name: string; members: string[]; }
 
+// ── Contact parser (no AI) ────────────────────────────────────────────────────
+// Handles: comma/tab/dash-separated lines, multi-line blocks, label prefixes,
+// +91 prefix, WhatsApp exports, Excel copy-paste.
+function parseRawContacts(text: string): { name: string; phone: string; place: string }[] {
+  const PHONE_RE = /(?:\+91[\s\-.]?|91[\s\-.]?|0)?([6-9]\d{9})/g;
+  const LABEL_RE = /\b(name|phone|mobile|mob|cell|no\.?|number|city|place|area|location|contact|sr\.?\s*no\.?|s\.?\s*no\.?|#)\s*[:.]?\s*/gi;
+  const HEADER_RE = /^(name|phone|mobile|city|place|area|s\.?\s*no|sr|#|contact)\b.{0,30}$/i;
+  const results: { name: string; phone: string; place: string }[] = [];
+  const seenPhones = new Set<string>();
+
+  // Split into blank-line-separated blocks
+  const rawLines = text.trim().split(/\r?\n/);
+  const blocks: string[][] = [];
+  let cur: string[] = [];
+  for (const line of rawLines) {
+    const t = line.trim();
+    if (!t) { if (cur.length) { blocks.push(cur); cur = []; } }
+    else cur.push(t);
+  }
+  if (cur.length) blocks.push(cur);
+
+  for (const block of blocks) {
+    // Skip header rows
+    if (block.length === 1 && HEADER_RE.test(block[0])) continue;
+
+    const blockText = block.join(' ');
+    PHONE_RE.lastIndex = 0;
+
+    // Collect all phone matches in this block
+    const phoneMatches: { phone: string; raw: string }[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = PHONE_RE.exec(blockText)) !== null) phoneMatches.push({ phone: m[1], raw: m[0] });
+
+    // Multi-phone multi-line block → parse each line independently
+    if (phoneMatches.length > 1 && block.length > 1) {
+      for (const line of block) {
+        PHONE_RE.lastIndex = 0;
+        const pm = PHONE_RE.exec(line);
+        if (!pm) continue;
+        const phone = pm[1];
+        if (seenPhones.has(phone)) continue;
+        seenPhones.add(phone);
+        const rest = line.replace(pm[0], '').replace(LABEL_RE, '').replace(/[-,|;:()[\]]+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (rest) results.push({ name: rest, phone, place: '' });
+      }
+      continue;
+    }
+
+    if (phoneMatches.length === 0) {
+      // No phone — add as name-only if it looks like a proper name (≥2 words, alpha)
+      const clean = blockText.replace(LABEL_RE, '').replace(/[-,|;:()[\]]+/g, ' ').trim();
+      if (/^[A-Za-z\s.'''-]{4,}$/.test(clean) && clean.split(/\s+/).length >= 2)
+        results.push({ name: clean, phone: '', place: '' });
+      continue;
+    }
+
+    // Single phone in block
+    const { phone, raw } = phoneMatches[0];
+    if (seenPhones.has(phone)) continue;
+    seenPhones.add(phone);
+
+    const cleaned = blockText
+      .replace(raw, ' ')
+      .replace(LABEL_RE, ' ')
+      .replace(/[-,|;:()[\]]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const words = cleaned.split(/\s+/).filter(Boolean);
+    let name = '', place = '';
+
+    if (words.length === 0) continue;
+    if (words.length === 1) {
+      name = words[0];
+    } else {
+      // Last capitalized single word is likely a city
+      const last = words[words.length - 1];
+      if (last.length >= 3 && /^[A-Z]/.test(last)) {
+        place = last;
+        name = words.slice(0, -1).join(' ');
+      } else {
+        name = words.join(' ');
+      }
+    }
+
+    // Drop pure-number fragments that slipped through
+    name = name.replace(/^\d+\s*/, '').trim();
+    if (name) results.push({ name, phone, place });
+  }
+
+  return results;
+}
+
 // ── Bulk Import Modal ──────────────────────────────────────────────────────────
 type ImportTab = 'csv' | 'paste' | 'quick';
 
