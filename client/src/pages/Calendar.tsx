@@ -188,7 +188,6 @@ function LeadsTab({ items }: { items: DayData['leads'] }) {
           <div className="flex flex-wrap items-center gap-3 mt-1">
             {l.company    && <span className="text-white/30 text-xs">{l.company}</span>}
             {l.staffName  && <span className="text-white/25 text-xs flex items-center gap-1"><User size={9}/>{l.staffName}</span>}
-            {l.value != null && l.value > 0 && <span className="text-gold/70 text-xs">₹{l.value.toLocaleString('en-IN')}</span>}
             <span className="ml-auto text-white/20 text-xs">{fmtTime(l.createdAt)}</span>
           </div>
         </div>
