@@ -57,12 +57,12 @@ function DirectionIcon({ d }: { d?: 'rising' | 'falling' | 'stable' }) {
 function DirectionBadge({ d }: { d?: 'rising' | 'falling' | 'stable' }) {
   if (!d) return null;
   const map = {
-    rising:  { label: '↑ Rising',  cls: 'bg-green-500/10 text-green-400' },
-    falling: { label: '↓ Falling', cls: 'bg-red-500/10   text-red-400'   },
-    stable:  { label: '→ Stable',  cls: 'bg-white/5      text-white/30'   },
+    rising:  { label: '↑ Rising',  cls: 'bg-green-500/10 text-green-400', glow: '0 0 8px rgba(34,197,94,0.5)'  },
+    falling: { label: '↓ Falling', cls: 'bg-red-500/10   text-red-400',   glow: '0 0 8px rgba(248,113,113,0.5)' },
+    stable:  { label: '→ Stable',  cls: 'bg-white/5      text-white/30',   glow: undefined                       },
   };
-  const { label, cls } = map[d];
-  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${cls}`}>{label}</span>;
+  const { label, cls, glow } = map[d];
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${cls}`} style={glow ? { boxShadow: glow } : undefined}>{label}</span>;
 }
 
 // ── Section wrapper ────────────────────────────────────────────────────────────
