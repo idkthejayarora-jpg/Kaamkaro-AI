@@ -154,15 +154,17 @@ router.post('/', async (req, res) => {
 });
 
 // ── POST /api/leads/bulk-import ────────────────────────────────────────────────
-// Admin-only. Accepts array of { name, phone, place, source, stage }.
+// Accepts array of { name, phone, place, source, stage }.
 // Creates a lead + linked customer record for each row.
-router.post('/bulk-import', adminOnly, async (req, res) => {
+// Admin can pass assignedTo to import for a specific staff member; staff always imports for themselves.
+router.post('/bulk-import', async (req, res) => {
   try {
     const { leads: incoming, assignedTo } = req.body;
     if (!Array.isArray(incoming) || incoming.length === 0) {
       return res.status(400).json({ error: 'No leads provided' });
     }
-    const staffId = assignedTo || req.user.id;
+    // Staff can only import for themselves; admin may specify assignedTo
+    const staffId = (req.user.role === 'admin' && assignedTo) ? assignedTo : req.user.id;
     const now = new Date().toISOString();
     const created = [];
     let skipped = 0;
