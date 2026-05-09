@@ -401,6 +401,22 @@ router.delete('/:id', async (req, res) => {
       updatedAt: new Date().toISOString(),
     });
     if (!updated) return res.status(404).json({ error: 'Lead not found' });
+
+    // If the linked customer has no other active leads, delete the customer too
+    if (existing.linkedCustomerId) {
+      try {
+        const remainingActiveLeads = leads.filter(
+          l => l.id !== req.params.id &&
+               l.linkedCustomerId === existing.linkedCustomerId &&
+               l.isActive !== false
+        );
+        if (remainingActiveLeads.length === 0) {
+          const { deleteOne: delOne } = require('../utils/db');
+          await delOne('customers', existing.linkedCustomerId);
+        }
+      } catch { /* non-blocking */ }
+    }
+
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('[Leads] DELETE error:', err);
