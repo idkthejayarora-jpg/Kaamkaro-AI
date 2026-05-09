@@ -385,7 +385,7 @@ function BulkImportModal({ staffList, onClose, onImported }: {
 
   const TABS: { id: ImportTab; label: string; icon: React.ElementType }[] = [
     { id: 'csv',   label: 'CSV File',    icon: FileText },
-    { id: 'paste', label: 'Paste & AI',  icon: Sparkles },
+    { id: 'paste', label: 'Paste Text',  icon: AlignLeft },
     { id: 'quick', label: 'Quick Type',  icon: Keyboard },
   ];
 
