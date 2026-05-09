@@ -918,8 +918,8 @@ function QuickLogModal({ customer, onClose, onLogged }: {
             onChange={e => setFollowUp(e.target.value)} />
         </div>
         <div className="px-5 pb-5 flex gap-3">
-          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={submit} disabled={saving} className="btn-primary flex-1">
+          <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving} className="btn-primary flex-1">
             {saving ? 'Logging...' : 'Log Interaction'}
           </button>
         </div>
