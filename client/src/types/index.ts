@@ -339,12 +339,15 @@ export interface StaffBehavior {
 
 export interface InsightsTrends {
   pipelineBreakdown: Record<string, number>;
+  pipelineValueByStage: Record<string, number>;
   pipelineValue: number;
   closedValue: number;
   sentimentByWeek: { week: string; responseRate: number; positiveRate: number; total: number }[];
   topCustomers: { id: string; name: string; interactions: number; status: string; dealValue: number | null }[];
   ghostCustomers: { id: string; name: string; daysSince: number | null }[];
   topTags: { tag: string; count: number }[];
+  interactionTypeBreakdown: { type: string; count: number; responseRate: number }[];
+  dailyActivity: Record<string, number>;
   totalCustomers: number;
   totalInteractions: number;
 }
