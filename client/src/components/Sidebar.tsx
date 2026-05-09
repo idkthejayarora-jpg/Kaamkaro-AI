@@ -266,12 +266,14 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             <div className="flex items-center gap-3">
               <div className="relative flex-shrink-0">
                 <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center border ${
-                  isSwitched ? 'bg-white/10 border-white/20' : 'bg-gold/20 border-gold/30'
-                }`}
-                style={!isSwitched ? { boxShadow: '0 0 10px rgba(212,175,55,0.45)' } : undefined}
-              >
-                  <span className={`text-xs font-bold ${isSwitched ? 'text-white/70' : 'text-gold'}`}>
+                  className="w-8 h-8 rounded-full flex items-center justify-center border flex-shrink-0"
+                  style={{
+                    background: isSwitched ? 'rgba(255,255,255,0.1)' : `${userColor}33`,
+                    borderColor: isSwitched ? 'rgba(255,255,255,0.2)' : `${userColor}66`,
+                    boxShadow: !isSwitched ? `0 0 10px ${userColor}77` : undefined,
+                  }}
+                >
+                  <span className="text-xs font-bold" style={{ color: isSwitched ? 'rgba(255,255,255,0.7)' : userColor }}>
                     {user?.avatar || 'U'}
                   </span>
                 </div>
