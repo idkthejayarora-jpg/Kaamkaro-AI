@@ -1166,7 +1166,7 @@ export default function Customers() {
                       })()}
                       {c.dealValue && (
                         <span className="text-emerald-400/80 text-xs flex items-center gap-1 font-medium">
-                          💰 ₹{c.dealValue.toLocaleString('en-IN')}
+                          <DollarSign size={9} />₹{c.dealValue.toLocaleString('en-IN')}
                         </span>
                       )}
                     </div>
