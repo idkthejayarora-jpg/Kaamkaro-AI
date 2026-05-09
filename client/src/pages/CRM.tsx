@@ -5,7 +5,7 @@ import {
   Filter as Funnel, User, Users, PhoneOff, ChevronRight,
   LayoutGrid, List, Trophy, ChevronDown, ChevronUp,
   Search, Upload, X, Trash2, Loader2, FileText,
-  CheckCircle2, ChevronLeft, Sparkles, Keyboard,
+  CheckCircle2, ChevronLeft, AlignLeft, Keyboard,
 } from 'lucide-react';
 import { leadsAPI, staffAPI, teamsAPI, meritsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
