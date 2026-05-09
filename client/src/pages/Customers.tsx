@@ -26,6 +26,34 @@ function stageBadge(status: PipelineStatus) {
   return <span className={`badge ${s.bg} ${s.color} border border-current/20`}>{s.emoji} {s.label}</span>;
 }
 
+// ── Avatar & heat helpers ──────────────────────────────────────────────────────
+// Consistent avatar gradient color based on name
+function getAvatarGradient(name: string): [string, string] {
+  const palettes: [string, string][] = [
+    ['#7c3aed', '#a855f7'], ['#2563eb', '#60a5fa'], ['#059669', '#34d399'],
+    ['#d97706', '#fbbf24'], ['#dc2626', '#f87171'], ['#0891b2', '#22d3ee'],
+    ['#be185d', '#f472b6'], ['#4338ca', '#818cf8'],
+  ];
+  const idx = (name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % palettes.length;
+  return palettes[idx];
+}
+
+// Heat level based on days since last contact
+function getHeat(days: number | null): { color: string; label: string; glow: string; pulse: boolean } {
+  if (days === null) return { color: 'text-white/20', label: 'Never', glow: '', pulse: false };
+  if (days === 0)   return { color: 'text-emerald-400', label: 'Today 🔥', glow: '0 0 10px rgba(52,211,153,0.5)', pulse: false };
+  if (days <= 3)    return { color: 'text-blue-400',    label: `${days}d ago`, glow: '0 0 8px rgba(96,165,250,0.4)', pulse: false };
+  if (days <= 7)    return { color: 'text-amber-400',   label: `${days}d ago`, glow: '0 0 8px rgba(251,191,36,0.4)', pulse: false };
+  return { color: 'text-red-400', label: `${days}d ago ⚠️`, glow: '0 0 10px rgba(248,113,113,0.5)', pulse: true };
+}
+
+// Stage left-border color
+const STAGE_BORDER: Record<string, string> = {
+  lead: 'border-l-white/15', contacted: 'border-l-blue-500/50',
+  interested: 'border-l-gold/60', negotiating: 'border-l-orange-500/60',
+  closed: 'border-l-emerald-500/60', churned: 'border-l-red-500/40',
+};
+
 // ── Sentiment Trend ────────────────────────────────────────────────────────────
 function SentimentTrendView({ customerId }: { customerId: string }) {
   const [trend, setTrend] = useState<SentimentPoint[]>([]);
