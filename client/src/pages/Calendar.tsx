@@ -221,27 +221,29 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
 
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
+  const activeCat = CATS.find(c => c.key === tab)!;
+
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 animate-scale-in">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 border-b border-white/[0.08] flex-shrink-0">
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 border-b border-white/[0.07] flex-shrink-0">
         <div>
           <p className="text-white font-bold text-sm leading-tight">{fmtDateLabel(date)}</p>
           <p className="text-white/30 text-xs mt-0.5">
             {loading ? 'Loading…' : total === 0 ? 'No activity' : `${total} entr${total === 1 ? 'y' : 'ies'}`}
           </p>
         </div>
-        <button onClick={onClose} className="text-white/25 hover:text-white transition-colors flex-shrink-0 mt-0.5">
+        <button onClick={onClose} className="text-white/25 hover:text-white transition-colors flex-shrink-0 mt-0.5 p-1 rounded-lg hover:bg-white/[0.06]">
           <X size={16} />
         </button>
       </div>
 
-      {/* Tab bar — sliding gold underline indicator */}
-      <div ref={containerRef} className="relative flex border-b border-white/[0.08] flex-shrink-0">
-        {/* Sliding underline */}
+      {/* Tab bar — sliding coloured underline indicator */}
+      <div ref={containerRef} className="relative flex border-b border-white/[0.07] flex-shrink-0">
+        {/* Sliding underline — uses active category colour */}
         <div
-          className="absolute bottom-0 h-[2px] bg-gold"
-          style={sliderStyle}
+          className="absolute bottom-0 h-[2px] transition-all duration-250"
+          style={{ ...sliderStyle, background: activeCat.dot }}
           aria-hidden
         />
         {CATS.map(c => (
@@ -249,14 +251,19 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
             key={c.key}
             ref={setRef(c.key)}
             onClick={() => setTab(c.key)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors ${
-              tab === c.key ? 'text-gold' : 'text-white/25 hover:text-white/60'
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-all duration-150 ${
+              tab === c.key ? c.activeColor : 'text-white/25 hover:text-white/55'
             }`}
           >
             <c.icon size={13} />
-            <span>{c.label}</span>
+            <span className="hidden xs:inline">{c.label}</span>
             {!loading && counts[c.key] > 0 && (
-              <span className={`text-[9px] px-1 rounded-full ${tab === c.key ? 'bg-gold/20 text-gold' : 'bg-white/10 text-white/40'}`}>
+              <span
+                className={`text-[9px] px-1.5 py-px rounded-full font-bold ${
+                  tab === c.key ? '' : 'bg-white/[0.07] text-white/35'
+                }`}
+                style={tab === c.key ? { background: activeCat.activeBg, color: activeCat.dot } : {}}
+              >
                 {counts[c.key]}
               </span>
             )}
@@ -268,7 +275,7 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
       <div className="flex-1 overflow-y-auto p-4">
         {loading && (
           <div className="flex items-center justify-center py-16">
-            <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${activeCat.dot} transparent transparent transparent` }} />
           </div>
         )}
         {!loading && data && (
