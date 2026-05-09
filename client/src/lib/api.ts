@@ -229,6 +229,12 @@ export const leadsAPI = {
   create: (data: Record<string, unknown>) => api.post('/leads', data).then(r => r.data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/leads/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/leads/${id}`).then(r => r.data),
+  bulkImport: (leads: Record<string, string>[], assignedTo?: string) =>
+    api.post('/leads/bulk-import', { leads, assignedTo }).then(r => r.data),
+  bulkActions: (ids: string[], action: string, value?: string) =>
+    api.post('/leads/bulk-actions', { ids, action, value }).then(r => r.data),
+  parseText: (text: string) =>
+    api.post('/leads/parse-text', { text }).then(r => r.data),
 };
 
 export const pdfAPI = {
