@@ -291,7 +291,7 @@ router.post('/bulk-actions', async (req, res) => {
 
 // ── POST /api/leads/parse-text ─────────────────────────────────────────────────
 // Admin-only. Uses Claude to extract contacts from any pasted raw text.
-router.post('/parse-text', adminOnly, async (req, res) => {
+router.post('/parse-text', async (req, res) => {
   try {
     const { text } = req.body;
     if (!text?.trim()) return res.status(400).json({ error: 'text is required' });
