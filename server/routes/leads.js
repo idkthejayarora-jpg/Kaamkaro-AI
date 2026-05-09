@@ -313,7 +313,7 @@ router.post('/parse-text', async (req, res) => {
     if (!text?.trim()) return res.status(400).json({ error: 'text is required' });
 
     const ai = getAI();
-    if (!ai) return res.status(503).json({ error: 'AI not configured' });
+    if (!ai) return res.status(503).json({ error: 'AI not configured — ask your admin to set the ANTHROPIC_API_KEY' });
 
     const message = await ai.messages.create({
       model: 'claude-3-5-haiku-20241022',
