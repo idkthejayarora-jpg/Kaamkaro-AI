@@ -813,9 +813,9 @@ function AdminDashboard() {
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-1.5 bg-dark-200 rounded-full">
-                            <div className="h-full bg-gold rounded-full" style={{ width: `${s.responseRate}%` }} />
+                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, Math.round((s.interactions / (Math.max(...staffPerfData.map(x => x.interactions)) || 1)) * 100))}%` }} />
                           </div>
-                          <span className="text-white/50 text-xs">{s.responseRate}%</span>
+                          <span className="text-white/50 text-xs">{s.interactions}</span>
                         </div>
                       </td>
                       <td className="py-3 text-white/50 text-xs">{s.contacts}</td>
