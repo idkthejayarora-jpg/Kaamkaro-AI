@@ -66,14 +66,14 @@ function DirectionBadge({ d }: { d?: 'rising' | 'falling' | 'stable' }) {
 }
 
 // ── Section wrapper ────────────────────────────────────────────────────────────
-function Section({ icon, title, color, badge, children }: {
+function Section({ icon, title, color, badge, children, glow }: {
   icon: React.ReactNode; title: string; color: string;
-  badge?: React.ReactNode; children: React.ReactNode;
+  badge?: React.ReactNode; children: React.ReactNode; glow?: string;
 }) {
   return (
     <div className="card space-y-3">
       <div className="flex items-center gap-2 mb-1">
-        <div className={`p-1.5 rounded-lg ${color}`}>{icon}</div>
+        <div className={`p-1.5 rounded-lg ${color}`} style={glow ? { boxShadow: glow } : undefined}>{icon}</div>
         <h2 className="text-white font-semibold text-sm flex-1">{title}</h2>
         {badge}
       </div>
