@@ -519,10 +519,10 @@ function BulkImportModal({ staffList, onClose, onImported }: {
               <button
                 type="button"
                 onClick={handleParseText}
-                disabled={!pasteText.trim() || parsing}
+                disabled={!pasteText.trim()}
                 className="btn-primary flex items-center gap-2"
               >
-                {parsing ? <><Loader2 size={14} className="animate-spin" />Parsing…</> : <><Sparkles size={14} />Parse with AI</>}
+                <AlignLeft size={14} /> Extract Contacts
               </button>
               {parseError && <p className="text-red-400 text-xs">{parseError}</p>}
 
