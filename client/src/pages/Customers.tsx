@@ -373,17 +373,11 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
             <div><label className="label">Phone</label><input className="input" type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
             <div><label className="label">Email</label><input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Stage</label>
-              <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as PipelineStatus }))}>
-                {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Deal Value (₹)</label>
-              <input className="input" type="number" min="0" placeholder="e.g. 50000" value={form.dealValue} onChange={e => setForm(f => ({ ...f, dealValue: e.target.value }))} />
-            </div>
+          <div>
+            <label className="label">Stage</label>
+            <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as PipelineStatus }))}>
+              {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
           </div>
           {/* Multi-staff assignment — admin only */}
           {isAdmin && staff.length > 0 && (
