@@ -1091,7 +1091,9 @@ export default function Customers() {
             const isChecked = selected.includes(c.id);
 
             return (
-              <div key={c.id} className={`card transition-all ${isOverdue ? 'border-red-500/20' : ''} ${isChecked ? 'border-gold/40 bg-gold/3' : ''}`}>
+              <div key={c.id} className={`card border-l-4 transition-all duration-200 ${
+                STAGE_BORDER[c.status] || 'border-l-white/10'
+              } ${isChecked ? 'border-gold/40 bg-gold/3' : ''}`}>
                 <div className="flex items-center gap-3">
                   {/* Checkbox */}
                   {isAdmin && (
@@ -1099,12 +1101,26 @@ export default function Customers() {
                       className="accent-gold w-4 h-4 flex-shrink-0" onClick={e => e.stopPropagation()} />
                   )}
 
-                  <div className="w-9 h-9 rounded-full bg-dark-200 border border-dark-50 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white/50 font-bold text-sm">{c.name[0]}</span>
-                  </div>
+                  {/* Avatar with colored gradient + heat ring */}
+                  {(() => {
+                    const [c1, c2] = getAvatarGradient(c.name);
+                    const heat = getHeat(days);
+                    return (
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm text-white shadow-lg"
+                        style={{
+                          background: `linear-gradient(135deg, ${c1}, ${c2})`,
+                          boxShadow: heat.glow ? heat.glow : undefined,
+                        }}
+                      >
+                        {c.name[0].toUpperCase()}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Main info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Inline name editor — admin only */}
                       {isAdmin && editingNameId === c.id ? (
                         <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                           <input
@@ -1117,74 +1133,65 @@ export default function Customers() {
                               if (e.key === 'Escape') { setEditingNameId(null); setEditNameValue(''); }
                             }}
                           />
-                          <button
-                            onClick={() => handleNameSave(c.id)}
-                            disabled={savingName || !editNameValue.trim()}
-                            className="text-green-400 hover:text-green-300 p-0.5 disabled:opacity-40"
-                            title="Save name"
-                          >
-                            {savingName
-                              ? <div className="w-3 h-3 border border-green-400/40 border-t-green-400 rounded-full animate-spin" />
-                              : <Check size={13} />}
+                          <button onClick={() => handleNameSave(c.id)} disabled={savingName || !editNameValue.trim()}
+                            className="text-green-400 hover:text-green-300 p-0.5 disabled:opacity-40">
+                            {savingName ? <div className="w-3 h-3 border border-green-400/40 border-t-green-400 rounded-full animate-spin" /> : <Check size={13} />}
                           </button>
-                          <button
-                            onClick={() => { setEditingNameId(null); setEditNameValue(''); }}
-                            className="text-white/30 hover:text-white p-0.5"
-                            title="Cancel"
-                          >
-                            <X size={13} />
-                          </button>
+                          <button onClick={() => { setEditingNameId(null); setEditNameValue(''); }}
+                            className="text-white/30 hover:text-white p-0.5"><X size={13} /></button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5 group/name">
-                          <p className="text-white font-semibold">{c.name}</p>
+                          <p className="text-white font-semibold text-sm">{c.name}</p>
                           {isAdmin && (
-                            <button
-                              onClick={e => { e.stopPropagation(); setEditingNameId(c.id); setEditNameValue(c.name); }}
-                              className="text-white/20 hover:text-gold transition-colors p-0.5 opacity-0 group-hover/name:opacity-100"
-                              title="Rename customer"
-                            >
+                            <button onClick={e => { e.stopPropagation(); setEditingNameId(c.id); setEditNameValue(c.name); }}
+                              className="text-white/20 hover:text-gold transition-colors p-0.5 opacity-0 group-hover/name:opacity-100">
                               <Pencil size={11} />
                             </button>
                           )}
                         </div>
                       )}
                       {stageBadge(c.status)}
-                      {isOverdue && <span className="badge badge-red">Overdue</span>}
-                      {(c.tags || []).map(t => <span key={t} className="badge badge-gold text-[10px]">{t}</span>)}
+                      {(c.tags || []).filter(t => t !== 'crm-lead').map(t => (
+                        <span key={t} className="badge badge-gold text-[10px]">{t}</span>
+                      ))}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      {c.phone && <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={10} />{c.phone}</span>}
-                      {c.email && <span className="text-white/30 text-xs flex items-center gap-1"><Mail size={10} />{c.email}</span>}
+                      {c.phone && <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={9} />{c.phone}</span>}
+                      {c.email && <span className="text-white/30 text-xs flex items-center gap-1"><Mail size={9} />{c.email}</span>}
                       {isAdmin && (() => {
                         const ids = c.assignedStaff?.length ? c.assignedStaff : (c.assignedTo ? [c.assignedTo] : []);
                         if (!ids.length) return null;
-                        return (
-                          <span className="text-gold/40 text-xs">
-                            → {ids.map(id => getStaffName(id)).filter(Boolean).join(', ')}
-                          </span>
-                        );
+                        return <span className="text-gold/40 text-xs">→ {ids.map(id => getStaffName(id)).filter(Boolean).join(', ')}</span>;
                       })()}
-                      {c.dealValue && <span className="text-green-400/70 text-xs flex items-center gap-1"><DollarSign size={9} />₹{c.dealValue.toLocaleString('en-IN')}</span>}
+                      {c.dealValue && (
+                        <span className="text-emerald-400/80 text-xs flex items-center gap-1 font-medium">
+                          💰 ₹{c.dealValue.toLocaleString('en-IN')}
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {/* Right: heat badge + actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="text-right hidden sm:block">
-                      <p className={`text-xs font-medium ${days === null ? 'text-white/20' : days === 0 ? 'text-green-400' : isOverdue ? 'text-red-400' : 'text-white/40'}`}>
-                        {days === null ? 'Never' : days === 0 ? 'Today' : `${days}d ago`}
-                      </p>
-                      <p className="text-white/20 text-[10px]">last contact</p>
-                    </div>
-                    <button onClick={() => setLogging(c)} className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1">
-                      <Clock size={11} />Log
+                    {(() => {
+                      const heat = getHeat(days);
+                      return (
+                        <div className="text-right hidden sm:block">
+                          <p className={`text-xs font-semibold ${heat.color} ${heat.pulse ? 'animate-pulse' : ''}`}>
+                            {heat.label}
+                          </p>
+                          <p className="text-white/20 text-[10px]">last contact</p>
+                        </div>
+                      );
+                    })()}
+                    <button onClick={() => setLogging(c)}
+                      className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1">
+                      <Clock size={11} /> Log
                     </button>
                     {isAdmin && (
-                      <button
-                        onClick={() => handleDeleteCustomer(c.id, c.name)}
-                        disabled={deletingId === c.id}
-                        className="p-1.5 text-red-400/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-40"
-                        title="Delete customer"
-                      >
+                      <button onClick={() => handleDeleteCustomer(c.id, c.name)} disabled={deletingId === c.id}
+                        className="p-1.5 text-red-400/30 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-40">
                         {deletingId === c.id
                           ? <div className="w-3.5 h-3.5 border border-red-400/40 border-t-red-400 rounded-full animate-spin" />
                           : <Trash2 size={14} />}
