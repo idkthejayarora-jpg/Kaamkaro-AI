@@ -457,9 +457,6 @@ router.get('/trends', async (req, res) => {
 
     res.json({
       pipelineBreakdown,
-      pipelineValueByStage,
-      pipelineValue:     filtered.reduce((s, c) => s + (c.dealValue || 0), 0),
-      closedValue:       filtered.filter(c => c.status === 'closed').reduce((s, c) => s + (c.dealValue || 0), 0),
       sentimentByWeek,
       topCustomers,
       ghostCustomers,
