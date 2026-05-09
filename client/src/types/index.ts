@@ -488,6 +488,30 @@ export interface StockItem {
   updatedAt: string;
 }
 
+// ── Holding Stock (dispatch tracker) ──────────────────────────────────────────
+
+export interface HoldingItem {
+  id: string;
+  itemName: string;
+  qty: number;
+  unit: string;
+  amount: number;
+}
+
+export interface HoldingStock {
+  id: string;
+  customerName: string;
+  customerId: string | null;
+  staffId: string;
+  staffName: string;
+  items: HoldingItem[];
+  totalAmount: number;
+  note: string | null;
+  status: 'pending' | 'dispatched';
+  createdAt: string;
+  dispatchedAt: string | null;
+}
+
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
 
 export interface PDFExtractedEntry {
