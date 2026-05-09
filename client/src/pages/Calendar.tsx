@@ -290,6 +290,47 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
   );
 }
 
+// ── Avatar-color helper (matches Sidebar) ─────────────────────────────────────
+function getUserColor(name: string): string {
+  const palette = ['#a855f7','#3b82f6','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899'];
+  const idx = ((name.charCodeAt(0) || 0) + (name.charCodeAt(1) || 0)) % palette.length;
+  return palette[idx];
+}
+
+// ── Glowing ball that travels between two screen positions ────────────────────
+function FloatingBall({ sx, sy, tx, ty, color }: {
+  sx: number; sy: number; tx: number; ty: number; color: string;
+}) {
+  const [pos, setPos] = useState({ x: sx, y: sy });
+
+  useEffect(() => {
+    // One rAF ensures the browser paints at start position before transitioning
+    const id = requestAnimationFrame(() => setPos({ x: tx, y: ty }));
+    return () => cancelAnimationFrame(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: pos.x,
+        top: pos.y,
+        transform: 'translate(-50%, -50%)',
+        width: 18,
+        height: 18,
+        borderRadius: '50%',
+        background: color,
+        boxShadow: `0 0 24px 8px ${color}66, 0 0 8px 2px ${color}`,
+        // Spring-like: overshoots target slightly then settles
+        transition: 'left 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        pointerEvents: 'none',
+        zIndex: 9999,
+      }}
+    />
+  );
+}
+
 // ── Calendar grid cell ────────────────────────────────────────────────────────
 
 function DayCell({
@@ -297,7 +338,7 @@ function DayCell({
 }: {
   day: number; dateStr: string;
   isToday: boolean; isSelected: boolean;
-  counts?: DayCounts; onClick: () => void;
+  counts?: DayCounts; onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const total = counts ? counts.tasks + counts.diary + counts.interactions + counts.leads : 0;
   const hasActivity = total > 0;
