@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTabSlider, AnimatedTabPanel } from '../components/TabBar';
 import {
   ChevronLeft, ChevronRight, BookOpen, ClipboardList,
