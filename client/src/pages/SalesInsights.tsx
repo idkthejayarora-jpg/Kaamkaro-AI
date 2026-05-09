@@ -517,7 +517,7 @@ export default function SalesInsights() {
 
           {/* ── Restock alerts ───────────────────────────────────────────────── */}
           {data.restockAlerts?.length > 0 && (
-            <Section icon={<Package size={14} className="text-amber-400" />} title="Restock Alerts" color="bg-amber-500/10">
+            <Section icon={<Package size={14} className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.6)] animate-pulse" />} title="Restock Alerts" color="bg-amber-500/10" glow="0 0 12px rgba(251,146,60,0.4)">
               <div className="space-y-2">
                 {data.restockAlerts.map((a, i) => {
                   const key = `restock-${i}`;
