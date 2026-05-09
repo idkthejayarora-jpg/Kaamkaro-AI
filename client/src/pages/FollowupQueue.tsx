@@ -592,13 +592,11 @@ function TrendsTab() {
   if (loading) return <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{Array(4).fill(0).map((_, i) => <div key={i} className="card h-52 shimmer" />)}</div>;
   if (!data)   return <p className="text-white/30 text-sm text-center py-12">Could not load trends.</p>;
 
-  // Ordered pipeline data with deal values
   const pipelineData = STAGE_ORDER
     .filter(s => data.pipelineBreakdown[s] != null)
     .map(status => ({
       status,
       count: data.pipelineBreakdown[status] || 0,
-      value: Math.round((data.pipelineValueByStage?.[status] || 0) / 1000),
       pct: data.totalCustomers > 0
         ? Math.round(((data.pipelineBreakdown[status] || 0) / data.totalCustomers) * 100)
         : 0,
