@@ -224,14 +224,18 @@ export default function StaffPage() {
                   <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={10} />{s.phone}</span>
                   <span className="text-white/20 text-xs flex items-center gap-1"><Calendar size={10} />{new Date(s.joinDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
                   {s.streakData?.currentStreak != null && s.streakData.currentStreak > 0 && (
-                    <span className="text-gold/60 text-xs flex items-center gap-1"><Flame size={10} />{s.streakData.currentStreak}d streak</span>
+                    <span className="text-gold/70 text-xs flex items-center gap-1">
+                      <Flame size={10} className="drop-shadow-[0_0_6px_rgba(212,175,55,0.7)]" />
+                      {s.streakData.currentStreak}d streak
+                    </span>
                   )}
                   {(() => {
                     const avail = s.availability || 'available';
                     const cfg = AVAILABILITY_CONFIG[avail as keyof typeof AVAILABILITY_CONFIG] || AVAILABILITY_CONFIG.available;
+                    const dotGlow = avail === 'available' ? '0 0 6px rgba(34,197,94,0.7)' : avail === 'on_call' ? '0 0 6px rgba(96,165,250,0.7)' : undefined;
                     return (
                       <span className={`text-xs flex items-center gap-1 ${cfg.color}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />{cfg.label}
+                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} style={dotGlow ? { boxShadow: dotGlow } : undefined} />{cfg.label}
                       </span>
                     );
                   })()}
