@@ -271,9 +271,24 @@ router.post('/bulk-actions', async (req, res) => {
         `Bulk follow-up set to ${value} for ${updated} leads`);
 
     } else if (action === 'delete') {
+      const allLeads = await readDB('leads');
+      const { deleteOne } = require('../utils/db');
       for (const id of allowedIds) {
+        const lead = allLeads.find(l => l.id === id);
         await updateOne('leads', id, { isActive: false, updatedAt: new Date().toISOString() });
         updated++;
+        // If the linked customer has no other active leads, delete the customer too
+        if (lead?.linkedCustomerId) {
+          try {
+            const others = allLeads.filter(
+              l => l.id !== id &&
+                   l.linkedCustomerId === lead.linkedCustomerId &&
+                   l.isActive !== false &&
+                   !allowedIds.includes(l.id)
+            );
+            if (others.length === 0) await deleteOne('customers', lead.linkedCustomerId);
+          } catch { /* non-blocking */ }
+        }
       }
       await logAudit(req.user.id, req.user.name, 'delete', 'lead', null,
         `Bulk soft-deleted ${updated} leads`);
