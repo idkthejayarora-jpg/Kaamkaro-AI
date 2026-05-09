@@ -539,10 +539,10 @@ export default function Tasks() {
           <button
             onClick={() => handleComplete(task.id)}
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-              task.completed        ? 'bg-green-500/20 border-green-500/40' :
-              isPool                ? 'border-indigo-400/40 hover:border-indigo-400 hover:bg-indigo-500/10' :
-              isOverdueTask         ? 'border-red-500/40 hover:border-red-400 hover:bg-red-500/10' :
-                                      'border-gold/30 hover:border-gold hover:bg-gold/10'
+              task.completed        ? 'bg-green-500/20 border-green-500/40 shadow-[0_0_8px_rgba(74,222,128,0.4)]' :
+              isPool                ? 'border-indigo-400/40 hover:border-indigo-400 hover:bg-indigo-500/10 hover:shadow-[0_0_8px_rgba(129,140,248,0.4)]' :
+              isOverdueTask         ? 'border-red-500/40 hover:border-red-400 hover:bg-red-500/10 hover:shadow-[0_0_8px_rgba(248,113,113,0.5)]' :
+                                      'border-gold/30 hover:border-gold hover:bg-gold/10 hover:shadow-[0_0_8px_rgba(212,175,55,0.5)]'
             }`}
           >
             {task.completed && <Check size={10} className="text-green-400" />}
