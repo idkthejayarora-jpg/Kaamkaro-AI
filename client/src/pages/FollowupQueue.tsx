@@ -439,6 +439,8 @@ function QueueCard({
                   width: `${item.priorityScore}%`,
                   background: item.priorityScore >= 80 ? '#f87171' :
                               item.priorityScore >= 60 ? '#f97316' : GOLD,
+                  boxShadow: item.priorityScore >= 80 ? '0 0 6px rgba(248,113,113,0.6)' :
+                             item.priorityScore >= 60 ? '0 0 6px rgba(249,115,22,0.6)' : '0 0 5px rgba(212,175,55,0.5)',
                 }}
               />
             </div>
