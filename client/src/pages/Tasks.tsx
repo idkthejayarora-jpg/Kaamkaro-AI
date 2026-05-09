@@ -429,8 +429,8 @@ function EditTaskModal({ task, onClose, onSaved }: {
         </div>
 
         <div className="px-6 pb-6 flex gap-3">
-          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={save} disabled={loading} className="btn-primary flex-1 flex items-center justify-center gap-2">
+          <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={save} disabled={loading} className="btn-primary flex-1 flex items-center justify-center gap-2">
             <Save size={14} />
             {loading ? 'Saving…' : dateChanged ? 'Reschedule (−0.5 pts)' : 'Save Changes'}
           </button>
