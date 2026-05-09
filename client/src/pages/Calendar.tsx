@@ -34,10 +34,10 @@ const MONTHS    = ['January','February','March','April','May','June',
 
 // Category config — drives dots, tabs, and section renders
 const CATS = [
-  { key: 'tasks',        icon: ClipboardList, label: 'Tasks',        dot: '#60a5fa' /* blue-400  */ },
-  { key: 'diary',        icon: BookOpen,      label: 'Diary',        dot: '#c084fc' /* purple-400*/ },
-  { key: 'interactions', icon: Phone,         label: 'Interactions', dot: '#34d399' /* emerald-400*/},
-  { key: 'leads',        icon: TrendingUp,    label: 'Leads',        dot: '#D4AF37' /* gold       */},
+  { key: 'tasks',        icon: ClipboardList, label: 'Tasks',        dot: '#60a5fa', activeColor: 'text-blue-400',    activeBg: '#60a5fa22' },
+  { key: 'diary',        icon: BookOpen,      label: 'Diary',        dot: '#c084fc', activeColor: 'text-purple-400',  activeBg: '#c084fc22' },
+  { key: 'interactions', icon: Phone,         label: 'Interactions', dot: '#34d399', activeColor: 'text-emerald-400', activeBg: '#34d39922' },
+  { key: 'leads',        icon: TrendingUp,    label: 'Leads',        dot: '#D4AF37', activeColor: 'text-gold',        activeBg: '#D4AF3722' },
 ] as const;
 type CatKey = typeof CATS[number]['key'];
 
