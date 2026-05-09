@@ -1153,11 +1153,6 @@ export default function Customers() {
                         if (!ids.length) return null;
                         return <span className="text-gold/40 text-xs">→ {ids.map(id => getStaffName(id)).filter(Boolean).join(', ')}</span>;
                       })()}
-                      {c.dealValue && (
-                        <span className="text-emerald-400/80 text-xs flex items-center gap-1 font-medium">
-                          <DollarSign size={9} />₹{c.dealValue.toLocaleString('en-IN')}
-                        </span>
-                      )}
                     </div>
                   </div>
 
