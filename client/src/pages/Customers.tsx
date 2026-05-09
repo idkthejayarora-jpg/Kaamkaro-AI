@@ -220,8 +220,8 @@ function LogInteractionModal({ customer, onClose, onLogged }: {
         </div>
 
         <div className="p-5 border-t border-dark-50 flex gap-3 flex-shrink-0">
-          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-          <button onClick={handleSubmit} disabled={loading} className="btn-primary flex-1">
+          <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={handleSubmit} disabled={loading} className="btn-primary flex-1">
             <Check size={14} className="mr-1.5" />
             {loading ? 'Logging...' : 'Log Interaction'}
           </button>
