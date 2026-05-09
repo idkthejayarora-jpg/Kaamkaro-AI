@@ -23,7 +23,7 @@ const STAGES: { key: PipelineStatus; label: string; color: string; bg: string; e
 function stageBadge(status: PipelineStatus) {
   const s = STAGES.find(x => x.key === status);
   if (!s) return null;
-  return <span className={`badge ${s.bg} ${s.color} border border-current/20`}>{s.label}</span>;
+  return <span className={`badge ${s.bg} ${s.color} border border-current/20`}>{s.emoji} {s.label}</span>;
 }
 
 // ── Sentiment Trend ────────────────────────────────────────────────────────────
