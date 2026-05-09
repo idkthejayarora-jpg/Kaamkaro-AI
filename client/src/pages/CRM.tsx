@@ -141,7 +141,11 @@ function LeadCard({ lead, today, isAdmin, onAction }: LeadCardProps) {
       }`}
     >
       {/* Heat dot */}
-      <span className={`absolute top-3 right-3 w-2 h-2 rounded-full ${HEAT_DOT[heat]}`} title={heat} />
+      <span
+        className={`absolute top-3 right-3 w-2 h-2 rounded-full ${HEAT_DOT[heat]} ${heat === 'hot' ? 'animate-pulse' : ''}`}
+        title={heat}
+        style={heat === 'hot' ? { boxShadow: '0 0 8px rgba(239,68,68,0.8)' } : heat === 'warm' ? { boxShadow: '0 0 7px rgba(251,146,60,0.7)' } : undefined}
+      />
 
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-xl bg-dark-200 border border-dark-50 flex items-center justify-center flex-shrink-0 group-hover:border-gold/20 transition-colors">
