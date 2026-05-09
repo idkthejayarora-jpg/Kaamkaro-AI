@@ -735,24 +735,41 @@ function AdminDashboard() {
           </ResponsiveContainer>
         </div>
         <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-1">Response Rate Trend</h3>
-          <p className="text-white/30 text-xs mb-4">% of customers who responded</p>
+          <h3 className="text-white font-semibold text-sm mb-1">Contact Breakdown</h3>
+          <p className="text-white/30 text-xs mb-3">How the team reaches customers each week</p>
           <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={weeklyData}>
-              <defs>
-                <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={GOLD} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={GOLD} stopOpacity={0}   />
-                </linearGradient>
-              </defs>
+            <BarChart data={weeklyData} barSize={14} barGap={2}>
               <CartesianGrid vertical={false} stroke={DIM} />
               <XAxis dataKey="week" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="responseRate" stroke={GOLD} strokeWidth={2}
-                fill="url(#goldGrad)" dot={{ fill: GOLD, r: 3, strokeWidth: 0 }} />
-            </AreaChart>
+              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl space-y-1">
+                      <p className="text-white/50 mb-1 font-medium">{label}</p>
+                      {payload.map((p, i) => p.value > 0 && (
+                        <p key={i} style={{ color: p.fill as string }}>{p.name}: <strong>{p.value}</strong></p>
+                      ))}
+                    </div>
+                  );
+                }}
+                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+              />
+              <Bar dataKey="calls"    stackId="a" fill="#60a5fa" name="Calls"    radius={[0,0,0,0]} />
+              <Bar dataKey="messages" stackId="a" fill="#c084fc" name="Messages" radius={[0,0,0,0]} />
+              <Bar dataKey="meetings" stackId="a" fill={GOLD}    name="Meetings" radius={[0,0,0,0]} />
+              <Bar dataKey="emails"   stackId="a" fill="#34d399" name="Emails"   radius={[3,3,0,0]} />
+            </BarChart>
           </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-1 flex-wrap">
+            {[['Calls','#60a5fa'],['Messages','#c084fc'],['Meetings',GOLD],['Emails','#34d399']].map(([l,c]) => (
+              <div key={l} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ background: c }} />
+                <span className="text-white/30 text-[10px]">{l}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
