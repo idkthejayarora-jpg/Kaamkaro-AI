@@ -1007,7 +1007,7 @@ export default function Customers() {
                 ? `${s.bg} ${s.color} border border-current/40 shadow-[0_0_10px_currentColor/20]`
                 : 'border border-dark-50 text-white/40 hover:text-white hover:border-white/20'
             }`}>
-            {s.emoji} {s.label} <span className={`ml-1 ${stageFilter === s.key ? 'opacity-70' : 'opacity-50'}`}>{stageCounts[s.key] || 0}</span>
+            {s.label} <span className={`ml-1 ${stageFilter === s.key ? 'opacity-70' : 'opacity-50'}`}>{stageCounts[s.key] || 0}</span>
           </button>
         ))}
       </div>
