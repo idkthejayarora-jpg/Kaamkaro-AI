@@ -748,7 +748,7 @@ function AdminDashboard() {
                   return (
                     <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl space-y-1">
                       <p className="text-white/50 mb-1 font-medium">{label}</p>
-                      {payload.map((p, i) => p.value > 0 && (
+                      {payload.map((p, i) => (Number(p.value) > 0) && (
                         <p key={i} style={{ color: p.fill as string }}>{p.name}: <strong>{p.value}</strong></p>
                       ))}
                     </div>
