@@ -325,7 +325,7 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
     name: '', phone: '', email: '',
     // Multi-staff: admin starts empty, staff auto-assigns themselves
     assignedStaff: isAdmin ? [] as string[] : [selfId],
-    notes: '', tags: '', status: 'lead' as PipelineStatus, dealValue: '',
+    notes: '', tags: '', status: 'lead' as PipelineStatus,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
