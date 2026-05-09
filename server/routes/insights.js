@@ -396,7 +396,6 @@ router.get('/trends', async (req, res) => {
         name:         c.name,
         interactions: custEngagement[c.id] || 0,
         status:       c.status,
-        dealValue:    c.dealValue,
       }))
       .sort((a, b) => b.interactions - a.interactions)
       .slice(0, 10);
