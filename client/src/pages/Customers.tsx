@@ -349,7 +349,6 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
         assignedTo: form.assignedStaff[0] || null,   // primary = first selected
         assignedStaff: form.assignedStaff,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-        dealValue: form.dealValue ? Number(form.dealValue) : null,
       });
       onCreated(c);
     } catch (err: unknown) {
