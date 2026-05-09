@@ -998,14 +998,12 @@ export default function CRM() {
             </button>
           )}
           {/* Import */}
-          {isAdmin && (
-            <button
-              onClick={() => setShowImport(true)}
-              className="btn-ghost flex items-center gap-1.5 text-sm"
-            >
-              <Upload size={14} /> Import
-            </button>
-          )}
+          <button
+            onClick={() => setShowImport(true)}
+            className="btn-ghost flex items-center gap-1.5 text-sm"
+          >
+            <Upload size={14} /> Import
+          </button>
           <button
             onClick={() => navigate('/crm/new')}
             className="btn-primary flex items-center gap-2 flex-shrink-0"
