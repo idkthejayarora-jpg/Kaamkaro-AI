@@ -557,7 +557,7 @@ function AdminDashboard() {
       {totalRedAlerts > 0 && (
         <div className="card border-red-500/20">
           <h3 className="text-red-400 font-semibold text-sm mb-4 flex items-center gap-2">
-            <AlertTriangle size={14} /> Red Alert Zone
+            <AlertTriangle size={14} className="drop-shadow-[0_0_8px_rgba(248,113,113,0.7)] animate-pulse" /> Red Alert Zone
             <span className="ml-1 text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{totalRedAlerts} issue{totalRedAlerts !== 1 ? 's' : ''}</span>
           </h3>
           <div className="space-y-4">
