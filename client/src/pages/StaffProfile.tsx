@@ -218,8 +218,7 @@ export default function StaffProfile() {
                     <div key={i} className={`w-4 h-4 rounded-sm ${i < p.streak ? 'bg-gold' : 'bg-dark-200'}`} />
                   ))}
                 </div>
-                <span className="text-white/30 text-xs w-16 text-right">{p.responseRate}% resp.</span>
-                <span className="text-white/30 text-xs w-16 text-right">{p.customersContacted} contacts</span>
+                <span className="text-white/30 text-xs w-20 text-right">{p.customersContacted} contacts</span>
               </div>
             </div>
           ))}
