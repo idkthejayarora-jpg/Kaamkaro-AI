@@ -345,6 +345,7 @@ function DayCell({
 
   return (
     <button
+      data-date={dateStr}
       onClick={onClick}
       className={`
         group relative flex flex-col items-center pt-2 pb-2 min-h-[68px] sm:min-h-[76px]
