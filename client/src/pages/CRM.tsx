@@ -301,17 +301,12 @@ function BulkImportModal({ staffList, onClose, onImported }: {
     .filter(r => r.name.trim());
 
   // ── Paste / AI parse ─────────────────────────────────────────────────────────
-  const handleParseText = async () => {
+  const handleParseText = () => {
     if (!pasteText.trim()) return;
-    setParsing(true); setParseError('');
-    try {
-      const res = await leadsAPI.parseText(pasteText);
-      setParsedLeads(res.leads || []);
-      if ((res.leads || []).length === 0) setParseError('No contacts found. Try a different format.');
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setParseError(msg || 'Failed to parse. Check your connection and try again.');
-    } finally { setParsing(false); }
+    setParseError('');
+    const contacts = parseRawContacts(pasteText);
+    setParsedLeads(contacts);
+    if (contacts.length === 0) setParseError('No contacts found. Make sure each line has a name and/or a 10-digit phone number.');
   };
 
   const updateParsedLead = (i: number, field: keyof ParsedLead, value: string) => {
