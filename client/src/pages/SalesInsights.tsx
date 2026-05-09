@@ -399,7 +399,7 @@ export default function SalesInsights() {
 
           {/* ── Customer segments ────────────────────────────────────────────── */}
           {data.segments?.length > 0 && (
-            <Section icon={<Users size={14} className="text-purple-400" />} title="Customer Segments" color="bg-purple-500/10">
+            <Section icon={<Users size={14} className="text-purple-400" />} title="Customer Segments" color="bg-purple-500/10" glow="0 0 12px rgba(192,132,252,0.4)">
               <div className="space-y-3">
                 {data.segments.map((seg, i) => (
                   <div key={i} className="bg-dark-300 rounded-xl p-3 space-y-1.5">
