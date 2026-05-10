@@ -752,10 +752,11 @@ function ShelfSection({ isAdmin, staffList }: { isAdmin: boolean; staffList: Sta
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Stock() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [pending,    setPending]    = useState<HoldingStock[]>([]);
   const [dispatched, setDispatched] = useState<HoldingStock[]>([]);
   const [customers,  setCustomers]  = useState<Customer[]>([]);
+  const [staffList,  setStaffList]  = useState<Staff[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [tab,        setTab]        = useState<'pending' | 'dispatched'>('pending');
   const [showModal,  setShowModal]  = useState(false);
@@ -766,16 +767,21 @@ export default function Stock() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, d, c] = await Promise.all([
+      const base = [
         holdingStockAPI.list({ status: 'pending' }),
         holdingStockAPI.list({ status: 'dispatched' }),
         customersAPI.list(),
-      ]);
+      ] as const;
+      const extras = isAdmin
+        ? import('../lib/api').then(m => m.staffAPI.list())
+        : Promise.resolve([] as Staff[]);
+      const [[p, d, c], s] = await Promise.all([Promise.all(base), extras]);
       setPending(p);
       setDispatched(d);
       setCustomers(c);
+      setStaffList(s);
     } finally { setLoading(false); }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
