@@ -298,7 +298,7 @@ function DayCell({
 }: {
   day: number; dateStr: string;
   isToday: boolean; isSelected: boolean;
-  counts?: DayCounts; onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  counts?: DayCounts; onClick: () => void;
 }) {
   const total = counts ? counts.tasks + counts.diary + counts.interactions + counts.leads : 0;
   const hasActivity = total > 0;
