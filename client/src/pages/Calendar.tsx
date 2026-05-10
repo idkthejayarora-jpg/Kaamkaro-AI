@@ -551,16 +551,5 @@ export default function Calendar() {
         )}
       </div>
     </div>
-
-    {/* ── Glowing ball animation ── */}
-    {ball && (
-      <FloatingBall
-        key={ball.key}
-        sx={ball.sx} sy={ball.sy}
-        tx={ball.tx} ty={ball.ty}
-        color={userColor}
-      />
-    )}
-    </>
   );
 }
