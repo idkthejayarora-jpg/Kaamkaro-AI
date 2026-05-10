@@ -515,6 +515,20 @@ export interface HoldingStock {
   dispatchedAt: string | null;
 }
 
+// ── Shelf Inventory ───────────────────────────────────────────────────────────
+
+export interface ShelfItem {
+  id: string;
+  staffId: string;
+  staffName: string;
+  itemName: string;
+  qty: number;
+  unit: string;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── PDF Upload ─────────────────────────────────────────────────────────────────
 
 export interface PDFExtractedEntry {
