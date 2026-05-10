@@ -365,18 +365,12 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                   <NavLink
                     to={to}
                     onClick={onClose}
-                    className="sidebar-link"
-                    style={({ isActive }: { isActive: boolean }) => isActive ? {
-                      color: userColor,
-                      background: `${userColor}14`,
-                      boxShadow: `inset 3px 0 0 ${userColor}`,
-                      fontWeight: 600,
-                    } : undefined}
+                    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                   >
                     {({ isActive }) => (
                       <>
                         <Icon size={16} className="flex-shrink-0 transition-all duration-200"
-                          style={isActive ? { filter: `drop-shadow(0 0 6px ${userColor}bb)` } : undefined} />
+                          style={isActive ? { filter: 'drop-shadow(0 0 6px #C9A84Ccc)' } : undefined} />
                         <span className="flex-1">{label}</span>
                         <ChevronRight size={12} className="opacity-0 group-hover:opacity-100" />
                       </>
