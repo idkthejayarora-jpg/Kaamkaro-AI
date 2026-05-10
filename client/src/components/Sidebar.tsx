@@ -217,7 +217,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               src="/logo.png"
               alt="KJ"
               className="w-9 h-9 rounded-full object-cover flex-shrink-0 animate-pulse"
-              style={{ boxShadow: `0 0 18px ${userColor}b3, 0 0 6px ${userColor}59` }}
+              style={{ boxShadow: '0 0 18px #C9A84Cb3, 0 0 6px #C9A84C59' }}
             />
             <div>
               <p className="text-white font-bold text-sm tracking-wide">Kaamkaro</p>
