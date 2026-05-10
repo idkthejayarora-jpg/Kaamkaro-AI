@@ -959,6 +959,16 @@ export default function Stock() {
           onDispatched={handleDispatched}
         />
       )}
+
+      {/* ── Divider ── */}
+      <div className="relative flex items-center gap-4 py-2">
+        <div className="flex-1 h-px bg-white/[0.07]" />
+        <span className="text-white/15 text-[10px] font-semibold uppercase tracking-widest flex-shrink-0">Shelf Inventory</span>
+        <div className="flex-1 h-px bg-white/[0.07]" />
+      </div>
+
+      {/* ── Shelf Inventory ── */}
+      <ShelfSection isAdmin={isAdmin} staffList={staffList} />
     </div>
   );
 }
