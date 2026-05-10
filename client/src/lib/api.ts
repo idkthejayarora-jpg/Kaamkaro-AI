@@ -298,4 +298,14 @@ export const holdingStockAPI = {
   delete: (id: string) => api.delete(`/stock/holding/${id}`).then(r => r.data),
 };
 
+export const shelfInventoryAPI = {
+  list: (params?: { staffId?: string }) =>
+    api.get('/stock/shelf', { params }).then(r => r.data),
+  create: (data: { itemName: string; qty: number; unit: string; note?: string }) =>
+    api.post('/stock/shelf', data).then(r => r.data),
+  update: (id: string, data: { itemName?: string; qty?: number; unit?: string; note?: string }) =>
+    api.put(`/stock/shelf/${id}`, data).then(r => r.data),
+  delete: (id: string) => api.delete(`/stock/shelf/${id}`).then(r => r.data),
+};
+
 export default api;
