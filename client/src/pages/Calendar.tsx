@@ -519,7 +519,7 @@ export default function Calendar() {
                   isToday={ds === todayStr}
                   isSelected={ds === selected}
                   counts={monthData?.days[ds]}
-                  onClick={(e) => handleDayClick(ds, e)}
+                  onClick={() => handleDayClick(ds)}
                 />
               );
             })}
