@@ -378,6 +378,94 @@ router.delete('/holding/:id', async (req, res) => {
   }
 });
 
+// ── Shelf Inventory (staff's physical shelf stock) ────────────────────────────
+
+// GET /api/stock/shelf — staff sees own; admin sees all (optional ?staffId=)
+router.get('/shelf', async (req, res) => {
+  try {
+    let items = await readDB('shelfItems');
+    if (req.user.role !== 'admin') {
+      items = items.filter(s => s.staffId === req.user.id);
+    } else if (req.query.staffId) {
+      items = items.filter(s => s.staffId === req.query.staffId);
+    }
+    items.sort((a, b) => a.itemName.localeCompare(b.itemName));
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/stock/shelf — add a shelf item
+router.post('/shelf', async (req, res) => {
+  try {
+    const { itemName, qty, unit, note } = req.body;
+    if (!itemName?.trim()) return res.status(400).json({ error: 'itemName is required' });
+    // Prevent duplicate item names per staff
+    const all = await readDB('shelfItems');
+    const exists = all.find(
+      s => s.staffId === req.user.id &&
+           s.itemName.toLowerCase() === itemName.trim().toLowerCase()
+    );
+    if (exists) {
+      return res.status(409).json({ error: `"${itemName.trim()}" already exists on your shelf — edit it instead` });
+    }
+    const entry = await insertOne('shelfItems', {
+      id:        uuidv4(),
+      staffId:   req.user.id,
+      staffName: req.user.name,
+      itemName:  itemName.trim(),
+      qty:       parseInt(qty, 10) || 0,
+      unit:      unit || 'pc',
+      note:      note?.trim() || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    res.json(entry);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/stock/shelf/:id — update a shelf item
+router.put('/shelf/:id', async (req, res) => {
+  try {
+    const all  = await readDB('shelfItems');
+    const item = all.find(s => s.id === req.params.id);
+    if (!item) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role !== 'admin' && item.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { itemName, qty, unit, note } = req.body;
+    const updated = await updateOne('shelfItems', item.id, {
+      itemName:  itemName?.trim()  ?? item.itemName,
+      qty:       qty != null ? (parseInt(qty, 10) || 0) : item.qty,
+      unit:      unit || item.unit,
+      note:      note !== undefined ? (note?.trim() || null) : item.note,
+      updatedAt: new Date().toISOString(),
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/stock/shelf/:id — remove a shelf item
+router.delete('/shelf/:id', async (req, res) => {
+  try {
+    const all  = await readDB('shelfItems');
+    const item = all.find(s => s.id === req.params.id);
+    if (!item) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role !== 'admin' && item.staffId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    await deleteOne('shelfItems', item.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Legacy stock-item routes ───────────────────────────────────────────────────
 
 // DELETE /api/stock/:id — delete entire stock item record
