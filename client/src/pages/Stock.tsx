@@ -429,6 +429,327 @@ function HoldingCard({
   );
 }
 
+// ── Shelf Inventory Modal (add / edit a shelf item) ───────────────────────────
+function ShelfItemModal({
+  initial, onClose, onSaved,
+}: {
+  initial?: ShelfItem;
+  onClose: () => void;
+  onSaved: (item: ShelfItem) => void;
+}) {
+  const isEdit = !!initial;
+  const [itemName, setItemName] = useState(initial?.itemName ?? '');
+  const [qty,      setQty]      = useState(initial ? String(initial.qty) : '');
+  const [unit,     setUnit]     = useState(initial?.unit ?? 'pc');
+  const [note,     setNote]     = useState(initial?.note ?? '');
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
+
+  const doSubmit = async () => {
+    if (!itemName.trim()) { setError('Item name is required'); return; }
+    if (!qty || parseInt(qty) < 0) { setError('Enter a valid quantity'); return; }
+    setLoading(true); setError('');
+    try {
+      const payload = {
+        itemName: itemName.trim(),
+        qty: parseInt(qty) || 0,
+        unit,
+        note: note.trim() || undefined,
+      };
+      const result = isEdit
+        ? await shelfInventoryAPI.update(initial!.id, payload)
+        : await shelfInventoryAPI.create(payload);
+      onSaved(result);
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to save');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-sm shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+          <h2 className="text-white font-semibold flex items-center gap-2">
+            <Layers size={15} className="text-gold" />
+            {isEdit ? 'Edit Shelf Item' : 'Add to Shelf'}
+          </h2>
+          <button onClick={onClose} className="text-white/40 hover:text-white"><X size={16} /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-2.5 text-sm">{error}</div>
+          )}
+          <div>
+            <label className="label">Item Name *</label>
+            <input
+              className="input" placeholder="e.g. Silk Saree, Gold Bangles…"
+              value={itemName} onChange={e => setItemName(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Quantity *</label>
+              <input
+                type="number" min="0" className="input text-center"
+                placeholder="0"
+                value={qty} onChange={e => setQty(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Unit</label>
+              <select className="input" value={unit} onChange={e => setUnit(e.target.value)}>
+                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Note (optional)</label>
+            <input
+              className="input" placeholder="e.g. Wedding stock, display only…"
+              value={note} onChange={e => setNote(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 flex gap-3">
+          <button onClick={onClose} className="btn-ghost flex-1">Cancel</button>
+          <button onClick={doSubmit} disabled={loading} className="btn-primary flex-1">
+            {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Add to Shelf'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Shelf Section ─────────────────────────────────────────────────────────────
+function ShelfSection({ isAdmin, staffList }: { isAdmin: boolean; staffList: Staff[] }) {
+  const [items,       setItems]       = useState<ShelfItem[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [filterStaff, setFilterStaff] = useState('');
+  const [showModal,   setShowModal]   = useState(false);
+  const [editing,     setEditing]     = useState<ShelfItem | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = isAdmin && filterStaff ? { staffId: filterStaff } : undefined;
+      const data = await shelfInventoryAPI.list(params);
+      setItems(data);
+    } finally { setLoading(false); }
+  }, [isAdmin, filterStaff]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSaved = (item: ShelfItem) => {
+    if (editing) {
+      setItems(prev => prev.map(x => x.id === item.id ? item : x).sort((a, b) => a.itemName.localeCompare(b.itemName)));
+    } else {
+      setItems(prev => [...prev, item].sort((a, b) => a.itemName.localeCompare(b.itemName)));
+    }
+    setShowModal(false);
+    setEditing(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Remove this item from your shelf?')) return;
+    await shelfInventoryAPI.delete(id);
+    setItems(prev => prev.filter(x => x.id !== id));
+  };
+
+  // Group by staff when admin is viewing all
+  const grouped: Record<string, ShelfItem[]> = {};
+  if (isAdmin && !filterStaff) {
+    items.forEach(item => {
+      if (!grouped[item.staffId]) grouped[item.staffId] = [];
+      grouped[item.staffId].push(item);
+    });
+  }
+
+  const totalQty = items.reduce((s, i) => s + i.qty, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Section header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center flex-shrink-0">
+            <Layers size={15} className="text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-base">Shelf Inventory</h2>
+            <p className="text-white/30 text-xs">
+              {isAdmin ? 'View each staff's on-shelf stock' : 'Your current stock on shelves'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Admin staff filter */}
+          {isAdmin && staffList.length > 0 && (
+            <select
+              value={filterStaff}
+              onChange={e => setFilterStaff(e.target.value)}
+              className="input text-sm w-auto pr-8"
+            >
+              <option value="">All Staff</option>
+              {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          )}
+          {/* Staff can add; admin can also add (for their own) */}
+          <button
+            onClick={() => { setEditing(null); setShowModal(true); }}
+            className="btn-primary flex items-center gap-2 text-sm py-2"
+          >
+            <Plus size={13} /> Add Item
+          </button>
+        </div>
+      </div>
+
+      {/* Quick stat strip */}
+      {!loading && items.length > 0 && (
+        <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl bg-blue-500/5 border border-blue-500/15">
+          <div>
+            <p className="text-white/30 text-[10px] uppercase tracking-wide">Items</p>
+            <p className="text-white font-bold text-lg leading-none">{items.length}</p>
+          </div>
+          <div className="w-px h-8 bg-white/[0.07]" />
+          <div>
+            <p className="text-white/30 text-[10px] uppercase tracking-wide">Total Units</p>
+            <p className="text-blue-400 font-bold text-lg leading-none">{totalQty}</p>
+          </div>
+          {isAdmin && !filterStaff && (
+            <>
+              <div className="w-px h-8 bg-white/[0.07]" />
+              <div>
+                <p className="text-white/30 text-[10px] uppercase tracking-wide">Staff</p>
+                <p className="text-white font-bold text-lg leading-none">{Object.keys(grouped).length}</p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Content */}
+      {loading ? (
+        <div className="space-y-2">
+          {Array(3).fill(0).map((_, i) => <div key={i} className="h-12 rounded-xl shimmer" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="card flex flex-col items-center py-10 text-center">
+          <Layers size={32} className="text-white/10 mb-3" />
+          <p className="text-white/35 font-medium text-sm">
+            {isAdmin && filterStaff
+              ? 'This staff has no shelf items yet'
+              : isAdmin
+                ? 'No shelf inventory across any staff'
+                : 'Your shelf is empty'}
+          </p>
+          {!isAdmin && (
+            <p className="text-white/20 text-xs mt-1">
+              Add the items you currently have in stock on your shelves
+            </p>
+          )}
+          {!isAdmin && (
+            <button
+              onClick={() => { setEditing(null); setShowModal(true); }}
+              className="btn-primary mt-4 text-sm"
+            >
+              Add First Item
+            </button>
+          )}
+        </div>
+      ) : isAdmin && !filterStaff ? (
+        /* Admin all-staff view — grouped by staff member */
+        <div className="space-y-4">
+          {Object.entries(grouped).map(([staffId, staffItems]) => {
+            const staffName = staffItems[0]?.staffName || staffId;
+            return (
+              <div key={staffId} className="card space-y-3">
+                {/* Staff sub-header */}
+                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06]">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px] font-bold text-blue-400 flex-shrink-0">
+                    {initials(staffName)}
+                  </div>
+                  <p className="text-white/70 text-sm font-semibold">{staffName}</p>
+                  <span className="ml-auto text-white/20 text-xs">{staffItems.length} item{staffItems.length !== 1 ? 's' : ''}</span>
+                </div>
+                {/* Items table */}
+                <div className="space-y-1">
+                  {staffItems.map(item => (
+                    <div key={item.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.03] group transition-colors">
+                      <span className="text-white/80 text-sm font-medium flex-1 truncate">{item.itemName}</span>
+                      <span className="text-blue-400 font-bold text-sm tabular-nums">{item.qty}</span>
+                      <span className="text-white/30 text-xs w-8">{item.unit}</span>
+                      {item.note && (
+                        <span className="text-white/25 text-xs italic truncate max-w-[120px] hidden sm:block">{item.note}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Staff own view (or admin filtered to one staff) */
+        <div className="card">
+          {/* Column headers */}
+          <div className="grid grid-cols-[1fr_56px_48px_80px] gap-2 px-3 pb-2 mb-1 border-b border-white/[0.06]">
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Unit</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Actions</span>
+          </div>
+          <div className="space-y-0.5">
+            {items.map(item => (
+              <div
+                key={item.id}
+                className="grid grid-cols-[1fr_56px_48px_80px] gap-2 px-3 py-2.5 rounded-lg hover:bg-white/[0.04] group transition-colors items-center"
+              >
+                <div className="min-w-0">
+                  <p className="text-white/85 text-sm font-medium truncate">{item.itemName}</p>
+                  {item.note && (
+                    <p className="text-white/25 text-xs truncate mt-0.5">{item.note}</p>
+                  )}
+                </div>
+                <span className="text-blue-400 font-bold text-sm text-center tabular-nums">{item.qty}</span>
+                <span className="text-white/35 text-xs">{item.unit}</span>
+                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => { setEditing(item); setShowModal(true); }}
+                    className="p-1.5 rounded-lg hover:bg-dark-200 text-white/30 hover:text-white transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <ShelfItemModal
+          initial={editing ?? undefined}
+          onClose={() => { setShowModal(false); setEditing(null); }}
+          onSaved={handleSaved}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Stock() {
   const { user } = useAuth();
