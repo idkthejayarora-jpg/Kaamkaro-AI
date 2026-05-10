@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Package, Plus, Trash2, X, Send, CheckCircle2,
   User, Calendar, ChevronDown, ChevronUp, Edit2,
-  IndianRupee, Archive, Clock,
+  IndianRupee, Archive, Clock, Layers, Pencil,
 } from 'lucide-react';
-import { holdingStockAPI, customersAPI } from '../lib/api';
+import { holdingStockAPI, customersAPI, shelfInventoryAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { HoldingStock, HoldingItem, Customer } from '../types';
+import type { HoldingStock, HoldingItem, Customer, ShelfItem } from '../types';
+import type { Staff } from '../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const UNITS = ['pc', 'set', 'pair', 'box', 'packet', 'kg', 'meter', 'yard'];
