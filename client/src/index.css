@@ -122,13 +122,19 @@ html.light .badge-gray        { background: rgba(0,0,0,0.06) !important; color: 
 html.light .badge-gold        { background: rgb(var(--accent-rgb) / 0.12) !important; }
 
 /* ── Sidebar links ────────────────────────────────────────────────────────── */
-/* Light mode: no !important on color so JS inline-style (active userColor) wins */
-html.light .sidebar-link      { color: rgba(28,28,30,0.65); }
+html.light .sidebar-link      { color: rgba(28,28,30,0.65) !important; }
 html.light .sidebar-link:hover {
-  color: rgba(28,28,30,0.85);
-  background: rgba(0,0,0,0.05);
+  color: rgba(28,28,30,0.85) !important;
+  background: rgba(0,0,0,0.05) !important;
 }
-/* .sidebar-link.active is no longer applied in JSX; active styles come from inline style */
+html.light .sidebar-link.active {
+  color: var(--accent-dark, #8B6914) !important;
+  background: rgb(var(--accent-rgb) / 0.10) !important;
+  box-shadow: inset 3px 0 0 var(--accent-dark, #8B6914) !important;
+}
+html.light .sidebar-link.active:hover {
+  background: rgb(var(--accent-rgb) / 0.14) !important;
+}
 
 /* ── Forms & placeholders ────────────────────────────────────────────────── */
 html.light ::placeholder      { color: rgba(28,28,30,0.30) !important; }
