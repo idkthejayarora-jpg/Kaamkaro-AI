@@ -290,52 +290,6 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
   );
 }
 
-// ── Avatar-color helper (matches Sidebar) ─────────────────────────────────────
-function getUserColor(name: string): string {
-  const palette = ['#a855f7','#3b82f6','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899'];
-  const idx = ((name.charCodeAt(0) || 0) + (name.charCodeAt(1) || 0)) % palette.length;
-  return palette[idx];
-}
-
-// ── Glowing ball that travels between two screen positions ────────────────────
-// Rendered via portal to document.body — escapes any ancestor transform/filter
-// that would break position:fixed viewport anchoring.
-function FloatingBall({ sx, sy, tx, ty, color }: {
-  sx: number; sy: number; tx: number; ty: number; color: string;
-}) {
-  const [pos, setPos] = useState({ x: sx, y: sy });
-
-  useEffect(() => {
-    // Double rAF: first frame paints the element at start position,
-    // second frame triggers the CSS transition to the target position.
-    let id1 = 0;
-    const id2 = requestAnimationFrame(() => {
-      id1 = requestAnimationFrame(() => setPos({ x: tx, y: ty }));
-    });
-    return () => { cancelAnimationFrame(id2); cancelAnimationFrame(id1); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        left: pos.x,
-        top: pos.y,
-        transform: 'translate(-50%, -50%)',
-        width: 16,
-        height: 16,
-        borderRadius: '50%',
-        background: color,
-        boxShadow: `0 0 20px 7px ${color}55, 0 0 7px 2px ${color}cc`,
-        transition: 'left 0.52s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.52s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        pointerEvents: 'none',
-        zIndex: 99999,
-      }}
-    />,
-    document.body
-  );
-}
 
 // ── Calendar grid cell ────────────────────────────────────────────────────────
 
