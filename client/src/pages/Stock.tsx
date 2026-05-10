@@ -581,7 +581,7 @@ function ShelfSection({ isAdmin, staffList }: { isAdmin: boolean; staffList: Sta
           <div>
             <h2 className="text-white font-bold text-base">Shelf Inventory</h2>
             <p className="text-white/30 text-xs">
-              {isAdmin ? 'View each staff's on-shelf stock' : 'Your current stock on shelves'}
+              {isAdmin ? "View each staff's on-shelf stock" : 'Your current stock on shelves'}
             </p>
           </div>
         </div>
