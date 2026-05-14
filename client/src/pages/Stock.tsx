@@ -858,6 +858,25 @@ export default function Stock() {
     setDispatched(prev => prev.filter(h => h.id !== id));
   };
 
+  // Inline +/- qty adjustment on a single item within a holding entry
+  const handleQtyChange = async (holdingId: string, itemId: string, delta: number) => {
+    const holding = pending.find(h => h.id === holdingId);
+    if (!holding) return;
+    const updatedItems = holding.items.map(i =>
+      i.id === itemId ? { ...i, qty: Math.max(1, i.qty + delta) } : i
+    );
+    // Optimistic update
+    const optimistic = { ...holding, items: updatedItems, totalAmount: updatedItems.reduce((s, i) => s + i.amount, 0) };
+    setPending(prev => prev.map(h => h.id === holdingId ? optimistic : h));
+    try {
+      const updated = await holdingStockAPI.update(holdingId, { items: updatedItems });
+      setPending(prev => prev.map(h => h.id === holdingId ? updated : h));
+    } catch {
+      // Revert on failure
+      setPending(prev => prev.map(h => h.id === holdingId ? holding : h));
+    }
+  };
+
   const shown = (tab === 'pending' ? pending : dispatched).filter(h =>
     !search || h.customerName.toLowerCase().includes(search.toLowerCase()) ||
     h.items.some(i => i.itemName.toLowerCase().includes(search.toLowerCase()))
