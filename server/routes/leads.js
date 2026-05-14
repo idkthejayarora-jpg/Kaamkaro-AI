@@ -86,6 +86,7 @@ router.post('/', async (req, res) => {
       visitDate = null, note = '',
       assignedTo,    // admin may specify a staff member
       customerId: existingCustomerId,  // if picking from customer DB
+      tags = [],
     } = req.body;
 
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
