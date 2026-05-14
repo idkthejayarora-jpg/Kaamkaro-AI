@@ -84,6 +84,7 @@ export default function CRMForm() {
           place:        l.place || '',
           source:       l.source,
           stage:        l.stage,
+          tags:         l.tags || [],
           assignedTo:   l.staffId || '',
           nextFollowUp: l.nextFollowUp || '',
           visitDate:    l.visitDate || '',
