@@ -58,6 +58,8 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/customers — single create (admin OR staff)
+// Auto-dedup: if a customer with the same name or phone already exists, the requesting
+// staff is added to that customer's assignedStaff array instead of creating a duplicate.
 router.post('/', async (req, res) => {
   try {
     const { name, phone, email, status, notes, tags, dealValue, assignedStaff: reqStaff } = req.body;
@@ -69,8 +71,34 @@ router.post('/', async (req, res) => {
       assignedTo = req.user.id;
     }
 
+    // ── Dedup guard: auto-link instead of creating a duplicate ───────────────
+    const allCustomers = await readDB('customers');
+    const nameLower    = name.trim().toLowerCase();
+    const existing = allCustomers.find(c =>
+      c.name.trim().toLowerCase() === nameLower ||
+      (phone?.trim() && c.phone?.trim() && c.phone.trim() === phone.trim())
+    );
+
+    if (existing) {
+      // Add this staff member to the existing customer's assignedStaff
+      const staffToAdd    = req.user.role === 'staff' ? req.user.id : (assignedTo || req.user.id);
+      const existingStaff = Array.isArray(existing.assignedStaff) ? existing.assignedStaff : [existing.assignedTo].filter(Boolean);
+      if (!existingStaff.includes(staffToAdd)) {
+        const updatedStaff = [...existingStaff, staffToAdd];
+        const updated = await updateOne('customers', existing.id, {
+          assignedStaff: updatedStaff,
+          assignedTo:    existing.assignedTo || staffToAdd,
+        });
+        await logAudit(req.user.id, req.user.name, 'link', 'customer', existing.id, `Auto-linked to existing: ${name}`);
+        broadcast('customer:updated', updated);
+        return res.status(200).json({ ...updated, autoLinked: true });
+      }
+      // Already linked — just return the existing record
+      return res.status(200).json({ ...existing, autoLinked: true });
+    }
+
+    // ── No duplicate found — create fresh ────────────────────────────────────
     const validStatus = PIPELINE_STAGES.includes(status) ? status : 'lead';
-    // Build multi-staff list: prefer explicit assignedStaff array, fall back to assignedTo
     const staffList = Array.isArray(reqStaff) && reqStaff.length > 0
       ? reqStaff
       : (assignedTo ? [assignedTo] : []);
