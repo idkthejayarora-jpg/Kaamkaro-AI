@@ -417,7 +417,14 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
               )}
             </div>
           )}
-          <div><label className="label">Tags (comma-separated)</label><input className="input" placeholder="hot-lead, follow-up, priority" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} /></div>
+          <div>
+            <label className="label">Tags</label>
+            <TagPicker
+              selected={form.tags}
+              onChange={tags => setForm(f => ({ ...f, tags }))}
+              isAdmin={isAdmin}
+            />
+          </div>
           <div><label className="label">Notes</label><textarea className="input resize-none" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
           <button type="submit" className="sr-only" aria-hidden>Submit</button>
         </form>
