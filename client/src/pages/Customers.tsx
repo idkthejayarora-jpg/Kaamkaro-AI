@@ -1165,9 +1165,18 @@ export default function Customers() {
                         </div>
                       )}
                       {stageBadge(c.status)}
-                      {(c.tags || []).filter(t => t !== 'crm-lead').map(t => (
-                        <span key={t} className="badge badge-gold text-[10px]">{t}</span>
-                      ))}
+                      {(c.tags || []).filter(t => t !== 'crm-lead' && t !== 'bulk-import' && t !== 'diary-import').map(t => {
+                        const def = tagDefs.find(d => d.name === t);
+                        return def ? (
+                          <span
+                            key={t}
+                            className="text-[10px] px-2 py-0.5 rounded-full border font-medium"
+                            style={{ color: def.color, background: `${def.color}18`, borderColor: `${def.color}40` }}
+                          >{t}</span>
+                        ) : (
+                          <span key={t} className="badge badge-gold text-[10px]">{t}</span>
+                        );
+                      })}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                       {c.phone && <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={9} />{c.phone}</span>}
