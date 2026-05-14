@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Loader2, Search, X, User } from 'lucide-react';
 import { leadsAPI, staffAPI, customersAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Lead, LeadStage, LeadSource, Staff } from '../types';
+import TagPicker from '../components/TagPicker';
 import { STAGES, STAGE_LABELS, SOURCE_LABELS } from './CRM';
 
 const SOURCES: LeadSource[] = ['walk_in', 'referral', 'phone', 'instagram', 'whatsapp', 'other'];
