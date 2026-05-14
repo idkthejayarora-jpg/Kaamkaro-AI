@@ -454,6 +454,7 @@ export interface Lead {
   place: string;
   source: LeadSource;
   stage: LeadStage;
+  tags: string[];
   notes: LeadNote[];
   nextFollowUp: string | null;  // YYYY-MM-DD
   visitDate: string | null;     // YYYY-MM-DD
@@ -464,6 +465,15 @@ export interface Lead {
   // Admin-only: attached server-side
   staffName?: string;
   teamName?:  string;
+}
+
+// ── Tag Definitions ────────────────────────────────────────────────────────────
+
+export interface TagDef {
+  id: string;
+  name: string;
+  color: string;   // hex colour e.g. '#ef4444'
+  createdAt: string;
 }
 
 // ── Stock Tracking ─────────────────────────────────────────────────────────────
