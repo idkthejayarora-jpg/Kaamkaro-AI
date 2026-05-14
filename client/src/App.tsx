@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Staff from './pages/Staff';
 import StaffProfile from './pages/StaffProfile';
 import Customers from './pages/Customers';
+import CustomerProfile from './pages/CustomerProfile';
 import Vendors from './pages/Vendors';
 import Diary from './pages/Diary';
 import Tasks from './pages/Tasks';
