@@ -294,12 +294,13 @@ function DispatchConfirm({
 
 // ── Holding card ──────────────────────────────────────────────────────────────
 function HoldingCard({
-  holding, onDispatch, onEdit, onDelete,
+  holding, onDispatch, onEdit, onDelete, onQtyChange,
 }: {
   holding: HoldingStock;
   onDispatch: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onQtyChange: (itemId: string, delta: number) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const isDispatched = holding.status === 'dispatched';
@@ -367,27 +368,74 @@ function HoldingCard({
       {expanded && (
         <div className="mt-4 space-y-1.5">
           {/* Column headers */}
-          <div className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 pb-1 border-b border-white/[0.06]">
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
-          </div>
+          {isDispatched ? (
+            <div className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 pb-1 border-b border-white/[0.06]">
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-[1fr_100px_60px_80px] gap-2 px-3 pb-1 border-b border-white/[0.06]">
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
+              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
+            </div>
+          )}
 
           {holding.items.map(item => (
-            <div
-              key={item.id}
-              className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
-            >
-              <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
-              <span className="text-white/50 text-sm text-center">{item.qty}</span>
-              <span className="text-white/30 text-xs text-center self-center">{item.unit}</span>
-              <span className="text-right text-sm font-medium">
-                {item.amount > 0
-                  ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
-                  : <span className="text-white/20">—</span>}
-              </span>
-            </div>
+            isDispatched ? (
+              /* Dispatched — read-only row */
+              <div
+                key={item.id}
+                className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 py-1.5 rounded-lg"
+              >
+                <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
+                <span className="text-white/50 text-sm text-center">{item.qty}</span>
+                <span className="text-white/30 text-xs text-center self-center">{item.unit}</span>
+                <span className="text-right text-sm font-medium">
+                  {item.amount > 0
+                    ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
+                    : <span className="text-white/20">—</span>}
+                </span>
+              </div>
+            ) : (
+              /* Pending — inline qty +/- controls */
+              <div
+                key={item.id}
+                className="grid grid-cols-[1fr_100px_60px_80px] gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors items-center"
+              >
+                <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
+                {/* Qty stepper */}
+                <div className="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onQtyChange(item.id, -1)}
+                    disabled={item.qty <= 1}
+                    className="w-6 h-6 rounded-md bg-dark-200 hover:bg-red-500/20 text-white/40 hover:text-red-400 flex items-center justify-center transition-colors disabled:opacity-25 disabled:cursor-not-allowed flex-shrink-0"
+                    title="Deduct 1"
+                  >
+                    <Minus size={10} />
+                  </button>
+                  <span className="text-white font-semibold text-sm w-8 text-center tabular-nums">{item.qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => onQtyChange(item.id, +1)}
+                    className="w-6 h-6 rounded-md bg-dark-200 hover:bg-emerald-500/20 text-white/40 hover:text-emerald-400 flex items-center justify-center transition-colors flex-shrink-0"
+                    title="Add 1"
+                  >
+                    <Plus size={10} />
+                  </button>
+                </div>
+                <span className="text-white/30 text-xs text-center">{item.unit}</span>
+                <span className="text-right text-sm font-medium">
+                  {item.amount > 0
+                    ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
+                    : <span className="text-white/20">—</span>}
+                </span>
+              </div>
+            )
           ))}
 
           {/* Note */}
@@ -402,17 +450,15 @@ function HoldingCard({
             <div className="flex items-center gap-2 pt-3 mt-2 border-t border-white/[0.06]">
               <button
                 onClick={onDelete}
-                className="p-2 rounded-lg hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-colors"
-                title="Delete"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-colors text-xs font-medium"
               >
-                <Trash2 size={14} />
+                <Trash2 size={13} /> Delete
               </button>
               <button
                 onClick={onEdit}
-                className="p-2 rounded-lg hover:bg-dark-200 text-white/20 hover:text-white transition-colors"
-                title="Edit"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-dark-200 text-white/40 hover:text-white transition-colors text-xs font-medium"
               >
-                <Edit2 size={14} />
+                <Edit2 size={13} /> Edit Items
               </button>
               <div className="flex-1" />
               <button
