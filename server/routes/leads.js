@@ -377,7 +377,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const allowed = ['name', 'phone', 'place', 'source', 'stage',
-                     'notes', 'nextFollowUp', 'visitDate', 'noPickupCount', 'isActive'];
+                     'tags', 'notes', 'nextFollowUp', 'visitDate', 'noPickupCount', 'isActive'];
     const updates = { updatedAt: new Date().toISOString() };
     allowed.forEach(k => { if (k in req.body) updates[k] = req.body[k]; });
 
