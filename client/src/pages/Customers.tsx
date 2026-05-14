@@ -5,10 +5,11 @@ import {
   Minus, Trash2, Users, Tag, UserPlus, StickyNote, Send,
   BookOpen, Pencil, Filter,
 } from 'lucide-react';
-import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI } from '../lib/api';
+import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI, tagDefsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useSSE } from '../hooks/useSSE';
-import type { Customer, CustomerNote, Staff, Interaction, PipelineStatus, Template, SentimentPoint } from '../types';
+import type { Customer, CustomerNote, Staff, Interaction, PipelineStatus, Template, SentimentPoint, TagDef } from '../types';
+import TagPicker from '../components/TagPicker';
 
 // ── Pipeline config ────────────────────────────────────────────────────────────
 const STAGES: { key: PipelineStatus; label: string; color: string; bg: string }[] = [
