@@ -93,6 +93,7 @@ export const customersAPI = {
   delete: (id: string) => api.delete(`/customers/${id}`).then(r => r.data),
   addNote: (id: string, text: string) => api.post(`/customers/${id}/notes`, { text }).then(r => r.data),
   deleteNote: (id: string, noteId: string) => api.delete(`/customers/${id}/notes/${noteId}`).then(r => r.data),
+  profile: (id: string) => api.get(`/customers/${id}/profile`).then(r => r.data),
 };
 
 export const vendorsAPI = {
