@@ -1204,6 +1204,13 @@ export default function Customers() {
                         </div>
                       );
                     })()}
+                    <button
+                      onClick={() => navigate(`/customers/${c.id}`)}
+                      className="p-1.5 text-white/30 hover:text-gold hover:bg-gold/10 rounded-lg transition-colors"
+                      title="View full profile"
+                    >
+                      <ExternalLink size={14} />
+                    </button>
                     <button onClick={() => setLogging(c)}
                       className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1">
                       <Clock size={11} /> Log
