@@ -1257,7 +1257,14 @@ export default function Customers() {
         </div>
       )}
 
-      {showAdd  && <AddCustomerModal staff={staff} isAdmin={isAdmin} selfId={user?.id || ''} onClose={() => setShowAdd(false)} onCreated={c => { setCustomers(p => [...p, c]); setShowAdd(false); }} />}
+      {showAdd  && <AddCustomerModal staff={staff} isAdmin={isAdmin} selfId={user?.id || ''} onClose={() => setShowAdd(false)} onCreated={c => {
+        const linked = (c as Customer & { autoLinked?: boolean }).autoLinked;
+        setCustomers(p => linked
+          ? p.map(x => x.id === c.id ? { ...x, ...c } : x)   // update existing
+          : [...p, c]                                           // add new
+        );
+        setShowAdd(false);
+      }} />}
       {showCSV  && <CSVImportModal staff={staff} onClose={() => setShowCSV(false)} onImported={cs => { setCustomers(p => [...p, ...cs]); setShowCSV(false); }} />}
       {logging  && <LogInteractionModal customer={logging} onClose={() => setLogging(null)} onLogged={u => { setCustomers(p => p.map(c => c.id === u.id ? u : c)); setLogging(null); }} />}
     </div>
