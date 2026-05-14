@@ -57,6 +57,87 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// GET /api/customers/:id/profile — full profile aggregation
+router.get('/:id/profile', async (req, res) => {
+  try {
+    const customers = await readDB('customers');
+    const c = customers.find(x => x.id === req.params.id);
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    if (req.user.role === 'staff' && !staffCanAccess(c, req.user.id)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Parallel fetch all related data
+    const [allInteractions, allHoldings, allStockItems, allLeads, allDiary, tagDefs] = await Promise.all([
+      readDB('interactions'),
+      readDB('holdingStock'),
+      readDB('stockItems'),
+      readDB('leads'),
+      readDB('diary'),
+      readDB('tagDefs'),
+    ]);
+
+    // Health score
+    const score = calcHealthScore(c, allInteractions);
+    const health = healthLabel(score);
+    const customer = { ...c, healthScore: score, healthLabel: health.label, healthColor: health.color };
+
+    // Interactions for this customer — sorted newest first
+    const interactions = allInteractions
+      .filter(i => i.customerId === c.id)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 30);
+
+    // Dispatch/holding stock linked to this customer
+    const holdings = allHoldings
+      .filter(h => h.customerId === c.id)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Stock sale history entries mentioning this customer
+    const stockHistory = [];
+    for (const item of allStockItems) {
+      const relevant = (item.history || []).filter(e => e.customerId === c.id);
+      if (relevant.length > 0) {
+        stockHistory.push({
+          itemName: item.itemName,
+          staffId: item.staffId,
+          staffName: item.staffName,
+          unit: item.unit,
+          entries: relevant.sort((a, b) => new Date(b.date) - new Date(a.date)),
+        });
+      }
+    }
+    // Sort stockHistory by most recent entry across all items
+    stockHistory.sort((a, b) => new Date(b.entries[0].date) - new Date(a.entries[0].date));
+
+    // Linked leads
+    const leads = allLeads.filter(l => l.linkedCustomerId === c.id && l.isActive !== false);
+
+    // Diary mentions — extract aiEntries that matched this customer
+    const diaryMentions = [];
+    for (const entry of allDiary) {
+      if (!Array.isArray(entry.aiEntries)) continue;
+      const matched = entry.aiEntries.filter(ae => ae.customerId === c.id || ae.autoCreatedId === c.id);
+      for (const ae of matched) {
+        diaryMentions.push({
+          diaryId:    entry.id,
+          date:       entry.date || entry.createdAt,
+          staffName:  entry.staffName,
+          staffId:    entry.staffId,
+          note:       ae.notes,
+          sentiment:  ae.sentiment,
+          actionItems: ae.actionItems || [],
+        });
+      }
+    }
+    diaryMentions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.json({ customer, interactions, holdings, stockHistory, leads, diaryMentions, tagDefs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/customers — single create (admin OR staff)
 // Auto-dedup: if a customer with the same name or phone already exists, the requesting
 // staff is added to that customer's assignedStaff array instead of creating a duplicate.
