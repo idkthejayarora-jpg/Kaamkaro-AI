@@ -142,6 +142,7 @@ export default function CRMForm() {
           place:        form.place.trim(),
           source:       form.source,
           stage:        form.stage,
+          tags:         form.tags,
           nextFollowUp: form.nextFollowUp || null,
           visitDate:    form.visitDate || null,
         });
