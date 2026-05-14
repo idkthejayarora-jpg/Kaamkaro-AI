@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Package, Plus, Trash2, X, Send, CheckCircle2,
   User, Calendar, ChevronDown, ChevronUp, Edit2,
-  IndianRupee, Archive, Clock, Layers, Pencil,
+  IndianRupee, Archive, Clock, Layers, Pencil, Minus,
 } from 'lucide-react';
 import { holdingStockAPI, customersAPI, shelfInventoryAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
