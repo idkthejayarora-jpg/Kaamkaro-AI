@@ -22,6 +22,7 @@ interface FormState {
   place: string;
   source: LeadSource;
   stage: LeadStage;
+  tags: string[];
   assignedTo: string;
   nextFollowUp: string;
   visitDate: string;
@@ -31,6 +32,7 @@ interface FormState {
 const EMPTY: FormState = {
   name: '', phone: '', place: '',
   source: 'other', stage: 'new',
+  tags: [],
   assignedTo: '',
   nextFollowUp: '', visitDate: '', note: '',
 };
