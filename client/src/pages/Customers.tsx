@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, Search, Phone, Mail, X, Check, ChevronDown, ChevronUp,
   Upload, Clock, MessageSquare, Calendar, TrendingUp, TrendingDown,
   Minus, Trash2, Users, Tag, UserPlus, StickyNote, Send,
-  BookOpen, Pencil, Filter,
+  BookOpen, Pencil, Filter, ExternalLink,
 } from 'lucide-react';
 import { customersAPI, staffAPI, interactionsAPI, templatesAPI, aiAPI, tagDefsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
