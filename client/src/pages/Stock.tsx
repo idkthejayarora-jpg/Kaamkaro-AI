@@ -438,7 +438,7 @@ function HoldingCard({
           )}
 
           {/* Actions */}
-          {!isDispatched && (
+          {canEdit && (
             <div className="flex items-center gap-2 pt-3 mt-2 border-t border-white/[0.06]">
               <button
                 onClick={onDelete}
@@ -453,12 +453,14 @@ function HoldingCard({
                 <Edit2 size={13} /> Edit Items
               </button>
               <div className="flex-1" />
-              <button
-                onClick={onDispatch}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Send size={13} /> Dispatch Order
-              </button>
+              {!isDispatched && (
+                <button
+                  onClick={onDispatch}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Send size={13} /> Dispatch Order
+                </button>
+              )}
             </div>
           )}
         </div>
