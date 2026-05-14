@@ -347,6 +347,16 @@ export default function CRMForm() {
           </div>
         </div>
 
+        {/* Tags */}
+        <div>
+          <label className="label">Tags</label>
+          <TagPicker
+            selected={form.tags}
+            onChange={tags => set('tags', tags)}
+            isAdmin={isAdmin}
+          />
+        </div>
+
         {/* Follow-up + Visit — side by side */}
         <div className="grid grid-cols-2 gap-3">
           <div>
