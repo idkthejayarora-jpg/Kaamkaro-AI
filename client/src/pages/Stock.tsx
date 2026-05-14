@@ -370,46 +370,21 @@ function HoldingCard({
       {expanded && (
         <div className="mt-4 space-y-1.5">
           {/* Column headers */}
-          {isDispatched ? (
-            <div className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 pb-1 border-b border-white/[0.06]">
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-[1fr_100px_60px_80px] gap-2 px-3 pb-1 border-b border-white/[0.06]">
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
-              <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
-            </div>
-          )}
+          <div className={`grid gap-2 px-3 pb-1 border-b border-white/[0.06] ${canEdit ? 'grid-cols-[1fr_100px_60px_80px]' : 'grid-cols-[1fr_60px_60px_80px]'}`}>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
+          </div>
 
           {holding.items.map(item => (
-            isDispatched ? (
-              /* Dispatched — read-only row */
-              <div
-                key={item.id}
-                className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 py-1.5 rounded-lg"
-              >
-                <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
-                <span className="text-white/50 text-sm text-center">{item.qty}</span>
-                <span className="text-white/30 text-xs text-center self-center">{item.unit}</span>
-                <span className="text-right text-sm font-medium">
-                  {item.amount > 0
-                    ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
-                    : <span className="text-white/20">—</span>}
-                </span>
-              </div>
-            ) : (
-              /* Pending — inline qty +/- controls */
+            canEdit ? (
+              /* Editable row — inline qty +/- */
               <div
                 key={item.id}
                 className="grid grid-cols-[1fr_100px_60px_80px] gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors items-center"
               >
                 <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
-                {/* Qty stepper */}
                 <div className="flex items-center justify-center gap-1">
                   <button
                     type="button"
@@ -431,6 +406,21 @@ function HoldingCard({
                   </button>
                 </div>
                 <span className="text-white/30 text-xs text-center">{item.unit}</span>
+                <span className="text-right text-sm font-medium">
+                  {item.amount > 0
+                    ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
+                    : <span className="text-white/20">—</span>}
+                </span>
+              </div>
+            ) : (
+              /* Read-only row (staff viewing dispatched entry) */
+              <div
+                key={item.id}
+                className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 py-1.5 rounded-lg"
+              >
+                <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
+                <span className="text-white/50 text-sm text-center">{item.qty}</span>
+                <span className="text-white/30 text-xs text-center self-center">{item.unit}</span>
                 <span className="text-right text-sm font-medium">
                   {item.amount > 0
                     ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
