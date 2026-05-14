@@ -1003,6 +1003,7 @@ export default function Stock() {
               onDispatch={() => setConfirming(h)}
               onEdit={() => { setEditing(h); setShowModal(true); }}
               onDelete={() => handleDelete(h.id)}
+              onQtyChange={(itemId, delta) => handleQtyChange(h.id, itemId, delta)}
             />
           ))}
         </div>
