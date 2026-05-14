@@ -803,12 +803,19 @@ export default function Customers() {
   const [staffFilter,    setStaffFilter]    = useState<string>('all');
   const { isAdmin, user } = useAuth();
 
+  const [tagDefs, setTagDefs] = useState<TagDef[]>([]);
+
   const load = async () => {
     // Load staff for everyone — needed for "Assign to" dropdown in admin mode
     // and to display staff names on cards
-    const [c, s] = await Promise.all([customersAPI.list(), staffAPI.list().catch(() => [])]);
+    const [c, s, defs] = await Promise.all([
+      customersAPI.list(),
+      staffAPI.list().catch(() => []),
+      tagDefsAPI.list().catch(() => []),
+    ]);
     setCustomers(c);
     setStaff(s);
+    setTagDefs(defs);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
