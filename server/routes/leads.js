@@ -138,6 +138,7 @@ router.post('/', async (req, res) => {
       place:            place?.trim() || '',
       source,
       stage,
+      tags:             Array.isArray(tags) ? tags : [],
       notes:            initialNotes,
       nextFollowUp:     nextFollowUp || null,
       visitDate:        visitDate || null,
