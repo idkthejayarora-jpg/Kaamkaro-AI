@@ -376,7 +376,8 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
           <button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X size={18} /></button>
         </div>
         <form onSubmit={e => { e.preventDefault(); doSubmit(); }} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
+          {error     && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
+          {linkedMsg && <div className="bg-gold/10 border border-gold/30 text-gold rounded-xl px-4 py-3 text-sm">{linkedMsg}</div>}
           <div><label className="label">Name *</label><input className="input" placeholder="Full name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Phone</label><input className="input" type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
