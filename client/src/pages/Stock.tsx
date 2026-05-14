@@ -294,16 +294,18 @@ function DispatchConfirm({
 
 // ── Holding card ──────────────────────────────────────────────────────────────
 function HoldingCard({
-  holding, onDispatch, onEdit, onDelete, onQtyChange,
+  holding, onDispatch, onEdit, onDelete, onQtyChange, isAdmin,
 }: {
   holding: HoldingStock;
   onDispatch: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onQtyChange: (itemId: string, delta: number) => void;
+  isAdmin: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
   const isDispatched = holding.status === 'dispatched';
+  const canEdit = !isDispatched || isAdmin; // admin can always edit; staff only pending
 
   return (
     <div className={`card transition-all ${isDispatched ? 'opacity-60' : ''}`}>
