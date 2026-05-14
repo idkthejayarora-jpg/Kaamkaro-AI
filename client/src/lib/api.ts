@@ -308,4 +308,11 @@ export const shelfInventoryAPI = {
   delete: (id: string) => api.delete(`/stock/shelf/${id}`).then(r => r.data),
 };
 
+export const tagDefsAPI = {
+  list:   ()                          => api.get('/tag-defs').then(r => r.data),
+  create: (name: string, color: string) => api.post('/tag-defs', { name, color }).then(r => r.data),
+  update: (id: string, patch: { name?: string; color?: string }) => api.patch(`/tag-defs/${id}`, patch).then(r => r.data),
+  delete: (id: string)                => api.delete(`/tag-defs/${id}`).then(r => r.data),
+};
+
 export default api;
