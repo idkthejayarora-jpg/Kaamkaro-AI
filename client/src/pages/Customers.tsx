@@ -326,10 +326,11 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
     name: '', phone: '', email: '',
     // Multi-staff: admin starts empty, staff auto-assigns themselves
     assignedStaff: isAdmin ? [] as string[] : [selfId],
-    notes: '', tags: '', status: 'lead' as PipelineStatus,
+    notes: '', tags: [] as string[], status: 'lead' as PipelineStatus,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+  const [linkedMsg, setLinkedMsg] = useState('');
 
   const toggleStaff = (id: string) => {
     setForm(f => ({
@@ -343,15 +344,22 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
   const doSubmit = async () => {
     if (!form.name) { setError('Name required'); return; }
     setLoading(true);
+    setLinkedMsg('');
     try {
       const c = await customersAPI.create({
         name: form.name, phone: form.phone, email: form.email,
         notes: form.notes, status: form.status,
-        assignedTo: form.assignedStaff[0] || null,   // primary = first selected
+        assignedTo: form.assignedStaff[0] || null,
         assignedStaff: form.assignedStaff,
-        tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        tags: form.tags,
       });
-      onCreated(c);
+      // autoLinked = true means an existing customer was found and staff was added
+      if ((c as Customer & { autoLinked?: boolean }).autoLinked) {
+        setLinkedMsg(`"${c.name}" already exists — you've been linked to that customer.`);
+        setTimeout(() => { onCreated(c); }, 1800);
+      } else {
+        onCreated(c);
+      }
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed');
     } finally { setLoading(false); }
