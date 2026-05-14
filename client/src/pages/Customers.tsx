@@ -784,6 +784,7 @@ function BulkToolbar({ selected, staff, onAction, onClear }: {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Customers() {
+  const navigate = useNavigate();
   const [customers, setCustomers]     = useState<Customer[]>([]);
   const [staff, setStaff]             = useState<Staff[]>([]);
   const [search, setSearch]           = useState('');
