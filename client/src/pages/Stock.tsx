@@ -996,6 +996,7 @@ export default function Stock() {
             <HoldingCard
               key={h.id}
               holding={h}
+              isAdmin={isAdmin}
               onDispatch={() => setConfirming(h)}
               onEdit={() => { setEditing(h); setShowModal(true); }}
               onDelete={() => handleDelete(h.id)}
