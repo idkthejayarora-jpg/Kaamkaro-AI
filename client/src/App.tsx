@@ -57,6 +57,7 @@ function AppRoutes() {
         <Route path="/staff"           element={<PrivateRoute adminOnly><Staff /></PrivateRoute>} />
         <Route path="/staff/:id"       element={<StaffProfile />} />
         <Route path="/customers"       element={<Customers />} />
+        <Route path="/customers/:id"   element={<CustomerProfile />} />
         <Route path="/vendors"         element={<Vendors />} />
         <Route path="/diary"           element={<Diary />} />
         <Route path="/tasks"           element={<Tasks />} />
