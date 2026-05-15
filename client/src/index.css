@@ -78,6 +78,13 @@ html:not(.light) .text-white\/25    { color: rgba(255,255,255,0.50) !important; 
 html:not(.light) .text-white\/20    { color: rgba(255,255,255,0.44) !important; }
 html:not(.light) .text-white\/15    { color: rgba(255,255,255,0.38) !important; }
 
+/* Dark mode hover contrast — hover states should read as boost of base */
+html:not(.light) .hover\:text-white:hover     { color: rgba(255,255,255,1.00) !important; }
+html:not(.light) .hover\:text-white\/80:hover { color: rgba(255,255,255,0.92) !important; }
+html:not(.light) .hover\:text-white\/70:hover { color: rgba(255,255,255,0.90) !important; }
+html:not(.light) .hover\:text-white\/60:hover { color: rgba(255,255,255,0.84) !important; }
+html:not(.light) .hover\:text-white\/50:hover { color: rgba(255,255,255,0.76) !important; }
+
 /* ── Accent / gold — darken for readability on white ────────────────────── */
 html.light .text-gold         { color: var(--accent-dark, #8B6914) !important; }
 
