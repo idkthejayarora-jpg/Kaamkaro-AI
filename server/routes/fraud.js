@@ -23,6 +23,49 @@ function adminOnly(req, res, next) {
 
 function dateStr(iso) { return (iso || '').substring(0, 10); }
 
+// ── Content-quality helpers ───────────────────────────────────────────────────
+
+/** Jaccard word-overlap similarity between two strings (0–1). */
+function jaccardSimilarity(a, b) {
+  const words = s => new Set((s || '').toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2));
+  const A = words(a), B = words(b);
+  if (A.size === 0 && B.size === 0) return 1;
+  if (A.size === 0 || B.size === 0) return 0;
+  let intersection = 0;
+  for (const w of A) if (B.has(w)) intersection++;
+  return intersection / (A.size + B.size - intersection);
+}
+
+/**
+ * Scores a diary entry 0–100 on content quality.
+ * High score = genuine, detailed entry. Low score = hollow / copy-paste bait.
+ */
+function diaryQualityScore(entry) {
+  const text = (entry.text || entry.notes || entry.entry || entry.content || '').trim();
+  let score = 0;
+
+  // Length — up to 35 pts (proportional; full score at 200 chars)
+  score += Math.min(35, Math.floor((text.length / 200) * 35));
+
+  // Customer resolved (not General / unmatched) — 25 pts
+  const hasCustomer = !!(entry.resolvedCustomer || entry.customerName || entry.matchedCustomer);
+  if (hasCustomer) score += 25;
+
+  // Action items present — 20 pts
+  const actionItems = entry.actionItems || entry.actions || [];
+  if (Array.isArray(actionItems) && actionItems.length > 0) score += 20;
+  // Also check text for common action keywords
+  else if (/follow.?up|call back|send|deliver|collect|visit|remind|confirm/i.test(text)) score += 10;
+
+  // Amounts / monetary values mentioned — 15 pts
+  if (/₹|rs\.?\s*\d|rupee|\bpaid\b|\bpayment\b|\badvance\b|\d{4,}/.test(text)) score += 15;
+
+  // Sentiment / tone present (not empty boilerplate) — 5 pts
+  if (entry.sentiment && entry.sentiment !== 'neutral' && entry.sentiment !== 'unknown') score += 5;
+
+  return Math.min(100, score);
+}
+
 function isoWeek(iso) {
   const date = new Date(iso);
   date.setHours(0, 0, 0, 0);
