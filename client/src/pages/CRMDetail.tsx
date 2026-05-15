@@ -647,7 +647,80 @@ export default function CRMDetail() {
                 <CalendarDays size={9} /> Visit Date
               </p>
               {lead.visitDate ? (
-                <p className="text-white text-sm font-medium">{lead.visitDate}</p>
+                rescheduleMode ? (
+                  /* Reschedule panel */
+                  <div className="space-y-2 mt-1">
+                    {/* Quick shortcuts */}
+                    <div className="flex gap-1 flex-wrap">
+                      {[
+                        { label: '+1 day',  days: 1 },
+                        { label: '+3 days', days: 3 },
+                        { label: '+1 week', days: 7 },
+                      ].map(({ label, days }) => (
+                        <button
+                          key={days}
+                          type="button"
+                          onClick={() => setRescheduleDate(addDays(days))}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-medium border transition-colors ${
+                            rescheduleDate === addDays(days)
+                              ? 'bg-gold/20 border-gold/40 text-gold'
+                              : 'border-dark-50 text-white/40 hover:text-white hover:border-gold/30'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="date"
+                      className="input text-xs py-1.5 w-full"
+                      value={rescheduleDate}
+                      onChange={e => setRescheduleDate(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setRescheduleMode(false); setRescheduleDate(''); }}
+                        className="flex-1 btn-ghost text-xs py-1.5"
+                      >
+                        Nevermind
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveReschedule}
+                        disabled={!rescheduleDate || saving}
+                        className="flex-1 btn-primary text-xs py-1.5 disabled:opacity-40"
+                      >
+                        Confirm
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Visit set — show date + action buttons */
+                  <div className="mt-1">
+                    <p className="text-indigo-300 text-sm font-semibold">
+                      📅 {lead.visitDate}
+                    </p>
+                    <div className="flex gap-1.5 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => { setRescheduleMode(true); setRescheduleDate(lead.visitDate || ''); }}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-indigo-500/25 text-indigo-400/80 hover:text-indigo-300 hover:bg-indigo-500/8 hover:border-indigo-500/40 text-[11px] font-medium transition-all"
+                      >
+                        <RefreshCw size={10} /> Reschedule
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelVisit}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-red-500/20 text-red-400/70 hover:text-red-400 hover:bg-red-500/8 hover:border-red-500/35 text-[11px] font-medium transition-all"
+                      >
+                        <CalendarX size={10} /> Cancel Visit
+                      </button>
+                    </div>
+                  </div>
+                )
               ) : (
                 <p className="text-white/20 text-sm italic">Not set</p>
               )}
