@@ -27,14 +27,21 @@ interface FraudRecord {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 const TYPE_META: Record<string, { label: string; icon: LucideIcon }> = {
-  task_speed:             { label: 'Speed Farming',     icon: Zap         },
-  task_burst:             { label: 'Task Burst',        icon: Clock       },
-  task_toggle:            { label: 'Toggle Abuse',      icon: ToggleLeft  },
-  merit_haul:             { label: 'Merit Haul',        icon: TrendingUp  },
-  merit_repeat:           { label: 'Manual Repeat',     icon: Award       },
-  merit_duplicate_reason: { label: 'Repeat Reason',     icon: Copy        },
-  loop_abuse:             { label: 'Loop Abuse',        icon: RefreshCw   },
-  diary_spam:             { label: 'Diary Spam',        icon: BookOpen    },
+  // Task checks
+  task_speed:             { label: 'Lightning Completion', icon: Zap         },
+  task_burst:             { label: 'Hollow Task Burst',    icon: Clock       },
+  task_toggle:            { label: 'Toggle Abuse',         icon: ToggleLeft  },
+  // Merit checks
+  merit_haul:             { label: 'Merit Haul',           icon: TrendingUp  },
+  merit_repeat:           { label: 'Manual Repeat',        icon: Award       },
+  merit_duplicate_reason: { label: 'Repeat Reason',        icon: Copy        },
+  loop_abuse:             { label: 'Loop Abuse',           icon: RefreshCw   },
+  // Diary content-quality checks (replaced diary_spam)
+  thin_diary_burst:       { label: 'Hollow Diary Burst',   icon: BookOpen    },
+  copy_paste_diary:       { label: 'Copy-Paste Diary',     icon: Clipboard   },
+  all_general_bulk:       { label: 'No Customer Matches',  icon: Users       },
+  // Legacy (may appear in old records)
+  diary_spam:             { label: 'Diary Spam (legacy)',  icon: BookOpen    },
 };
 const SEV_COLOR: Record<string, string> = {
   high:   'bg-red-500/15    text-red-400    border-red-500/25',
