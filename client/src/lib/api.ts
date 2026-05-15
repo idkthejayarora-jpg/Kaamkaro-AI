@@ -77,7 +77,7 @@ export const staffAPI = {
 };
 
 export const broadcastAPI = {
-  send: (message: string) => api.post('/broadcast', { message }).then(r => r.data),
+  send: (message: string, title?: string) => api.post('/broadcast', { message, title }).then(r => r.data),
   list: () => api.get('/broadcast').then(r => r.data),
 };
 
