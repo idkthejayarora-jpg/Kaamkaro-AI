@@ -4,6 +4,7 @@ const { readDB, insertOne, updateOne } = require('../utils/db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { checkAndAwardBadges } = require('../utils/badgeEarner');
 const { logAudit } = require('../utils/audit');
+const { broadcast } = require('../utils/sse');
 
 let Anthropic;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
