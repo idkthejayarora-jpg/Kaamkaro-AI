@@ -49,11 +49,31 @@ function getHeat(days: number | null): { color: string; label: string; glow: str
   return { color: 'text-red-400', label: `${days}d ago`, glow: '0 0 10px rgba(248,113,113,0.5)', pulse: true };
 }
 
-// Stage left-border color
+// Stage left-border color (used on expanded panel)
 const STAGE_BORDER: Record<string, string> = {
   lead: 'border-l-white/15', contacted: 'border-l-blue-500/50',
   interested: 'border-l-gold/60', negotiating: 'border-l-orange-500/60',
   closed: 'border-l-emerald-500/60', churned: 'border-l-red-500/40',
+};
+
+// Stage top-strip color for card header bar
+const STAGE_TOP: Record<string, string> = {
+  lead:        'from-white/5   to-transparent',
+  contacted:   'from-blue-500/40 to-transparent',
+  interested:  'from-amber-400/50 to-transparent',
+  negotiating: 'from-orange-500/45 to-transparent',
+  closed:      'from-emerald-500/45 to-transparent',
+  churned:     'from-red-500/35 to-transparent',
+};
+
+// Stage card outer ring
+const STAGE_RING: Record<string, string> = {
+  lead:        'border-dark-50',
+  contacted:   'border-blue-500/25',
+  interested:  'border-amber-400/35',
+  negotiating: 'border-orange-500/30',
+  closed:      'border-emerald-500/30',
+  churned:     'border-red-500/20',
 };
 
 // ── Sentiment Trend ────────────────────────────────────────────────────────────
