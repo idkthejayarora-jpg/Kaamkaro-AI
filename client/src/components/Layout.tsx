@@ -258,8 +258,11 @@ export default function Layout() {
                   <X size={15} />
                 </button>
               </div>
-              <div className="px-5 py-4">
-                <p className="text-white text-sm leading-relaxed">{broadcast.message}</p>
+              <div className="px-5 py-4 space-y-1">
+                {broadcast.title && (
+                  <p className="text-white font-bold text-sm">{broadcast.title}</p>
+                )}
+                <p className="text-white/80 text-sm leading-relaxed">{broadcast.message}</p>
               </div>
               <div className="px-5 pb-4">
                 <button
