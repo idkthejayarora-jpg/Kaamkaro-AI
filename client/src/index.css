@@ -215,9 +215,17 @@ html.light .bg-dark-500       { background-color: #F2F2F7 !important; }
 
 /* Border utilities */
 html.light .border-dark-50    { border-color: #D1D1D6 !important; }
+html.light .border-white\/5   { border-color: rgba(0,0,0,0.04) !important; }
+html.light .border-white\/8   { border-color: rgba(0,0,0,0.06) !important; }
 html.light .border-white\/10  { border-color: rgba(0,0,0,0.08) !important; }
+html.light .border-white\/15  { border-color: rgba(0,0,0,0.10) !important; }
 html.light .border-white\/20  { border-color: rgba(0,0,0,0.12) !important; }
 html.light .border-white\/30  { border-color: rgba(0,0,0,0.16) !important; }
+html.light .border-white\/40  { border-color: rgba(0,0,0,0.20) !important; }
+
+/* Divide utilities (same treatment as border) */
+html.light .divide-white\/10 > * + * { border-color: rgba(0,0,0,0.08) !important; }
+html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important; }
 
 /* ── Base ─────────────────────────────────────────────────────────────────────*/
 @layer base {
