@@ -396,6 +396,19 @@ export default function CRMDetail() {
   const logFollowUpDone = () =>
     appendNote('Follow-up done', { nextFollowUp: null });
 
+  // ── Visit actions ─────────────────────────────────────────────────────────────
+  const cancelVisit = () => {
+    appendNote('Visit cancelled', { visitDate: null });
+    setRescheduleMode(false);
+  };
+
+  const saveReschedule = async () => {
+    if (!rescheduleDate) return;
+    await appendNote(`Visit rescheduled to ${rescheduleDate}`, { visitDate: rescheduleDate });
+    setRescheduleMode(false);
+    setRescheduleDate('');
+  };
+
   // ── Add manual note ───────────────────────────────────────────────────────────
   const submitNote = async () => {
     if (!noteText.trim()) return;
