@@ -289,24 +289,103 @@ router.get('/detect', adminOnly, async (req, res) => {
       });
     }
 
-    // ── 8. DIARY SPAM ─────────────────────────────────────────────────────────
+    // ── 8. THIN DIARY BURST — hollow entries in bulk ──────────────────────────
+    // Staff who do after-hours catch-up entry write detailed notes; farmers write nothing.
     const diaryByStaffDay = {};
     for (const d of diary) {
       const day = dateStr(d.date || d.createdAt);
       const key = `${d.staffId}::${day}`;
-      diaryByStaffDay[key] = (diaryByStaffDay[key] || 0) + 1;
+      if (!diaryByStaffDay[key]) diaryByStaffDay[key] = [];
+      diaryByStaffDay[key].push(d);
     }
-    for (const [key, count] of Object.entries(diaryByStaffDay)) {
-      if (count < 4) continue;
+    for (const [key, entries] of Object.entries(diaryByStaffDay)) {
+      if (entries.length < 3) continue; // Need at least 3 same-day entries to evaluate
+      const thinEntries = entries.filter(e => diaryQualityScore(e) < 25);
+      if (thinEntries.length < 3) continue; // At least 3 must be hollow
       const [sid, day] = key.split('::');
       const name = staffMap[sid] || sid;
-      const ri   = repeatInfo(sid, 'diary_spam');
+      const ri   = repeatInfo(sid, 'thin_diary_burst');
+      const avgScore = Math.round(thinEntries.reduce((s, e) => s + diaryQualityScore(e), 0) / thinEntries.length);
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
-        type: 'diary_spam', severity: 'low',
-        title: 'Diary entry flooding',
-        detail: `${count} diary entries submitted on ${day}. Normal usage is 1 entry per day. Submitting multiple entries on the same date is the classic streak-farming trick — each new entry looks like a fresh day.`,
-        evidence: `Date: ${day} · ${count} entries in one day`,
+        type: 'thin_diary_burst', severity: 'medium',
+        title: 'Hollow diary burst',
+        detail: `${thinEntries.length} of ${entries.length} diary entries on ${day} scored below 25/100 on content quality (avg: ${avgScore}/100). Genuine after-hours catch-up entries have real customer names, action items, and amounts — these are empty shells.`,
+        evidence: `Date: ${day} · ${thinEntries.length} thin entries · avg quality ${avgScore}/100`,
+        ...ri, detectedAt: new Date().toISOString(),
+      });
+    }
+
+    // ── 9. COPY-PASTE DIARY — duplicate content across entries ────────────────
+    const diaryByStaff = {};
+    for (const d of diary) {
+      if (!d.staffId) continue;
+      if (!diaryByStaff[d.staffId]) diaryByStaff[d.staffId] = [];
+      diaryByStaff[d.staffId].push(d);
+    }
+    const seenCopyPaste = new Set();
+    for (const [sid, entries] of Object.entries(diaryByStaff)) {
+      // Only check last 60 days to keep this O(n²) manageable
+      const cutoff = Date.now() - 60 * 86400000;
+      const recent = entries.filter(e => new Date(e.date || e.createdAt).getTime() > cutoff);
+      for (let i = 0; i < recent.length; i++) {
+        for (let j = i + 1; j < recent.length; j++) {
+          const a = recent[i], b = recent[j];
+          const textA = (a.text || a.notes || a.entry || a.content || '').trim();
+          const textB = (b.text || b.notes || b.entry || b.content || '').trim();
+          if (textA.length < 30 || textB.length < 30) continue; // skip empty entries
+          const sim = jaccardSimilarity(textA, textB);
+          if (sim >= 0.65) {
+            const dedupKey = `${sid}::${[a.id, b.id].sort().join(':')}`;
+            if (seenCopyPaste.has(dedupKey)) continue;
+            seenCopyPaste.add(dedupKey);
+            const name = staffMap[sid] || sid;
+            const ri   = repeatInfo(sid, 'copy_paste_diary');
+            const dateA = dateStr(a.date || a.createdAt);
+            const dateB = dateStr(b.date || b.createdAt);
+            alerts.push({
+              id: mkId(), staffId: sid, staffName: name,
+              type: 'copy_paste_diary', severity: 'high',
+              title: 'Copy-paste diary entries',
+              detail: `Two diary entries share ${Math.round(sim * 100)}% word overlap — strongly suggesting copy-pasted content. Genuine diary entries describe different customers, visits, and conversations each day.`,
+              evidence: `Entry on ${dateA} vs entry on ${dateB} · ${Math.round(sim * 100)}% similarity`,
+              ...ri, detectedAt: new Date().toISOString(),
+            });
+            break; // one alert per person is enough
+          }
+        }
+      }
+    }
+
+    // ── 10. ALL-GENERAL BULK — no customer resolution across many entries ──────
+    // Staff who write real diary entries match real customers. If every entry in a streak
+    // goes to "General" (unmatched), the staff member is likely fabricating activity.
+    const generalCountByStaff = {};
+    for (const d of diary) {
+      if (!d.staffId) continue;
+      const isGeneral = !d.resolvedCustomer && !d.customerName && !d.matchedCustomer;
+      if (!isGeneral) continue;
+      generalCountByStaff[d.staffId] = (generalCountByStaff[d.staffId] || 0) + 1;
+    }
+    // Also get total diary entries per staff to compute ratio
+    const totalDiaryByStaff = {};
+    for (const d of diary) {
+      if (!d.staffId) continue;
+      totalDiaryByStaff[d.staffId] = (totalDiaryByStaff[d.staffId] || 0) + 1;
+    }
+    for (const [sid, generalCount] of Object.entries(generalCountByStaff)) {
+      if (generalCount < 5) continue; // Need a meaningful pattern
+      const total = totalDiaryByStaff[sid] || generalCount;
+      const ratio = generalCount / total;
+      if (ratio < 0.80) continue; // Only flag if >80% of all entries are unmatched
+      const name = staffMap[sid] || sid;
+      const ri   = repeatInfo(sid, 'all_general_bulk');
+      alerts.push({
+        id: mkId(), staffId: sid, staffName: name,
+        type: 'all_general_bulk', severity: 'medium',
+        title: 'No customer resolutions in diary',
+        detail: `${generalCount} of ${total} diary entries (${Math.round(ratio * 100)}%) match no real customer — they all fall under "General". Staff who actually visit and talk to customers get customer matches. This pattern suggests fabricated activity without real customer interaction.`,
+        evidence: `${generalCount} unmatched entries out of ${total} total · ${Math.round(ratio * 100)}% general rate`,
         ...ri, detectedAt: new Date().toISOString(),
       });
     }
