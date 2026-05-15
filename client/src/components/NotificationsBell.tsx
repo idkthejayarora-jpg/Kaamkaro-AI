@@ -591,13 +591,57 @@ export default function NotificationsBell() {
             </div>
 
             {isAdmin && (
-              <div className="px-4 py-2.5 border-t border-dark-50 bg-dark-400/50">
-                <button
-                  onClick={() => buildNotifications()}
-                  className="text-white/30 hover:text-white text-xs transition-colors"
-                >
-                  Refresh alerts
-                </button>
+              <div className="border-t border-dark-50 bg-dark-400/50">
+                {!showCompose ? (
+                  <div className="flex items-center justify-between px-4 py-2.5">
+                    <button
+                      onClick={() => buildNotifications()}
+                      className="text-white/30 hover:text-white text-xs transition-colors"
+                    >
+                      Refresh
+                    </button>
+                    <button
+                      onClick={() => setShowCompose(true)}
+                      className="flex items-center gap-1.5 text-xs text-gold/80 hover:text-gold transition-colors font-medium"
+                    >
+                      <Radio size={11} /> Post Update
+                    </button>
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-gold text-xs font-semibold flex items-center gap-1.5">
+                        <Radio size={11} className="animate-pulse" /> Broadcast to All Staff
+                      </p>
+                      <button onClick={() => { setShowCompose(false); setBcastTitle(''); setBcastMsg(''); }}
+                        className="text-white/30 hover:text-white transition-colors">
+                        <X size={13} />
+                      </button>
+                    </div>
+                    <input
+                      className="w-full bg-dark-300 border border-dark-50 rounded-lg px-3 py-2 text-white text-xs placeholder:text-white/25 focus:outline-none focus:border-gold/50"
+                      placeholder="Update title (e.g. New Feature: Customer Profile)"
+                      value={bcastTitle}
+                      onChange={e => setBcastTitle(e.target.value)}
+                    />
+                    <textarea
+                      className="w-full bg-dark-300 border border-dark-50 rounded-lg px-3 py-2 text-white text-xs placeholder:text-white/25 focus:outline-none focus:border-gold/50 resize-none"
+                      placeholder="What changed or was added? Staff will see this immediately…"
+                      rows={3}
+                      value={bcastMsg}
+                      onChange={e => setBcastMsg(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSendBroadcast(); }}
+                    />
+                    <button
+                      onClick={handleSendBroadcast}
+                      disabled={!bcastMsg.trim() || bcastSending}
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-gold/15 hover:bg-gold/25 border border-gold/30 text-gold text-xs font-semibold transition-colors disabled:opacity-40"
+                    >
+                      {bcastSending ? <Loader2 size={11} className="animate-spin" /> : bcastDone ? <CheckCircle size={11} /> : <Send size={11} />}
+                      {bcastSending ? 'Sending…' : bcastDone ? 'Sent!' : 'Send to All Staff'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
