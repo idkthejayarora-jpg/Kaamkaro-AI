@@ -122,11 +122,12 @@ router.post('/', async (req, res) => {
         status:        'lead',
         lastContact:   null,
         notes:         note?.trim() || '',
-        tags:          ['crm-lead'],
+        tags:          [],          // no internal tag — they appear as normal customers
         dealValue:     null,
         createdAt:     new Date().toISOString(),
       };
       await insertOne('customers', customer);
+      broadcast('customer:created', customer);   // live-update all open Customers pages
     }
 
     // ── Create the lead record ─────────────────────────────────────────────────
