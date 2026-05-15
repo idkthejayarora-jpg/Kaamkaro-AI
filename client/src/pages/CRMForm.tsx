@@ -49,6 +49,8 @@ export default function CRMForm() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerSearch,  setCustomerSearch]  = useState('');
   const [showDropdown,    setShowDropdown]    = useState(false);
+  // 'pick' = search existing | 'new' = create brand-new customer inline
+  const [customerMode,    setCustomerMode]    = useState<'pick' | 'new'>('pick');
   const [loading,         setLoading]         = useState(isEdit);
   const [saving,          setSaving]          = useState(false);
   const [error,           setError]           = useState('');
