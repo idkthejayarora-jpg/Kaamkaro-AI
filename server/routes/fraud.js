@@ -114,14 +114,16 @@ router.get('/detect', adminOnly, async (req, res) => {
       const createdMs   = new Date(t.createdAt).getTime();
       const completedMs = new Date(t.completedAt).getTime();
       const diffMins    = (completedMs - createdMs) / 60000;
-      if (diffMins >= 0 && diffMins < 4) {
+      // Flag only if sub-2-min AND task notes are absent/hollow (genuine work leaves a note)
+      const hasNotes = (t.notes || t.description || '').trim().length > 10;
+      if (diffMins >= 0 && diffMins < 2 && !hasNotes) {
         const name = staffMap[t.staffId] || t.staffId;
         const ri   = repeatInfo(t.staffId, 'task_speed');
         alerts.push({
           id: mkId(), staffId: t.staffId, staffName: name,
           type: 'task_speed', severity: 'high',
-          title: 'Lightning task completion',
-          detail: `"${t.title}" was created and completed within ${Math.round(diffMins * 10) / 10} min. No genuine task can be completed in under 4 minutes — this is a strong farming signal.`,
+          title: 'Lightning task completion (no notes)',
+          detail: `"${t.title}" was created and completed within ${Math.round(diffMins * 10) / 10} min with no task notes. Genuine work always leaves some trace — sub-2-minute hollow completions are a strong farming signal.`,
           evidence: `Task: "${t.title}" · Created: ${t.createdAt.substring(0,16)} · Completed: ${t.completedAt.substring(0,16)}`,
           taskId: t.id, taskTitle: t.title,
           ...ri, detectedAt: new Date().toISOString(),
