@@ -195,33 +195,67 @@ export default function CRMForm() {
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>
         )}
 
-        {/* Customer picker — only for new leads */}
+        {/* ── Customer — only for new leads ── */}
         {!isEdit && (
           <div ref={searchRef}>
-            <label className="label">Customer *</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="label mb-0">Customer *</label>
+              {/* Mode toggle */}
+              {!selectedCustomer && (
+                <div className="flex gap-1 p-0.5 bg-dark-200 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => { setCustomerMode('pick'); setForm(f => ({ ...f, name: '' })); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all ${
+                      customerMode === 'pick'
+                        ? 'bg-gold text-white shadow-sm'
+                        : 'text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    <Search size={9} /> Search existing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCustomerMode('new'); setSelectedCustomer(null); setCustomerSearch(''); setShowDropdown(false); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all ${
+                      customerMode === 'new'
+                        ? 'bg-gold text-white shadow-sm'
+                        : 'text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    <UserPlus size={9} /> New customer
+                  </button>
+                </div>
+              )}
+            </div>
 
-            {selectedCustomer ? (
-              /* Selected customer chip */
-              <div className="flex items-center gap-3 px-4 py-3 bg-gold/5 border border-gold/20 rounded-xl">
-                <div className="w-8 h-8 rounded-lg bg-gold/15 flex items-center justify-center flex-shrink-0">
-                  <span className="text-gold text-sm font-bold">{selectedCustomer.name[0].toUpperCase()}</span>
+            {/* ── Mode: pick existing ── */}
+            {customerMode === 'pick' && (
+              selectedCustomer ? (
+                /* Selected customer chip */
+                <div className="flex items-center gap-3 px-4 py-3 bg-gold/5 border border-gold/25 rounded-xl">
+                  <div className="w-9 h-9 rounded-xl bg-gold/15 flex items-center justify-center flex-shrink-0">
+                    <span className="text-gold font-bold text-sm">{selectedCustomer.name[0].toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-semibold">{selectedCustomer.name}</p>
+                    {selectedCustomer.phone
+                      ? <p className="text-white/40 text-xs">{selectedCustomer.phone}</p>
+                      : <p className="text-amber-400/60 text-xs">No phone — add it below</p>
+                    }
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Check size={8} /> linked
+                    </span>
+                    <button type="button" onClick={clearCustomer} className="p-1 text-white/30 hover:text-white transition-colors rounded-lg hover:bg-white/5">
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-semibold">{selectedCustomer.name}</p>
-                  {selectedCustomer.phone
-                    ? <p className="text-white/30 text-xs">{selectedCustomer.phone}</p>
-                    : <p className="text-amber-400/60 text-xs">No phone — add below</p>
-                  }
-                </div>
-                <button type="button" onClick={clearCustomer} className="text-white/30 hover:text-white transition-colors">
-                  <X size={16} />
-                </button>
-              </div>
-            ) : (
-              /* Search box */
-              <div className="relative">
+              ) : (
                 <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                   <input
                     className="input pl-9"
                     placeholder="Search by name or phone…"
@@ -230,59 +264,81 @@ export default function CRMForm() {
                     onFocus={() => setShowDropdown(true)}
                     autoFocus
                   />
-                </div>
-
-                {showDropdown && customerSearch.length > 0 && (
-                  <div className="absolute z-20 w-full mt-1 bg-dark-400 border border-dark-50 rounded-xl shadow-xl overflow-hidden">
-                    {filteredCustomers.length === 0 ? (
-                      <div className="px-4 py-3 text-white/30 text-sm flex items-center gap-2">
-                        <User size={14} />
-                        No match — will create new customer
-                      </div>
-                    ) : (
-                      filteredCustomers.map(c => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => selectCustomer(c)}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
-                        >
-                          <div className="w-7 h-7 rounded-lg bg-dark-200 flex items-center justify-center flex-shrink-0">
-                            <span className="text-white/50 text-xs font-bold">{c.name[0].toUpperCase()}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm">{c.name}</p>
-                            <p className="text-white/30 text-xs">{c.phone || 'No phone'}</p>
-                          </div>
-                        </button>
-                      ))
-                    )}
-                    {/* Option to proceed without selecting (new customer) */}
-                    {customerSearch.length >= 2 && filteredCustomers.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowDropdown(false);
-                          setForm(f => ({ ...f, name: customerSearch }));
-                          setDirty(true);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 border-t border-dark-50 hover:bg-white/5 transition-colors text-left"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-dark-200 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white/30 text-xs">+</span>
+                  {showDropdown && customerSearch.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-dark-400 border border-dark-50 rounded-xl shadow-xl overflow-hidden">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="px-4 py-3.5">
+                          <p className="text-white/30 text-sm">No match found</p>
+                          <button
+                            type="button"
+                            onClick={() => { setCustomerMode('new'); setForm(f => ({ ...f, name: customerSearch })); setShowDropdown(false); setDirty(true); }}
+                            className="mt-2 w-full flex items-center gap-2 px-3 py-2 bg-gold/10 hover:bg-gold/15 border border-gold/20 rounded-lg text-gold text-sm font-medium transition-colors"
+                          >
+                            <UserPlus size={13} />
+                            Create "<span className="font-bold">{customerSearch}</span>" as new customer
+                          </button>
                         </div>
-                        <p className="text-white/40 text-sm">Add "<span className="text-white">{customerSearch}</span>" as new customer</p>
-                      </button>
-                    )}
-                  </div>
-                )}
+                      ) : (
+                        <>
+                          {filteredCustomers.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => selectCustomer(c)}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-b border-dark-50/40 last:border-0"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-dark-200 flex items-center justify-center flex-shrink-0">
+                                <span className="text-white/60 text-xs font-bold">{c.name[0].toUpperCase()}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm font-medium">{c.name}</p>
+                                <p className="text-white/30 text-xs">{c.phone || 'No phone'}</p>
+                              </div>
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => { setCustomerMode('new'); setForm(f => ({ ...f, name: customerSearch })); setShowDropdown(false); setDirty(true); }}
+                            className="w-full flex items-center gap-2 px-4 py-3 border-t border-dark-50 hover:bg-gold/5 transition-colors text-left"
+                          >
+                            <UserPlus size={13} className="text-gold flex-shrink-0" />
+                            <p className="text-white/50 text-sm">
+                              Create <span className="text-white font-medium">"{customerSearch}"</span> as new
+                            </p>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+
+            {/* ── Mode: new customer ── */}
+            {customerMode === 'new' && (
+              <div className="rounded-xl border border-gold/20 bg-gold/4 px-4 py-3.5 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <UserPlus size={13} className="text-gold flex-shrink-0" />
+                  <p className="text-gold text-xs font-semibold">Creating new customer</p>
+                  <span className="text-white/25 text-xs">· will also appear in your Customers list</span>
+                </div>
+                <div>
+                  <label className="label">Full Name *</label>
+                  <input
+                    className="input"
+                    placeholder="e.g. Ramesh Gupta"
+                    value={form.name}
+                    onChange={e => set('name', e.target.value)}
+                    autoFocus
+                  />
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Name — shown when editing, or when new customer typed (not picked from list) */}
-        {(isEdit || (!selectedCustomer && !showDropdown && form.name)) && (
+        {/* Name field when editing an existing lead */}
+        {isEdit && (
           <div>
             <label className="label">Name *</label>
             <input
