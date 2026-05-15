@@ -1327,8 +1327,7 @@ export default function Customers() {
                 {/* ── Expanded drawer ── */}
                 {isOpen && (
                   <div
-                    className="border-t px-5 pt-3 pb-4 animate-fade-in"
-                    style={{ borderColor: `${stageHex}20`, background: 'rgba(0,0,0,0.15)' }}
+                    className="relative border-t border-dark-50/30 bg-dark-300 px-5 pt-3 pb-4 animate-fade-in"
                   >
                     <div className="flex gap-1 mb-3 flex-wrap">
                       {[
