@@ -1130,48 +1130,56 @@ export default function Customers() {
       ) : (
         <div className="space-y-3">
           {filtered.map(c => {
-            const days      = c.lastContact
+            const days         = c.lastContact
               ? Math.round((Date.now() - new Date(c.lastContact).getTime()) / 86400000) : null;
-            const heat      = getHeat(days);
-            const [c1, c2]  = getAvatarGradient(c.name);
-            const isOpen    = expanded === c.id;
-            const isChecked = selected.includes(c.id);
-            const assignedIds = c.assignedStaff?.length ? c.assignedStaff : (c.assignedTo ? [c.assignedTo] : []);
+            const heat         = getHeat(days);
+            const [c1, c2]     = getAvatarGradient(c.name);
+            const stageHex     = STAGE_HEX[c.status] || '#ffffff';
+            const isOpen       = expanded === c.id;
+            const isChecked    = selected.includes(c.id);
+            const assignedIds  = c.assignedStaff?.length ? c.assignedStaff : (c.assignedTo ? [c.assignedTo] : []);
             const customerTags = (c.tags || []).filter(t => t !== 'crm-lead' && t !== 'bulk-import' && t !== 'diary-import');
 
             return (
               <div
                 key={c.id}
-                className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
-                  STAGE_RING[c.status] || 'border-dark-50'
-                } ${isChecked ? '!border-gold/50 ring-1 ring-gold/20' : ''}`}
+                className={`group relative rounded-2xl border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl ${
+                  STAGE_RING[c.status] || 'border-white/8'
+                } ${isChecked ? '!border-gold/60 ring-2 ring-gold/20' : ''}`}
+                style={{
+                  background: `linear-gradient(120deg, ${stageHex}0e 0%, #1c1c1f 28%)`,
+                  boxShadow: isChecked ? '0 0 0 2px rgba(201,168,76,0.25)' : undefined,
+                }}
               >
-                {/* Stage-colored gradient header strip */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${STAGE_TOP[c.status] || 'from-white/5 to-transparent'}`} />
+                {/* Left accent bar — vivid stage color */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-[3px]"
+                  style={{ background: `linear-gradient(to bottom, ${stageHex}cc, ${stageHex}44)` }}
+                />
 
                 {/* Card body */}
-                <div className="bg-dark-400 px-4 pt-3.5 pb-3">
-                  <div className="flex items-start gap-3">
+                <div className="pl-5 pr-4 pt-4 pb-3">
+                  <div className="flex gap-3.5">
 
                     {/* Checkbox */}
                     {isAdmin && (
-                      <div className="flex-shrink-0 pt-1">
+                      <div className="flex-shrink-0 pt-1.5">
                         <input type="checkbox" checked={isChecked} onChange={() => toggleSelect(c.id)}
-                          className="accent-gold w-4 h-4" onClick={e => e.stopPropagation()} />
+                          className="accent-gold w-4 h-4 cursor-pointer" onClick={e => e.stopPropagation()} />
                       </div>
                     )}
 
-                    {/* Avatar — large, clickable, links to profile */}
+                    {/* Avatar — large, glowing, clickable */}
                     <button
                       onClick={() => navigate(`/customers/${c.id}`)}
                       className="flex-shrink-0 focus:outline-none group/avatar"
-                      title="Open profile"
+                      title="Open customer profile"
                     >
                       <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg text-white shadow-lg transition-transform group-hover/avatar:scale-105"
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-white transition-all duration-200 group-hover/avatar:scale-105"
                         style={{
                           background: `linear-gradient(135deg, ${c1}, ${c2})`,
-                          boxShadow: heat.glow || undefined,
+                          boxShadow: `0 6px 24px ${c1}55, ${heat.glow}`,
                         }}
                       >
                         {c.name[0].toUpperCase()}
@@ -1180,9 +1188,10 @@ export default function Customers() {
 
                     {/* Main info */}
                     <div className="flex-1 min-w-0">
-                      {/* Name row */}
+
+                      {/* Top row: name + heat badge */}
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           {isAdmin && editingNameId === c.id ? (
                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                               <input
@@ -1203,44 +1212,49 @@ export default function Customers() {
                                 className="text-white/30 hover:text-white p-0.5"><X size={13} /></button>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 group/name flex-wrap">
+                            <div className="flex items-center gap-1.5 group/name">
                               <button
                                 onClick={() => navigate(`/customers/${c.id}`)}
-                                className="text-white font-bold text-base hover:text-gold transition-colors text-left leading-tight"
+                                className="text-white font-bold text-lg leading-tight hover:text-gold transition-colors text-left"
                               >
                                 {c.name}
                               </button>
                               {isAdmin && (
                                 <button onClick={e => { e.stopPropagation(); setEditingNameId(c.id); setEditNameValue(c.name); }}
                                   className="text-white/20 hover:text-gold transition-colors p-0.5 opacity-0 group-hover/name:opacity-100">
-                                  <Pencil size={10} />
+                                  <Pencil size={11} />
                                 </button>
                               )}
                             </div>
                           )}
+
                           {/* Contact info */}
                           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                             {c.phone && (
                               <a href={`tel:${c.phone}`} onClick={e => e.stopPropagation()}
-                                className="text-white/35 text-xs flex items-center gap-1 hover:text-white/70 transition-colors">
-                                <Phone size={9} />{c.phone}
+                                className="text-white/40 text-xs flex items-center gap-1 hover:text-white/80 transition-colors">
+                                <Phone size={9} className="text-white/25" />{c.phone}
                               </a>
                             )}
-                            {c.email && <span className="text-white/25 text-xs flex items-center gap-1"><Mail size={9} />{c.email}</span>}
+                            {c.email && (
+                              <span className="text-white/25 text-xs flex items-center gap-1">
+                                <Mail size={9} />{c.email}
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        {/* Heat indicator — top right */}
-                        <div className="text-right flex-shrink-0">
-                          <p className={`text-xs font-bold tabular-nums ${heat.color} ${heat.pulse ? 'animate-pulse' : ''}`}>
-                            {heat.label}
-                          </p>
-                          <p className="text-white/20 text-[9px] mt-0.5">last contact</p>
+                        {/* Heat pill — prominent status badge */}
+                        <div
+                          className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[10px] font-bold border ${heat.pill} ${heat.pulse ? 'animate-pulse' : ''}`}
+                          style={{ boxShadow: heat.glow }}
+                        >
+                          {heat.label}
                         </div>
                       </div>
 
-                      {/* Tags + stage row */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      {/* Stage + tags + assigned staff */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                         {stageBadge(c.status)}
                         {customerTags.map(t => {
                           const def = tagDefs.find(d => d.name === t);
@@ -1255,7 +1269,7 @@ export default function Customers() {
                           );
                         })}
                         {isAdmin && assignedIds.length > 0 && (
-                          <span className="text-[10px] text-gold/50 font-medium ml-0.5">
+                          <span className="text-[10px] text-gold/45 font-medium">
                             → {assignedIds.map(id => getStaffName(id)).filter(Boolean).join(', ')}
                           </span>
                         )}
@@ -1264,29 +1278,31 @@ export default function Customers() {
                   </div>
 
                   {/* ── Bottom action bar ── */}
-                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-dark-50/40">
-                    {/* Profile link */}
+                  <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-white/5">
+                    {/* Profile CTA */}
                     <button
                       onClick={() => navigate(`/customers/${c.id}`)}
-                      className="flex items-center gap-1.5 text-gold/60 hover:text-gold text-xs font-semibold transition-colors"
+                      className="flex items-center gap-1.5 text-xs font-semibold text-gold/70 hover:text-gold transition-all group/profile"
                     >
-                      <ExternalLink size={11} />
-                      View Profile
+                      <div className="w-5 h-5 rounded-md bg-gold/10 group-hover/profile:bg-gold/20 flex items-center justify-center transition-colors">
+                        <ExternalLink size={10} className="text-gold" />
+                      </div>
+                      Full Profile
                     </button>
 
-                    {/* Actions */}
+                    {/* Action buttons */}
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => setLogging(c)}
-                        className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white/70 hover:text-white transition-all"
                       >
-                        <Clock size={11} /> Log
+                        <Clock size={11} className="text-white/40" /> Log
                       </button>
                       {isAdmin && (
                         <button
                           onClick={() => handleDeleteCustomer(c.id, c.name)}
                           disabled={deletingId === c.id}
-                          className="p-1.5 text-red-400/25 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-40"
+                          className="p-1.5 text-red-400/20 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-40"
                           title="Delete customer"
                         >
                           {deletingId === c.id
@@ -1296,18 +1312,21 @@ export default function Customers() {
                       )}
                       <button
                         onClick={() => setExpanded(isOpen ? null : c.id)}
-                        className="p-1.5 text-white/25 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                        className={`p-1.5 rounded-xl transition-all ${isOpen ? 'bg-white/8 text-white' : 'text-white/25 hover:text-white hover:bg-white/5'}`}
                         title={isOpen ? 'Collapse' : 'Expand history & notes'}
                       >
-                        {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* ── Expanded panel ── */}
+                {/* ── Expanded drawer ── */}
                 {isOpen && (
-                  <div className="bg-dark-300 border-t border-dark-50/50 px-4 pt-3 pb-4 animate-fade-in">
+                  <div
+                    className="border-t px-5 pt-3 pb-4 animate-fade-in"
+                    style={{ borderColor: `${stageHex}20`, background: 'rgba(0,0,0,0.15)' }}
+                  >
                     <div className="flex gap-1 mb-3 flex-wrap">
                       {[
                         { key: 'timeline',  label: '📋 History' },
@@ -1317,7 +1336,7 @@ export default function Customers() {
                       ].map(({ key, label }) => (
                         <button key={key} onClick={() => setExpandedTab(key as typeof expandedTab)}
                           className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                            expandedTab === key ? 'bg-gold/10 text-gold' : 'text-white/30 hover:text-white'
+                            expandedTab === key ? 'bg-gold/10 text-gold' : 'text-white/30 hover:text-white/70'
                           }`}>
                           {label}
                         </button>
