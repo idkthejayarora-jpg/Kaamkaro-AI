@@ -479,6 +479,19 @@ export default function NotificationsBell() {
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  const handleSendBroadcast = async () => {
+    if (!bcastMsg.trim() || bcastSending) return;
+    setBcastSending(true);
+    try {
+      await broadcastAPI.send(bcastMsg.trim(), bcastTitle.trim() || undefined);
+      setBcastDone(true);
+      setBcastTitle('');
+      setBcastMsg('');
+      setTimeout(() => { setBcastDone(false); setShowCompose(false); }, 1800);
+    } catch { /* non-fatal */ }
+    finally { setBcastSending(false); }
+  };
+
   const handleNotifClick = (n: Notification) => {
     markRead(n.id);
     if (n.modalKey) {
