@@ -264,6 +264,12 @@ export default function NotificationsBell() {
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [staleModal, setStaleModal] = useState<StaleCustomer[] | null>(null);
+  // Admin broadcast compose
+  const [showCompose,   setShowCompose]   = useState(false);
+  const [bcastTitle,    setBcastTitle]    = useState('');
+  const [bcastMsg,      setBcastMsg]      = useState('');
+  const [bcastSending,  setBcastSending]  = useState(false);
+  const [bcastDone,     setBcastDone]     = useState(false);
   const { user, isAdmin }   = useAuth();
   const navigate            = useNavigate();
   const ref                 = useRef<HTMLDivElement>(null);
