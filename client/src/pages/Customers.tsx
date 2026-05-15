@@ -1143,22 +1143,25 @@ export default function Customers() {
             return (
               <div
                 key={c.id}
-                className={`group relative rounded-2xl border overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl ${
+                className={`group relative rounded-2xl border overflow-hidden bg-dark-400 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl ${
                   STAGE_RING[c.status] || 'border-white/8'
                 } ${isChecked ? '!border-gold/60 ring-2 ring-gold/20' : ''}`}
-                style={{
-                  background: `linear-gradient(120deg, ${stageHex}0e 0%, #1c1c1f 28%)`,
-                  boxShadow: isChecked ? '0 0 0 2px rgba(201,168,76,0.25)' : undefined,
-                }}
+                style={isChecked ? { boxShadow: '0 0 0 2px rgba(201,168,76,0.25)' } : undefined}
               >
+                {/* Stage color tint overlay — transparent gradient, adapts to any bg */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: `linear-gradient(120deg, ${stageHex}12 0%, transparent 40%)` }}
+                />
+
                 {/* Left accent bar — vivid stage color */}
                 <div
-                  className="absolute left-0 top-0 bottom-0 w-[3px]"
+                  className="absolute left-0 top-0 bottom-0 w-[3px] z-10"
                   style={{ background: `linear-gradient(to bottom, ${stageHex}cc, ${stageHex}44)` }}
                 />
 
                 {/* Card body */}
-                <div className="pl-5 pr-4 pt-4 pb-3">
+                <div className="relative pl-5 pr-4 pt-4 pb-3">
                   <div className="flex gap-3.5">
 
                     {/* Checkbox */}
