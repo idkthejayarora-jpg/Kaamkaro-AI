@@ -57,7 +57,7 @@ function playBadgeFanfare() {
   } catch { /* audio not available */ }
 }
 
-interface BroadcastMsg { id: string; message: string; sentBy: string; }
+interface BroadcastMsg { id: string; title?: string | null; message: string; sentBy: string; }
 
 function getReadBroadcasts(): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem('kk_broadcasts_read') || '[]')); }
