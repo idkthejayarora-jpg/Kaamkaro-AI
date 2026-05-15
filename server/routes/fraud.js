@@ -200,15 +200,15 @@ router.get('/detect', adminOnly, async (req, res) => {
       meritByStaffDay[key] = (meritByStaffDay[key] || 0) + (m.points || 0);
     }
     for (const [key, total] of Object.entries(meritByStaffDay)) {
-      if (total <= 15) continue;
+      if (total <= 25) continue;
       const [sid, day] = key.split('::');
       const name = staffMap[sid] || sid;
       const ri   = repeatInfo(sid, 'merit_haul');
       alerts.push({
         id: mkId(), staffId: sid, staffName: name,
-        type: 'merit_haul', severity: total > 30 ? 'high' : 'medium',
+        type: 'merit_haul', severity: total > 45 ? 'high' : 'medium',
         title: 'Abnormal daily merit haul',
-        detail: `Earned ${total} auto-merit points in a single day. Normal daily ceiling under genuine work patterns is 10–12 points. Scores above 15 indicate bulk task farming.`,
+        detail: `Earned ${total} auto-merit points in a single day. A productive staff member doing catch-up entry can reach 20–25 pts — scores above 25 suggest bulk task farming without real work behind it.`,
         evidence: `Date: ${day} · Total: ${total} pts from task/auto sources`,
         ...ri, detectedAt: new Date().toISOString(),
       });
