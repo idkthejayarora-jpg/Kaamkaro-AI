@@ -41,39 +41,50 @@ function getAvatarGradient(name: string): [string, string] {
 }
 
 // Heat level based on days since last contact
-function getHeat(days: number | null): { color: string; label: string; glow: string; pulse: boolean } {
-  if (days === null) return { color: 'text-white/20', label: 'Never', glow: '', pulse: false };
-  if (days === 0)   return { color: 'text-emerald-400', label: 'Today', glow: '0 0 10px rgba(52,211,153,0.5)', pulse: false };
-  if (days <= 3)    return { color: 'text-blue-400',    label: `${days}d ago`, glow: '0 0 8px rgba(96,165,250,0.4)', pulse: false };
-  if (days <= 7)    return { color: 'text-amber-400',   label: `${days}d ago`, glow: '0 0 8px rgba(251,191,36,0.4)', pulse: false };
-  return { color: 'text-red-400', label: `${days}d ago`, glow: '0 0 10px rgba(248,113,113,0.5)', pulse: true };
+function getHeat(days: number | null) {
+  if (days === null) return {
+    color: 'text-red-400', label: '⚠ Never', glow: '0 0 14px rgba(248,113,113,0.55)', pulse: true,
+    pill: 'bg-red-500/15 border-red-500/30 text-red-400',
+  };
+  if (days === 0) return {
+    color: 'text-emerald-400', label: '● Today', glow: '0 0 12px rgba(52,211,153,0.55)', pulse: false,
+    pill: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+  };
+  if (days <= 3) return {
+    color: 'text-blue-400', label: `${days}d ago`, glow: '0 0 10px rgba(96,165,250,0.4)', pulse: false,
+    pill: 'bg-blue-500/10 border-blue-500/25 text-blue-400',
+  };
+  if (days <= 7) return {
+    color: 'text-amber-400', label: `${days}d ago`, glow: '0 0 10px rgba(251,191,36,0.4)', pulse: false,
+    pill: 'bg-amber-500/10 border-amber-500/25 text-amber-400',
+  };
+  return {
+    color: 'text-red-400', label: `${days}d ago`, glow: '0 0 14px rgba(248,113,113,0.5)', pulse: true,
+    pill: 'bg-red-500/15 border-red-500/30 text-red-400',
+  };
 }
 
-// Stage left-border color (used on expanded panel)
+// Stage left-border color (expanded panel)
 const STAGE_BORDER: Record<string, string> = {
   lead: 'border-l-white/15', contacted: 'border-l-blue-500/50',
   interested: 'border-l-gold/60', negotiating: 'border-l-orange-500/60',
   closed: 'border-l-emerald-500/60', churned: 'border-l-red-500/40',
 };
 
-// Stage top-strip color for card header bar
-const STAGE_TOP: Record<string, string> = {
-  lead:        'from-white/5   to-transparent',
-  contacted:   'from-blue-500/40 to-transparent',
-  interested:  'from-amber-400/50 to-transparent',
-  negotiating: 'from-orange-500/45 to-transparent',
-  closed:      'from-emerald-500/45 to-transparent',
-  churned:     'from-red-500/35 to-transparent',
+// Stage hex color — used for inline gradient effects
+const STAGE_HEX: Record<string, string> = {
+  lead: '#ffffff', contacted: '#3b82f6', interested: '#C9A84C',
+  negotiating: '#f97316', closed: '#10b981', churned: '#ef4444',
 };
 
 // Stage card outer ring
 const STAGE_RING: Record<string, string> = {
-  lead:        'border-dark-50',
-  contacted:   'border-blue-500/25',
-  interested:  'border-amber-400/35',
-  negotiating: 'border-orange-500/30',
-  closed:      'border-emerald-500/30',
-  churned:     'border-red-500/20',
+  lead:        'border-white/8',
+  contacted:   'border-blue-500/30',
+  interested:  'border-amber-400/40',
+  negotiating: 'border-orange-500/35',
+  closed:      'border-emerald-500/35',
+  churned:     'border-red-500/25',
 };
 
 // ── Sentiment Trend ────────────────────────────────────────────────────────────
