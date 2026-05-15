@@ -236,17 +236,57 @@ function AlertCard({
   );
 }
 
+// ── Staff initials avatar (consistent gradient per name) ──────────────────────
+function StaffAvatar({ name, size = 40, isOffender }: { name: string; size?: number; isOffender: boolean }) {
+  const GRADIENTS = [
+    ['#7c3aed', '#a855f7'], ['#dc2626', '#f87171'], ['#0891b2', '#22d3ee'],
+    ['#b45309', '#fbbf24'], ['#065f46', '#34d399'], ['#1d4ed8', '#60a5fa'],
+    ['#be185d', '#f472b6'], ['#4338ca', '#818cf8'],
+  ];
+  const idx = (name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % GRADIENTS.length;
+  const [c1, c2] = GRADIENTS[idx];
+  return (
+    <div
+      className="rounded-xl flex items-center justify-center font-bold text-white flex-shrink-0"
+      style={{
+        width: size, height: size, fontSize: size * 0.38,
+        background: `linear-gradient(135deg, ${c1}, ${c2})`,
+        boxShadow: isOffender ? '0 0 0 2px rgba(239,68,68,0.4)' : 'none',
+      }}
+    >
+      {name[0]?.toUpperCase()}
+    </div>
+  );
+}
+
+// ── Severity bar — visual breakdown of alert mix ──────────────────────────────
+function SeverityBar({ alerts }: { alerts: FraudAlert[] }) {
+  const high   = alerts.filter(a => a.severity === 'high').length;
+  const medium = alerts.filter(a => a.severity === 'medium').length;
+  const low    = alerts.filter(a => a.severity === 'low').length;
+  const total  = alerts.length || 1;
+  return (
+    <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden w-24">
+      {high   > 0 && <div className="bg-red-500"    style={{ width: `${(high   / total) * 100}%` }} />}
+      {medium > 0 && <div className="bg-amber-400"  style={{ width: `${(medium / total) * 100}%` }} />}
+      {low    > 0 && <div className="bg-blue-400"   style={{ width: `${(low    / total) * 100}%` }} />}
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function AntiFraud() {
   const navigate = useNavigate();
-  const [alerts,    setAlerts]    = useState<FraudAlert[]>([]);
-  const [records,   setRecords]   = useState<FraudRecord[]>([]);
-  const [loading,   setLoading]   = useState(false);
-  const [error,     setError]     = useState('');
-  const [scannedAt, setScannedAt] = useState('');
-  const [tab,       setTab]       = useState<'live' | 'history'>('live');
-  const [fineModal, setFineModal] = useState<FraudAlert | null>(null);
+  const [alerts,      setAlerts]      = useState<FraudAlert[]>([]);
+  const [records,     setRecords]     = useState<FraudRecord[]>([]);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState('');
+  const [scannedAt,   setScannedAt]   = useState('');
+  const [tab,         setTab]         = useState<'live' | 'history'>('live');
+  const [fineModal,   setFineModal]   = useState<FraudAlert | null>(null);
   const [fineLoading, setFineLoading] = useState(false);
+  const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
+  const [showLegend,    setShowLegend]    = useState(false);
   // per-alert action state: 'idle' | 'fined' | 'dismissed'
   const [actionState, setActionState] = useState<Record<string, 'idle' | 'fined' | 'dismissed'>>({});
 
@@ -269,20 +309,35 @@ export default function AntiFraud() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Group alerts by staff
+  // Group alerts by staff, sort worst first
   const byStaff: Record<string, { name: string; alerts: FraudAlert[] }> = {};
   for (const a of alerts) {
     if (!byStaff[a.staffId]) byStaff[a.staffId] = { name: a.staffName, alerts: [] };
     byStaff[a.staffId].alerts.push(a);
   }
   const staffGroups = Object.entries(byStaff).sort((a, b) => {
-    const aHasRepeat = a[1].alerts.some(x => x.isRepeat);
-    const bHasRepeat = b[1].alerts.some(x => x.isRepeat);
-    if (aHasRepeat !== bHasRepeat) return bHasRepeat ? 1 : -1;
+    const aRepeat = a[1].alerts.some(x => x.isRepeat);
+    const bRepeat = b[1].alerts.some(x => x.isRepeat);
+    if (aRepeat !== bRepeat) return bRepeat ? 1 : -1;
     const aHigh = a[1].alerts.filter(x => x.severity === 'high').length;
     const bHigh = b[1].alerts.filter(x => x.severity === 'high').length;
     return bHigh - aHigh;
   });
+
+  // Auto-expand the worst offender when results arrive
+  useEffect(() => {
+    if (staffGroups.length > 0 && expandedStaff.size === 0) {
+      setExpandedStaff(new Set([staffGroups[0][0]]));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staffGroups.length]);
+
+  const toggleStaff = (id: string) =>
+    setExpandedStaff(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const highCount   = alerts.filter(a => a.severity === 'high').length;
   const repeatCount = alerts.filter(a => a.isRepeat).length;
@@ -299,7 +354,6 @@ export default function AntiFraud() {
       });
       setActionState(prev => ({ ...prev, [fineModal.id]: 'fined' }));
       setFineModal(null);
-      // Reload records silently
       fraudAPI.records().then(r => setRecords(r)).catch(() => {});
     } catch { /* ignore */ }
     setFineLoading(false);
@@ -307,21 +361,16 @@ export default function AntiFraud() {
 
   async function handleDismiss(alert: FraudAlert) {
     try {
-      await fraudAPI.dismiss({
-        staffId:    alert.staffId,
-        fraudType:  alert.type,
-        alertTitle: alert.title,
-      });
+      await fraudAPI.dismiss({ staffId: alert.staffId, fraudType: alert.type, alertTitle: alert.title });
       setActionState(prev => ({ ...prev, [alert.id]: 'dismissed' }));
     } catch { /* ignore */ }
   }
 
-  const liveCount    = alerts.filter(a => (actionState[a.id] || 'idle') === 'idle').length;
-  const scannedTime  = scannedAt ? new Date(scannedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+  const liveCount   = alerts.filter(a => (actionState[a.id] || 'idle') === 'idle').length;
+  const scannedTime = scannedAt ? new Date(scannedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Fine confirm modal */}
       {fineModal && (
         <ConfirmModal
           staffName={fineModal.staffName}
@@ -340,8 +389,8 @@ export default function AntiFraud() {
             Anti-Fraud Monitor
           </h1>
           <p className="text-white/30 text-sm mt-1">
-            Scans tasks, merits & diary for farming patterns
-            {scannedTime && <span className="ml-2 text-white/20">· Last scan {scannedTime}</span>}
+            Content-quality detection — timing is not a crime, hollow content is
+            {scannedTime && <span className="ml-2 text-white/20">· Scanned {scannedTime}</span>}
           </p>
         </div>
         <button onClick={load} disabled={loading} className="btn-primary flex items-center gap-2 flex-shrink-0">
@@ -349,7 +398,6 @@ export default function AntiFraud() {
         </button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="card bg-red-500/5 border-red-500/20 text-red-400 text-sm flex items-center gap-2">
           <AlertTriangle size={14} className="flex-shrink-0" />{error}
@@ -360,14 +408,15 @@ export default function AntiFraud() {
       {!loading && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total alerts',    value: alerts.length,  color: 'text-white' },
-            { label: 'High severity',   value: highCount,      color: 'text-red-400' },
-            { label: 'Repeat offenders',value: repeatCount,    color: repeatCount > 0 ? 'text-red-400' : 'text-white/30' },
-            { label: 'Staff flagged',   value: staffGroups.length, color: 'text-amber-400' },
-          ].map(({ label, value, color }) => (
+            { label: 'Total alerts',     value: alerts.length,       color: 'text-white',                                  sub: 'across all staff' },
+            { label: 'High severity',    value: highCount,           color: highCount > 0 ? 'text-red-400' : 'text-white/30', sub: 'need action now' },
+            { label: 'Repeat offenders', value: repeatCount,         color: repeatCount > 0 ? 'text-red-400' : 'text-white/30', sub: 'fined before' },
+            { label: 'Staff flagged',    value: staffGroups.length,  color: staffGroups.length > 0 ? 'text-amber-400' : 'text-white/30', sub: 'members' },
+          ].map(({ label, value, color, sub }) => (
             <div key={label} className="card py-3 px-4 text-center">
-              <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className="text-white/40 text-xs mt-0.5">{label}</p>
+              <p className={`text-3xl font-black ${color}`}>{value}</p>
+              <p className="text-white/50 text-xs font-medium mt-0.5">{label}</p>
+              <p className="text-white/20 text-[9px] mt-0.5">{sub}</p>
             </div>
           ))}
         </div>
@@ -376,7 +425,7 @@ export default function AntiFraud() {
       {/* Tabs */}
       <TabBar
         tabs={[
-          { id: 'live',    label: 'Live Alerts',    icon: AlertTriangle, count: liveCount      },
+          { id: 'live',    label: 'Staff Alerts',   icon: AlertTriangle, count: liveCount      },
           { id: 'history', label: 'Action History', icon: History,       count: records.length },
         ]}
         active={tab}
@@ -385,92 +434,151 @@ export default function AntiFraud() {
         className="w-fit"
       />
 
-      <AnimatedTabPanel key={tab} className="space-y-4">
+      <AnimatedTabPanel key={tab} className="space-y-3">
 
       {/* ── Live alerts tab ─────────────────────────────────────────────────── */}
       {tab === 'live' && (
         <>
           {loading && (
             <div className="space-y-3">
-              {[1,2,3].map(i => <div key={i} className="card h-20 shimmer" />)}
+              {[1,2,3].map(i => <div key={i} className="card h-24 shimmer" />)}
             </div>
           )}
 
           {!loading && staffGroups.length === 0 && (
             <div className="card text-center py-16">
-              <CheckCircle2 size={36} className="text-green-400/30 mx-auto mb-3" />
-              <p className="text-white/40 font-medium">No fraud patterns detected</p>
-              <p className="text-white/20 text-sm mt-1">All staff activity looks normal</p>
+              <CheckCircle2 size={40} className="text-green-400/30 mx-auto mb-3" />
+              <p className="text-white/40 font-semibold text-lg">All clear</p>
+              <p className="text-white/20 text-sm mt-1">No suspicious patterns detected across any staff member</p>
             </div>
           )}
 
-          {/* Pattern legend */}
+          {/* Collapsible legend */}
           {staffGroups.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(TYPE_META).map(([key, { label, icon: Icon }]) => (
-                <span key={key} className="flex items-center gap-1 text-[10px] bg-dark-300 text-white/30 px-2 py-1 rounded-full">
-                  <Icon size={9} />{label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Staff groups */}
-          {staffGroups.map(([staffId, group]) => {
-            const repeatAlerts = group.alerts.filter(a => a.isRepeat);
-            const isOffender   = repeatAlerts.length > 0;
-            const activeCount  = group.alerts.filter(a => (actionState[a.id] || 'idle') === 'idle').length;
-            return (
-              <div key={staffId} className={`card space-y-3 ${isOffender ? 'border-red-500/25' : ''}`}>
-                {/* Staff header */}
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isOffender ? 'bg-red-500/15' : 'bg-dark-300'}`}>
-                    <User size={16} className={isOffender ? 'text-red-400' : 'text-white/30'} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white font-semibold">{group.name}</p>
-                      {isOffender && (
-                        <span className="text-[10px] bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-semibold">
-                          REPEAT OFFENDER
-                        </span>
-                      )}
-                      <span className="text-[10px] bg-dark-300 text-white/30 px-1.5 py-0.5 rounded-full">
-                        {activeCount} active alert{activeCount !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    {/* Severity summary */}
-                    <div className="flex gap-2 mt-0.5">
-                      {(['high', 'medium', 'low'] as const).map(sev => {
-                        const n = group.alerts.filter(a => a.severity === sev).length;
-                        return n > 0 ? (
-                          <span key={sev} className={`text-[10px] ${sev === 'high' ? 'text-red-400' : sev === 'medium' ? 'text-amber-400' : 'text-blue-400'}`}>
-                            {n} {sev}
-                          </span>
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/staff/${staffId}`)}
-                    className="btn-ghost text-xs text-white/30 flex-shrink-0"
-                  >
-                    <Eye size={12} />
-                  </button>
-                </div>
-
-                {/* Alerts */}
-                <div className="space-y-2">
-                  {group.alerts.map(alert => (
-                    <AlertCard
-                      key={alert.id}
-                      alert={alert}
-                      onFine={a => setFineModal(a)}
-                      onDismiss={handleDismiss}
-                      actionState={actionState[alert.id] || 'idle'}
-                    />
+            <div className="rounded-xl border border-dark-50 overflow-hidden">
+              <button
+                onClick={() => setShowLegend(l => !l)}
+                className="w-full flex items-center justify-between px-4 py-2.5 bg-dark-400 hover:bg-dark-300 transition-colors"
+              >
+                <span className="text-white/40 text-xs font-medium uppercase tracking-wider">Detection patterns ({Object.keys(TYPE_META).length - 1})</span>
+                <ChevronDown size={13} className={`text-white/30 transition-transform ${showLegend ? 'rotate-180' : ''}`} />
+              </button>
+              {showLegend && (
+                <div className="px-4 py-3 bg-dark-300 flex flex-wrap gap-2 border-t border-dark-50">
+                  {Object.entries(TYPE_META).filter(([k]) => k !== 'diary_spam').map(([key, { label, icon: Icon }]) => (
+                    <span key={key} className="flex items-center gap-1.5 text-[10px] bg-dark-400 text-white/40 border border-dark-50 px-2.5 py-1 rounded-full">
+                      <Icon size={9} className="text-white/30" />{label}
+                    </span>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Staff accordion ── */}
+          {staffGroups.map(([staffId, group], idx) => {
+            const isOffender  = group.alerts.some(a => a.isRepeat);
+            const highAlerts  = group.alerts.filter(a => a.severity === 'high').length;
+            const medAlerts   = group.alerts.filter(a => a.severity === 'medium').length;
+            const lowAlerts   = group.alerts.filter(a => a.severity === 'low').length;
+            const activeCount = group.alerts.filter(a => (actionState[a.id] || 'idle') === 'idle').length;
+            const allDone     = activeCount === 0;
+            const isOpen      = expandedStaff.has(staffId);
+
+            return (
+              <div
+                key={staffId}
+                className={`rounded-2xl border overflow-hidden transition-all ${
+                  isOffender ? 'border-red-500/30' : allDone ? 'border-dark-50/40 opacity-60' : 'border-dark-50'
+                }`}
+              >
+                {/* Severity strip at top of card */}
+                <div className="h-1 w-full flex">
+                  {highAlerts  > 0 && <div className="bg-red-500"   style={{ flex: highAlerts  }} />}
+                  {medAlerts   > 0 && <div className="bg-amber-400" style={{ flex: medAlerts   }} />}
+                  {lowAlerts   > 0 && <div className="bg-blue-400"  style={{ flex: lowAlerts   }} />}
+                </div>
+
+                {/* Staff accordion header — click to expand/collapse */}
+                <button
+                  onClick={() => toggleStaff(staffId)}
+                  className="w-full flex items-center gap-4 px-4 py-3.5 bg-dark-400 hover:bg-dark-300 transition-colors text-left"
+                >
+                  {/* Avatar with initials */}
+                  <StaffAvatar name={group.name} size={44} isOffender={isOffender} />
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white font-bold text-base">{group.name}</span>
+                      {isOffender && (
+                        <span className="text-[9px] bg-red-500/15 text-red-400 border border-red-500/25 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide animate-pulse">
+                          Repeat
+                        </span>
+                      )}
+                      {allDone && (
+                        <span className="text-[9px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-medium">
+                          resolved
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Severity summary chips + bar */}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {highAlerts  > 0 && <span className="text-[10px] text-red-400    font-semibold">{highAlerts}  high</span>}
+                      {medAlerts   > 0 && <span className="text-[10px] text-amber-400  font-semibold">{medAlerts}  medium</span>}
+                      {lowAlerts   > 0 && <span className="text-[10px] text-blue-400   font-semibold">{lowAlerts}  low</span>}
+                      <SeverityBar alerts={group.alerts} />
+                    </div>
+                  </div>
+
+                  {/* Right: alert count + staff profile link + chevron */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className={`text-xs font-bold tabular-nums px-2 py-1 rounded-lg ${
+                      allDone ? 'bg-green-500/10 text-green-400' : 'bg-dark-300 text-white/50'
+                    }`}>
+                      {allDone ? '✓' : activeCount} {!allDone && `alert${activeCount !== 1 ? 's' : ''}`}
+                    </span>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={e => { e.stopPropagation(); navigate(`/staff/${staffId}`); }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); navigate(`/staff/${staffId}`); } }}
+                      className="p-1.5 rounded-lg text-white/20 hover:text-gold hover:bg-gold/10 transition-colors"
+                      title="View staff profile"
+                    >
+                      <Eye size={14} />
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      className={`text-white/30 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </div>
+                </button>
+
+                {/* Alert list — shown when expanded */}
+                {isOpen && (
+                  <div className="bg-dark-300 border-t border-dark-50 px-4 py-3 space-y-2 animate-fade-in">
+                    {/* Rank badge for worst offender */}
+                    {idx === 0 && isOffender && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/8 border border-red-500/15 mb-3">
+                        <AlertTriangle size={13} className="text-red-400 flex-shrink-0" />
+                        <p className="text-red-400 text-xs font-medium">
+                          Highest risk — repeat offender with {highAlerts > 0 ? `${highAlerts} high-severity` : 'multiple'} active alert{highAlerts !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    )}
+                    {group.alerts.map(alert => (
+                      <AlertCard
+                        key={alert.id}
+                        alert={alert}
+                        onFine={a => setFineModal(a)}
+                        onDismiss={handleDismiss}
+                        actionState={actionState[alert.id] || 'idle'}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -479,39 +587,75 @@ export default function AntiFraud() {
 
       {/* ── History tab ─────────────────────────────────────────────────────── */}
       {tab === 'history' && (
-        <div className="card space-y-3">
+        <>
           {records.length === 0 && (
-            <div className="text-center py-10">
+            <div className="card text-center py-12">
               <History size={28} className="text-white/10 mx-auto mb-2" />
               <p className="text-white/30 text-sm">No actions taken yet</p>
             </div>
           )}
-          {records.map(r => (
-            <div key={r.id} className={`flex items-start gap-3 p-3 rounded-xl border ${r.action === 'fine' ? 'bg-red-500/5 border-red-500/15' : 'bg-dark-300 border-dark-50'}`}>
-              <div className={`p-1.5 rounded-lg flex-shrink-0 ${r.action === 'fine' ? 'bg-red-500/10' : 'bg-dark-400'}`}>
-                {r.action === 'fine' ? <Gavel size={13} className="text-red-400" /> : <EyeOff size={13} className="text-white/30" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-white text-sm font-medium">{r.staffName || r.staffId}</span>
-                  {r.action === 'fine'
-                    ? <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 py-0.5 rounded-full">−10 pts fine</span>
-                    : <span className="text-[10px] bg-dark-400 text-white/30 px-1.5 py-0.5 rounded-full">dismissed</span>
-                  }
-                  <span className="text-[10px] text-white/20">{r.week}</span>
+
+          {/* Group history by staff */}
+          {(() => {
+            const byStaffHistory: Record<string, { name: string; recs: FraudRecord[] }> = {};
+            for (const r of records) {
+              if (!byStaffHistory[r.staffId]) byStaffHistory[r.staffId] = { name: r.staffName || r.staffId, recs: [] };
+              byStaffHistory[r.staffId].recs.push(r);
+            }
+            return Object.entries(byStaffHistory).map(([sid, g]) => {
+              const fineCount = g.recs.filter(r => r.action === 'fine').length;
+              const totalPts  = fineCount * -10;
+              return (
+                <div key={sid} className="rounded-2xl border border-dark-50 overflow-hidden">
+                  {/* Staff header */}
+                  <div className="flex items-center gap-3 px-4 py-3 bg-dark-400 border-b border-dark-50">
+                    <StaffAvatar name={g.name} size={36} isOffender={fineCount > 1} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm">{g.name}</p>
+                      <p className="text-white/30 text-xs">{g.recs.length} action{g.recs.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    {fineCount > 0 && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-red-400 font-bold text-sm">{totalPts} pts</p>
+                        <p className="text-white/25 text-[10px]">{fineCount} fine{fineCount !== 1 ? 's' : ''}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Records */}
+                  <div className="bg-dark-300 divide-y divide-dark-50/30">
+                    {g.recs.map(r => (
+                      <div key={r.id} className={`flex items-start gap-3 px-4 py-3 ${r.action === 'fine' ? 'bg-red-500/3' : ''}`}>
+                        <div className={`p-1.5 rounded-lg flex-shrink-0 mt-0.5 ${r.action === 'fine' ? 'bg-red-500/10' : 'bg-dark-400'}`}>
+                          {r.action === 'fine'
+                            ? <Gavel size={12} className="text-red-400" />
+                            : <EyeOff size={12} className="text-white/30" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {r.action === 'fine'
+                              ? <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 py-0.5 rounded-full font-semibold">−10 pts fine</span>
+                              : <span className="text-[10px] bg-dark-400 text-white/30 px-1.5 py-0.5 rounded-full">dismissed</span>
+                            }
+                            <span className="text-[10px] text-white/20 font-mono">{r.week}</span>
+                          </div>
+                          <p className="text-white/60 text-xs mt-0.5">{r.alertTitle}</p>
+                          {r.notes && <p className="text-white/30 text-xs mt-0.5 italic">"{r.notes}"</p>}
+                          <p className="text-white/20 text-[10px] mt-1">
+                            {new Date(r.issuedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        {r.action === 'fine' && (
+                          <span className="text-red-400 font-black text-base flex-shrink-0">−10</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-white/40 text-xs mt-0.5">{r.alertTitle}</p>
-                {r.notes && <p className="text-white/25 text-xs mt-0.5 italic">"{r.notes}"</p>}
-                <p className="text-white/20 text-[10px] mt-1">
-                  {new Date(r.issuedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-              {r.action === 'fine' && (
-                <span className="text-red-400 text-sm font-bold flex-shrink-0">−10</span>
-              )}
-            </div>
-          ))}
-        </div>
+              );
+            });
+          })()}
+        </>
       )}
 
       </AnimatedTabPanel>
