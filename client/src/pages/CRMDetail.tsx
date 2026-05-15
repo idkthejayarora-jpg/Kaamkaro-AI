@@ -585,6 +585,15 @@ export default function CRMDetail() {
           >
             <CalendarDays size={12} /> Follow-up Done
           </button>
+          {lead.visitDate && (
+            <button
+              onClick={() => appendNote('Visit completed ✓', { visitDate: null, stage: 'won' as LeadStage })}
+              disabled={saving}
+              className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-indigo-500/25 text-indigo-400/80 hover:text-indigo-300 hover:bg-indigo-500/8 hover:border-indigo-500/40 text-xs font-medium transition-all"
+            >
+              <Check size={12} /> Visit Completed — Mark Won
+            </button>
+          )}
         </div>
         {saving && (
           <div className="mt-2 flex items-center gap-2 text-white/30 text-xs">
