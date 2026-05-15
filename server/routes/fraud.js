@@ -273,7 +273,7 @@ router.get('/detect', adminOnly, async (req, res) => {
       loopMeritByDay[key] = (loopMeritByDay[key] || 0) + 1;
     }
     for (const [key, count] of Object.entries(loopMeritByDay)) {
-      if (count < 2) continue;
+      if (count < 3) continue;
       const [sid, taskId, day] = key.split('::');
       const name = staffMap[sid] || sid;
       const task = tasks.find(t => t.id === taskId);
