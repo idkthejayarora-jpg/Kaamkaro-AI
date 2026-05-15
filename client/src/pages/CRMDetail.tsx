@@ -335,9 +335,11 @@ export default function CRMDetail() {
   const [loading,       setLoading]       = useState(true);
   const [saving,        setSaving]        = useState(false);
   const [noteText,      setNoteText]      = useState('');
-  const [editSchedule,  setEditSchedule]  = useState(false);
-  const [followUpEdit,  setFollowUpEdit]  = useState('');
-  const [visitEdit,     setVisitEdit]     = useState('');
+  const [editSchedule,    setEditSchedule]    = useState(false);
+  const [followUpEdit,    setFollowUpEdit]    = useState('');
+  const [visitEdit,       setVisitEdit]       = useState('');
+  const [rescheduleMode,  setRescheduleMode]  = useState(false);
+  const [rescheduleDate,  setRescheduleDate]  = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
 
   // Voice input — appends spoken text to the note textarea
