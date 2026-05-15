@@ -82,8 +82,39 @@ html:not(.light) .text-white\/15    { color: rgba(255,255,255,0.38) !important; 
 html.light .text-gold         { color: var(--accent-dark, #8B6914) !important; }
 
 /* ── Backgrounds — flip white-alpha fills to black-alpha ────────────────── */
+html.light .bg-white\/2       { background-color: rgba(0,0,0,0.01) !important; }
+html.light .bg-white\/3       { background-color: rgba(0,0,0,0.02) !important; }
 html.light .bg-white\/5       { background-color: rgba(0,0,0,0.04) !important; }
+html.light .bg-white\/8       { background-color: rgba(0,0,0,0.05) !important; }
 html.light .bg-white\/10      { background-color: rgba(0,0,0,0.06) !important; }
+html.light .bg-white\/15      { background-color: rgba(0,0,0,0.08) !important; }
+html.light .bg-white\/20      { background-color: rgba(0,0,0,0.09) !important; }
+
+/* Hover bg — white-alpha hover fills flip to black-alpha */
+html.light .hover\:bg-white\/2:hover  { background-color: rgba(0,0,0,0.01) !important; }
+html.light .hover\:bg-white\/5:hover  { background-color: rgba(0,0,0,0.04) !important; }
+html.light .hover\:bg-white\/8:hover  { background-color: rgba(0,0,0,0.05) !important; }
+html.light .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.06) !important; }
+html.light .hover\:bg-white\/15:hover { background-color: rgba(0,0,0,0.08) !important; }
+html.light .hover\:bg-white\/20:hover { background-color: rgba(0,0,0,0.09) !important; }
+
+/* ── Hover text — must override separately from base text classes ──────── */
+html.light .hover\:text-white:hover     { color: #1C1C1E !important; }
+html.light .hover\:text-white\/90:hover { color: rgba(28,28,30,0.92) !important; }
+html.light .hover\:text-white\/80:hover { color: rgba(28,28,30,0.86) !important; }
+html.light .hover\:text-white\/70:hover { color: rgba(28,28,30,0.80) !important; }
+html.light .hover\:text-white\/60:hover { color: rgba(28,28,30,0.74) !important; }
+html.light .hover\:text-white\/50:hover { color: rgba(28,28,30,0.68) !important; }
+html.light .hover\:text-white\/40:hover { color: rgba(28,28,30,0.62) !important; }
+html.light .hover\:text-white\/30:hover { color: rgba(28,28,30,0.54) !important; }
+
+/* Group-hover text */
+html.light .group-hover\/name\:opacity-100 { opacity: 1 !important; }
+
+/* ── Hover borders ────────────────────────────────────────────────────── */
+html.light .hover\:border-white\/10:hover { border-color: rgba(0,0,0,0.06) !important; }
+html.light .hover\:border-white\/20:hover { border-color: rgba(0,0,0,0.10) !important; }
+html.light .hover\:border-white\/30:hover { border-color: rgba(0,0,0,0.14) !important; }
 
 /* ── Borders — card, input, and component borders ────────────────────────── */
 /* Cards */
