@@ -1222,12 +1222,11 @@ export default function Customers() {
                               >
                                 {c.name}
                               </button>
-                              {isAdmin && (
-                                <button onClick={e => { e.stopPropagation(); setEditingNameId(c.id); setEditNameValue(c.name); }}
-                                  className="text-white/20 hover:text-gold transition-colors p-0.5 opacity-0 group-hover/name:opacity-100">
-                                  <Pencil size={11} />
-                                </button>
-                              )}
+                              <button onClick={e => { e.stopPropagation(); setEditingNameId(c.id); setEditNameValue(c.name); }}
+                                className="text-white/20 hover:text-gold transition-colors p-0.5 opacity-0 group-hover/name:opacity-100"
+                                title="Rename customer">
+                                <Pencil size={11} />
+                              </button>
                             </div>
                           )}
 
