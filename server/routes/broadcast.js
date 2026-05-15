@@ -10,11 +10,12 @@ router.use(authMiddleware);
 // POST /api/broadcast — admin sends a message to all connected staff
 router.post('/', adminOnly, async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, title } = req.body;
     if (!message?.trim()) return res.status(400).json({ error: 'Message required' });
 
     const msg = {
       id:      uuidv4(),
+      title:   title?.trim() || null,
       message: message.trim(),
       sentBy:  req.user.name,
       sentAt:  new Date().toISOString(),
