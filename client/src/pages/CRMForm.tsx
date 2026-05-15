@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Search, X, User } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Search, X, User, UserPlus, Check } from 'lucide-react';
 import { leadsAPI, staffAPI, customersAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Lead, LeadStage, LeadSource, Staff } from '../types';
