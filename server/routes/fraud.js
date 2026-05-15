@@ -145,13 +145,20 @@ router.get('/detect', adminOnly, async (req, res) => {
       for (let i = 0; i < entries.length; i++) {
         const window = entries.filter(e => e.ts - entries[i].ts <= 2 * 3600000);
         if (window.length > 10) {
+          // Quality gate: only flag if majority of burst tasks are hollow (no notes, no customer)
+          const windowTasks = window.map(e => tasks.find(t => t.id === e.id)).filter(Boolean);
+          const hollowCount = windowTasks.filter(t =>
+            !(t.notes || t.description || '').trim() && !(t.customerId || t.customerName)
+          ).length;
+          const hollowRatio = windowTasks.length > 0 ? hollowCount / windowTasks.length : 0;
+          if (hollowRatio < 0.6) break; // Mostly documented tasks — batch entry by a diligent worker, skip
           const name = staffMap[sid] || sid;
           const ri   = repeatInfo(sid, 'task_burst');
           alerts.push({
             id: mkId(), staffId: sid, staffName: name,
             type: 'task_burst', severity: 'high',
-            title: 'Suspicious task burst',
-            detail: `${window.length} tasks completed within a 2-hour window — this volume is humanly impossible for genuine work. Classic bulk-completion farming pattern.`,
+            title: 'Hollow task burst',
+            detail: `${window.length} tasks completed within 2 hours — ${hollowCount} of them have no notes and no customer link (${Math.round(hollowRatio * 100)}% hollow). A legitimate burst of catch-up entries would have documented details.`,
             evidence: `Window start: ${new Date(entries[i].ts).toLocaleString('en-IN')} · Tasks: ${window.slice(0,3).map(e => `"${e.title}"`).join(', ')}${window.length > 3 ? ` +${window.length - 3} more` : ''}`,
             taskTitles: window.slice(0, 6).map(e => e.title),
             ...ri, detectedAt: new Date().toISOString(),
