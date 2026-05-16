@@ -1319,11 +1319,17 @@ export default function CRM() {
           ) : (
             <>
               <div className="space-y-2">
-                {paginated.map(l => (
-                  <LeadCard
-                    key={l.id} lead={l} today={today} isAdmin={isAdmin} onAction={handleAction}
-                    isSelectMode={selectMode} isSelected={selectedIds.has(l.id)} onSelect={toggleSelect}
-                  />
+                {paginated.map((l, i) => (
+                  <div
+                    key={l.id}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${Math.min(i, 7) * 35}ms` }}
+                  >
+                    <LeadCard
+                      lead={l} today={today} isAdmin={isAdmin} onAction={handleAction}
+                      isSelectMode={selectMode} isSelected={selectedIds.has(l.id)} onSelect={toggleSelect}
+                    />
+                  </div>
                 ))}
               </div>
 
