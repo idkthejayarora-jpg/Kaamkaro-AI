@@ -1323,38 +1323,41 @@ export default function Customers() {
                   </div>
                 </div>
 
-                {/* ── Expanded drawer ── */}
-                {isOpen && (
-                  <div
-                    className="relative border-t border-dark-50/30 bg-dark-300 px-5 pt-3 pb-4 animate-fade-in"
-                  >
-                    <div className="flex gap-1 mb-3 flex-wrap">
-                      {[
-                        { key: 'timeline',  label: '📋 History' },
-                        { key: 'notes',     label: '📝 Notes'   },
-                        { key: 'sentiment', label: '📈 Sentiment' },
-                        ...(isAdmin ? [{ key: 'staff', label: '👥 Staff' }] : []),
-                      ].map(({ key, label }) => (
-                        <button key={key} onClick={() => setExpandedTab(key as typeof expandedTab)}
-                          className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                            expandedTab === key ? 'bg-gold/10 text-gold' : 'text-white/30 hover:text-white/70'
-                          }`}>
-                          {label}
-                        </button>
-                      ))}
+                {/* ── Expanded drawer — smooth height with CSS grid trick ── */}
+                <div
+                  className="grid transition-all duration-300 ease-out"
+                  style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+                >
+                  <div className="overflow-hidden">
+                    <div className="relative border-t border-dark-50/30 bg-dark-300 px-5 pt-3 pb-4">
+                      <div className="flex gap-1 mb-3 flex-wrap">
+                        {[
+                          { key: 'timeline',  label: '📋 History' },
+                          { key: 'notes',     label: '📝 Notes'   },
+                          { key: 'sentiment', label: '📈 Sentiment' },
+                          ...(isAdmin ? [{ key: 'staff', label: '👥 Staff' }] : []),
+                        ].map(({ key, label }) => (
+                          <button key={key} onClick={() => setExpandedTab(key as typeof expandedTab)}
+                            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                              expandedTab === key ? 'bg-gold/10 text-gold' : 'text-white/30 hover:text-white/70'
+                            }`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {expandedTab === 'timeline'  && <CustomerTimeline customerId={c.id} isAdmin={isAdmin} />}
+                      {expandedTab === 'notes'     && <CustomerNotes customerId={c.id} />}
+                      {expandedTab === 'sentiment' && <SentimentTrendView customerId={c.id} />}
+                      {expandedTab === 'staff' && isAdmin && (
+                        <StaffAssignPanel
+                          customer={c}
+                          allStaff={staff}
+                          onChange={updated => setCustomers(prev => prev.map(x => x.id === updated.id ? updated : x))}
+                        />
+                      )}
                     </div>
-                    {expandedTab === 'timeline'  && <CustomerTimeline customerId={c.id} isAdmin={isAdmin} />}
-                    {expandedTab === 'notes'     && <CustomerNotes customerId={c.id} />}
-                    {expandedTab === 'sentiment' && <SentimentTrendView customerId={c.id} />}
-                    {expandedTab === 'staff' && isAdmin && (
-                      <StaffAssignPanel
-                        customer={c}
-                        allStaff={staff}
-                        onChange={updated => setCustomers(prev => prev.map(x => x.id === updated.id ? updated : x))}
-                      />
-                    )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
