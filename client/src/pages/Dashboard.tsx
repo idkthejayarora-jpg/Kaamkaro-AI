@@ -541,7 +541,7 @@ function AdminDashboard() {
                 <YAxis tick={{ fill: CHART_TICK, fontSize: 10, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(212,175,55,0.05)' }} />
                 <Bar dataKey="contacts" name="Contacts" radius={[6, 6, 0, 0]}>
-                  {weeklyData.map((_, i) => <Cell key={i} fill={i === weeklyData.length - 1 ? GOLD : '#252525'} />)}
+                  {weeklyData.map((_, i) => <Cell key={i} fill={i === weeklyData.length - 1 ? GOLD : CHART_GRID} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
