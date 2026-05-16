@@ -1248,7 +1248,7 @@ export default function Customers() {
 
                         {/* Heat pill — prominent status badge */}
                         <div
-                          className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[10px] font-bold border ${heat.pill} ${heat.pulse ? 'animate-pulse' : ''}`}
+                          className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-[10px] font-bold border ${heat.pill} ${heat.pulse ? 'animate-glow-breathe' : ''}`}
                           style={{ boxShadow: heat.glow }}
                         >
                           {heat.label}
