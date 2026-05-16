@@ -2338,7 +2338,7 @@ Respond ONLY with this JSON (no markdown, no text outside the JSON):
     for (const e of aiResult.entries) {
       const spokenName = deduplicateName((e.spokenName || '').trim());
       const nameLower  = spokenName.toLowerCase();
-      if (!spokenName || STOP_WORDS.has(nameLower) || spokenName.length < 3) continue;
+      if (!spokenName || !validateExtractedName(spokenName)) continue;
 
       // ── Vendor path — AI flagged this as a vendor match ───────────────────
       const isVendorEntry = e.isVendor === true || !!e.matchedVendorId;
