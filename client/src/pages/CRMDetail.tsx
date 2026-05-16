@@ -819,7 +819,11 @@ export default function CRMDetail() {
         ) : (
           <div className="space-y-3">
             {sortedNotes.map((n, i) => (
-              <div key={i} className="flex gap-3">
+              <div
+                key={i}
+                className="flex gap-3 animate-fade-in-up"
+                style={{ animationDelay: `${Math.min(i, 6) * 45}ms` }}
+              >
                 <div className="flex flex-col items-center flex-shrink-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-gold/40 mt-1.5" />
                   {i < sortedNotes.length - 1 && <div className="w-px flex-1 bg-dark-50 mt-1" />}
