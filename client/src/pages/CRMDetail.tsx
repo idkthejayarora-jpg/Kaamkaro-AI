@@ -11,6 +11,12 @@ import { leadsAPI, templatesAPI } from '../lib/api';
 import type { Lead, LeadNote, LeadStage, Template } from '../types';
 
 const SERVER = window.location.origin;
+
+const addDays = (n: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split('T')[0];
+};
 import { STAGES, STAGE_LABELS, STAGE_COLORS, SOURCE_LABELS } from './CRM';
 import { useVoice } from '../hooks/useVoice';
 
