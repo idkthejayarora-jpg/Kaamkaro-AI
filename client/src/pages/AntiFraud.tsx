@@ -19,6 +19,12 @@ interface FraudAlert {
   isRepeat: boolean; weekCount: number; pastWeeks: string[];
   detectedAt: string;
 }
+interface SuspiciousCustomer {
+  id: string; name: string; reason: string;
+  staffId: string | null; staffName: string;
+  createdAt: string; phone: string | null;
+}
+
 interface FraudRecord {
   id: string; staffId: string; staffName?: string;
   fraudType: string; alertTitle: string; notes: string;
