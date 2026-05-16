@@ -755,6 +755,7 @@ function AdminDashboard() {
 function StaffDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isLight } = useTheme();
   const [customers, setCustomers]   = useState<Customer[]>([]);
   const [tasks, setTasks]           = useState<Task[]>([]);
   const [performance, setPerf]      = useState<Performance[]>([]);
