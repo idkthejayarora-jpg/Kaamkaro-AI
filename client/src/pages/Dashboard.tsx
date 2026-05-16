@@ -89,6 +89,10 @@ function AdminDashboard() {
   const [aReason, setAReason]       = useState(''); const [savingAward, setSavingAward] = useState(false);
   const [expandedBanner, setExpandedBanner] = useState<'customers' | 'tasks' | null>(null);
   const navigate = useNavigate();
+  const { isLight } = useTheme();
+  // Adaptive chart palette — flips with theme
+  const CHART_GRID = isLight ? '#d1d1d6' : '#1f1f22';
+  const CHART_TICK = isLight ? '#8e8e93' : '#52525a';
 
   const loadData = useCallback(async () => {
     try {
