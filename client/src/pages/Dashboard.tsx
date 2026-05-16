@@ -44,21 +44,20 @@ function markBcastRead(userId: string, ids: string[]) {
 }
 
 const GOLD = '#D4AF37';
-const DIM  = '#1a1a1a';
 
 const PIPELINE_COLORS: Record<string, string> = {
-  lead: '#555', contacted: '#60a5fa', interested: '#D4AF37',
+  lead: '#888', contacted: '#60a5fa', interested: '#D4AF37',
   negotiating: '#f97316', closed: '#4ade80', churned: '#f87171',
 };
 
-// ── Inline chart tooltip ─────────────────────────────────────────────────────
+// ── Inline chart tooltip — adapts to dark/light ──────────────────────────────
 const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; fill?: string; name?: string; dataKey?: string }[]; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#111] border border-white/10 rounded-2xl px-3.5 py-2.5 text-xs shadow-2xl">
-      <p className="text-white/40 mb-1.5 font-medium">{label}</p>
+    <div className="bg-dark-200 border border-dark-50 rounded-2xl px-3.5 py-2.5 text-xs shadow-2xl">
+      <p className="text-white/50 mb-1.5 font-semibold">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="font-bold" style={{ color: p.fill || 'white' }}>
+        <p key={i} className="font-bold" style={{ color: p.fill || GOLD }}>
           {p.name || p.dataKey}: {p.value}{p.dataKey === 'taskRate' ? '%' : ''}
         </p>
       ))}
