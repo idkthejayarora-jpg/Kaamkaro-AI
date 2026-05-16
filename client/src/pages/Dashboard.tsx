@@ -568,9 +568,9 @@ function AdminDashboard() {
           </div>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={weeklyData} barSize={14} barGap={2}>
-              <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="week" tick={{ fill: '#3a3a3a', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#3a3a3a', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <CartesianGrid vertical={false} stroke={CHART_GRID} />
+              <XAxis dataKey="week" tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
               <Bar dataKey="calls"    stackId="a" fill="#60a5fa" name="Calls"    radius={[0,0,0,0]} />
               <Bar dataKey="messages" stackId="a" fill="#c084fc" name="Messages" radius={[0,0,0,0]} />
