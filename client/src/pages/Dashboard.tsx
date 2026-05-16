@@ -859,7 +859,7 @@ function StaffDashboard() {
         <div className="relative z-10 p-6 flex items-center gap-6">
           {/* Big streak number */}
           <div className="flex-1">
-            <p className="text-white/20 text-[10px] uppercase tracking-[0.22em] font-bold mb-2">Current Streak</p>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.22em] font-bold mb-2">Current Streak</p>
             <div className="flex items-end gap-3">
               <span className="text-7xl font-black text-white leading-none">{streak}</span>
               <div className="mb-2 flex flex-col gap-0.5">
