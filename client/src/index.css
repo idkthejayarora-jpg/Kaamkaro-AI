@@ -187,7 +187,9 @@ html.light ::-webkit-scrollbar-thumb:hover { background: #AEAEB2; }
 
 /* ── Shimmer skeleton ────────────────────────────────────────────────────── */
 html.light .shimmer {
-  background: linear-gradient(90deg, #E5E5EA 25%, #F2F2F7 50%, #E5E5EA 75%) !important;
+  background: linear-gradient(90deg, #E5E5EA 25%, #F8F8FC 50%, #E5E5EA 75%) !important;
+  background-size: 400% 100% !important;
+  animation: shimmerSweep 1.6s infinite linear !important;
 }
 
 /* ── Selection ───────────────────────────────────────────────────────────── */
