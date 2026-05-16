@@ -303,10 +303,10 @@ router.get('/staff-behavior', async (req, res) => {
         return cIxs.length >= 2 && cIxs.filter(i => i.sentiment === 'negative').length >= 2;
       }).map(c => ({ id: c.id, name: c.name }));
 
-      // Overdue (not contacted in 7+ days)
+      // Overdue (not contacted in 14+ days)
       const overdueCount = myCustomers.filter(c => {
         const d = daysSince(c.lastContact);
-        return d === null || d > 7;
+        return d === null || d > 14;
       }).length;
 
       // Quality score composite
