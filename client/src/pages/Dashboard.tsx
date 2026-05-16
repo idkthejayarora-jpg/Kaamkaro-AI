@@ -536,9 +536,9 @@ function AdminDashboard() {
             <p className="text-xl font-black text-white mt-0.5 mb-4">Weekly Contacts</p>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={weeklyData} barSize={22}>
-                <CartesianGrid vertical={false} stroke={DIM} />
-                <XAxis dataKey="week" tick={{ fill: '#3a3a3a', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#3a3a3a', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <CartesianGrid vertical={false} stroke={CHART_GRID} />
+                <XAxis dataKey="week" tick={{ fill: CHART_TICK, fontSize: 10, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: CHART_TICK, fontSize: 10, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(212,175,55,0.05)' }} />
                 <Bar dataKey="contacts" name="Contacts" radius={[6, 6, 0, 0]}>
                   {weeklyData.map((_, i) => <Cell key={i} fill={i === weeklyData.length - 1 ? GOLD : '#252525'} />)}
