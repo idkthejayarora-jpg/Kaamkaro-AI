@@ -313,7 +313,7 @@ router.get('/staff-behavior', async (req, res) => {
       const qualityScore = Math.round(coverage * 0.3 + sentScore * 0.3 + responseRate * 0.4);
       const qualityLabel =
         qualityScore >= 70 ? 'excellent' :
-        qualityScore >= 50 ? 'good' : 'needs_attention';
+        qualityScore >= 35 ? 'good' : 'needs_attention';
 
       return {
         staffId:           s.id,
