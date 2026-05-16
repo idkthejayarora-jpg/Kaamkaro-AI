@@ -110,34 +110,35 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   const staffConcern = latestNeg >= 2 && latestIxs.length >= 2;
 
   // ── Priority score ────────────────────────────────────────────────────────
-  let score = 50;
+  let score = 35;
 
-  if (lastContactDays === null) score += 25;
-  else if (lastContactDays > 14) score += 20;
-  else if (lastContactDays > 7)  score += 12;
-  else if (lastContactDays > 3)  score += 4;
-  else if (lastContactDays <= 1) score -= 15;
+  if (lastContactDays === null) score += 20;
+  else if (lastContactDays > 21) score += 18;
+  else if (lastContactDays > 14) score += 12;
+  else if (lastContactDays > 7)  score += 6;
+  else if (lastContactDays > 3)  score += 2;
+  else if (lastContactDays <= 1) score -= 18;
 
-  if      (responsiveness === 'ghosting') score += 20;
-  else if (responsiveness === 'ignoring') score += 12;
-  else if (responsiveness === 'slow')     score += 5;
+  if      (responsiveness === 'ghosting') score += 14;
+  else if (responsiveness === 'ignoring') score += 8;
+  else if (responsiveness === 'slow')     score += 3;
 
-  if      (sentimentTrend === 'declining')  score += 15;
+  if      (sentimentTrend === 'declining')  score += 10;
   else if (sentimentTrend === 'improving')  score -= 8;
 
-  if (hasPaymentDelay) score += 10;
-  if (staffConcern)    score += 8;
+  if (hasPaymentDelay) score += 8;
+  if (staffConcern)    score += 6;
 
-  const stageBonus = { lead: 5, contacted: 3, interested: 8, negotiating: 15, closed: -35, churned: -15 };
+  const stageBonus = { lead: 3, contacted: 2, interested: 6, negotiating: 10, closed: -35, churned: -15 };
   score += stageBonus[customer.status] || 0;
 
-  score += Math.round((negCount / total) * 15);
+  score += Math.round((negCount / total) * 10);
 
   const priorityScore = Math.max(0, Math.min(100, score));
   const priority =
-    priorityScore >= 80 ? 'urgent' :
-    priorityScore >= 60 ? 'high'   :
-    priorityScore >= 40 ? 'medium' : 'low';
+    priorityScore >= 82 ? 'urgent' :
+    priorityScore >= 65 ? 'high'   :
+    priorityScore >= 45 ? 'medium' : 'low';
 
   // ── Context snippet for AI (compact) ─────────────────────────────────────
   const contextSnippet = [
