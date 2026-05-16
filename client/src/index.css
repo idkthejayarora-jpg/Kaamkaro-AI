@@ -450,11 +450,35 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
 }
 .count-pop { animation: countPop 0.25s ease-out; }
 
+/* ── Custom scrollbar — thin, themed ────────────────────────────────────────*/
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--accent-rgb) / 0.4); }
+html.light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
+html.light ::-webkit-scrollbar-thumb:hover { background: rgb(var(--accent-rgb) / 0.5); }
+
+/* ── Text selection color ────────────────────────────────────────────────────*/
+::selection { background: rgb(var(--accent-rgb) / 0.25); color: inherit; }
+
 /* ── Smooth focus ring on any focusable element (keyboard nav) ───────────────*/
 :focus-visible {
   outline: 2px solid rgb(var(--accent-rgb) / 0.7);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* ── Sidebar icon scale on active ────────────────────────────────────────────*/
+.sidebar-icon { transition: transform 0.2s ease; }
+.sidebar-link.active .sidebar-icon {
+  transform: scale(1.10);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ── Shimmer — sweeping gradient instead of opacity pulse ────────────────────*/
+@keyframes shimmerSweep {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
 }
 
 /* ── Glass-morphism helper ───────────────────────────────────────────────────*/
