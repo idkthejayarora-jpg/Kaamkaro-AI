@@ -444,7 +444,7 @@ function AdminDashboard() {
         <div className="rounded-2xl border border-red-500/15 bg-dark-300 overflow-hidden animate-fade-in-up">
           <div className="h-[2px] bg-gradient-to-r from-red-500 via-red-500/40 to-transparent" />
           <div className="p-5">
-            <p className="text-white/20 text-[10px] uppercase tracking-[0.2em] font-bold mb-4">Alert Breakdown</p>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold mb-4">Alert Breakdown</p>
             <div className="space-y-4">
               {inactiveStaff.length > 0 && (
                 <div>
