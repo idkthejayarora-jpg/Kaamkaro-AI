@@ -312,9 +312,9 @@ function AdminDashboard() {
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={meritChartData} barGap={4} barCategoryGap="28%">
-                  <CartesianGrid vertical={false} stroke={DIM} />
-                  <XAxis dataKey="name" tick={{ fill: '#3a3a3a', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#3a3a3a', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid vertical={false} stroke={CHART_GRID} />
+                  <XAxis dataKey="name" tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(212,175,55,0.04)' }} />
                   <Bar dataKey="allTime" name="All-time" radius={[6, 6, 0, 0]}>
                     {meritChartData.map((e, i) => <Cell key={i} fill={e.allTime >= 0 ? GOLD : '#f87171'} fillOpacity={0.9} />)}
@@ -513,9 +513,9 @@ function AdminDashboard() {
             </div>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
-                <CartesianGrid vertical={false} stroke={DIM} />
-                <XAxis dataKey="name" tick={{ fill: '#3a3a3a', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#3a3a3a', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid vertical={false} stroke={CHART_GRID} />
+                <XAxis dataKey="name" tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
                 <Bar dataKey="taskRate" name="Task %" fill="#60a5fa" fillOpacity={0.85} radius={[5, 5, 0, 0]} />
                 <Bar dataKey="conversions" name="Conversions" fill={GOLD} fillOpacity={0.9} radius={[5, 5, 0, 0]} />
