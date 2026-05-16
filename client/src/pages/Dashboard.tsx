@@ -884,7 +884,7 @@ function StaffDashboard() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-white font-black text-base leading-none">{weekContacts}</span>
-                <span className="text-white/25 text-[9px] leading-none mt-0.5">/{weekTarget}</span>
+                <span className="text-white/40 text-[9px] leading-none mt-0.5">/{weekTarget}</span>
               </div>
             </div>
             <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">Week</p>
