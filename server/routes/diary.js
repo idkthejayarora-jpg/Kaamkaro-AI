@@ -2414,6 +2414,17 @@ Respond ONLY with this JSON (no markdown, no text outside the JSON):
           continue;
         }
 
+        // Name validation gate — reject products, pronouns, placeholders
+        if (!validateExtractedName(spokenName)) {
+          console.log(`[Diary AI] 🚫 Skipping non-name AI extraction: "${spokenName}"`);
+          continue;
+        }
+        // Confidence gate — don't auto-create customers for low-confidence extractions
+        if (typeof e.confidence === 'number' && e.confidence < 0.80) {
+          console.log(`[Diary AI] ⚠️  Low confidence (${e.confidence}) skipping new customer: "${spokenName}"`);
+          continue;
+        }
+
         try {
           const newCust = {
             id: uuidv4(), name: titleCase(spokenName), phone: '', email: '',
