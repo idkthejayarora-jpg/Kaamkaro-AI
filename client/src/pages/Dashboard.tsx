@@ -887,7 +887,7 @@ function StaffDashboard() {
                 <span className="text-white/25 text-[9px] leading-none mt-0.5">/{weekTarget}</span>
               </div>
             </div>
-            <p className="text-white/25 text-[10px] font-semibold uppercase tracking-wider">Week</p>
+            <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">Week</p>
           </div>
         </div>
       </div>
