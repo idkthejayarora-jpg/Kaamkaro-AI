@@ -874,7 +874,7 @@ function StaffDashboard() {
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="relative w-20 h-20">
               <svg viewBox="0 0 36 36" className="w-20 h-20 -rotate-90">
-                <circle cx="18" cy="18" r="14" fill="none" stroke="#1e1e1e" strokeWidth="3" />
+                <circle cx="18" cy="18" r="14" fill="none" stroke={isLight ? '#e5e5ea' : '#1e1e1e'} strokeWidth="3" />
                 <circle cx="18" cy="18" r="14" fill="none"
                   stroke={weekProgress >= 100 ? '#4ade80' : GOLD}
                   strokeWidth="3" strokeLinecap="round"
