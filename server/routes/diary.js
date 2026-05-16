@@ -268,6 +268,59 @@ for (const term of stockRoute.STOCK_TERMS) {
   if (!term.includes(' ')) STOP_WORDS.add(term);
 }
 
+// ── Jewellery & product vocabulary — NEVER a customer name ────────────────────
+// Broader than STOCK_TERMS — covers catalog, style, and business meta-words too.
+const JEWELLERY_TERMS = new Set([
+  // Product categories
+  'earring','earrings','jhumka','jhumke','jhumki','tops','studs',
+  'bangle','bangles','kangan','kada','kara',
+  'necklace','haar','mala','rani','satlada','kanthi',
+  'maang','tikka','maangtikka','borla',
+  'payal','payals','anklet','anklets','pajeb',
+  'ring','rings','anguthi','angoothi',
+  'pendant','pendants','locket','lockets',
+  'bracelet','bracelets','bajuband','baju','armlet',
+  'nath','nathni','nosering','nospin',
+  // Materials / finishes
+  'kundan','meenakari','polki','jadau','moti','pearl','pearls',
+  'diamond','diamonds','solitaire','emerald','ruby',
+  'gold','silver','platinum','brass','copper',
+  'oxidised','oxidized','antique','vintage',
+  'american','ad','cz','cubic','zirconia',
+  'rhodium','lacquer',
+  // Style / occasion
+  'chuda','chudiyan','chudi','chooda','churiya',
+  'rose','mehendi','bridal',
+  // Business / catalog meta-words
+  'collection','catalogue','catalog','range','line','series',
+  'design','designs','sample','samples','piece','pieces',
+  'stock','inventory','item','items','lot','bulk',
+  'set','sets','delivery',
+]);
+
+/**
+ * Returns false if `name` is clearly not a real person/business name.
+ * Used as a pre-flight check before creating/matching customers.
+ */
+function validateExtractedName(name) {
+  if (!name || typeof name !== 'string') return false;
+  const lower = name.toLowerCase().trim();
+  const words = lower.split(/\s+/);
+
+  if (lower.length < 3) return false;
+  if (/^\d+$/.test(lower)) return false;          // pure number
+  if (STOP_WORDS.has(lower)) return false;         // single-word stop-word
+  // Reject if ANY word in the name is a jewellery product/business term
+  if (words.some(w => JEWELLERY_TERMS.has(w))) return false;
+  // Reject placeholder / test strings
+  const PLACEHOLDERS = new Set([
+    'test','demo','abc','xyz','temp','unknown','dummy',
+    'na','nil','none','null','anonymous','customer','client','buyer',
+  ]);
+  if (words.every(w => PLACEHOLDERS.has(w))) return false;
+  return true;
+}
+
 // ── Runtime customer name cache (refreshed per diary processing call) ─────────
 // Populated from the actual customer DB so names the static dict doesn't know
 // (e.g. "Taruna UK", "Bittoo Fashion") can still be detected without a location anchor.
