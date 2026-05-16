@@ -920,7 +920,7 @@ function StaffDashboard() {
             <div key={label} className={`p-5 text-center relative ${alert ? 'bg-red-500/5' : ''}`}>
               {alert && <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500" />}
               <p className={`text-3xl font-black leading-none ${color}`}>{value}</p>
-              <p className="text-white/20 text-[10px] mt-2 uppercase tracking-widest font-bold">{label}</p>
+              <p className="text-white/40 text-[10px] mt-2 uppercase tracking-widest font-bold">{label}</p>
             </div>
           ))}
         </div>
