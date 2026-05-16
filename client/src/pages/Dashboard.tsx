@@ -325,8 +325,8 @@ function AdminDashboard() {
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex items-center gap-5 mt-3 justify-end">
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/25 text-[10px]">All-time</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-purple-400/70" /><span className="text-white/25 text-[10px]">This week</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/40 text-[10px] font-semibold">All-time</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-purple-400/70" /><span className="text-white/40 text-[10px] font-semibold">This week</span></div>
               </div>
             </div>
           </div>
