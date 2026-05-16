@@ -154,16 +154,37 @@ router.get('/day', async (req, res) => {
       _type: 'interaction',
     }));
 
-    // Leads: created or won on this date
-    const dayLeads = leads.filter(l => {
+    // Leads: created, won, follow-up, or visit on this date
+    const rawDayLeads = leads.filter(l => {
       const assigneeId = l.staffId || l.assignedTo;
       if (filterStaffId && assigneeId !== filterStaffId) return false;
-      return toDateStr(l.createdAt) === date || toDateStr(l.updatedAt) === date;
-    }).map(l => ({
-      ...l,
-      staffName: l.staffName || staffMap[l.staffId || l.assignedTo] || 'Unknown',
-      _type: 'lead',
-    }));
+      return (
+        toDateStr(l.createdAt) === date ||
+        (l.stage === 'won' && l.updatedAt && toDateStr(l.updatedAt) === date) ||
+        l.nextFollowUp === date ||
+        l.visitDate === date
+      );
+    }).map(l => {
+      // Determine the most meaningful subtype for this occurrence
+      let _subtype = 'created';
+      if (l.visitDate === date)    _subtype = 'visit';
+      if (l.nextFollowUp === date) _subtype = 'follow_up';
+      if (l.stage === 'won' && l.updatedAt && toDateStr(l.updatedAt) === date) _subtype = 'won';
+      return {
+        ...l,
+        _subtype,
+        staffName: l.staffName || staffMap[l.staffId || l.assignedTo] || 'Unknown',
+        _type: 'lead',
+      };
+    });
+
+    // De-duplicate by id (a lead can match multiple conditions; keep the most specific)
+    const seenLeadIds = new Set();
+    const dayLeads = rawDayLeads.filter(l => {
+      if (seenLeadIds.has(l.id)) return false;
+      seenLeadIds.add(l.id);
+      return true;
+    });
 
     res.json({
       date,
