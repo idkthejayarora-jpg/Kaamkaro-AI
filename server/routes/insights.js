@@ -77,12 +77,12 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   const responseRate  = ixs.length > 0
     ? Math.round(((ixs.length - notResponded) / ixs.length) * 100)
     : 50;
-  const ghosting = lastContactDays !== null && lastContactDays > 14 && responseRate < 40;
-  const ignoring = lastContactDays !== null && lastContactDays > 7  && responseRate < 50 && ixs.length > 1;
+  const ghosting = lastContactDays !== null && lastContactDays > 21 && responseRate < 30;
+  const ignoring = lastContactDays !== null && lastContactDays > 14 && responseRate < 40 && ixs.length > 2;
   const responsiveness =
     ghosting ? 'ghosting' :
     ignoring ? 'ignoring' :
-    responseRate < 60 ? 'slow' : 'responsive';
+    responseRate < 45 ? 'slow' : 'responsive';
 
   // ── Order / payment patterns ───────────────────────────────────────────────
   const hasPaymentDelay = hasKeywords(allText, PAYMENT_DELAY_WORDS);
