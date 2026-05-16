@@ -2260,6 +2260,26 @@ Provide a complete natural English translation (sentence by sentence, not a summ
 
 7. EXTRACT ALL customers mentioned — one entry per customer.
 
+8. PRODUCT FILTER — NEVER extract jewellery or product terms as customer names.
+   These are NOT customers: earring, jhumka, bangle, necklace, chuda, ring, pendant,
+   bracelet, kundan, collection, design, sample, stock, piece, sets, catalogue, haar,
+   payal, nath, moti, diamond, gold, silver, tops, studs, kada, tikka, mala, locket.
+   If a word could be a product or item category, it is NOT a person's name.
+
+9. PRONOUN FILTER — NEVER extract Hindi pronouns or interrogatives as customer names.
+   These are NOT customers: kiska, iska, uska, kisi, koi, wala, wali, aapka, mera,
+   tera, hamara, tumhara, unka, kaun, kya, kahan, kyun, yeh, woh, tum, inke, unke.
+
+10. CONFIDENCE GATE — Only set isNewCustomer=true when confidence ≥ 0.80.
+    If you are less than 80% sure a token refers to a real person or business, either:
+    (a) match to an existing customer with phonetic similarity, or
+    (b) skip the entry entirely (omit from entries array).
+    Single-word names with no city context have lower confidence — treat carefully.
+
+11. DB-FIRST MANDATORY — If a name phonetically matches any entry in KNOWN CUSTOMERS
+    (within ~20% character difference), you MUST use that existing customer's id.
+    Do NOT create a new customer when a close match already exists.
+
 ━━━ ACTION ITEMS RULES ━━━
 - List ONLY future actions the staff member still needs to do (not things already done)
 - "usne payment de diya" = done (past) → no payment action item
