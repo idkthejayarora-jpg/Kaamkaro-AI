@@ -488,6 +488,30 @@ export default function CRMDetail() {
         </div>
       </div>
 
+      {/* ── Linked Customer Profile banner ──────────────────────────────────── */}
+      {lead.linkedCustomerId && (
+        <div
+          onClick={() => navigate(`/customers/${lead.linkedCustomerId}`)}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-500/6 border border-indigo-500/20
+            hover:bg-indigo-500/10 hover:border-indigo-500/35 cursor-pointer transition-all group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/20
+            flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+            <span className="text-indigo-300 font-bold text-sm">{lead.name[0].toUpperCase()}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-indigo-300 text-xs font-semibold flex items-center gap-1.5">
+              <UserCheck size={11} /> Linked Customer Profile
+            </p>
+            <p className="text-white/50 text-sm font-medium truncate mt-0.5">{lead.name}</p>
+          </div>
+          <div className="flex items-center gap-1 text-indigo-400/60 group-hover:text-indigo-300 transition-colors flex-shrink-0">
+            <span className="text-xs">View Report</span>
+            <ChevronRight size={13} />
+          </div>
+        </div>
+      )}
+
       {/* ── Phone / WhatsApp / Template buttons ─────────────────────────────── */}
       <div className="flex gap-2 flex-wrap">
         {lead.phone && (
