@@ -176,23 +176,44 @@ function InteractionsTab({ items }: { items: DayData['interactions'] }) {
   );
 }
 
+const LEAD_SUBTYPE: Record<string, { icon: string; cls: string; label: string }> = {
+  follow_up: { icon: '📅', cls: 'bg-orange-500/15 text-orange-400 border-orange-500/20', label: 'Follow-up' },
+  visit:     { icon: '🏠', cls: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20', label: 'Visit' },
+  won:       { icon: '🏆', cls: 'bg-gold/15 text-gold border-gold/20',                   label: 'Won' },
+  created:   { icon: '✨', cls: 'bg-white/10 text-white/40 border-white/10',             label: 'Created' },
+};
+
 function LeadsTab({ items }: { items: DayData['leads'] }) {
   if (!items.length) return <EmptyState tab="leads" />;
   return (
     <div className="space-y-2">
-      {items.map(l => (
-        <div key={l.id} className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-white/12 transition-colors">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-white/85 text-sm font-medium leading-snug truncate">{l.title || l.name}</p>
-            <span className={`text-[10px] px-2 py-px rounded-full border flex-shrink-0 ${stageChip(l.stage)}`}>{l.stage}</span>
+      {items.map(l => {
+        const sub = LEAD_SUBTYPE[l._subtype || 'created'] ?? LEAD_SUBTYPE.created;
+        const relevantDate =
+          l._subtype === 'follow_up' ? (l.nextFollowUp ?? l.createdAt) :
+          l._subtype === 'visit'     ? (l.visitDate    ?? l.createdAt) :
+          l.createdAt;
+        return (
+          <div key={`${l.id}-${l._subtype}`} className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-white/12 transition-colors">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-white/85 text-sm font-medium leading-snug truncate">{l.title || l.name}</p>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={`text-[10px] px-2 py-px rounded-full border ${sub.cls}`}>
+                  {sub.icon} {sub.label}
+                </span>
+                <span className={`text-[10px] px-2 py-px rounded-full border flex-shrink-0 ${stageChip(l.stage)}`}>{l.stage}</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 mt-1">
+              {l.company   && <span className="text-white/30 text-xs">{l.company}</span>}
+              {l.staffName && <span className="text-white/25 text-xs flex items-center gap-1"><User size={9}/>{l.staffName}</span>}
+              <span className="ml-auto text-white/20 text-xs">
+                {l._subtype === 'follow_up' || l._subtype === 'visit' ? relevantDate : fmtTime(relevantDate)}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 mt-1">
-            {l.company    && <span className="text-white/30 text-xs">{l.company}</span>}
-            {l.staffName  && <span className="text-white/25 text-xs flex items-center gap-1"><User size={9}/>{l.staffName}</span>}
-            <span className="ml-auto text-white/20 text-xs">{fmtTime(l.createdAt)}</span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
