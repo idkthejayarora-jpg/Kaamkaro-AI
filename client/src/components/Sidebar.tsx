@@ -369,7 +369,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                   >
                     {({ isActive }) => (
                       <>
-                        <Icon size={16} className="flex-shrink-0 transition-all duration-200"
+                        <Icon size={16} className="sidebar-icon flex-shrink-0 transition-all duration-200"
                           style={isActive ? { filter: 'drop-shadow(0 0 6px #C9A84Ccc)' } : undefined} />
                         <span className="flex-1">{label}</span>
                         <ChevronRight size={12} className="opacity-0 group-hover:opacity-100" />
