@@ -300,7 +300,7 @@ function AdminDashboard() {
             <div className="p-5">
               <div className="flex items-start justify-between mb-5">
                 <div>
-                  <p className="text-white/25 text-[10px] uppercase tracking-[0.18em] font-bold">Leaderboard</p>
+                  <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Leaderboard</p>
                   <p className="text-2xl font-black text-white mt-0.5 flex items-center gap-2">
                     Merit Points <Trophy size={18} className="text-gold" />
                   </p>
