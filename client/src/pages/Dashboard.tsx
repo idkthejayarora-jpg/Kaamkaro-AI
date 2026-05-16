@@ -445,8 +445,8 @@ function AdminDashboard() {
 
       {/* ── Stats ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Total Staff"      value={summary?.totalStaff ?? 0}     icon={Users}       accent onClick={() => navigate('/staff')} />
-        <StatCard label="Active Customers" value={summary?.activeCustomers ?? 0} icon={UserCheck}   accent onClick={() => navigate('/customers')} />
+        <StatCard label="Total Staff"      value={summary?.totalStaff ?? 0}     icon={Users}       accent onClick={() => navigate('/staff')}       className="animate-fade-in-up stagger-1" />
+        <StatCard label="Active Customers" value={summary?.activeCustomers ?? 0} icon={UserCheck}   accent onClick={() => navigate('/customers')}   className="animate-fade-in-up stagger-2" />
         <StatCard
           label="Red Alerts"
           value={totalRedAlerts}
@@ -454,6 +454,7 @@ function AdminDashboard() {
           icon={AlertCircle}
           alert={totalRedAlerts > 0}
           onClick={() => navigate('/followup')}
+          className="animate-fade-in-up stagger-3"
         />
       </div>
 
