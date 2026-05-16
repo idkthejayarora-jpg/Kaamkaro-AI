@@ -677,6 +677,114 @@ export default function AntiFraud() {
         </>
       )}
 
+      {/* ── Odd Names tab ───────────────────────────────────────────────────── */}
+      {tab === 'odd-names' && (
+        <>
+          {/* Header row */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold text-sm">Suspicious Customer Names</p>
+              <p className="text-white/30 text-xs mt-0.5">
+                Names that look like products, pronouns, or placeholders — likely created by AI mistake
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setSuspNamesLoading(true);
+                fraudAPI.suspiciousNames()
+                  .then((r: { customers: SuspiciousCustomer[] }) => setSuspNames(r.customers || []))
+                  .catch(() => {})
+                  .finally(() => setSuspNamesLoading(false));
+              }}
+              className="p-2 rounded-xl hover:bg-dark-200 text-white/30 hover:text-white transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={15} className={suspNamesLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+
+          {suspNamesLoading && (
+            <div className="space-y-2">
+              {[1,2,3].map(i => <div key={i} className="card h-16 shimmer" />)}
+            </div>
+          )}
+
+          {!suspNamesLoading && suspNames.length === 0 && (
+            <div className="card text-center py-14">
+              <CheckCircle2 size={28} className="text-green-400/40 mx-auto mb-2" />
+              <p className="text-white/40 text-sm font-medium">No suspicious names found</p>
+              <p className="text-white/20 text-xs mt-1">All customer names look valid</p>
+            </div>
+          )}
+
+          {!suspNamesLoading && suspNames.length > 0 && (
+            <div className="rounded-2xl border border-dark-50 overflow-hidden">
+              <div className="bg-dark-400 border-b border-dark-50 px-4 py-2.5 flex items-center gap-2">
+                <TextSearch size={13} className="text-amber-400" />
+                <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">
+                  {suspNames.length} flagged name{suspNames.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="bg-dark-300 divide-y divide-dark-50/30">
+                {suspNames.map(c => {
+                  const reasonColor =
+                    c.reason.includes('pronoun') || c.reason.includes('interrogative')
+                      ? 'bg-red-500/15 text-red-400 border-red-500/20'
+                      : c.reason.includes('product') || c.reason.includes('Jewellery')
+                      ? 'bg-orange-500/15 text-orange-400 border-orange-500/20'
+                      : 'bg-amber-500/12 text-amber-400 border-amber-500/18';
+                  return (
+                    <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-dark-200/40 transition-colors">
+                      {/* Avatar */}
+                      <div className="w-8 h-8 rounded-xl bg-dark-200 border border-dark-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white/40 text-xs font-bold">{c.name[0]?.toUpperCase() ?? '?'}</span>
+                      </div>
+
+                      {/* Name + meta */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white text-sm font-semibold">{c.name}</p>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${reasonColor}`}>
+                            {c.reason}
+                          </span>
+                        </div>
+                        <p className="text-white/25 text-[11px] mt-0.5">
+                          {c.staffName}
+                          {c.phone ? ` · ${c.phone}` : ''}
+                          {' · '}
+                          {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => navigate(`/customers/${c.id}`)}
+                          title="View profile"
+                          className="p-1.5 rounded-lg text-white/25 hover:text-gold hover:bg-gold/10 transition-colors"
+                        >
+                          <ExternalLink size={13} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await fraudAPI.deleteCustomer(c.id);
+                            setSuspNames(prev => prev.filter(x => x.id !== c.id));
+                          }}
+                          title="Delete customer"
+                          className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       </AnimatedTabPanel>
     </div>
   );
