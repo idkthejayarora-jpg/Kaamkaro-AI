@@ -507,7 +507,7 @@ function AdminDashboard() {
           <div className="p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Performance</p>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Performance</p>
                 <p className="text-xl font-black text-white mt-0.5">Task Rate & Conversions</p>
               </div>
             </div>
@@ -532,7 +532,7 @@ function AdminDashboard() {
         <div className="lg:col-span-2 rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
           <div className="h-[2px] bg-gradient-to-r from-gold/70 via-gold/25 to-transparent" />
           <div className="p-5">
-            <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Activity</p>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Activity</p>
             <p className="text-xl font-black text-white mt-0.5 mb-4">Weekly Contacts</p>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={weeklyData} barSize={22}>
@@ -554,7 +554,7 @@ function AdminDashboard() {
         <div className="p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Communication</p>
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Communication</p>
               <p className="text-xl font-black text-white mt-0.5">Contact Breakdown</p>
             </div>
             <div className="flex items-center gap-4">
@@ -586,7 +586,7 @@ function AdminDashboard() {
         <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
           <div className="flex items-center justify-between px-6 py-5 border-b border-dark-100/60">
             <div>
-              <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Rankings</p>
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Rankings</p>
               <p className="text-xl font-black text-white mt-0.5">Team Performance</p>
             </div>
             <button onClick={() => navigate('/staff')} className="text-gold/50 text-xs hover:text-gold flex items-center gap-1 transition-colors font-semibold">
@@ -638,7 +638,7 @@ function AdminDashboard() {
       <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
         <div className="flex items-center justify-between px-6 py-5 border-b border-dark-100/60">
           <div>
-            <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Targets</p>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Targets</p>
             <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">Merit Goals <Star size={16} className="text-gold" /></p>
           </div>
           <button onClick={() => setGoalModal(true)}
@@ -932,7 +932,7 @@ function StaffDashboard() {
           <div className="h-[2px] bg-gradient-to-r from-gold/60 to-transparent" />
           <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100/50">
             <div>
-              <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Queue</p>
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Queue</p>
               <p className="text-lg font-black text-white mt-0.5">Today's Tasks</p>
             </div>
             <button onClick={() => navigate('/tasks')} className="text-white/20 text-xs hover:text-gold transition-colors flex items-center gap-1 font-semibold">
@@ -960,7 +960,7 @@ function StaffDashboard() {
       <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100/50">
           <div>
-            <p className="text-white/20 text-[10px] uppercase tracking-[0.18em] font-bold">Priority</p>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Priority</p>
             <p className="text-lg font-black text-white mt-0.5">Customer Queue <Zap size={14} className="inline text-gold" /></p>
           </div>
           <button onClick={() => navigate('/customers')} className="text-white/20 text-xs hover:text-gold transition-colors flex items-center gap-1 font-semibold">
