@@ -461,7 +461,7 @@ export default function CRMDetail() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold text-white">{lead.name}</h1>
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STAGE_COLORS[lead.stage]}`}>
+            <span key={lead.stage} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full animate-subtle-pop ${STAGE_COLORS[lead.stage]}`}>
               {STAGE_LABELS[lead.stage]}
             </span>
           </div>
