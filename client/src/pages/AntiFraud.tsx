@@ -289,7 +289,9 @@ export default function AntiFraud() {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState('');
   const [scannedAt,   setScannedAt]   = useState('');
-  const [tab,         setTab]         = useState<'live' | 'history'>('live');
+  const [tab,         setTab]         = useState<'live' | 'history' | 'odd-names'>('live');
+  const [suspNames,       setSuspNames]       = useState<SuspiciousCustomer[]>([]);
+  const [suspNamesLoading, setSuspNamesLoading] = useState(false);
   const [fineModal,   setFineModal]   = useState<FraudAlert | null>(null);
   const [fineLoading, setFineLoading] = useState(false);
   const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
