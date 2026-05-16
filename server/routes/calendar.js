@@ -87,7 +87,7 @@ router.get('/month', async (req, res) => {
       bump(toDateStr(i.createdAt), 'interactions');
     });
 
-    // Leads — count creation + stage-change-to-won date
+    // Leads — count creation, stage-change-to-won, follow-up, and visit dates
     leads.forEach(l => {
       const assigneeId = l.staffId || l.assignedTo;
       if (filterStaffId && assigneeId !== filterStaffId) return;
@@ -95,6 +95,9 @@ router.get('/month', async (req, res) => {
       if (l.stage === 'won' && l.updatedAt && toDateStr(l.updatedAt) !== toDateStr(l.createdAt)) {
         bump(toDateStr(l.updatedAt), 'leads');
       }
+      // Also surface scheduled activities on their own dates
+      if (l.nextFollowUp) bump(l.nextFollowUp, 'leads');
+      if (l.visitDate)    bump(l.visitDate,    'leads');
     });
 
     res.json({ year, month, days });
