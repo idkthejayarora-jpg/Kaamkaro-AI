@@ -9,6 +9,7 @@ import {
   CheckCircle, Clock, ChevronRight, Phone, Calendar,
   MessageSquare, Mail, Target, Zap, Trophy, AlertCircle,
   Award, Plus, X, Star, TrendingDown, Flame, Mic,
+  ShieldAlert, Sparkles,
 } from 'lucide-react';
 import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,48 +54,149 @@ function markBcastRead(userId: string, ids: string[]) {
 }
 
 const GOLD = '#D4AF37';
-const DIM  = '#2A2A2A';
+const DIM  = '#1e1e1e';
 
 const PIPELINE_COLORS: Record<string, string> = {
-  lead: '#666',  contacted: '#60a5fa', interested: '#D4AF37',
+  lead: '#555',  contacted: '#60a5fa', interested: '#D4AF37',
   negotiating: '#f97316', closed: '#4ade80', churned: '#f87171',
 };
 
-function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false, onClick, className }: {
-  label: string; value: string | number; sub?: string;
-  icon: React.ElementType; accent?: boolean; alert?: boolean; onClick?: () => void; className?: string;
+// ── Reusable section header ───────────────────────────────────────────────────
+function SectionHeader({
+  icon: Icon, title, subtitle, iconColor = 'text-gold', iconBg = 'bg-gold/10 border-gold/20',
+  action,
+}: {
+  icon: React.ElementType; title: string; subtitle?: string;
+  iconColor?: string; iconBg?: string;
+  action?: React.ReactNode;
 }) {
   return (
-    <div
-      className={`stat-card group ${alert ? 'border-red-500/30' : ''} ${onClick ? 'cursor-pointer hover:border-gold/30 transition-colors' : ''} ${className ?? ''}`}
-      onClick={onClick}
-    >
-      <div
-        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
-          alert ? 'bg-red-500/10 border border-red-500/20' :
-          accent ? 'bg-gold/15 border border-gold/25' : 'bg-dark-200 border border-dark-50'
-        }`}
-        style={alert ? { boxShadow: '0 0 12px rgba(248,113,113,0.35)' } : accent ? { boxShadow: '0 0 12px rgba(212,175,55,0.35)' } : undefined}
-      >
-        <Icon size={16} className={`${alert ? 'text-red-400' : accent ? 'text-gold' : 'text-white/40'}`} />
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-xl border flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          <Icon size={14} className={iconColor} />
+        </div>
+        <div>
+          <h3 className="text-white font-semibold text-sm leading-tight">{title}</h3>
+          {subtitle && <p className="text-white/30 text-[11px] mt-0.5">{subtitle}</p>}
+        </div>
       </div>
-      <div className="mt-3">
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-white/40 text-xs mt-0.5">{label}</p>
-        {sub && <p className="text-white/25 text-[10px] mt-0.5">{sub}</p>}
-      </div>
+      {action}
     </div>
   );
 }
 
-const ChartTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; dataKey: string }[]; label?: string }) => {
+// ── Modern StatCard ───────────────────────────────────────────────────────────
+function StatCard({
+  label, value, sub, icon: Icon, accent = false, alert = false, onClick, className,
+}: {
+  label: string; value: string | number; sub?: string;
+  icon: React.ElementType; accent?: boolean; alert?: boolean; onClick?: () => void; className?: string;
+}) {
+  const glowColor = alert ? 'rgba(248,113,113,0.2)' : accent ? 'rgba(212,175,55,0.18)' : 'transparent';
+  const borderColor = alert ? 'border-red-500/25' : accent ? 'border-gold/20' : 'border-dark-50';
+
+  return (
+    <div
+      className={`relative group overflow-hidden rounded-2xl border bg-dark-300 p-5 transition-all duration-300
+        ${borderColor} ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.99]' : ''} ${className ?? ''}`}
+      style={{ boxShadow: `0 0 0 0 ${glowColor}` }}
+      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${glowColor}`; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 0 ${glowColor}`; }}
+      onClick={onClick}
+    >
+      {/* Subtle gradient overlay */}
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl ${
+        alert ? 'bg-gradient-to-br from-red-500/5 to-transparent' :
+        accent ? 'bg-gradient-to-br from-gold/5 to-transparent' : 'bg-gradient-to-br from-white/3 to-transparent'
+      }`} />
+
+      {/* Icon */}
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
+        alert ? 'bg-red-500/10 border border-red-500/20' :
+        accent ? 'bg-gold/12 border border-gold/25' : 'bg-dark-200 border border-dark-100'
+      }`}
+        style={alert ? { boxShadow: '0 0 16px rgba(248,113,113,0.25)' } : accent ? { boxShadow: '0 0 16px rgba(212,175,55,0.2)' } : undefined}
+      >
+        <Icon size={17} className={`${alert ? 'text-red-400' : accent ? 'text-gold' : 'text-white/35'}`} />
+      </div>
+
+      {/* Value */}
+      <div className="mt-4">
+        <p className={`text-3xl font-black tracking-tight ${alert && (value as number) > 0 ? 'text-red-300' : 'text-white'}`}>
+          {value}
+        </p>
+        <p className="text-white/40 text-xs font-medium mt-0.5">{label}</p>
+        {sub && (
+          <p className={`text-[10px] mt-1 font-medium ${alert && (value as number) > 0 ? 'text-red-400/70' : 'text-white/25'}`}>
+            {sub}
+          </p>
+        )}
+      </div>
+
+      {/* Arrow */}
+      {onClick && (
+        <ChevronRight
+          size={14}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/15 group-hover:text-white/40 group-hover:translate-x-0.5 transition-all duration-200"
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Animated alert banner ─────────────────────────────────────────────────────
+function AlertBanner({
+  color, icon: Icon, title, children, onToggle, expanded, count,
+}: {
+  color: 'red' | 'amber';
+  icon: React.ElementType;
+  title: React.ReactNode;
+  children?: React.ReactNode;
+  onToggle?: () => void;
+  expanded?: boolean;
+  count?: number;
+}) {
+  const c = color === 'red'
+    ? { border: 'border-red-500/20', bg: 'bg-red-500/8', stripe: 'bg-red-500', text: 'text-red-300', hover: 'hover:bg-red-500/12', iconBg: 'bg-red-500/15', iconText: 'text-red-400', badge: 'bg-red-500/20 text-red-300' }
+    : { border: 'border-amber-500/20', bg: 'bg-amber-500/8', stripe: 'bg-amber-500', text: 'text-amber-300', hover: 'hover:bg-amber-500/12', iconBg: 'bg-amber-500/15', iconText: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300' };
+
+  return (
+    <div className={`rounded-2xl border overflow-hidden animate-fade-in-up ${c.border} ${c.bg}`}>
+      <button
+        className={`w-full flex items-center gap-3 px-4 py-3.5 ${onToggle ? c.hover : ''} transition-colors`}
+        onClick={onToggle}
+      >
+        {/* Animated left stripe */}
+        <div className={`w-1 h-8 rounded-full flex-shrink-0 ${c.stripe} animate-glow-breathe`} />
+        {/* Icon */}
+        <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${c.iconBg}`}>
+          <Icon size={13} className={`${c.iconText} ${expanded !== undefined ? '' : 'animate-pulse'}`} />
+        </div>
+        {/* Text */}
+        <p className={`${c.text} text-sm text-left flex-1 font-medium`}>{title}</p>
+        {/* Count badge */}
+        {count !== undefined && (
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.badge}`}>{count}</span>
+        )}
+        {/* Expand arrow */}
+        {onToggle && (
+          <ChevronRight size={14} className={`${c.iconText} flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
+        )}
+      </button>
+      {children}
+    </div>
+  );
+}
+
+const ChartTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; dataKey: string; fill?: string; name?: string }[]; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-      <p className="text-white/50 mb-1">{label}</p>
+    <div className="bg-dark-200 border border-dark-100 rounded-xl p-3 text-xs shadow-2xl">
+      <p className="text-white/40 mb-2 font-medium">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="text-white font-semibold">
-          {p.dataKey === 'responseRate' ? `${p.value}%` : p.value}
+        <p key={i} className="font-semibold" style={{ color: p.fill || 'white' }}>
+          {p.name ? `${p.name}: ${p.value}` : p.dataKey === 'responseRate' ? `${p.value}%` : p.value}
         </p>
       ))}
     </div>
@@ -166,7 +268,6 @@ function AdminDashboard() {
   // ── Computed chart data ────────────────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
 
-  // Compute weekly data directly from interactions (never flat — always real counts)
   const weeklyData = (() => {
     const map: Record<string, { contacts: number; calls: number; messages: number; meetings: number; emails: number }> = {};
     for (const ix of allInteractions) {
@@ -187,7 +288,6 @@ function AdminDashboard() {
       .map(([key, v]) => ({ week: `W${key.split('-W')[1]}`, ...v }));
   })();
 
-  // Per-staff interaction totals for the table (real data, never 0)
   const staffInteractionCounts = allInteractions.reduce((acc, ix) => {
     if (ix.staffId) acc[ix.staffId] = (acc[ix.staffId] || 0) + 1;
     return acc;
@@ -224,7 +324,6 @@ function AdminDashboard() {
     .filter(t => !t.completed && t.dueDate < today)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  // Customers not contacted in 7+ days (matches the banner count)
   const cutoff7 = new Date(Date.now() - 7 * 86400000).toISOString();
   const staleCustomers = customers
     .filter(c => !c.lastContact || c.lastContact < cutoff7)
@@ -241,12 +340,10 @@ function AdminDashboard() {
     })
     .sort((a, b) => b.daysSilent - a.daysSilent);
 
-  // Red alert groups
   const inactiveStaff = staff.filter(s => {
     const last = s.streakData?.lastActivityDate;
     if (!last) return true;
-    const daysSince = Math.floor((Date.now() - new Date(last).getTime()) / 86400000);
-    return daysSince >= 7;
+    return Math.floor((Date.now() - new Date(last).getTime()) / 86400000) >= 7;
   });
 
   const negativeStaff = meritSummary.filter(m => m.total < 0);
@@ -293,12 +390,13 @@ function AdminDashboard() {
   };
 
   if (loading) return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array(4).fill(0).map((_, i) => <div key={i} className="card h-28 shimmer" />)}
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array(3).fill(0).map((_, i) => <div key={i} className="h-32 rounded-2xl shimmer" />)}
       </div>
+      <div className="h-64 rounded-2xl shimmer" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card h-52 shimmer" /><div className="card h-52 shimmer" />
+        <div className="h-52 rounded-2xl shimmer" /><div className="h-52 rounded-2xl shimmer" />
       </div>
     </div>
   );
@@ -306,22 +404,20 @@ function AdminDashboard() {
   const totalRedAlerts = inactiveStaff.length + negativeStaff.length + overdueHeavy.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+
       {/* ── Alert banners ─────────────────────────────────────────────────── */}
       {(summary?.overdueCount ?? 0) > 0 && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 overflow-hidden animate-fade-in">
-          <button
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/5 transition-colors"
-            onClick={() => setExpandedBanner(expandedBanner === 'customers' ? null : 'customers')}
-          >
-            <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
-            <p className="text-red-300 text-sm text-left flex-1">
-              <span className="font-semibold">{summary!.overdueCount} customers</span> haven't been contacted in 7+ days.
-            </p>
-            <ChevronRight size={14} className={`text-red-400 flex-shrink-0 transition-transform duration-200 ${expandedBanner === 'customers' ? 'rotate-90' : ''}`} />
-          </button>
+        <AlertBanner
+          color="red"
+          icon={AlertTriangle}
+          title={<><span className="font-bold">{summary!.overdueCount} customers</span> haven't been contacted in 7+ days</>}
+          onToggle={() => setExpandedBanner(expandedBanner === 'customers' ? null : 'customers')}
+          expanded={expandedBanner === 'customers'}
+          count={summary!.overdueCount}
+        >
           {expandedBanner === 'customers' && (
-            <div className="border-t border-red-500/15">
+            <div className="border-t border-red-500/12">
               <div className="max-h-64 overflow-y-auto">
                 {staleCustomers.length === 0 ? (
                   <p className="text-red-400 text-xs text-center py-4 opacity-60">No data available</p>
@@ -333,114 +429,104 @@ function AdminDashboard() {
                   return (
                     <div
                       key={c.id}
-                      className="px-4 py-3 border-b border-red-500/10 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
+                      className="px-4 py-3 border-b border-red-500/8 last:border-0 cursor-pointer hover:bg-red-500/5 transition-colors"
                       onClick={() => navigate('/customers')}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                          <span className="text-red-400 text-[10px] font-bold">{c.name[0]}</span>
+                        <div className="w-8 h-8 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                          <span className="text-red-300 text-xs font-bold">{c.name[0]}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-xs font-medium truncate">{c.name}</p>
-                          <p className="text-red-400 text-[10px] opacity-70">{c.assignedStaffName} · {c.phone}</p>
+                          <p className="text-white text-xs font-semibold truncate">{c.name}</p>
+                          <p className="text-red-400/60 text-[10px]">{c.assignedStaffName} · {c.phone}</p>
                         </div>
-                        <span className={`text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full ${
-                          c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'
+                        <span className={`text-[10px] font-bold flex-shrink-0 px-2.5 py-1 rounded-full ${
+                          c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/15 text-amber-300'
                         }`}>
-                          {c.daysSilent >= 9999 ? 'Never contacted' : `${c.daysSilent}d silent`}
+                          {c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d`}
                         </span>
                       </div>
                       {lastTwo.length > 0 ? (
-                        <div className="mt-2 ml-10 space-y-1.5">
+                        <div className="mt-2 ml-11 space-y-1">
                           {lastTwo.map(i => {
                             const daysAgo = Math.round((Date.now() - new Date(i.createdAt).getTime()) / 86400000);
                             return (
                               <div key={i.id} className="flex items-start gap-2">
-                                <span className="text-[10px] text-red-400 opacity-60 flex-shrink-0 mt-0.5 whitespace-nowrap">
+                                <span className="text-[10px] text-red-400/50 flex-shrink-0 mt-0.5 whitespace-nowrap">
                                   {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
                                 </span>
-                                <p className="text-[11px] text-white opacity-70 leading-snug line-clamp-2">{i.notes || `${i.type} logged`}</p>
+                                <p className="text-[11px] text-white/60 leading-snug line-clamp-1">{i.notes || `${i.type} logged`}</p>
                               </div>
                             );
                           })}
                         </div>
                       ) : (
-                        <p className="mt-1.5 ml-10 text-[10px] text-red-400 opacity-55 italic">No entries on record</p>
+                        <p className="mt-1 ml-11 text-[10px] text-red-400/40 italic">No entries on record</p>
                       )}
                     </div>
                   );
                 })}
               </div>
-              {/* View all — always visible outside the scroll area */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-t border-red-500/15">
-                <span className="text-red-400 text-[10px] opacity-60">{staleCustomers.length} customers total</span>
-                <button
-                  className="text-red-400 text-xs font-medium hover:text-red-300 flex items-center gap-1 transition-colors"
-                  onClick={() => navigate('/customers')}
-                >
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-red-500/10">
+                <span className="text-red-400/50 text-[10px]">{staleCustomers.length} customers total</span>
+                <button className="text-red-300 text-xs font-semibold hover:text-red-200 flex items-center gap-1 transition-colors" onClick={() => navigate('/customers')}>
                   View all <ChevronRight size={12} />
                 </button>
               </div>
             </div>
           )}
-        </div>
+        </AlertBanner>
       )}
+
       {(summary?.dueTasksCount ?? 0) > 0 && (
-        <div className="rounded-xl border border-gold/20 bg-gold/10 overflow-hidden animate-fade-in">
-          <button
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gold/5 transition-colors"
-            onClick={() => setExpandedBanner(expandedBanner === 'tasks' ? null : 'tasks')}
-          >
-            <Clock size={16} className="text-gold flex-shrink-0" />
-            <p className="text-gold/80 text-sm text-left flex-1">
-              <span className="font-semibold">{summary!.dueTasksCount} tasks</span> are due today or overdue.
-            </p>
-            <ChevronRight size={14} className={`text-gold flex-shrink-0 transition-transform duration-200 ${expandedBanner === 'tasks' ? 'rotate-90' : ''}`} />
-          </button>
+        <AlertBanner
+          color="amber"
+          icon={Clock}
+          title={<><span className="font-bold">{summary!.dueTasksCount} tasks</span> are due today or overdue</>}
+          onToggle={() => setExpandedBanner(expandedBanner === 'tasks' ? null : 'tasks')}
+          expanded={expandedBanner === 'tasks'}
+          count={summary!.dueTasksCount}
+        >
           {expandedBanner === 'tasks' && (
-            <div className="border-t border-gold/15">
+            <div className="border-t border-amber-500/12">
               <div className="max-h-64 overflow-y-auto">
                 {overdueTasks.length === 0 ? (
-                  <p className="text-gold text-xs text-center py-4 opacity-60">No overdue tasks</p>
+                  <p className="text-amber-400 text-xs text-center py-4 opacity-60">No overdue tasks</p>
                 ) : overdueTasks.slice(0, 20).map(t => {
                   const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
                   const staffMember = staff.find(s => s.id === t.staffId);
                   return (
                     <div
                       key={t.id}
-                      className="flex items-center gap-3 px-4 py-2.5 border-b border-gold/10 last:border-0 cursor-pointer hover:bg-gold/5 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 border-b border-amber-500/8 last:border-0 cursor-pointer hover:bg-amber-500/5 transition-colors"
                       onClick={() => navigate('/tasks')}
                     >
-                      <div className="w-7 h-7 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
-                        <span className="text-gold text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
+                      <div className="w-7 h-7 rounded-xl bg-amber-500/12 flex items-center justify-center flex-shrink-0">
+                        <span className="text-amber-400 text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-xs font-medium truncate">{t.title}</p>
-                        <p className="text-gold text-[10px] opacity-70">
+                        <p className="text-amber-400/60 text-[10px]">
                           {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
                           {t.customerName ? ` · ${t.customerName}` : ''}
                         </p>
                       </div>
-                      <span className="text-[10px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
-                        {daysOverdue}d overdue
+                      <span className="text-[10px] font-bold flex-shrink-0 px-2.5 py-1 rounded-full bg-red-500/20 text-red-300">
+                        {daysOverdue}d over
                       </span>
                     </div>
                   );
                 })}
               </div>
-              {/* View all — always visible outside the scroll area */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-t border-gold/15">
-                <span className="text-gold text-[10px] opacity-60">{overdueTasks.length} tasks total</span>
-                <button
-                  className="text-gold text-xs font-medium hover:text-gold/80 flex items-center gap-1 transition-colors"
-                  onClick={() => navigate('/tasks')}
-                >
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-amber-500/10">
+                <span className="text-amber-400/50 text-[10px]">{overdueTasks.length} tasks total</span>
+                <button className="text-amber-300 text-xs font-semibold hover:text-amber-200 flex items-center gap-1 transition-colors" onClick={() => navigate('/tasks')}>
                   View all <ChevronRight size={12} />
                 </button>
               </div>
             </div>
           )}
-        </div>
+        </AlertBanner>
       )}
 
       {/* ── Stats ─────────────────────────────────────────────────────────── */}
@@ -450,145 +536,61 @@ function AdminDashboard() {
         <StatCard
           label="Red Alerts"
           value={totalRedAlerts}
-          sub={totalRedAlerts > 0 ? 'Needs attention' : 'All clear'}
+          sub={totalRedAlerts > 0 ? 'Needs attention' : 'All clear ✓'}
           icon={AlertCircle}
           alert={totalRedAlerts > 0}
           onClick={() => navigate('/followup')}
-          className="animate-fade-in-up stagger-3"
+          className="animate-fade-in-up stagger-3 col-span-2 lg:col-span-1"
         />
       </div>
 
-      {/* ── Merit Points chart ─────────────────────────────────────────────── */}
-      {meritChartData.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-                <Trophy size={14} className="text-gold" /> Merit Points
-              </h3>
-              <p className="text-white/30 text-xs mt-0.5">All-time vs this week per staff member</p>
-            </div>
-            <button
-              onClick={() => setAwardModal(true)}
-              className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-1.5 rounded-lg hover:bg-gold/20 transition-colors"
-            >
-              <Award size={12} /> Award Points
-            </button>
-          </div>
-          <div className="mt-4">
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={meritChartData} barGap={4} barCategoryGap="30%">
-                <CartesianGrid vertical={false} stroke={DIM} />
-                <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
-                    return (
-                      <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-                        <p className="text-white/50 mb-1">{label}</p>
-                        {payload.map((p, i) => (
-                          <p key={i} style={{ color: p.fill as string }} className="font-semibold">
-                            {p.dataKey === 'allTime' ? 'All-time' : 'This week'}: {p.value} pts
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                  cursor={{ fill: 'rgba(212,175,55,0.04)' }}
-                />
-                <Bar dataKey="allTime" radius={[4, 4, 0, 0]}>
-                  {meritChartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.allTime >= 0 ? GOLD : '#f87171'} fillOpacity={0.85} />
-                  ))}
-                </Bar>
-                <Bar dataKey="thisWeek" radius={[4, 4, 0, 0]}>
-                  {meritChartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.thisWeek >= 0 ? '#a78bfa' : '#fb923c'} fillOpacity={0.7} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="flex items-center gap-4 mt-2 justify-end">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/85" /><span className="text-white/30 text-[10px]">All-time</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-purple-400/70" /><span className="text-white/30 text-[10px]">This week</span></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Task Rate & Conversions chart ─────────────────────────────────── */}
-      <div className="card">
-        <h3 className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-          <TrendingUp size={14} className="text-gold" /> Task Rate & Conversions
-        </h3>
-        <p className="text-white/30 text-xs mb-4">% tasks completed · closures per staff</p>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
-            <CartesianGrid vertical={false} stroke={DIM} />
-            <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null;
-                return (
-                  <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl">
-                    <p className="text-white/50 mb-1">{label}</p>
-                    {payload.map((p, i) => (
-                      <p key={i} style={{ color: p.fill as string }} className="font-semibold">
-                        {p.dataKey === 'taskRate' ? `Task completion: ${p.value}%` : `Conversions: ${p.value}`}
-                      </p>
-                    ))}
-                  </div>
-                );
-              }}
-              cursor={{ fill: 'rgba(212,175,55,0.04)' }}
-            />
-            <Bar dataKey="taskRate" fill="#60a5fa" fillOpacity={0.8} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="conversions" fill={GOLD} fillOpacity={0.85} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="flex items-center gap-4 mt-2 justify-end">
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/30 text-[10px]">Task Rate %</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gold/85" /><span className="text-white/30 text-[10px]">Conversions</span></div>
-        </div>
-      </div>
-
-      {/* ── Red Alert section ─────────────────────────────────────────────── */}
+      {/* ── Red Alert Zone ─────────────────────────────────────────────────── */}
       {totalRedAlerts > 0 && (
-        <div className="card border-red-500/20">
-          <h3 className="text-red-400 font-semibold text-sm mb-4 flex items-center gap-2">
-            <AlertTriangle size={14} className="drop-shadow-[0_0_8px_rgba(248,113,113,0.7)] animate-pulse" /> Red Alert Zone
-            <span className="ml-1 text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{totalRedAlerts} issue{totalRedAlerts !== 1 ? 's' : ''}</span>
-          </h3>
-          <div className="space-y-4">
+        <div className="rounded-2xl border border-red-500/20 bg-gradient-to-br from-red-500/6 to-transparent overflow-hidden animate-fade-in-up">
+          {/* Header bar */}
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-red-500/10">
+            <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center"
+              style={{ boxShadow: '0 0 20px rgba(248,113,113,0.2)' }}>
+              <AlertTriangle size={16} className="text-red-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-red-300 font-bold text-sm">Red Alert Zone</p>
+              <p className="text-red-400/50 text-[10px]">Immediate attention required</p>
+            </div>
+            <span className="text-xs font-black bg-red-500/20 text-red-300 px-3 py-1.5 rounded-full border border-red-500/20">
+              {totalRedAlerts} {totalRedAlerts === 1 ? 'issue' : 'issues'}
+            </span>
+          </div>
+
+          <div className="p-5 space-y-4">
             {inactiveStaff.length > 0 && (
               <div>
-                <p className="text-white/40 text-xs font-medium mb-2 flex items-center gap-1.5">
-                  <Clock size={11} className="text-red-400" /> Inactive 7+ days
+                <p className="text-white/35 text-[11px] font-semibold mb-2.5 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Clock size={10} className="text-red-400" /> Inactive 7+ days
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {inactiveStaff.map(s => (
-                    <span key={s.id} className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-red-500/20 transition-colors"
+                    <button key={s.id}
+                      className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-2 rounded-xl cursor-pointer hover:bg-red-500/20 hover:border-red-500/30 transition-all"
                       onClick={() => navigate(`/staff/${s.id}`)}>
-                      <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[10px] font-bold">{s.avatar}</span>
+                      <span className="w-5 h-5 rounded-lg bg-red-500/20 flex items-center justify-center text-[9px] font-black">{s.avatar}</span>
                       {s.name.split(' ')[0]}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
             {negativeStaff.length > 0 && (
               <div>
-                <p className="text-white/40 text-xs font-medium mb-2 flex items-center gap-1.5">
-                  <TrendingDown size={11} className="text-red-400" /> Negative merit balance
+                <p className="text-white/35 text-[11px] font-semibold mb-2.5 flex items-center gap-1.5 uppercase tracking-wider">
+                  <TrendingDown size={10} className="text-red-400" /> Negative merit balance
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {negativeStaff.map(m => (
-                    <span key={m.staffId} className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg">
-                      <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[10px] font-bold">{m.avatar}</span>
+                    <span key={m.staffId} className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-2 rounded-xl">
+                      <span className="w-5 h-5 rounded-lg bg-red-500/20 flex items-center justify-center text-[9px] font-black">{m.avatar}</span>
                       {m.name.split(' ')[0]}
-                      <span className="text-red-400/70 font-semibold">{m.total} pts</span>
+                      <span className="text-red-400/70 font-bold">{m.total} pts</span>
                     </span>
                   ))}
                 </div>
@@ -596,17 +598,18 @@ function AdminDashboard() {
             )}
             {overdueHeavy.length > 0 && (
               <div>
-                <p className="text-white/40 text-xs font-medium mb-2 flex items-center gap-1.5">
-                  <AlertCircle size={11} className="text-red-400" /> 3+ overdue tasks
+                <p className="text-white/35 text-[11px] font-semibold mb-2.5 flex items-center gap-1.5 uppercase tracking-wider">
+                  <AlertCircle size={10} className="text-red-400" /> 3+ overdue tasks
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {overdueHeavy.map(s => (
-                    <span key={s.id} className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-red-500/20 transition-colors"
+                    <button key={s.id}
+                      className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-3 py-2 rounded-xl cursor-pointer hover:bg-red-500/20 hover:border-red-500/30 transition-all"
                       onClick={() => navigate('/tasks')}>
-                      <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[10px] font-bold">{s.avatar}</span>
+                      <span className="w-5 h-5 rounded-lg bg-red-500/20 flex items-center justify-center text-[9px] font-black">{s.avatar}</span>
                       {s.name.split(' ')[0]}
-                      <span className="text-red-400/70 font-semibold">{s.overdueCount} overdue</span>
-                    </span>
+                      <span className="text-red-400/70 font-bold">{s.overdueCount}</span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -615,155 +618,125 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Anti-Fraud Alerts ─────────────────────────────────────────────── */}
-      {fraudAlerts.length > 0 && (
-        <div className="card border-orange-500/25">
-          <button
-            className="w-full flex items-center justify-between group"
-            onClick={() => setFraudExpanded(e => !e)}
-          >
-            <h3 className="text-orange-400 font-semibold text-sm flex items-center gap-2">
-              <AlertCircle size={14} className="text-orange-400" />
-              Anti-Fraud Alerts
-              <span className="text-[10px] bg-orange-500/20 text-orange-300 rounded-full px-2 py-0.5">{fraudAlerts.length}</span>
-              {fraudAlerts.some(a => a.severity === 'high') && (
-                <span className="text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">
-                  {fraudAlerts.filter(a => a.severity === 'high').length} HIGH
-                </span>
-              )}
-            </h3>
-            <ChevronRight size={14} className={`text-orange-400 transition-transform duration-200 ${fraudExpanded ? 'rotate-90' : ''}`} />
-          </button>
-          <p className="text-white opacity-55 text-[11px] mt-1">Suspicious patterns detected — review before taking action</p>
-
-          {fraudExpanded && (
-            <div className="mt-4 space-y-3">
-              {fraudAlerts.map(alert => {
-                const sevColor = alert.severity === 'high'
-                  ? 'border-red-500/30 bg-red-500/5'
-                  : alert.severity === 'medium'
-                  ? 'border-orange-500/30 bg-orange-500/5'
-                  : 'border-yellow-500/20 bg-yellow-500/5';
-                const sevBadge = alert.severity === 'high'
-                  ? 'bg-red-500/20 text-red-300'
-                  : alert.severity === 'medium'
-                  ? 'bg-orange-500/20 text-orange-300'
-                  : 'bg-yellow-500/15 text-yellow-300';
-                return (
-                  <div key={alert.id} className={`rounded-xl border p-3 ${sevColor}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-white text-xs font-semibold">{alert.title}</p>
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${sevBadge}`}>
-                            {alert.severity}
-                          </span>
-                        </div>
-                        <p className="text-white opacity-70 text-[11px] mt-1">{alert.detail}</p>
-                        <p className="text-white opacity-45 text-[10px] mt-1 font-mono">{alert.evidence}</p>
-                      </div>
-                      <button
-                        className="flex-shrink-0 w-7 h-7 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center hover:bg-gold/20 transition-colors"
-                        title="Go to staff profile"
-                        onClick={() => navigate(`/staff/${alert.staffId}`)}
-                      >
-                        <span className="text-gold text-[10px] font-bold">
-                          {staff.find(s => s.id === alert.staffId)?.avatar || alert.staffName[0]}
-                        </span>
-                      </button>
-                    </div>
-                    <p className="text-white opacity-35 text-[10px] mt-2">Staff: {alert.staffName}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Overdue Tasks list ────────────────────────────────────────────── */}
-      {overdueTasks.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-              <Clock size={14} className="text-red-400" /> Overdue Tasks
-              <span className="text-[10px] bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{overdueTasks.length}</span>
-            </h3>
-            <button onClick={() => navigate('/tasks')} className="text-gold/60 text-xs hover:text-gold flex items-center gap-1 transition-colors">
-              All tasks <ChevronRight size={12} />
-            </button>
-          </div>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {overdueTasks.slice(0, 20).map(t => {
-              const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
-              const staffMember = staff.find(s => s.id === t.staffId);
-              return (
-                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/15">
-                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-red-300 text-[10px] font-bold">{staffMember?.avatar ?? '?'}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs font-medium truncate">{t.title}</p>
-                    <p className="text-white/30 text-[10px]">
-                      {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
-                      {t.customerName ? ` · ${t.customerName}` : ''}
-                    </p>
-                  </div>
-                  <span className="badge badge-red text-[10px] flex-shrink-0 whitespace-nowrap">
-                    {daysOverdue}d overdue
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Weekly Contacts + Response Rate ───────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-1">Weekly Contacts</h3>
-          <p className="text-white/30 text-xs mb-4">Total customer contacts across team</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={weeklyData} barSize={24}>
+      {/* ── Merit Points chart ─────────────────────────────────────────────── */}
+      {meritChartData.length > 0 && (
+        <div className="card animate-fade-in-up stagger-4">
+          <SectionHeader
+            icon={Trophy}
+            title="Merit Points"
+            subtitle="All-time vs this week per staff member"
+            action={
+              <button
+                onClick={() => setAwardModal(true)}
+                className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-1.5 rounded-xl hover:bg-gold/20 transition-colors font-medium"
+              >
+                <Award size={12} /> Award Points
+              </button>
+            }
+          />
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={meritChartData} barGap={4} barCategoryGap="30%">
               <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="week" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(212,175,55,0.05)' }} />
-              <Bar dataKey="contacts" radius={[4, 4, 0, 0]}>
-                {weeklyData.map((_, i) => (
-                  <Cell key={i} fill={i === weeklyData.length - 1 ? GOLD : '#2A2A2A'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="card">
-          <h3 className="text-white font-semibold text-sm mb-1">Contact Breakdown</h3>
-          <p className="text-white/30 text-xs mb-3">How the team reaches customers each week</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={weeklyData} barSize={14} barGap={2}>
-              <CartesianGrid vertical={false} stroke={DIM} />
-              <XAxis dataKey="week" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <XAxis dataKey="name" tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   return (
-                    <div className="bg-dark-200 border border-dark-50 rounded-xl p-3 text-xs shadow-xl space-y-1">
-                      <p className="text-white/50 mb-1 font-medium">{label}</p>
+                    <div className="bg-dark-200 border border-dark-100 rounded-xl p-3 text-xs shadow-xl">
+                      <p className="text-white/40 mb-1.5 font-medium">{label}</p>
+                      {payload.map((p, i) => (
+                        <p key={i} style={{ color: p.fill as string }} className="font-semibold">
+                          {p.dataKey === 'allTime' ? 'All-time' : 'This week'}: {p.value} pts
+                        </p>
+                      ))}
+                    </div>
+                  );
+                }}
+                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+              />
+              <Bar dataKey="allTime" radius={[5, 5, 0, 0]}>
+                {meritChartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.allTime >= 0 ? GOLD : '#f87171'} fillOpacity={0.9} />
+                ))}
+              </Bar>
+              <Bar dataKey="thisWeek" radius={[5, 5, 0, 0]}>
+                {meritChartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.thisWeek >= 0 ? '#a78bfa' : '#fb923c'} fillOpacity={0.75} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2 justify-end">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/30 text-[10px]">All-time</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-purple-400/70" /><span className="text-white/30 text-[10px]">This week</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Charts row ────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Task Rate & Conversions */}
+        <div className="card">
+          <SectionHeader icon={TrendingUp} title="Task Rate & Conversions" subtitle="% completed · closures per staff" />
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
+              <CartesianGrid vertical={false} stroke={DIM} />
+              <XAxis dataKey="name" tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="bg-dark-200 border border-dark-100 rounded-xl p-3 text-xs shadow-xl">
+                      <p className="text-white/40 mb-1.5 font-medium">{label}</p>
+                      {payload.map((p, i) => (
+                        <p key={i} style={{ color: p.fill as string }} className="font-semibold">
+                          {p.dataKey === 'taskRate' ? `Completion: ${p.value}%` : `Conversions: ${p.value}`}
+                        </p>
+                      ))}
+                    </div>
+                  );
+                }}
+                cursor={{ fill: 'rgba(212,175,55,0.04)' }}
+              />
+              <Bar dataKey="taskRate" fill="#60a5fa" fillOpacity={0.85} radius={[5, 5, 0, 0]} />
+              <Bar dataKey="conversions" fill={GOLD} fillOpacity={0.9} radius={[5, 5, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2 justify-end">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/30 text-[10px]">Task Rate %</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/30 text-[10px]">Conversions</span></div>
+          </div>
+        </div>
+
+        {/* Contact Breakdown */}
+        <div className="card">
+          <SectionHeader icon={Zap} title="Contact Breakdown" subtitle="How the team reaches customers each week" />
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyData} barSize={14} barGap={2}>
+              <CartesianGrid vertical={false} stroke={DIM} />
+              <XAxis dataKey="week" tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  return (
+                    <div className="bg-dark-200 border border-dark-100 rounded-xl p-3 text-xs shadow-xl space-y-1">
+                      <p className="text-white/40 mb-1 font-medium">{label}</p>
                       {payload.map((p, i) => (Number(p.value) > 0) && (
                         <p key={i} style={{ color: p.fill as string }}>{p.name}: <strong>{p.value}</strong></p>
                       ))}
                     </div>
                   );
                 }}
-                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                cursor={{ fill: 'rgba(255,255,255,0.02)' }}
               />
               <Bar dataKey="calls"    stackId="a" fill="#60a5fa" name="Calls"    radius={[0,0,0,0]} />
               <Bar dataKey="messages" stackId="a" fill="#c084fc" name="Messages" radius={[0,0,0,0]} />
               <Bar dataKey="meetings" stackId="a" fill={GOLD}    name="Meetings" radius={[0,0,0,0]} />
-              <Bar dataKey="emails"   stackId="a" fill="#34d399" name="Emails"   radius={[3,3,0,0]} />
+              <Bar dataKey="emails"   stackId="a" fill="#34d399" name="Emails"   radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-4 mt-1 flex-wrap">
@@ -777,52 +750,190 @@ function AdminDashboard() {
         </div>
       </div>
 
+      {/* ── Weekly Contacts area chart ─────────────────────────────────────── */}
+      <div className="card">
+        <SectionHeader
+          icon={TrendingUp}
+          title="Weekly Contacts"
+          subtitle="Total customer contacts across team"
+          action={
+            <button onClick={() => navigate('/staff')} className="text-gold/50 text-xs hover:text-gold flex items-center gap-1 transition-colors font-medium">
+              Staff <ChevronRight size={12} />
+            </button>
+          }
+        />
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={weeklyData} barSize={28}>
+            <CartesianGrid vertical={false} stroke={DIM} />
+            <XAxis dataKey="week" tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(212,175,55,0.05)' }} />
+            <Bar dataKey="contacts" radius={[6, 6, 0, 0]}>
+              {weeklyData.map((_, i) => (
+                <Cell key={i} fill={i === weeklyData.length - 1 ? GOLD : '#2a2a2a'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ── Anti-Fraud Alerts ─────────────────────────────────────────────── */}
+      {fraudAlerts.length > 0 && (
+        <div className="card border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-transparent">
+          <button className="w-full flex items-center justify-between" onClick={() => setFraudExpanded(e => !e)}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/12 border border-orange-500/25 flex items-center justify-center"
+                style={{ boxShadow: '0 0 16px rgba(249,115,22,0.15)' }}>
+                <ShieldAlert size={16} className="text-orange-400" />
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <p className="text-orange-300 font-bold text-sm">Anti-Fraud Alerts</p>
+                  <span className="text-[10px] font-bold bg-orange-500/20 text-orange-300 rounded-full px-2 py-0.5">{fraudAlerts.length}</span>
+                  {fraudAlerts.some(a => a.severity === 'high') && (
+                    <span className="text-[10px] font-bold bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">
+                      {fraudAlerts.filter(a => a.severity === 'high').length} HIGH
+                    </span>
+                  )}
+                </div>
+                <p className="text-white/35 text-[11px] mt-0.5">Suspicious patterns — review before acting</p>
+              </div>
+            </div>
+            <ChevronRight size={14} className={`text-orange-400 transition-transform duration-200 flex-shrink-0 ${fraudExpanded ? 'rotate-90' : ''}`} />
+          </button>
+
+          {fraudExpanded && (
+            <div className="mt-4 space-y-2.5">
+              {fraudAlerts.map(alert => {
+                const sevLeft = alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500';
+                const sevBadge = alert.severity === 'high'
+                  ? 'bg-red-500/20 text-red-300'
+                  : alert.severity === 'medium'
+                  ? 'bg-orange-500/20 text-orange-300'
+                  : 'bg-yellow-500/15 text-yellow-300';
+                return (
+                  <div key={alert.id} className="flex gap-3 p-3.5 rounded-xl bg-dark-200 border border-dark-100 overflow-hidden relative">
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${sevLeft} rounded-l-xl`} />
+                    <div className="pl-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white text-xs font-semibold">{alert.title}</p>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${sevBadge}`}>
+                          {alert.severity}
+                        </span>
+                      </div>
+                      <p className="text-white/60 text-[11px] mt-1">{alert.detail}</p>
+                      <p className="text-white/35 text-[10px] mt-0.5 font-mono">{alert.evidence}</p>
+                      <p className="text-white/25 text-[10px] mt-1.5">Staff: {alert.staffName}</p>
+                    </div>
+                    <button
+                      className="flex-shrink-0 w-8 h-8 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center hover:bg-gold/20 transition-colors"
+                      onClick={() => navigate(`/staff/${alert.staffId}`)}
+                    >
+                      <span className="text-gold text-[10px] font-black">
+                        {staff.find(s => s.id === alert.staffId)?.avatar || alert.staffName[0]}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Overdue Tasks ────────────────────────────────────────────────── */}
+      {overdueTasks.length > 0 && (
+        <div className="card">
+          <SectionHeader
+            icon={Clock}
+            title="Overdue Tasks"
+            subtitle={`${overdueTasks.length} task${overdueTasks.length !== 1 ? 's' : ''} past deadline`}
+            iconColor="text-red-400"
+            iconBg="bg-red-500/10 border-red-500/20"
+            action={
+              <button onClick={() => navigate('/tasks')} className="text-gold/50 text-xs hover:text-gold flex items-center gap-1 transition-colors font-medium">
+                All tasks <ChevronRight size={12} />
+              </button>
+            }
+          />
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {overdueTasks.slice(0, 20).map(t => {
+              const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
+              const staffMember = staff.find(s => s.id === t.staffId);
+              return (
+                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/12">
+                  <div className="w-7 h-7 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-300 text-[10px] font-black">{staffMember?.avatar ?? '?'}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-xs font-medium truncate">{t.title}</p>
+                    <p className="text-white/30 text-[10px]">
+                      {staffMember?.name?.split(' ')[0] ?? 'Unknown'}
+                      {t.customerName ? ` · ${t.customerName}` : ''}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold flex-shrink-0 px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 whitespace-nowrap">
+                    {daysOverdue}d
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Team Performance table ─────────────────────────────────────────── */}
       {staffPerfData.length > 0 && (
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold text-sm">Team Performance</h3>
-            <button onClick={() => navigate('/staff')} className="text-gold/60 text-xs hover:text-gold flex items-center gap-1 transition-colors">
-              Manage staff <ChevronRight size={12} />
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <SectionHeader
+            icon={Users}
+            title="Team Performance"
+            subtitle="Interactions, contacts & merit this period"
+            action={
+              <button onClick={() => navigate('/staff')} className="text-gold/50 text-xs hover:text-gold flex items-center gap-1 transition-colors font-medium">
+                Manage <ChevronRight size={12} />
+              </button>
+            }
+          />
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-sm min-w-[320px]">
               <thead>
-                <tr className="border-b border-dark-50">
-                  {['Staff', 'Merit Pts', 'Interactions', 'Contacts'].map(h => (
-                    <th key={h} className="text-left text-white/25 font-medium text-xs py-2 pr-4">{h}</th>
+                <tr>
+                  {['Staff', 'Merit', 'Interactions', 'Contacts'].map(h => (
+                    <th key={h} className="text-left text-white/25 font-semibold text-[11px] py-2 pr-4 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {staffPerfData.map((s, i) => {
                   const ms = meritSummary.find(m => m.staffId === staff[i]?.id);
+                  const maxInt = Math.max(...staffPerfData.map(x => x.interactions), 1);
                   return (
-                    <tr key={i} className="border-b border-dark-50/40 hover:bg-dark-200/40 transition-colors cursor-pointer"
+                    <tr key={i}
+                      className="border-t border-dark-100/50 hover:bg-dark-200/50 transition-colors cursor-pointer group"
                       onClick={() => navigate(`/staff/${staff[i]?.id}`)}>
                       <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0">
-                            <span className="text-gold text-[10px] font-bold">{staff[i]?.avatar}</span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-gold/12 border border-gold/20 flex items-center justify-center flex-shrink-0">
+                            <span className="text-gold text-[10px] font-black">{staff[i]?.avatar}</span>
                           </div>
-                          <span className="text-white font-medium">{s.name}</span>
+                          <span className="text-white text-xs font-semibold group-hover:text-gold transition-colors">{s.name}</span>
                         </div>
                       </td>
                       <td className="py-3 pr-4">
-                        <span className={`text-xs font-semibold ${(ms?.total ?? 0) >= 0 ? 'text-gold' : 'text-red-400'}`}>
+                        <span className={`text-xs font-black ${(ms?.total ?? 0) >= 0 ? 'text-gold' : 'text-red-400'}`}>
                           {(ms?.total ?? 0) >= 0 ? '+' : ''}{ms?.total ?? 0}
                         </span>
                       </td>
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-20 h-1.5 bg-dark-200 rounded-full">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, Math.round((s.interactions / (Math.max(...staffPerfData.map(x => x.interactions)) || 1)) * 100))}%` }} />
+                          <div className="w-16 h-1.5 bg-dark-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((s.interactions / maxInt) * 100))}%` }} />
                           </div>
-                          <span className="text-white/50 text-xs">{s.interactions}</span>
+                          <span className="text-white/40 text-xs">{s.interactions}</span>
                         </div>
                       </td>
-                      <td className="py-3 text-white/50 text-xs">{s.contacts}</td>
+                      <td className="py-3 text-white/40 text-xs">{s.contacts}</td>
                     </tr>
                   );
                 })}
@@ -834,54 +945,66 @@ function AdminDashboard() {
 
       {/* ── Merit Goals ───────────────────────────────────────────────────── */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-            <Star size={14} className="text-gold" /> Merit Goals
-          </h3>
-          <button
-            onClick={() => setGoalModal(true)}
-            className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-1.5 rounded-lg hover:bg-gold/20 transition-colors"
-          >
-            <Plus size={12} /> Set Goal
-          </button>
-        </div>
+        <SectionHeader
+          icon={Star}
+          title="Merit Goals"
+          subtitle="Point targets and current progress"
+          action={
+            <button
+              onClick={() => setGoalModal(true)}
+              className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-1.5 rounded-xl hover:bg-gold/20 transition-colors font-medium"
+            >
+              <Plus size={12} /> Set Goal
+            </button>
+          }
+        />
         {meritGoals.length === 0 ? (
-          <p className="text-white/25 text-sm text-center py-6">No goals set yet. Set a point target for your team.</p>
+          <div className="flex flex-col items-center py-8 gap-2">
+            <div className="w-10 h-10 rounded-2xl bg-gold/8 border border-gold/15 flex items-center justify-center">
+              <Target size={18} className="text-gold/40" />
+            </div>
+            <p className="text-white/25 text-sm">No goals set yet</p>
+            <p className="text-white/15 text-xs">Set a point target to motivate your team</p>
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {meritGoals.map(g => {
               const ms = meritSummary.find(m => m.staffId === g.staffId);
               const current = g.period === 'weekly' ? (ms?.weekPts ?? 0) : (ms?.monthPts ?? 0);
               const progress = Math.min(Math.max(Math.round((current / g.targetPoints) * 100), 0), 100);
+              const done = progress >= 100;
               return (
-                <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl bg-dark-200 border border-dark-50">
-                  <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0">
-                    <span className="text-gold text-[10px] font-bold">
-                      {staff.find(s => s.id === g.staffId)?.avatar ?? g.staffName[0]}
-                    </span>
+                <div key={g.id} className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
+                  done ? 'bg-green-500/5 border-green-500/20' : 'bg-dark-200 border-dark-100'
+                }`}>
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    done ? 'bg-green-500/15 border border-green-500/25' : 'bg-gold/12 border border-gold/20'
+                  }`}>
+                    {done
+                      ? <CheckCircle size={14} className="text-green-400" />
+                      : <span className="text-gold text-[10px] font-black">{staff.find(s => s.id === g.staffId)?.avatar ?? g.staffName[0]}</span>
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-xs font-medium">{g.staffName.split(' ')[0]}</p>
-                      <span className="text-[10px] text-white/30 capitalize">{g.period}</span>
-                      {g.reward && <span className="text-[10px] text-gold/60 truncate">🎁 {g.reward}</span>}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <p className="text-white text-xs font-semibold">{g.staffName.split(' ')[0]}</p>
+                      <span className="text-[10px] text-white/25 capitalize bg-dark-100 px-2 py-0.5 rounded-full">{g.period}</span>
+                      {g.reward && <span className="text-[10px] text-gold/50 truncate">🎁 {g.reward}</span>}
+                      {done && <span className="text-[10px] font-bold text-green-400 ml-auto">Complete!</span>}
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 h-1.5 bg-dark-100 rounded-full">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-dark-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${progress}%`, background: progress >= 100 ? '#4ade80' : GOLD }}
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${progress}%`, background: done ? '#4ade80' : `linear-gradient(90deg, ${GOLD}cc, ${GOLD})` }}
                         />
                       </div>
-                      <span className="text-white/40 text-[10px] whitespace-nowrap">
-                        {current}/{g.targetPoints} pts
+                      <span className="text-white/35 text-[10px] whitespace-nowrap font-medium">
+                        {current}/{g.targetPoints}
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteGoal(g.id)}
-                    className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0"
-                  >
+                  <button onClick={() => handleDeleteGoal(g.id)} className="text-white/15 hover:text-red-400 transition-colors flex-shrink-0">
                     <X size={14} />
                   </button>
                 </div>
@@ -893,67 +1016,49 @@ function AdminDashboard() {
 
       {/* ── Goal Modal ────────────────────────────────────────────────────── */}
       {goalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-dark-300 border border-dark-50 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-dark-300 border border-dark-100 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-semibold flex items-center gap-2"><Star size={16} className="text-gold" /> Set Merit Goal</h3>
-              <button onClick={() => setGoalModal(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+              <h3 className="text-white font-bold flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl bg-gold/15 border border-gold/25 flex items-center justify-center">
+                  <Star size={13} className="text-gold" />
+                </div>
+                Set Merit Goal
+              </h3>
+              <button onClick={() => setGoalModal(false)} className="text-white/25 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Staff Member</label>
-                <select
-                  value={gStaffId}
-                  onChange={e => setGStaffId(e.target.value)}
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50"
-                >
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Staff Member</label>
+                <select value={gStaffId} onChange={e => setGStaffId(e.target.value)}
+                  className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
                   <option value="">Select staff...</option>
                   {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Target Points</label>
-                <input
-                  type="number"
-                  value={gTarget}
-                  onChange={e => setGTarget(e.target.value)}
-                  placeholder="e.g. 50"
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
-                />
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Target Points</label>
+                <input type="number" value={gTarget} onChange={e => setGTarget(e.target.value)} placeholder="e.g. 50"
+                  className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" />
               </div>
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Period</label>
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Period</label>
                 <div className="flex gap-2">
                   {(['weekly', 'monthly'] as const).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setGPeriod(p)}
-                      className={`flex-1 py-2 rounded-xl text-sm capitalize transition-colors ${
-                        gPeriod === p
-                          ? 'bg-gold text-black font-semibold'
-                          : 'bg-dark-200 border border-dark-50 text-white/40 hover:text-white'
-                      }`}
-                    >
-                      {p}
-                    </button>
+                    <button key={p} onClick={() => setGPeriod(p)}
+                      className={`flex-1 py-2 rounded-xl text-sm capitalize font-medium transition-all ${
+                        gPeriod === p ? 'bg-gold text-black font-bold shadow-lg' : 'bg-dark-200 border border-dark-100 text-white/40 hover:text-white'
+                      }`}>{p}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Reward (optional)</label>
-                <input
-                  type="text"
-                  value={gReward}
-                  onChange={e => setGReward(e.target.value)}
-                  placeholder="e.g. Bonus ₹500, day off..."
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
-                />
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Reward (optional)</label>
+                <input type="text" value={gReward} onChange={e => setGReward(e.target.value)} placeholder="e.g. Bonus ₹500, day off..."
+                  className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" />
               </div>
-              <button
-                onClick={handleSaveGoal}
-                disabled={!gStaffId || !gTarget || savingGoal}
-                className="w-full bg-gold text-black font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-colors"
-              >
+              <button onClick={handleSaveGoal} disabled={!gStaffId || !gTarget || savingGoal}
+                className="w-full bg-gold text-black font-bold py-2.5 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-all active:scale-95">
                 {savingGoal ? 'Saving...' : 'Save Goal'}
               </button>
             </div>
@@ -963,49 +1068,38 @@ function AdminDashboard() {
 
       {/* ── Award Points Modal ────────────────────────────────────────────── */}
       {awardModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-dark-300 border border-dark-50 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-dark-300 border border-dark-100 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-semibold flex items-center gap-2"><Award size={16} className="text-gold" /> Award / Deduct Points</h3>
-              <button onClick={() => setAwardModal(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+              <h3 className="text-white font-bold flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl bg-gold/15 border border-gold/25 flex items-center justify-center">
+                  <Award size={13} className="text-gold" />
+                </div>
+                Award / Deduct Points
+              </h3>
+              <button onClick={() => setAwardModal(false)} className="text-white/25 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Staff Member</label>
-                <select
-                  value={aStaffId}
-                  onChange={e => setAStaffId(e.target.value)}
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50"
-                >
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Staff Member</label>
+                <select value={aStaffId} onChange={e => setAStaffId(e.target.value)}
+                  className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
                   <option value="">Select staff...</option>
                   {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Points (use negative to deduct)</label>
-                <input
-                  type="number"
-                  value={aPoints}
-                  onChange={e => setAPoints(e.target.value)}
-                  placeholder="e.g. 10 or -5"
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
-                />
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Points (use negative to deduct)</label>
+                <input type="number" value={aPoints} onChange={e => setAPoints(e.target.value)} placeholder="e.g. 10 or -5"
+                  className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" />
               </div>
               <div>
-                <label className="text-white/40 text-xs mb-1.5 block">Reason</label>
-                <input
-                  type="text"
-                  value={aReason}
-                  onChange={e => setAReason(e.target.value)}
-                  placeholder="e.g. Excellent client handling"
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20"
-                />
+                <label className="text-white/40 text-xs mb-1.5 block font-medium">Reason</label>
+                <input type="text" value={aReason} onChange={e => setAReason(e.target.value)} placeholder="e.g. Excellent client handling"
+                  className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" />
               </div>
-              <button
-                onClick={handleAward}
-                disabled={!aStaffId || !aPoints || !aReason || savingAward}
-                className="w-full bg-gold text-black font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-colors"
-              >
+              <button onClick={handleAward} disabled={!aStaffId || !aPoints || !aReason || savingAward}
+                className="w-full bg-gold text-black font-bold py-2.5 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-all active:scale-95">
                 {savingAward ? 'Saving...' : 'Confirm'}
               </button>
             </div>
@@ -1024,12 +1118,11 @@ function StaffDashboard() {
   const [tasks,       setTasks]       = useState<Task[]>([]);
   const [performance, setPerf]        = useState<Performance[]>([]);
   const [broadcasts,    setBroadcasts]    = useState<BroadcastMsg[]>([]);
-  const [unreadQueue,   setUnreadQueue]   = useState<BroadcastMsg[]>([]); // only unseen ones for modal
+  const [unreadQueue,   setUnreadQueue]   = useState<BroadcastMsg[]>([]);
   const [bcastModal,    setBcastModal]    = useState(false);
   const [bcastModalIdx, setBcastModalIdx] = useState(0);
   const [loading,       setLoading]       = useState(true);
 
-  // Mark broadcasts as read in localStorage and remove from unread queue
   const dismissBcastModal = () => {
     const ids = unreadQueue.map(b => b.id);
     markBcastRead(user!.id, ids);
@@ -1049,7 +1142,6 @@ function StaffDashboard() {
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
     const bList = b as BroadcastMsg[];
     setBroadcasts(bList);
-    // Only pop up broadcasts the staff hasn't read yet
     const readSet = getBcastReadSet(user!.id);
     const unread  = bList.filter(br => !readSet.has(br.id));
     if (unread.length > 0) {
@@ -1063,7 +1155,6 @@ function StaffDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Live broadcast via SSE — always show new ones immediately ────────────────
   useSSE({
     'admin:broadcast': (msg: unknown) => {
       const newMsg = msg as BroadcastMsg;
@@ -1088,16 +1179,11 @@ function StaffDashboard() {
   const weekContacts = latestPerf?.customersContacted || 0;
   const weekProgress = Math.min((weekContacts / weekTarget) * 100, 100);
 
-  // Sort customers: overdue first, then by last contact
   const sortedCustomers = [...customers].sort((a, b) => {
     const da = a.lastContact ? Date.now() - new Date(a.lastContact).getTime() : Infinity;
     const db = b.lastContact ? Date.now() - new Date(b.lastContact).getTime() : Infinity;
     return db - da;
   });
-
-  const TYPE_ICONS: Record<string, React.ElementType> = {
-    call: Phone, message: MessageSquare, email: Mail, meeting: Calendar,
-  };
 
   const handleCompleteTask = async (id: string) => {
     await tasksAPI.complete(id);
@@ -1106,58 +1192,53 @@ function StaffDashboard() {
 
   if (loading) return (
     <div className="space-y-4">
-      <div className="card h-32 shimmer" />
-      <div className="grid grid-cols-2 gap-4">
-        <div className="card h-24 shimmer" /><div className="card h-24 shimmer" />
+      <div className="h-36 rounded-2xl shimmer" />
+      <div className="h-16 rounded-2xl shimmer" />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="h-24 rounded-2xl shimmer" /><div className="h-24 rounded-2xl shimmer" /><div className="h-24 rounded-2xl shimmer" />
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
 
-      {/* ── Broadcast modal — only shows unread, marks read on dismiss ──────── */}
+      {/* ── Broadcast modal ──────────────────────────────────────────────── */}
       {bcastModal && unreadQueue.length > 0 && (() => {
         const b = unreadQueue[bcastModalIdx];
         if (!b) return null;
         const hasNext = bcastModalIdx < unreadQueue.length - 1;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-            <div className="bg-dark-300 border border-amber-500/40 rounded-2xl shadow-2xl w-full max-w-sm animate-slide-up">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-dark-50">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center">
-                    <MessageSquare size={13} className="text-amber-400" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+            <div className="bg-dark-300 border border-amber-500/35 rounded-2xl shadow-2xl w-full max-w-sm animate-bounce-in">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-dark-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/12 border border-amber-500/25 flex items-center justify-center">
+                    <MessageSquare size={14} className="text-amber-400" />
                   </div>
-                  <p className="text-amber-400 font-semibold text-sm">Announcement</p>
-                  {unreadQueue.length > 1 && (
-                    <span className="text-white/30 text-xs">({bcastModalIdx + 1}/{unreadQueue.length})</span>
-                  )}
+                  <div>
+                    <p className="text-amber-300 font-bold text-sm">Announcement</p>
+                    {unreadQueue.length > 1 && (
+                      <p className="text-white/25 text-[10px]">{bcastModalIdx + 1} of {unreadQueue.length}</p>
+                    )}
+                  </div>
                 </div>
-                <button onClick={dismissBcastModal} className="text-white/30 hover:text-white transition-colors">
-                  <X size={16} />
-                </button>
+                <button onClick={dismissBcastModal} className="text-white/25 hover:text-white transition-colors"><X size={16} /></button>
               </div>
               <div className="px-5 py-4">
                 <p className="text-white text-sm leading-relaxed">{b.message}</p>
-                <p className="text-white/30 text-[10px] mt-2.5">
+                <p className="text-white/25 text-[10px] mt-3">
                   {b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                 </p>
               </div>
-              <div className="flex items-center gap-2 px-5 py-3.5 border-t border-dark-50">
+              <div className="flex items-center gap-2 px-5 py-3.5 border-t border-dark-100">
                 {hasNext ? (
                   <>
-                    <button onClick={() => setBcastModalIdx(i => i + 1)} className="flex-1 btn-primary text-sm py-2">
-                      Next →
-                    </button>
-                    <button onClick={dismissBcastModal} className="flex-1 text-white/40 hover:text-white text-sm transition-colors">
-                      Done
-                    </button>
+                    <button onClick={() => setBcastModalIdx(i => i + 1)} className="flex-1 btn-primary text-sm py-2">Next →</button>
+                    <button onClick={dismissBcastModal} className="flex-1 text-white/40 hover:text-white text-sm transition-colors">Done</button>
                   </>
                 ) : (
-                  <button onClick={dismissBcastModal} className="w-full btn-primary text-sm py-2">
-                    Got it
-                  </button>
+                  <button onClick={dismissBcastModal} className="w-full btn-primary text-sm py-2">Got it</button>
                 )}
               </div>
             </div>
@@ -1165,114 +1246,149 @@ function StaffDashboard() {
         );
       })()}
 
-      {/* Streak hero */}
-      <div className="card bg-gradient-to-br from-dark-300 to-dark-400 border-gold/20 relative overflow-hidden">
-        <div className="absolute -right-8 -top-8 w-32 h-32 bg-gold/5 rounded-full" />
-        <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-gold/5 rounded-full" />
-        <div className="flex items-center justify-between relative z-10">
+      {/* ── Streak hero card ─────────────────────────────────────────────── */}
+      <div className="relative rounded-2xl border border-gold/20 bg-gradient-to-br from-dark-300 via-dark-300 to-dark-400 overflow-hidden p-5"
+        style={{ boxShadow: streak > 0 ? '0 0 40px rgba(212,175,55,0.08)' : undefined }}>
+        {/* Decorative orbs */}
+        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-gold/5 blur-2xl pointer-events-none" />
+        <div className="absolute right-4 bottom-4 w-20 h-20 rounded-full bg-gold/4 blur-xl pointer-events-none" />
+
+        <div className="relative z-10 flex items-center justify-between">
           <div>
-            <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Current Streak</p>
-            <div className="flex items-end gap-2">
-              <span className="text-5xl font-black text-white">{streak}</span>
-              <span className="text-gold text-lg font-bold mb-1">days</span>
-              <Flame size={28} className={`mb-1 transition-all ${streak > 0 ? 'text-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]' : 'text-white/20'}`} />
-            </div>
-            <p className="text-white/30 text-xs mt-1">Longest: {longestStreak}d · Log a contact to keep it going</p>
-          </div>
-          <div className="text-right">
-            <div className="bg-dark-200 rounded-2xl p-4 border border-dark-50">
-              <p className="text-white/30 text-xs mb-1">Week Progress</p>
-              <p className="text-white font-bold text-lg">{weekContacts}<span className="text-white/30 text-sm font-normal">/{weekTarget}</span></p>
-              <div className="w-24 h-1.5 bg-dark-100 rounded-full mt-2">
-                <div className="h-full bg-gold rounded-full transition-all" style={{ width: `${weekProgress}%` }} />
+            <p className="text-white/35 text-[10px] uppercase tracking-[0.15em] font-semibold mb-1.5">Current Streak</p>
+            <div className="flex items-end gap-2.5">
+              <span className="text-6xl font-black text-white leading-none">{streak}</span>
+              <div className="mb-1">
+                <span className="text-gold text-xl font-black">days</span>
+                {streak > 0 && (
+                  <Flame
+                    size={22}
+                    className="inline ml-2 text-gold animate-glow-breathe"
+                    style={{ filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.8))' }}
+                  />
+                )}
               </div>
             </div>
+            <p className="text-white/25 text-xs mt-2">Best: <span className="text-white/40 font-semibold">{longestStreak}d</span> · Log a contact to keep going</p>
+          </div>
+
+          {/* Week progress mini card */}
+          <div className="bg-dark-200/80 backdrop-blur rounded-2xl p-4 border border-dark-100/80 min-w-[110px]">
+            <p className="text-white/30 text-[10px] font-semibold uppercase tracking-wider mb-1">This Week</p>
+            <p className="text-white font-black text-xl leading-tight">
+              {weekContacts}
+              <span className="text-white/25 text-sm font-normal">/{weekTarget}</span>
+            </p>
+            <div className="w-full h-2 bg-dark-100 rounded-full mt-2 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${weekProgress}%`, background: weekProgress >= 100 ? '#4ade80' : `linear-gradient(90deg, ${GOLD}99, ${GOLD})` }}
+              />
+            </div>
+            <p className="text-white/20 text-[10px] mt-1.5 text-center">{Math.round(weekProgress)}% of target</p>
           </div>
         </div>
       </div>
 
-      {/* ── Diary mic CTA ───────────────────────────────────────────────────── */}
+      {/* ── Diary mic CTA ─────────────────────────────────────────────────── */}
       <button
         onClick={() => navigate('/diary')}
-        className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gold/30 bg-gold/5 hover:bg-gold/10 hover:border-gold/50 transition-all group active:scale-[0.98]"
+        className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gold/25 bg-gradient-to-r from-gold/6 to-transparent hover:from-gold/12 hover:border-gold/40 transition-all group active:scale-[0.98]"
+        style={{ boxShadow: '0 0 0 0 rgba(212,175,55,0)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(212,175,55,0.1)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 0 rgba(212,175,55,0)'; }}
       >
-        <div className="w-12 h-12 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0 group-hover:bg-gold/25 transition-colors">
-          <Mic size={22} className="text-gold" />
+        <div className="relative flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center group-hover:bg-gold/22 transition-colors">
+            <Mic size={22} className="text-gold" />
+          </div>
+          {/* Pulse ring */}
+          <span className="absolute inset-0 rounded-xl border border-gold/40 animate-ping opacity-30 group-hover:opacity-60" />
         </div>
         <div className="text-left flex-1">
-          <p className="text-white font-semibold text-sm">Log Today's Work</p>
-          <p className="text-white/40 text-xs mt-0.5">Tap to open diary & record voice entries</p>
+          <p className="text-white font-bold text-sm">Log Today's Work</p>
+          <p className="text-white/35 text-xs mt-0.5">Tap to open diary & record voice entries</p>
         </div>
-        <ChevronRight size={16} className="text-gold/50 group-hover:text-gold transition-colors flex-shrink-0" />
+        <ChevronRight size={16} className="text-gold/35 group-hover:text-gold group-hover:translate-x-0.5 transition-all flex-shrink-0" />
       </button>
 
-      {/* Quick stats */}
+      {/* ── Quick stats ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="card text-center py-4">
-          <p className="text-2xl font-bold text-white">{customers.length}</p>
-          <p className="text-white/30 text-xs mt-0.5">Customers</p>
+        <div className="card text-center py-4 animate-fade-in-up stagger-1">
+          <p className="text-2xl font-black text-white">{customers.length}</p>
+          <p className="text-white/30 text-[11px] mt-0.5 font-medium">Customers</p>
         </div>
-        <div className={`card text-center py-4 ${overdueTasks.length > 0 ? 'border-red-500/30' : ''}`}>
-          <p className={`text-2xl font-bold ${overdueTasks.length > 0 ? 'text-red-400' : 'text-white'}`}>
+        <div className={`card text-center py-4 animate-fade-in-up stagger-2 ${overdueTasks.length > 0 ? 'border-red-500/25' : ''}`}>
+          <p className={`text-2xl font-black ${overdueTasks.length > 0 ? 'text-red-400' : 'text-white'}`}>
             {overdueTasks.length}
           </p>
-          <p className="text-white/30 text-xs mt-0.5">Overdue Tasks</p>
+          <p className="text-white/30 text-[11px] mt-0.5 font-medium">Overdue</p>
         </div>
-        <div className="card text-center py-4">
-          <p className="text-2xl font-bold text-white">{latestPerf?.responseRate || 0}%</p>
-          <p className="text-white/30 text-xs mt-0.5">Response Rate</p>
+        <div className="card text-center py-4 animate-fade-in-up stagger-3">
+          <p className="text-2xl font-black text-white">{latestPerf?.responseRate || 0}<span className="text-sm text-white/40">%</span></p>
+          <p className="text-white/30 text-[11px] mt-0.5 font-medium">Response</p>
         </div>
       </div>
 
-      {/* Today's tasks */}
+      {/* ── Today's tasks ─────────────────────────────────────────────────── */}
       {(todayTasks.length > 0 || overdueTasks.length > 0) && (
         <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-              <Target size={14} className="text-gold" /> Today's Tasks
-            </h3>
-            <button onClick={() => navigate('/tasks')} className="text-white/30 text-xs hover:text-gold transition-colors flex items-center gap-1">
-              All tasks <ChevronRight size={12} />
-            </button>
-          </div>
+          <SectionHeader
+            icon={Target}
+            title="Today's Tasks"
+            subtitle={`${todayTasks.length} today · ${overdueTasks.length} overdue`}
+            action={
+              <button onClick={() => navigate('/tasks')} className="text-white/25 text-xs hover:text-gold transition-colors flex items-center gap-1 font-medium">
+                All <ChevronRight size={12} />
+              </button>
+            }
+          />
           <div className="space-y-2">
             {[...overdueTasks.slice(0, 2), ...todayTasks.slice(0, 3)].map(t => (
               <div key={t.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                t.dueDate < today ? 'bg-red-500/5 border-red-500/15' : 'bg-dark-200 border-dark-50'
+                t.dueDate < today ? 'bg-red-500/5 border-red-500/15' : 'bg-dark-200 border-dark-100'
               }`}>
                 <button
                   onClick={() => handleCompleteTask(t.id)}
-                  className="w-5 h-5 rounded-full border-2 border-gold/40 hover:border-gold hover:bg-gold/20 flex items-center justify-center flex-shrink-0 transition-all"
+                  className="w-5 h-5 rounded-full border-2 border-gold/35 hover:border-gold hover:bg-gold/15 flex items-center justify-center flex-shrink-0 transition-all group"
                 >
-                  <CheckCircle size={10} className="text-gold opacity-0 hover:opacity-100" />
+                  <CheckCircle size={10} className="text-gold opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{t.title}</p>
-                  {t.customerName && <p className="text-white/30 text-xs">{t.customerName}</p>}
+                  <p className="text-white text-xs font-semibold truncate">{t.title}</p>
+                  {t.customerName && <p className="text-white/30 text-[10px]">{t.customerName}</p>}
                 </div>
-                {t.dueDate < today && <span className="badge badge-red text-[10px] flex-shrink-0">Overdue</span>}
+                {t.dueDate < today && (
+                  <span className="text-[10px] font-bold flex-shrink-0 px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">Overdue</span>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Customer queue */}
+      {/* ── Customer queue ────────────────────────────────────────────────── */}
       <div className="card">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-            <Zap size={14} className="text-gold" /> Customer Queue
-            <span className="text-white/30 text-xs font-normal">(sorted by urgency)</span>
-          </h3>
-          <button onClick={() => navigate('/customers')} className="text-white/30 text-xs hover:text-gold transition-colors flex items-center gap-1">
-            All <ChevronRight size={12} />
-          </button>
-        </div>
+        <SectionHeader
+          icon={Zap}
+          title="Customer Queue"
+          subtitle="Sorted by urgency — contact the top ones first"
+          action={
+            <button onClick={() => navigate('/customers')} className="text-white/25 text-xs hover:text-gold transition-colors flex items-center gap-1 font-medium">
+              All <ChevronRight size={12} />
+            </button>
+          }
+        />
         {sortedCustomers.length === 0 ? (
-          <p className="text-white/25 text-sm py-4 text-center">No customers assigned yet</p>
+          <div className="flex flex-col items-center py-8 gap-2">
+            <div className="w-10 h-10 rounded-2xl bg-gold/8 border border-gold/15 flex items-center justify-center">
+              <Users size={18} className="text-gold/40" />
+            </div>
+            <p className="text-white/25 text-sm">No customers assigned yet</p>
+          </div>
         ) : (
           <div className="space-y-2">
-            {sortedCustomers.slice(0, 6).map(c => {
+            {sortedCustomers.slice(0, 6).map((c, i) => {
               const days = c.lastContact
                 ? Math.round((Date.now() - new Date(c.lastContact).getTime()) / 86400000)
                 : null;
@@ -1280,27 +1396,27 @@ function StaffDashboard() {
               return (
                 <div
                   key={c.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:border-gold/30 transition-all ${
-                    isOverdue ? 'border-red-500/20 bg-red-500/5' : 'border-dark-50 bg-dark-200'
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:scale-[1.01] ${
+                    isOverdue ? 'border-red-500/20 bg-red-500/5 hover:border-red-500/30' : 'border-dark-100 bg-dark-200 hover:border-gold/20'
                   }`}
+                  style={{ animationDelay: `${i * 35}ms` }}
                   onClick={() => navigate('/customers')}
                 >
-                  <div className="w-8 h-8 rounded-full bg-dark-100 flex items-center justify-center flex-shrink-0 border border-dark-50">
-                    <span className="text-white/50 text-xs font-bold">{c.name[0]}</span>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border ${
+                    isOverdue ? 'bg-red-500/12 border-red-500/20' : 'bg-dark-100 border-dark-50'
+                  }`}>
+                    <span className={`text-xs font-black ${isOverdue ? 'text-red-300' : 'text-white/50'}`}>{c.name[0]}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{c.name}</p>
-                    <p className="text-white/30 text-xs">{c.phone}</p>
+                    <p className="text-white text-xs font-semibold truncate">{c.name}</p>
+                    <p className="text-white/30 text-[10px]">{c.phone}</p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ background: PIPELINE_COLORS[c.status] || '#666' }}
-                      />
-                      <span className="text-white/30 text-[10px] capitalize">{c.status}</span>
+                  <div className="text-right flex-shrink-0 space-y-1">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: PIPELINE_COLORS[c.status] || '#555' }} />
+                      <span className="text-white/25 text-[10px] capitalize">{c.status}</span>
                     </div>
-                    <p className={`text-[10px] mt-0.5 ${isOverdue ? 'text-red-400' : days === 0 ? 'text-green-400' : 'text-white/25'}`}>
+                    <p className={`text-[10px] font-semibold ${isOverdue ? 'text-red-400' : days === 0 ? 'text-green-400' : 'text-white/25'}`}>
                       {days === null ? 'Never' : days === 0 ? 'Today' : `${days}d ago`}
                     </p>
                   </div>
@@ -1319,15 +1435,27 @@ export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   return (
     <div className="animate-fade-in">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">
-          {isAdmin ? 'Dashboard' : 'My Dashboard'}
-          {' — '}
-          <span className="text-gold">{user?.name?.split(' ')[0]}</span>
-        </h1>
-        <p className="text-white/30 text-sm mt-1">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+      {/* Page header */}
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1 h-6 rounded-full bg-gold animate-glow-breathe" />
+            <h1 className="text-2xl font-black text-white tracking-tight">
+              {isAdmin ? 'Dashboard' : 'My Dashboard'}
+            </h1>
+          </div>
+          <p className="text-white/30 text-sm pl-3">
+            <span className="text-gold font-semibold">{user?.name?.split(' ')[0]}</span>
+            {' — '}
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-1.5 text-[10px] text-white/20 bg-dark-200 border border-dark-100 rounded-xl px-3 py-1.5">
+            <Sparkles size={10} className="text-gold/40" />
+            <span>Live</span>
+          </div>
+        )}
       </div>
       {isAdmin ? <AdminDashboard /> : <StaffDashboard />}
     </div>
