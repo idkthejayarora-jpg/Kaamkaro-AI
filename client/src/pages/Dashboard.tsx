@@ -1014,7 +1014,7 @@ export default function Dashboard() {
     <div className="animate-fade-in">
       <div className="mb-6">
         {/* Eyebrow */}
-        <p className="text-white/20 text-[11px] uppercase tracking-[0.22em] font-bold mb-1">{today}</p>
+        <p className="text-white/40 text-[11px] uppercase tracking-[0.22em] font-bold mb-1">{today}</p>
         {/* Title */}
         <h1 className="text-3xl font-black text-white tracking-tight leading-none">
           {isAdmin ? 'Command Center' : 'My Dashboard'}
