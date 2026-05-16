@@ -252,6 +252,13 @@ const STOP_WORDS = new Set([
   'uncle','aunty','aunti',
   // Filler/locative connectors — "X wale bhaiya" → "wale" links X to a location, not a name part
   'wale','wali','waale','waali','vale','vali',
+  // Hindi interrogatives & pronouns — often misidentified as names by voice transcription
+  'kiska','kisi','kaun','kitna','kahan','jiska',
+  'tum','tumhara','tumhari','tumhare','inke','unke','uska',
+  'main','vo','toh','tou',
+  // Common diary action fillers — verbs that should never be customer names
+  'bheja','bhejo','bhejna','dena','leni','lena','karna','karo',
+  'milna','batana','batao','samjha','samjho',
 ]);
 
 // ── Inject stock product terms into STOP_WORDS at module load ─────────────────
