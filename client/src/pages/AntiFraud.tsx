@@ -434,11 +434,21 @@ export default function AntiFraud() {
       {/* Tabs */}
       <TabBar
         tabs={[
-          { id: 'live',    label: 'Staff Alerts',   icon: AlertTriangle, count: liveCount      },
-          { id: 'history', label: 'Action History', icon: History,       count: records.length },
+          { id: 'live',      label: 'Staff Alerts',   icon: AlertTriangle, count: liveCount      },
+          { id: 'history',   label: 'Action History', icon: History,       count: records.length },
+          { id: 'odd-names', label: 'Odd Names',      icon: TextSearch,    count: suspNames.length || undefined },
         ]}
         active={tab}
-        onChange={id => setTab(id as 'live' | 'history')}
+        onChange={id => {
+          setTab(id as 'live' | 'history' | 'odd-names');
+          if (id === 'odd-names' && suspNames.length === 0) {
+            setSuspNamesLoading(true);
+            fraudAPI.suspiciousNames()
+              .then((r: { customers: SuspiciousCustomer[] }) => setSuspNames(r.customers || []))
+              .catch(() => {})
+              .finally(() => setSuspNamesLoading(false));
+          }
+        }}
         variant="pill-dark"
         className="w-fit"
       />
