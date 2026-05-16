@@ -561,14 +561,14 @@ export default function CRMDetail() {
           <button
             onClick={logCallDone}
             disabled={saving}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-blue-500/20 text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/8 hover:border-blue-500/40 text-xs font-medium transition-all"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-blue-500/20 text-blue-400/70 hover:text-blue-400 hover:bg-blue-500/8 hover:border-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-xs font-medium transition-all duration-150"
           >
             <Check size={12} /> Call Done
           </button>
           <button
             onClick={logNoPickup}
             disabled={saving}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/8 hover:border-amber-500/40 text-xs font-medium transition-all"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/8 hover:border-amber-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-xs font-medium transition-all duration-150"
           >
             <PhoneOff size={12} /> No Pickup
             {lead.noPickupCount > 0 && (
@@ -580,14 +580,14 @@ export default function CRMDetail() {
           <button
             onClick={logCatalogueSent}
             disabled={saving}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-purple-500/20 text-purple-400/70 hover:text-purple-400 hover:bg-purple-500/8 hover:border-purple-500/40 text-xs font-medium transition-all"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-purple-500/20 text-purple-400/70 hover:text-purple-400 hover:bg-purple-500/8 hover:border-purple-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-xs font-medium transition-all duration-150"
           >
             <BookCheck size={12} /> Sent Catalogue
           </button>
           <button
             onClick={logFollowUpDone}
             disabled={saving}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-green-500/20 text-green-400/70 hover:text-green-400 hover:bg-green-500/8 hover:border-green-500/40 text-xs font-medium transition-all"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-green-500/20 text-green-400/70 hover:text-green-400 hover:bg-green-500/8 hover:border-green-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-xs font-medium transition-all duration-150"
           >
             <CalendarDays size={12} /> Follow-up Done
           </button>
@@ -595,7 +595,7 @@ export default function CRMDetail() {
             <button
               onClick={() => appendNote('Visit completed ✓', { visitDate: null, stage: 'won' as LeadStage })}
               disabled={saving}
-              className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-indigo-500/25 text-indigo-400/80 hover:text-indigo-300 hover:bg-indigo-500/8 hover:border-indigo-500/40 text-xs font-medium transition-all"
+              className="col-span-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-indigo-500/25 text-indigo-400/80 hover:text-indigo-300 hover:bg-indigo-500/8 hover:border-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-xs font-medium transition-all duration-150"
             >
               <Check size={12} /> Visit Completed — Mark Won
             </button>
