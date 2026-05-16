@@ -427,7 +427,7 @@ function AdminDashboard() {
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${sevBadge}`}>{alert.severity}</span>
                     </div>
                     <p className="text-white/55 text-[11px] mt-1">{alert.detail}</p>
-                    <p className="text-white/25 text-[10px] mt-1.5">Staff: {alert.staffName}</p>
+                    <p className="text-white/40 text-[10px] mt-1.5">Staff: {alert.staffName}</p>
                   </div>
                   <button onClick={() => navigate(`/staff/${alert.staffId}`)} className="flex-shrink-0 w-8 h-8 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center hover:bg-gold/20 transition-colors">
                     <span className="text-gold text-[10px] font-black">{staff.find(s => s.id === alert.staffId)?.avatar || alert.staffName[0]}</span>
@@ -523,7 +523,7 @@ function AdminDashboard() {
             </ResponsiveContainer>
             <div className="flex items-center gap-5 mt-2 justify-end">
               <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/40 text-[10px] font-semibold">Task Rate %</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/25 text-[10px]">Conversions</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/40 text-[10px] font-semibold">Conversions</span></div>
             </div>
           </div>
         </div>
@@ -561,7 +561,7 @@ function AdminDashboard() {
               {[['Calls','#60a5fa'],['Messages','#c084fc'],['Meetings',GOLD],['Emails','#34d399']].map(([l,c]) => (
                 <div key={l} className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-sm" style={{ background: c }} />
-                  <span className="text-white/25 text-[10px]">{l}</span>
+                  <span className="text-white/40 text-[10px] font-semibold">{l}</span>
                 </div>
               ))}
             </div>
@@ -617,7 +617,7 @@ function AdminDashboard() {
                       <div className="flex-1 max-w-[120px] h-1.5 bg-dark-100 rounded-full overflow-hidden">
                         <div className="h-full bg-blue-500/70 rounded-full" style={{ width: `${Math.min(100, Math.round((s.interactions / maxInt) * 100))}%` }} />
                       </div>
-                      <span className="text-white/25 text-[10px]">{s.interactions} interactions</span>
+                      <span className="text-white/40 text-[10px]">{s.interactions} interactions</span>
                     </div>
                   </div>
                   {/* Merit */}

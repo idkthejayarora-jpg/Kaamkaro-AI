@@ -103,7 +103,11 @@
       "Bash(xargs sed *)",
       "Bash(sed -i '' \"s/dragging ? 'text-dark-500'/dragging ? 'text-white'/\" \"/Users/jaigopalarora/Kaamkaro AI/client/src/pages/PDFUpload.tsx\")",
       "Bash(sed -i '' \"s/file:text-dark-500/file:text-white/\" \"/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Customers.tsx\")",
-      "Bash(grep -n \"sortedNotes\\\\.map\\\\|notes\\\\.map\\\\|note\\\\.id\\\\|n\\\\.id.*note\\\\|{n,\\\\|{ n,\" \"/Users/jaigopalarora/Kaamkaro AI/client/src/pages/CRMDetail.tsx\")"
+      "Bash(grep -n \"sortedNotes\\\\.map\\\\|notes\\\\.map\\\\|note\\\\.id\\\\|n\\\\.id.*note\\\\|{n,\\\\|{ n,\" \"/Users/jaigopalarora/Kaamkaro AI/client/src/pages/CRMDetail.tsx\")",
+      "Bash(sed -i '' 's/text-white\\\\/25 text-\\\\[10px\\\\] mt-1\\\\.5\">Staff:/text-white\\\\/40 text-[10px] mt-1.5\">Staff:/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')",
+      "Bash(sed -i '' 's/<span className=\"text-white\\\\/25 text-\\\\[10px\\\\]\">Conversions<\\\\/span>/<span className=\"text-white\\\\/40 text-[10px] font-semibold\">Conversions<\\\\/span>/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')",
+      "Bash(sed -i '' 's/<span className=\"text-white\\\\/25 text-\\\\[10px\\\\]\">{l}<\\\\/span>/<span className=\"text-white\\\\/40 text-[10px] font-semibold\">{l}<\\\\/span>/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')",
+      "Bash(sed -i '' 's/<span className=\"text-white\\\\/25 text-\\\\[10px\\\\]\">{s\\\\.interactions} interactions<\\\\/span>/<span className=\"text-white\\\\/40 text-[10px]\">{s.interactions} interactions<\\\\/span>/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')"
     ]
   }
 }
