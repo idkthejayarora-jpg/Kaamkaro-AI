@@ -268,7 +268,9 @@ export const fraudAPI = {
     api.post('/fraud/fine', data).then(r => r.data),
   dismiss: (data: { staffId: string; fraudType: string; alertTitle?: string; notes?: string }) =>
     api.post('/fraud/dismiss', data).then(r => r.data),
-  records: () => api.get('/fraud/records').then(r => r.data),
+  records:        () => api.get('/fraud/records').then(r => r.data),
+  suspiciousNames:() => api.get('/fraud/suspicious-names').then(r => r.data),
+  deleteCustomer: (id: string) => api.delete(`/fraud/suspicious-names/${id}`).then(r => r.data),
 };
 
 export const stockAPI = {
