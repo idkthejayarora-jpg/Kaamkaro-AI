@@ -664,7 +664,7 @@ export default function CRMDetail() {
               {lead.visitDate ? (
                 rescheduleMode ? (
                   /* Reschedule panel */
-                  <div className="space-y-2 mt-1">
+                  <div className="space-y-2 mt-1 animate-scale-in">
                     {/* Quick shortcuts */}
                     <div className="flex gap-1 flex-wrap">
                       {[
