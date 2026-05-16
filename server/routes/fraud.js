@@ -479,4 +479,99 @@ router.get('/records', adminOnly, async (req, res) => {
   }
 });
 
+// ── Suspicious name detection ─────────────────────────────────────────────────
+
+const SUSPICIOUS_PRODUCTS = new Set([
+  'earring','earrings','jhumka','jhumke','jhumki','bangle','bangles','kangan',
+  'necklace','haar','mala','maang','tikka','maangtikka','nath',
+  'payal','anklet','ring','rings','pendant','pendants','locket',
+  'bracelet','bracelets','bajuband','baju',
+  'bridal','kundan','meenakari','polki','jadau','moti',
+  'chuda','chudiyan','chudi','chooda','churiya',
+  'chain','chains','set','sets','collection','design','designs',
+  'sample','samples','stock','piece','pieces','item','items',
+  'diamond','diamonds','ad','american','rose','gold','silver',
+  'oxidised','oxidized','polish','stone','stones','mehendi',
+  'tops','studs','kada','kara','satlada','kanthi','borla',
+  'pajeb','anguthi','armlet','nathni','pearl','pearls',
+  'solitaire','emerald','ruby','platinum','brass','copper',
+  'antique','vintage','lacquer','rhodium','cz','cubic','zirconia',
+  'catalogue','catalog','range','line','series','lot','bulk','delivery',
+]);
+
+const SUSPICIOUS_PRONOUNS = new Set([
+  'kiska','iska','uska','kisi','koi','kuch','sab','saab',
+  'wala','wali','waale','aapka','mera','tera','hamara',
+  'tumhara','unka','inke','unke','jiska','kaun','kitna',
+  'kahan','kyun','kya','yeh','woh','hum','tum','aap',
+  'main','wo','ye','toh','tou','vo',
+]);
+
+const SUSPICIOUS_PLACEHOLDERS = new Set([
+  'test','demo','abc','xyz','temp','dummy','unknown','anonymous',
+  'na','nil','none','null','n/a','xxx','yyy','zzz','abcd','1234',
+  'customer','client','buyer','party','person',
+]);
+
+function getSuspiciousReason(name) {
+  if (!name || typeof name !== 'string') return 'Empty name';
+  const lower = name.toLowerCase().trim();
+  const words = lower.split(/\s+/);
+
+  if (lower.length < 3)                  return 'Name too short';
+  if (/^\d+$/.test(lower))               return 'Name is a number';
+  if (SUSPICIOUS_PRONOUNS.has(lower))    return 'Hindi pronoun / interrogative';
+  if (SUSPICIOUS_PLACEHOLDERS.has(lower))return 'Placeholder / test name';
+  if (words.some(w => SUSPICIOUS_PRODUCTS.has(w)))  return 'Jewellery product term';
+  if (words.some(w => SUSPICIOUS_PRONOUNS.has(w)))  return 'Contains Hindi pronoun';
+  if (words.some(w => SUSPICIOUS_PLACEHOLDERS.has(w))) return 'Contains placeholder word';
+  if (lower.length <= 4 && words.length === 1)       return 'Very short single word';
+  return null; // not suspicious
+}
+
+// ── GET /api/fraud/suspicious-names ──────────────────────────────────────────
+router.get('/suspicious-names', adminOnly, async (req, res) => {
+  try {
+    const [customers, staffList] = await Promise.all([
+      readDB('customers').catch(() => []),
+      readDB('staff').catch(() => []),
+    ]);
+    const staffMap = Object.fromEntries(staffList.map(s => [s.id, s.name]));
+
+    const flagged = [];
+    for (const c of customers) {
+      const reason = getSuspiciousReason(c.name);
+      if (reason) {
+        flagged.push({
+          id:        c.id,
+          name:      c.name,
+          reason,
+          staffId:   c.staffId || c.assignedTo || null,
+          staffName: staffMap[c.staffId || c.assignedTo] || 'Unknown',
+          createdAt: c.createdAt,
+          phone:     c.phone || null,
+        });
+      }
+    }
+
+    flagged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ count: flagged.length, customers: flagged });
+  } catch (err) {
+    console.error('[Fraud] suspicious-names error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── DELETE /api/fraud/suspicious-names/:id ────────────────────────────────────
+router.delete('/suspicious-names/:id', adminOnly, async (req, res) => {
+  try {
+    const { deleteOne } = require('../utils/db');
+    await deleteOne('customers', req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Fraud] delete customer error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
