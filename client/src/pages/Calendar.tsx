@@ -17,6 +17,7 @@ interface Lead {
   id: string; title?: string; name?: string; company?: string;
   stage: string; value?: number; staffId?: string; staffName?: string;
   createdAt: string; updatedAt?: string;
+  nextFollowUp?: string; visitDate?: string; _subtype?: string;
 }
 interface DayData {
   date: string;
