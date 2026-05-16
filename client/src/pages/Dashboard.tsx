@@ -522,7 +522,7 @@ function AdminDashboard() {
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center gap-5 mt-2 justify-end">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/25 text-[10px]">Task Rate %</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/40 text-[10px] font-semibold">Task Rate %</span></div>
               <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/25 text-[10px]">Conversions</span></div>
             </div>
           </div>
