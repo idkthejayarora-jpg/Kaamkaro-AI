@@ -70,7 +70,7 @@ function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false
       onClick={onClick}
     >
       <div
-        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
           alert ? 'bg-red-500/10 border border-red-500/20' :
           accent ? 'bg-gold/15 border border-gold/25' : 'bg-dark-200 border border-dark-50'
         }`}
