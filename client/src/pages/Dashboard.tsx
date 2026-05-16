@@ -279,9 +279,9 @@ function AdminDashboard() {
               className="p-6 text-left hover:bg-white/[0.025] transition-colors group relative overflow-hidden">
               {/* Tiny top accent line */}
               <div className={`absolute top-0 left-0 right-0 h-[2px] ${alert ? 'bg-red-500' : accent ? 'bg-gold' : 'bg-white/10'}`} />
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white/20 font-bold mb-3">{label}</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-3">{label}</p>
               <p className={`text-5xl font-black leading-none transition-colors ${alert ? 'text-red-300' : 'text-white group-hover:text-gold'}`}>{value}</p>
-              <p className={`text-xs mt-2 flex items-center gap-1 ${alert ? 'text-red-400/50' : 'text-white/20'}`}>
+              <p className={`text-xs mt-2 flex items-center gap-1 ${alert ? 'text-red-400/60' : 'text-white/35'}`}>
                 {sub} <ChevronRight size={10} className="opacity-60 group-hover:translate-x-0.5 transition-transform" />
               </p>
             </button>
