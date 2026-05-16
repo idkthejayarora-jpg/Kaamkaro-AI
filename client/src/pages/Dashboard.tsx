@@ -60,13 +60,13 @@ const PIPELINE_COLORS: Record<string, string> = {
   negotiating: '#f97316', closed: '#4ade80', churned: '#f87171',
 };
 
-function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false, onClick }: {
+function StatCard({ label, value, sub, icon: Icon, accent = false, alert = false, onClick, className }: {
   label: string; value: string | number; sub?: string;
-  icon: React.ElementType; accent?: boolean; alert?: boolean; onClick?: () => void;
+  icon: React.ElementType; accent?: boolean; alert?: boolean; onClick?: () => void; className?: string;
 }) {
   return (
     <div
-      className={`stat-card ${alert ? 'border-red-500/30' : ''} ${onClick ? 'cursor-pointer hover:border-gold/30 transition-colors' : ''}`}
+      className={`stat-card group ${alert ? 'border-red-500/30' : ''} ${onClick ? 'cursor-pointer hover:border-gold/30 transition-colors' : ''} ${className ?? ''}`}
       onClick={onClick}
     >
       <div
