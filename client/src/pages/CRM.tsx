@@ -762,7 +762,7 @@ function LeadCard({ lead, today, isAdmin, onAction, isSelectMode, isSelected, on
 
       {/* Quick actions — hidden in select mode */}
       {!isSelectMode && (
-        <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-dark-50 opacity-0 group-hover:opacity-100 transition-opacity md:opacity-0 opacity-100">
+        <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-dark-50 translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-200 md:translate-y-1 md:opacity-0">
           <button
             onClick={handleLogCall}
             title="Log call — clear follow-up"
