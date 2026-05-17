@@ -412,7 +412,7 @@ function AdminDashboard() {
               <p className="text-orange-300 font-bold text-sm">Anti-Fraud Alerts</p>
               {fraudAlerts.some(a => a.severity === 'high') && <span className="text-[10px] font-bold bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{fraudAlerts.filter(a => a.severity === 'high').length} HIGH</span>}
             </div>
-            <button onClick={() => setFraudExpanded(false)} className="text-white/25 hover:text-white transition-colors"><X size={16} /></button>
+            <button onClick={() => setFraudExpanded(false)} className="text-white/40 hover:text-white transition-colors"><X size={16} /></button>
           </div>
           <div className="p-4 space-y-2.5">
             {fraudAlerts.map(alert => {
@@ -699,7 +699,7 @@ function AdminDashboard() {
           <div className="bg-dark-300 border border-dark-100 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
             <div className="flex items-center justify-between mb-5">
               <p className="text-white font-black text-lg">Set Merit Goal</p>
-              <button onClick={() => setGoalModal(false)} className="text-white/25 hover:text-white transition-colors"><X size={18} /></button>
+              <button onClick={() => setGoalModal(false)} className="text-white/40 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Staff Member</label>
@@ -727,7 +727,7 @@ function AdminDashboard() {
           <div className="bg-dark-300 border border-dark-100 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
             <div className="flex items-center justify-between mb-5">
               <p className="text-white font-black text-lg">Award / Deduct Points</p>
-              <button onClick={() => setAwardModal(false)} className="text-white/25 hover:text-white transition-colors"><X size={18} /></button>
+              <button onClick={() => setAwardModal(false)} className="text-white/40 hover:text-white transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Staff Member</label>
@@ -837,7 +837,7 @@ function StaffDashboard() {
                   <div className="w-8 h-8 rounded-xl bg-amber-500/12 border border-amber-500/20 flex items-center justify-center"><MessageSquare size={14} className="text-amber-400" /></div>
                   <div><p className="text-amber-300 font-bold text-sm">Announcement</p>{unreadQueue.length > 1 && <p className="text-white/40 text-[10px]">{bcastModalIdx + 1} of {unreadQueue.length}</p>}</div>
                 </div>
-                <button onClick={dismissBcastModal} className="text-white/25 hover:text-white transition-colors"><X size={16} /></button>
+                <button onClick={dismissBcastModal} className="text-white/40 hover:text-white transition-colors"><X size={16} /></button>
               </div>
               <div className="px-5 py-4"><p className="text-white text-sm leading-relaxed">{b.message}</p><p className="text-white/40 text-[10px] mt-3">{b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</p></div>
               <div className="flex gap-2 px-5 py-4 border-t border-dark-100">
