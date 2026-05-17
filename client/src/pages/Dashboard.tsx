@@ -360,7 +360,7 @@ function AdminDashboard() {
                 <p className="text-red-400/40 text-[10px] mt-2 flex items-center gap-1">Tap to review <ChevronRight size={9} /></p>
               </div>
             ) : (
-              <p className="text-white/15 text-xs mt-1">Everything looks good</p>
+              <p className="text-white/35 text-xs mt-1">Everything looks good</p>
             )}
           </div>
 
