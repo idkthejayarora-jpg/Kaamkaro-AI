@@ -835,7 +835,7 @@ function StaffDashboard() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/12 border border-amber-500/20 flex items-center justify-center"><MessageSquare size={14} className="text-amber-400" /></div>
-                  <div><p className="text-amber-300 font-bold text-sm">Announcement</p>{unreadQueue.length > 1 && <p className="text-white/20 text-[10px]">{bcastModalIdx + 1} of {unreadQueue.length}</p>}</div>
+                  <div><p className="text-amber-300 font-bold text-sm">Announcement</p>{unreadQueue.length > 1 && <p className="text-white/40 text-[10px]">{bcastModalIdx + 1} of {unreadQueue.length}</p>}</div>
                 </div>
                 <button onClick={dismissBcastModal} className="text-white/25 hover:text-white transition-colors"><X size={16} /></button>
               </div>
