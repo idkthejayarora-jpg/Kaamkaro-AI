@@ -601,7 +601,7 @@ function AdminDashboard() {
               const rankBg = ['bg-gold/15 border-gold/30', 'bg-dark-100 border-dark-50', 'bg-dark-100 border-dark-50'];
               return (
                 <div key={s.id} onClick={() => navigate(`/staff/${s.id}`)}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.02] cursor-pointer transition-colors group">
+                  className="flex items-center gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.04] cursor-pointer transition-colors group">
                   {/* Rank */}
                   <div className={`w-7 h-7 rounded-full border flex items-center justify-center flex-shrink-0 ${rankBg[i] || 'bg-dark-100 border-dark-50'}`}>
                     <span className={`text-xs font-black ${rankColors[i] || 'text-white/25'}`}>#{i + 1}</span>
