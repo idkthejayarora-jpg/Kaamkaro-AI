@@ -108,7 +108,8 @@
       "Bash(sed -i '' 's/<span className=\"text-white\\\\/25 text-\\\\[10px\\\\]\">Conversions<\\\\/span>/<span className=\"text-white\\\\/40 text-[10px] font-semibold\">Conversions<\\\\/span>/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')",
       "Bash(sed -i '' 's/<span className=\"text-white\\\\/25 text-\\\\[10px\\\\]\">{l}<\\\\/span>/<span className=\"text-white\\\\/40 text-[10px] font-semibold\">{l}<\\\\/span>/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')",
       "Bash(sed -i '' 's/<span className=\"text-white\\\\/25 text-\\\\[10px\\\\]\">{s\\\\.interactions} interactions<\\\\/span>/<span className=\"text-white\\\\/40 text-[10px]\">{s.interactions} interactions<\\\\/span>/g' '/Users/jaigopalarora/Kaamkaro AI/client/src/pages/Dashboard.tsx')",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(\"/Users/jaigopalarora/pulse/client/node_modules/.bin/tsc\" --noEmit --project \"/Users/jaigopalarora/pulse/client/tsconfig.json\")"
     ]
   }
 }
