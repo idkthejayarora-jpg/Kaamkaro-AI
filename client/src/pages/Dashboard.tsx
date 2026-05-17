@@ -935,7 +935,7 @@ function StaffDashboard() {
               <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Queue</p>
               <p className="text-lg font-black text-white mt-0.5">Today's Tasks</p>
             </div>
-            <button onClick={() => navigate('/tasks')} className="text-white/20 text-xs hover:text-gold transition-colors flex items-center gap-1 font-semibold">
+            <button onClick={() => navigate('/tasks')} className="text-white/40 text-xs hover:text-gold transition-colors flex items-center gap-1 font-semibold">
               All <ChevronRight size={12} />
             </button>
           </div>
