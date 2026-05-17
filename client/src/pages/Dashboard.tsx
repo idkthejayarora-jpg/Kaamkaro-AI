@@ -680,7 +680,7 @@ function AdminDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <p className="text-white text-sm font-bold">{g.staffName.split(' ')[0]}</p>
-                      <span className="text-[10px] text-white/20 capitalize bg-dark-100 px-2 py-0.5 rounded-full">{g.period}</span>
+                      <span className="text-[10px] text-white/40 capitalize bg-dark-100 px-2 py-0.5 rounded-full">{g.period}</span>
                     </div>
                     <p className="text-white/40 text-xs">{current} / {g.targetPoints} pts</p>
                     {g.reward && <p className="text-gold/40 text-[10px] mt-0.5 truncate">🎁 {g.reward}</p>}
