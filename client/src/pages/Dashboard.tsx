@@ -867,7 +867,7 @@ function StaffDashboard() {
                 {streak > 0 && <Flame size={18} className="text-gold animate-glow-breathe" style={{ filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.9))' }} />}
               </div>
             </div>
-            <p className="text-white/20 text-xs mt-2">Best ever: <span className="text-white/35 font-semibold">{longestStreak}d</span></p>
+            <p className="text-white/40 text-xs mt-2">Best ever: <span className="text-white/35 font-semibold">{longestStreak}d</span></p>
           </div>
 
           {/* Circular week-progress ring */}
