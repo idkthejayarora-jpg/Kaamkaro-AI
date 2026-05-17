@@ -839,7 +839,7 @@ function StaffDashboard() {
                 </div>
                 <button onClick={dismissBcastModal} className="text-white/25 hover:text-white transition-colors"><X size={16} /></button>
               </div>
-              <div className="px-5 py-4"><p className="text-white text-sm leading-relaxed">{b.message}</p><p className="text-white/20 text-[10px] mt-3">{b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</p></div>
+              <div className="px-5 py-4"><p className="text-white text-sm leading-relaxed">{b.message}</p><p className="text-white/40 text-[10px] mt-3">{b.sentBy} · {new Date(b.sentAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</p></div>
               <div className="flex gap-2 px-5 py-4 border-t border-dark-100">
                 {hasNext ? (<><button onClick={() => setBcastModalIdx(i => i + 1)} className="flex-1 btn-primary text-sm py-2">Next →</button><button onClick={dismissBcastModal} className="flex-1 text-white/35 hover:text-white text-sm transition-colors">Done</button></>) : (<button onClick={dismissBcastModal} className="w-full btn-primary text-sm py-2">Got it</button>)}
               </div>
