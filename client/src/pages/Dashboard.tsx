@@ -367,7 +367,7 @@ function AdminDashboard() {
           {/* Fraud mini card */}
           {fraudAlerts.length > 0 && (
             <button onClick={() => setFraudExpanded(e => !e)}
-              className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-950/30 to-dark-300 p-5 text-left hover:border-orange-500/35 transition-all animate-fade-in-up stagger-3">
+              className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/8 to-dark-300 p-4 sm:p-5 text-left hover:border-orange-500/35 transition-all animate-fade-in-up stagger-3">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-9 h-9 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
                   <ShieldAlert size={15} className="text-orange-400" />
