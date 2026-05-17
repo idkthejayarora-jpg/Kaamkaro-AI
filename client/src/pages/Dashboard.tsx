@@ -981,7 +981,7 @@ function StaffDashboard() {
                 <div key={c.id} onClick={() => navigate('/customers')}
                   className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors hover:bg-white/[0.02] ${isOverdue ? 'bg-red-500/3' : ''}`}>
                   {/* Index dot */}
-                  <span className="text-white/15 text-[11px] font-black w-4 flex-shrink-0 text-right">{i + 1}</span>
+                  <span className="text-white/35 text-[11px] font-black w-4 flex-shrink-0 text-right">{i + 1}</span>
                   {/* Avatar */}
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isOverdue ? 'bg-red-500/12 border border-red-500/18' : 'bg-dark-200 border border-dark-100'}`}>
                     <span className={`text-xs font-black ${isOverdue ? 'text-red-300' : 'text-white/45'}`}>{c.name[0]}</span>
