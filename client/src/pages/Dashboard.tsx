@@ -340,7 +340,7 @@ function AdminDashboard() {
             onClick={() => navigate('/followup')}
             className={`rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all hover:scale-[1.02] animate-fade-in-up stagger-2 ${
               totalRedAlerts > 0
-                ? 'bg-gradient-to-br from-red-950/50 to-dark-300 border-red-500/25 hover:border-red-500/40'
+                ? 'bg-gradient-to-br from-red-500/8 to-dark-300 border-red-500/25 hover:border-red-500/40'
                 : 'bg-dark-300 border-dark-100 hover:border-dark-50'
             }`}
           >
