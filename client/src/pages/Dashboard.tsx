@@ -397,7 +397,7 @@ function AdminDashboard() {
                 {overdueTasks[0]?.title}
                 {overdueTasks.length > 1 ? ` + ${overdueTasks.length - 1} more` : ''}
               </p>
-              <p className="text-white/15 text-[10px] mt-2 flex items-center gap-1 group-hover:text-gold/40 transition-colors">View tasks <ChevronRight size={9} /></p>
+              <p className="text-white/35 text-[10px] mt-2 flex items-center gap-1 group-hover:text-gold/40 transition-colors">View tasks <ChevronRight size={9} /></p>
             </button>
           )}
         </div>
