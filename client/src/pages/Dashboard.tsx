@@ -651,7 +651,7 @@ function AdminDashboard() {
             <div className="w-12 h-12 rounded-2xl bg-gold/6 border border-gold/12 flex items-center justify-center">
               <Target size={20} className="text-gold/30" />
             </div>
-            <p className="text-white/20 text-sm mt-1">No goals set yet</p>
+            <p className="text-white/40 text-sm mt-1">No goals set yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-dark-100/40">
