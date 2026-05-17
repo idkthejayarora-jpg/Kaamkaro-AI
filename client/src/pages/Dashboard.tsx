@@ -861,7 +861,7 @@ function StaffDashboard() {
           <div className="flex-1">
             <p className="text-white/40 text-[10px] uppercase tracking-[0.22em] font-bold mb-2">Current Streak</p>
             <div className="flex items-end gap-3">
-              <span className="text-7xl font-black text-white leading-none">{streak}</span>
+              <span className="text-5xl sm:text-7xl font-black text-white leading-none">{streak}</span>
               <div className="mb-2 flex flex-col gap-0.5">
                 <span className="text-gold text-xl font-black leading-none">days</span>
                 {streak > 0 && <Flame size={18} className="text-gold animate-glow-breathe" style={{ filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.9))' }} />}
