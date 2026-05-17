@@ -584,12 +584,12 @@ function AdminDashboard() {
       {/* ── TEAM PERFORMANCE TABLE ────────────────────────────────────────── */}
       {staffPerfData.length > 0 && (
         <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-dark-100/60">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-dark-100/60">
             <div>
               <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Rankings</p>
               <p className="text-xl font-black text-white mt-0.5">Team Performance</p>
             </div>
-            <button onClick={() => navigate('/staff')} className="text-gold/50 text-xs hover:text-gold flex items-center gap-1 transition-colors font-semibold">
+            <button onClick={() => navigate('/staff')} className="text-white/40 text-xs hover:text-gold flex items-center gap-1 transition-colors font-semibold">
               Manage <ChevronRight size={12} />
             </button>
           </div>
