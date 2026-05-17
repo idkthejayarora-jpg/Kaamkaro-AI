@@ -385,7 +385,7 @@ function AdminDashboard() {
           {/* Overdue tasks mini */}
           {overdueTasks.length > 0 && (
             <button onClick={() => navigate('/tasks')}
-              className="rounded-2xl border border-dark-100 bg-dark-300 p-5 text-left hover:border-gold/20 transition-all animate-fade-in-up stagger-4 group">
+              className="rounded-2xl border border-dark-100 bg-dark-300 p-4 sm:p-5 text-left hover:border-gold/20 transition-all animate-fade-in-up stagger-4 group">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-9 h-9 rounded-2xl bg-dark-200 border border-dark-100 flex items-center justify-center">
                   <Clock size={15} className="text-amber-400" />
