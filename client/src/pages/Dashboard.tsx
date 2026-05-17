@@ -625,7 +625,7 @@ function AdminDashboard() {
                     <p className={`text-lg font-black leading-none ${(ms?.total ?? 0) >= 0 ? 'text-gold' : 'text-red-400'}`}>
                       {(ms?.total ?? 0) >= 0 ? '+' : ''}{ms?.total ?? 0}
                     </p>
-                    <p className="text-white/20 text-[10px] mt-0.5">pts</p>
+                    <p className="text-white/40 text-[10px] mt-0.5">pts</p>
                   </div>
                 </div>
               );
