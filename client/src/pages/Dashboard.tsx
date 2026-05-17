@@ -665,7 +665,7 @@ function AdminDashboard() {
                   {/* Circular ring */}
                   <div className="relative w-14 h-14 flex-shrink-0">
                     <svg viewBox="0 0 36 36" className="w-14 h-14 -rotate-90">
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#1e1e1e" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="14" fill="none" stroke={isLight ? '#e5e5ea' : '#1e1e1e'} strokeWidth="3" />
                       <circle cx="18" cy="18" r="14" fill="none"
                         stroke={done ? '#4ade80' : GOLD}
                         strokeWidth="3" strokeLinecap="round"
