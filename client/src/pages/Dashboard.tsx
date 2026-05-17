@@ -856,7 +856,7 @@ function StaffDashboard() {
         {/* Decorative bg orb */}
         <div className="absolute -right-16 -top-16 w-52 h-52 rounded-full bg-gold/4 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 p-6 flex items-center gap-6">
+        <div className="relative z-10 p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
           {/* Big streak number */}
           <div className="flex-1">
             <p className="text-white/40 text-[10px] uppercase tracking-[0.22em] font-bold mb-2">Current Streak</p>
