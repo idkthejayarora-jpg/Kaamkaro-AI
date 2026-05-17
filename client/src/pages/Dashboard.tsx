@@ -917,10 +917,10 @@ function StaffDashboard() {
             { label: 'Overdue',   value: overdueTasks.length, color: overdueTasks.length > 0 ? 'text-red-300' : 'text-white', alert: overdueTasks.length > 0 },
             { label: 'Response',  value: `${latestPerf?.responseRate || 0}%`, color: 'text-white', alert: false },
           ].map(({ label, value, color, alert }) => (
-            <div key={label} className={`p-5 text-center relative ${alert ? 'bg-red-500/5' : ''}`}>
+            <div key={label} className={`p-3 sm:p-5 text-center relative ${alert ? 'bg-red-500/5' : ''}`}>
               {alert && <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500" />}
-              <p className={`text-3xl font-black leading-none ${color}`}>{value}</p>
-              <p className="text-white/40 text-[10px] mt-2 uppercase tracking-widest font-bold">{label}</p>
+              <p className={`text-2xl sm:text-3xl font-black leading-none ${color}`}>{value}</p>
+              <p className="text-white/40 text-[9px] sm:text-[10px] mt-1.5 sm:mt-2 uppercase tracking-widest font-bold">{label}</p>
             </div>
           ))}
         </div>
