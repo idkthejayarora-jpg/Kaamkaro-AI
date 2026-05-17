@@ -393,7 +393,7 @@ function AdminDashboard() {
                 <span className="text-4xl font-black text-amber-300 leading-none">{overdueTasks.length}</span>
               </div>
               <p className="text-sm font-bold text-white">Overdue Tasks</p>
-              <p className="text-white/20 text-[10px] mt-1.5 truncate">
+              <p className="text-white/40 text-[10px] mt-1.5 truncate">
                 {overdueTasks[0]?.title}
                 {overdueTasks.length > 1 ? ` + ${overdueTasks.length - 1} more` : ''}
               </p>
