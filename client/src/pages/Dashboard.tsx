@@ -970,7 +970,7 @@ function StaffDashboard() {
         {sortedCustomers.length === 0 ? (
           <div className="flex flex-col items-center py-10 gap-2">
             <Users size={28} className="text-white/10" />
-            <p className="text-white/20 text-sm">No customers assigned yet</p>
+            <p className="text-white/40 text-sm">No customers assigned yet</p>
           </div>
         ) : (
           <div className="divide-y divide-dark-100/40">
