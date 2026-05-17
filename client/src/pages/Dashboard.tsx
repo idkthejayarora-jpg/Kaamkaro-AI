@@ -979,7 +979,7 @@ function StaffDashboard() {
               const isOverdue = days !== null && days > 7;
               return (
                 <div key={c.id} onClick={() => navigate('/customers')}
-                  className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors hover:bg-white/[0.02] ${isOverdue ? 'bg-red-500/3' : ''}`}>
+                  className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors hover:bg-white/[0.04] ${isOverdue ? 'bg-red-500/3' : ''}`}>
                   {/* Index dot */}
                   <span className="text-white/35 text-[11px] font-black w-4 flex-shrink-0 text-right">{i + 1}</span>
                   {/* Avatar */}
