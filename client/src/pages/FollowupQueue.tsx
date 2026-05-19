@@ -908,6 +908,7 @@ function QuickLogModal({ customer, onClose, onLogged }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
