@@ -141,6 +141,7 @@ function AddGoalModal({ staff, onClose, onCreated }: {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
 
