@@ -133,6 +133,7 @@ function WinCelebration({ active, onDone }: { active: boolean; onDone: () => voi
         <p className="text-white/50 text-sm mt-2">+50 merit points awarded</p>
       </div>
     </div>
+    </Portal>
   );
 }
 
