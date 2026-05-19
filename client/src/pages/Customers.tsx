@@ -291,6 +291,7 @@ function LogInteractionModal({ customer, onClose, onLogged }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
