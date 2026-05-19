@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSSE } from '../hooks/useSSE';
 import type { Customer, CustomerNote, Staff, Interaction, PipelineStatus, Template, SentimentPoint, TagDef } from '../types';
 import TagPicker from '../components/TagPicker';
+import Portal from '../components/Portal';
 
 // ── Pipeline config ────────────────────────────────────────────────────────────
 const STAGES: { key: PipelineStatus; label: string; color: string; bg: string }[] = [
