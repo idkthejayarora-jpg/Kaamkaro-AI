@@ -567,6 +567,7 @@ function ShelfItemModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
