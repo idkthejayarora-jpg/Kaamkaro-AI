@@ -98,8 +98,9 @@ function TemplatePicker({ lead, onClose, onSent }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in">
-      <div className="bg-dark-300 border border-dark-50 rounded-2xl w-full max-w-lg shadow-2xl max-h-[88vh] flex flex-col animate-slide-up">
+    <Portal>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in">
+      <div className="bg-dark-300 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl max-h-[88vh] flex flex-col animate-slide-up sm:animate-scale-in">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50 flex-shrink-0">
