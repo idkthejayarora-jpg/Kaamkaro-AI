@@ -470,6 +470,7 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
