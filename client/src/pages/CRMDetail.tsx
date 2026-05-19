@@ -8,6 +8,7 @@ import {
   CalendarX, RefreshCw, UserCheck, ChevronRight,
 } from 'lucide-react';
 import { leadsAPI, templatesAPI } from '../lib/api';
+import Portal from '../components/Portal';
 import type { Lead, LeadNote, LeadStage, Template } from '../types';
 
 const SERVER = window.location.origin;
