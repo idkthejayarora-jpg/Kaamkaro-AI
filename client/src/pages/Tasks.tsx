@@ -308,7 +308,8 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
