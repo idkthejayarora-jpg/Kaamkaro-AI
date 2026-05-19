@@ -156,6 +156,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
