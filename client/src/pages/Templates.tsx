@@ -124,6 +124,7 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
