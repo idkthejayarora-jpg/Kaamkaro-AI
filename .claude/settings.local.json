@@ -118,7 +118,12 @@
       "Bash(ssh-keyscan github.com >> ~/.ssh/known_hosts 2>&1 && ssh -T git@github.com 2>&1)",
       "Bash(git remote *)",
       "Bash(git commit *)",
-      "Bash(git -C \"/Users/jaigopalarora/Kaamkaro AI\" diff client/src/pages/Tasks.tsx)"
+      "Bash(git -C \"/Users/jaigopalarora/Kaamkaro AI\" diff client/src/pages/Tasks.tsx)",
+      "Bash(\"/Users/jaigopalarora/Kaamkaro AI/client/node_modules/.bin/tsc\" --noEmit --project client/tsconfig.json)",
+      "Bash(git -C \"/Users/jaigopalarora/Kaamkaro AI\" diff --name-only HEAD)",
+      "Bash(git -C \"/Users/jaigopalarora/Kaamkaro AI\" status --short client/src/pages/Tasks.tsx)",
+      "Bash(git -C \"/Users/jaigopalarora/Kaamkaro AI\" show HEAD:client/src/pages/Tasks.tsx)",
+      "Bash(awk -F: '{print $1}')"
     ]
   }
 }
