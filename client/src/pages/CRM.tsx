@@ -125,6 +125,7 @@ function WinCelebration({ active, onDone }: { active: boolean; onDone: () => voi
   }, [active, onDone]);
   if (!active) return null;
   return (
+    <Portal>
     <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/30">
       <div className="text-center bg-dark-300 border border-gold/40 rounded-2xl px-12 py-10 shadow-2xl animate-slide-up">
         <Trophy size={56} className="text-gold mx-auto mb-3 animate-pulse drop-shadow-[0_0_24px_rgba(212,175,55,0.9)]" />
