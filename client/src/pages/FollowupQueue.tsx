@@ -14,6 +14,7 @@ import {
   ExternalLink, CheckCircle2, Calendar,
 } from 'lucide-react';
 import { insightsAPI, interactionsAPI, diaryAPI } from '../lib/api';
+import Portal from '../components/Portal';
 import { useAuth } from '../contexts/AuthContext';
 import type { Interaction, CustomerInsight, StaffBehavior, InsightsTrends, DiaryEntry } from '../types';
 
