@@ -241,6 +241,7 @@ function HoldingModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
