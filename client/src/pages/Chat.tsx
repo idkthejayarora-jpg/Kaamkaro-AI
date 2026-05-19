@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { chatAPI, staffAPI, tasksAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import Portal from '../components/Portal';
 import { useSSE } from '../hooks/useSSE';
 import type { ChatConversation, ChatMessage, Staff, Task } from '../types';
 
