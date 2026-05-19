@@ -125,6 +125,7 @@ function CustomerDetailPanel({ item, onClose, onLog, onNavigate }: {
   }, [item.customerId, item.customerName]);
 
   return (
+    <Portal>
     <>
       {/* Backdrop */}
       <div
