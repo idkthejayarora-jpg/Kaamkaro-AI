@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Plus, X, Trash2, Copy, FileText, Paperclip, Image, File, CheckCheck, ExternalLink, Lock, Globe } from 'lucide-react';
 import { templatesAPI } from '../lib/api';
+import Portal from '../components/Portal';
 import { useAuth } from '../contexts/AuthContext';
 import type { Template, TemplateAttachment, PipelineStatus } from '../types';
 
