@@ -837,7 +837,7 @@ function StaffDashboard() {
         return (
           <Portal>
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-dark-300 border border-amber-500/30 rounded-3xl shadow-2xl w-full max-w-sm animate-bounce-in">
+            <div className="bg-dark-300 border border-amber-500/30 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm animate-slide-up sm:animate-bounce-in">
               <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/12 border border-amber-500/20 flex items-center justify-center"><MessageSquare size={14} className="text-amber-400" /></div>
