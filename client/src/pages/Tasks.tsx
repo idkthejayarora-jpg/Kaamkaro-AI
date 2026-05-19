@@ -438,7 +438,8 @@ function EditTaskModal({ task, onClose, onSaved }: {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
