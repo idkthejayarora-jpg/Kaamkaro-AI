@@ -3,6 +3,7 @@ import { Target, Plus, X, Trash2, TrendingUp, Phone, CheckCircle, BarChart3 } fr
 import { goalsAPI, staffAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Goal, Staff, GoalMetric } from '../types';
+import Portal from '../components/Portal';
 
 const METRIC_CONFIG: Record<GoalMetric, { label: string; unit: string; icon: React.ElementType; color: string }> = {
   calls:           { label: 'Total Calls',        unit: 'calls',       icon: Phone,         color: 'text-blue-400' },
