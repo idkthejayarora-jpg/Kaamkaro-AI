@@ -179,7 +179,8 @@ function VoiceTaskPanel({ onClose, onTasksChanged }: {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
