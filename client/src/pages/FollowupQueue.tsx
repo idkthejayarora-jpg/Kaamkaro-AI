@@ -326,6 +326,7 @@ function CustomerDetailPanel({ item, onClose, onLog, onNavigate }: {
         </div>
       </div>
     </>
+    </Portal>
   );
 }
 
