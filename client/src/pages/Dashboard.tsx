@@ -851,6 +851,7 @@ function StaffDashboard() {
               </div>
             </div>
           </div>
+          </Portal>
         );
       })()}
 
