@@ -696,8 +696,9 @@ function AdminDashboard() {
 
       {/* ── MODALS ────────────────────────────────────────────────────────── */}
       {goalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="bg-dark-300 border border-dark-100 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up">
+        <Portal>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-dark-300 border border-dark-100 rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-slide-up sm:animate-fade-in-up">
             <div className="flex items-center justify-between mb-5">
               <p className="text-white font-black text-lg">Set Merit Goal</p>
               <button onClick={() => setGoalModal(false)} className="text-white/40 hover:text-white transition-colors"><X size={18} /></button>
