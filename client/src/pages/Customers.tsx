@@ -773,6 +773,7 @@ function CSVImportModal({ staff, onClose, onImported }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
