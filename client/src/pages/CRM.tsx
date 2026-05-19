@@ -140,9 +140,11 @@ function WinCelebration({ active, onDone }: { active: boolean; onDone: () => voi
 function Toast({ msg }: { msg: string }) {
   if (!msg) return null;
   return (
+    <Portal>
     <div className="fixed bottom-6 right-6 z-40 bg-dark-200 border border-gold/20 text-white/80 text-sm px-4 py-2.5 rounded-xl shadow-lg animate-slide-up">
       {msg}
     </div>
+    </Portal>
   );
 }
 
