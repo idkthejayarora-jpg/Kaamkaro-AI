@@ -10,6 +10,7 @@ import {
 import { leadsAPI, staffAPI, teamsAPI, meritsAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { Lead, LeadStage, Staff } from '../types';
+import Portal from '../components/Portal';
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
 
