@@ -155,6 +155,7 @@ function ResetPasswordModal({ staff, onClose }: { staff: Staff; onClose: () => v
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
