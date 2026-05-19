@@ -8,6 +8,7 @@ import {
   TextSearch, Trash2, ExternalLink,
 } from 'lucide-react';
 import { fraudAPI } from '../lib/api';
+import Portal from '../components/Portal';
 import { useNavigate } from 'react-router-dom';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
