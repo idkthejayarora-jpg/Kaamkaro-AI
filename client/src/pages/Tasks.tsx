@@ -442,8 +442,8 @@ function EditTaskModal({ task, onClose, onSaved }: {
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
+    </Portal>
   );
 }
 
