@@ -8,6 +8,7 @@ import { holdingStockAPI, customersAPI, shelfInventoryAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { HoldingStock, HoldingItem, Customer, ShelfItem } from '../types';
 import type { Staff } from '../types';
+import Portal from '../components/Portal';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const UNITS = ['pc', 'set', 'pair', 'box', 'packet', 'kg', 'meter', 'yard'];
