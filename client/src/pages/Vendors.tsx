@@ -54,6 +54,7 @@ function AddVendorModal({ onClose, onCreated }: { onClose: () => void; onCreated
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
