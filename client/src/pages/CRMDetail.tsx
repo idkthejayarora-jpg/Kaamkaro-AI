@@ -326,6 +326,7 @@ function TemplatePicker({ lead, onClose, onSent }: {
         )}
       </div>
     </div>
+    </Portal>
   );
 }
 
