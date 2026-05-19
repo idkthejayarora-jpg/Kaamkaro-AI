@@ -300,7 +300,7 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
           {/* Hidden submit so Enter key works naturally */}
           <button type="submit" className="sr-only" aria-hidden>Submit</button>
         </form>
-        <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
+        <div className="px-6 pb-8 sm:pb-6 flex gap-3 flex-shrink-0">
           <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
           <button type="button" onClick={doSubmit} disabled={loading || outsideHours} className="btn-primary flex-1">
             {loading ? 'Adding...' : 'Add Task'}
