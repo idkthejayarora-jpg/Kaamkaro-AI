@@ -87,6 +87,7 @@ function AddStaffModal({ customers, onClose, onCreated }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
