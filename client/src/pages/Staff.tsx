@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Search, ChevronRight, Users, Phone, Calendar, Trash2, X, Eye, EyeOff, KeyRound, Flame, Wifi, PhoneCall, Home } from 'lucide-react';
 import { staffAPI, customersAPI } from '../lib/api';
 import type { Staff, Customer } from '../types';
+import Portal from '../components/Portal';
 
 const AVAILABILITY_CONFIG = {
   available:    { label: 'Available',     color: 'text-green-400',  bg: 'bg-green-500/10',  dot: 'bg-green-400',  icon: Wifi },
