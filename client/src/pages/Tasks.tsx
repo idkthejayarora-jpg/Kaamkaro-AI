@@ -311,8 +311,8 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
+    </Portal>
   );
 }
 
