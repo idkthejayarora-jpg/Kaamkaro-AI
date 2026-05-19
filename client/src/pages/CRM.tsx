@@ -637,6 +637,7 @@ function BulkImportModal({ staffList, onClose, onImported }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
