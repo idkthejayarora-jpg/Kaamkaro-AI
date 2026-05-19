@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, Building2, Phone, Mail, X, Trash2, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { vendorsAPI } from '../lib/api';
+import Portal from '../components/Portal';
 import { useAuth } from '../contexts/AuthContext';
 import type { Vendor, VendorInteraction } from '../types';
 
