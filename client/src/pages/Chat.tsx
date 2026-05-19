@@ -106,6 +106,7 @@ function NewConvModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
