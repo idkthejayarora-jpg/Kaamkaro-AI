@@ -835,7 +835,8 @@ function StaffDashboard() {
         const b = unreadQueue[bcastModalIdx]; if (!b) return null;
         const hasNext = bcastModalIdx < unreadQueue.length - 1;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <Portal>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm">
             <div className="bg-dark-300 border border-amber-500/30 rounded-3xl shadow-2xl w-full max-w-sm animate-bounce-in">
               <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100">
                 <div className="flex items-center gap-2.5">
