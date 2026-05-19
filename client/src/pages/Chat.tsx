@@ -299,6 +299,7 @@ function TransferTaskModal({ conv, staff, myId, onClose, onTransferred }: {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
