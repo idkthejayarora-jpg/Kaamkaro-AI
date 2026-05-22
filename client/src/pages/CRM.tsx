@@ -1076,7 +1076,7 @@ export default function CRM() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {/* View toggle */}
           <div className="flex bg-dark-400 border border-dark-50 rounded-lg p-0.5">
             <button
@@ -1092,11 +1092,11 @@ export default function CRM() {
           {view === 'list' && (
             <button
               onClick={() => { setSelectMode(s => !s); setSelectedIds(new Set()); }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium border transition-colors ${
                 selectMode ? 'bg-gold/15 border-gold/40 text-gold' : 'border-dark-50 text-white/40 hover:text-white'
               }`}
             >
-              <CheckCircle2 size={13} /> {selectMode ? 'Done' : 'Select'}
+              <CheckCircle2 size={13} /> <span className="hidden sm:inline">{selectMode ? 'Done' : 'Select'}</span>
             </button>
           )}
           {/* Import */}
@@ -1104,13 +1104,13 @@ export default function CRM() {
             onClick={() => setShowImport(true)}
             className="btn-ghost flex items-center gap-1.5 text-sm"
           >
-            <Upload size={14} /> Import
+            <Upload size={14} /> <span className="hidden sm:inline">Import</span>
           </button>
           <button
             onClick={() => navigate('/crm/new')}
             className="btn-primary flex items-center gap-2 flex-shrink-0"
           >
-            <Plus size={16} /> New Lead
+            <Plus size={16} /> <span className="hidden sm:inline">New Lead</span><span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
