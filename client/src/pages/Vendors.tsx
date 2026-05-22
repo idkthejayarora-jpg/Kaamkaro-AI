@@ -166,7 +166,7 @@ export default function Vendors() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Vendors</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Vendors</h1>
           <p className="text-white/40 text-sm mt-1">{vendors.length} vendors · {vendors.filter(v => v.status === 'active').length} active</p>
         </div>
         <button onClick={() => setShowAdd(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
