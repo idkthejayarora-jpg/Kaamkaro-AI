@@ -984,7 +984,7 @@ export default function Customers() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Customers</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Customers</h1>
           <p className="text-white/30 text-sm mt-0.5">
             {isAdmin && staffFilter !== 'all'
               ? `Showing ${filtered.length} of ${customers.length}`
