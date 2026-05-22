@@ -210,15 +210,15 @@ export default function StaffProfile() {
         <h3 className="text-white font-semibold mb-4">Weekly Streak History</h3>
         <div className="space-y-2">
           {performance.slice(-6).reverse().map(p => (
-            <div key={p.id} className="flex items-center justify-between py-2 border-b border-dark-50/50 last:border-0">
-              <span className="text-white/40 text-xs font-mono">{p.week}</span>
-              <div className="flex items-center gap-3">
+            <div key={p.id} className="flex items-center justify-between gap-2 py-2 border-b border-dark-50/50 last:border-0">
+              <span className="text-white/40 text-xs font-mono flex-shrink-0">{p.week}</span>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 <div className="flex gap-0.5">
                   {Array.from({ length: 7 }).map((_, i) => (
-                    <div key={i} className={`w-4 h-4 rounded-sm ${i < p.streak ? 'bg-gold' : 'bg-dark-200'}`} />
+                    <div key={i} className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm ${i < p.streak ? 'bg-gold' : 'bg-dark-200'}`} />
                   ))}
                 </div>
-                <span className="text-white/30 text-xs w-20 text-right">{p.customersContacted} contacts</span>
+                <span className="text-white/30 text-xs text-right">{p.customersContacted} contacts</span>
               </div>
             </div>
           ))}
