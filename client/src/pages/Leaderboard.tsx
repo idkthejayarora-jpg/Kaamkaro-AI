@@ -98,8 +98,8 @@ export default function Leaderboard() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Trophy size={24} className="text-gold" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+            <Trophy size={22} className="text-gold" />
             Leaderboard
             {data.scopedTeamName && (
               <span className="badge badge-gold text-xs ml-1">{data.scopedTeamName}</span>
