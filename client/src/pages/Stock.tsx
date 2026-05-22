@@ -894,8 +894,8 @@ export default function Stock() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Package size={24} className="text-gold" /> Dispatch Tracker
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+            <Package size={22} className="text-gold" /> Dispatch Tracker
           </h1>
           <p className="text-white/30 text-sm mt-1">
             Stock set aside for customers — dispatch when order goes out
@@ -905,12 +905,12 @@ export default function Stock() {
           onClick={() => { setEditing(null); setShowModal(true); }}
           className="btn-primary flex items-center gap-2 flex-shrink-0"
         >
-          <Plus size={14} /> Set Aside
+          <Plus size={14} /> <span className="hidden sm:inline">Set Aside</span><span className="sm:hidden">Add</span>
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="card py-3 px-4">
           <p className="text-white/30 text-xs mb-1">Pending</p>
           <p className="text-white font-bold text-xl">{pending.length}</p>
