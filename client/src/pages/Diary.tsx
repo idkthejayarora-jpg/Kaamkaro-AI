@@ -549,7 +549,7 @@ export default function Diary() {
 
         {/* Admin-only filters */}
         {isAdmin && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             <Filter size={13} className="text-white/30 flex-shrink-0" />
             {/* Staff filter */}
             <div className="relative">
