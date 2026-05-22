@@ -966,8 +966,8 @@ export default function FollowupQueue() {
     <div className="space-y-6 animate-fade-in">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <Brain size={24} className="text-gold" />
+        <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+          <Brain size={22} className="text-gold" />
           Follow-up Queue & Insights
         </h1>
         <p className="text-white/30 text-sm mt-1">
