@@ -541,7 +541,7 @@ export default function Diary() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white">Diary</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Diary</h1>
           <p className="text-white/30 text-sm mt-1">
             Hindi, English, ya Hinglish — kuch bhi likho ya bolo. Kamal AI customers automatically detect aur add karega.
           </p>
