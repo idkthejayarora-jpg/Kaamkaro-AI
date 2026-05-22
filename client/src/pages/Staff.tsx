@@ -193,7 +193,7 @@ export default function StaffPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Staff</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Staff</h1>
           <p className="text-white/30 text-sm mt-1">{staff.length} team members</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
