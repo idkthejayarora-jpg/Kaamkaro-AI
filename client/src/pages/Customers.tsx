@@ -1067,7 +1067,7 @@ export default function Customers() {
 
       {/* Search + Tag + Staff filter */}
       <div className="space-y-2">
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[160px]">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
             <input type="text" placeholder="Search by name, phone, or email…" value={search}
