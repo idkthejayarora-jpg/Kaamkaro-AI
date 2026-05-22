@@ -1140,8 +1140,8 @@ export default function CRM() {
 
       {/* Search + Sort bar */}
       {view === 'list' && (
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[160px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
             <input
               className="input pl-9 pr-8"
@@ -1160,7 +1160,7 @@ export default function CRM() {
             )}
           </div>
           <select
-            className="input w-36 text-sm"
+            className="input w-32 sm:w-36 text-sm"
             value={sortBy}
             onChange={e => { setSortBy(e.target.value); resetPage(); }}
           >
