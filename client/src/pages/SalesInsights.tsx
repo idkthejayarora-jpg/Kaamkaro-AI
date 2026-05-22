@@ -187,7 +187,7 @@ export default function SalesInsights() {
 
           {/* ── Conversion stats strip (admin) ──────────────────────────────── */}
           {isAdmin && s && (s.activeLeads ?? 0) > 0 && (
-            <div className="card bg-gold/5 border-gold/15 flex flex-wrap gap-5 py-3 px-4">
+            <div className="card bg-gold/5 border-gold/15 grid grid-cols-3 gap-3 py-3 px-4 text-center">
               <div className="text-center">
                 <p className="text-gold text-lg font-bold">{s.activeLeads}</p>
                 <p className="text-white/40 text-[10px]">Active leads</p>
