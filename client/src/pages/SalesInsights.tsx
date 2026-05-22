@@ -169,7 +169,7 @@ export default function SalesInsights() {
         <>
           {/* ── KPI bar ─────────────────────────────────────────────────────── */}
           {s && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {[
                 { label: 'Diary entries',   value: s.totalEntries,          sub: 'scanned'              },
                 { label: 'Leads analysed',  value: s.uniqueLeadsScanned,    sub: 'with notes'           },
