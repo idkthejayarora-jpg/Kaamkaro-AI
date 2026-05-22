@@ -426,7 +426,7 @@ export default function AntiFraud() {
             { label: 'Staff flagged',    value: staffGroups.length,  color: staffGroups.length > 0 ? 'text-amber-400' : 'text-white/30', sub: 'members' },
           ].map(({ label, value, color, sub }) => (
             <div key={label} className="card py-3 px-4 text-center">
-              <p className={`text-3xl font-black ${color}`}>{value}</p>
+              <p className={`text-2xl sm:text-3xl font-black ${color}`}>{value}</p>
               <p className="text-white/50 text-xs font-medium mt-0.5">{label}</p>
               <p className="text-white/20 text-[9px] mt-0.5">{sub}</p>
             </div>
