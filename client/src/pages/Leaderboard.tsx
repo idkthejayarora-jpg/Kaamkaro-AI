@@ -388,7 +388,7 @@ export default function Leaderboard() {
       {/* Score legend */}
       <div className="card border-dark-50/50">
         <p className="text-white/30 text-xs font-medium uppercase tracking-wider mb-3">How weekly ranking works</p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
           {[
             { label: 'This week\'s pts', weight: '#1 rank key', icon: Award },
             { label: 'Response rate',   weight: '35%',          icon: Target },
