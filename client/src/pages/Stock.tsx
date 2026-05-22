@@ -931,7 +931,7 @@ export default function Stock() {
       </div>
 
       {/* Tabs + search */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         <div className="flex rounded-xl overflow-hidden border border-dark-50">
           <button
             onClick={() => setTab('pending')}
