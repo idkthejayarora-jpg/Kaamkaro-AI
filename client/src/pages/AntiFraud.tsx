@@ -418,7 +418,7 @@ export default function AntiFraud() {
 
       {/* KPI strip */}
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {[
             { label: 'Total alerts',     value: alerts.length,       color: 'text-white',                                  sub: 'across all staff' },
             { label: 'High severity',    value: highCount,           color: highCount > 0 ? 'text-red-400' : 'text-white/30', sub: 'need action now' },
