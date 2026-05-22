@@ -136,8 +136,8 @@ export default function SalesInsights() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Sparkles size={22} className="text-gold" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+            <Sparkles size={20} className="text-gold" />
             Sales Insights
           </h1>
           <p className="text-white/30 text-sm mt-1">
