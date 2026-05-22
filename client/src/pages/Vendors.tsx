@@ -175,8 +175,8 @@ export default function Vendors() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[160px]">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
           <input type="text" placeholder="Search vendors..." value={search} onChange={e => setSearch(e.target.value)} className="input pl-10" />
         </div>
