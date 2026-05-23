@@ -470,12 +470,8 @@ export default function CustomerProfile() {
         </div>
       )}
 
-      {/* Analytics */}
-      <AnalyticsSection
-        interactions={interactions}
-        holdings={holdings}
-        diaryMentions={diaryMentions}
-      />
+      {/* CRM Analytics */}
+      <CrmAnalyticsSection leads={leads} />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-dark-300 p-1 rounded-xl border border-dark-50">
