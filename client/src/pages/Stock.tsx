@@ -384,53 +384,58 @@ function HoldingCard({
 
           {holding.items.map(item => (
             canEdit ? (
-              /* Editable row — inline qty +/- */
+              /* Editable row — stacked on mobile for full name visibility */
               <div
                 key={item.id}
-                className="grid grid-cols-[1fr_100px_60px_80px] gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors items-center"
+                className="px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors"
               >
-                <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
-                <div className="flex items-center justify-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onQtyChange(item.id, -1)}
-                    disabled={item.qty <= 1}
-                    className="w-6 h-6 rounded-md bg-dark-200 hover:bg-red-500/20 text-white/40 hover:text-red-400 flex items-center justify-center transition-colors disabled:opacity-25 disabled:cursor-not-allowed flex-shrink-0"
-                    title="Deduct 1"
-                  >
-                    <Minus size={10} />
-                  </button>
-                  <span className="text-white font-semibold text-sm w-8 text-center tabular-nums">{item.qty}</span>
-                  <button
-                    type="button"
-                    onClick={() => onQtyChange(item.id, +1)}
-                    className="w-6 h-6 rounded-md bg-dark-200 hover:bg-emerald-500/20 text-white/40 hover:text-emerald-400 flex items-center justify-center transition-colors flex-shrink-0"
-                    title="Add 1"
-                  >
-                    <Plus size={10} />
-                  </button>
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <span className="text-white/85 text-sm font-medium leading-snug">{item.itemName}</span>
+                  <span className="text-sm font-medium flex-shrink-0">
+                    {item.amount > 0
+                      ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
+                      : <span className="text-white/20">—</span>}
+                  </span>
                 </div>
-                <span className="text-white/30 text-xs text-center">{item.unit}</span>
-                <span className="text-right text-sm font-medium">
-                  {item.amount > 0
-                    ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
-                    : <span className="text-white/20">—</span>}
-                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onQtyChange(item.id, -1)}
+                      disabled={item.qty <= 1}
+                      className="w-6 h-6 rounded-md bg-dark-200 hover:bg-red-500/20 text-white/40 hover:text-red-400 flex items-center justify-center transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+                      title="Deduct 1"
+                    >
+                      <Minus size={10} />
+                    </button>
+                    <span className="text-white font-semibold text-sm w-8 text-center tabular-nums">{item.qty}</span>
+                    <button
+                      type="button"
+                      onClick={() => onQtyChange(item.id, +1)}
+                      className="w-6 h-6 rounded-md bg-dark-200 hover:bg-emerald-500/20 text-white/40 hover:text-emerald-400 flex items-center justify-center transition-colors"
+                      title="Add 1"
+                    >
+                      <Plus size={10} />
+                    </button>
+                  </div>
+                  <span className="text-white/30 text-xs">{item.unit}</span>
+                </div>
               </div>
             ) : (
-              /* Read-only row (staff viewing dispatched entry) */
+              /* Read-only row */
               <div
                 key={item.id}
-                className="grid grid-cols-[1fr_60px_60px_80px] gap-2 px-3 py-1.5 rounded-lg"
+                className="px-3 py-2.5 rounded-lg"
               >
-                <span className="text-white/80 text-sm font-medium truncate">{item.itemName}</span>
-                <span className="text-white/50 text-sm text-center">{item.qty}</span>
-                <span className="text-white/30 text-xs text-center self-center">{item.unit}</span>
-                <span className="text-right text-sm font-medium">
-                  {item.amount > 0
-                    ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
-                    : <span className="text-white/20">—</span>}
-                </span>
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <span className="text-white/80 text-sm font-medium leading-snug">{item.itemName}</span>
+                  <span className="text-sm font-medium flex-shrink-0">
+                    {item.amount > 0
+                      ? <span className="text-gold/80">{fmtRupees(item.amount)}</span>
+                      : <span className="text-white/20">—</span>}
+                  </span>
+                </div>
+                <span className="text-white/35 text-xs">{item.qty} {item.unit}</span>
               </div>
             )
           ))}
