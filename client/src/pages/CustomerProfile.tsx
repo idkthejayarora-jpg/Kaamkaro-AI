@@ -213,9 +213,9 @@ function CrmAnalyticsSection({ leads }: { leads: Lead[] }) {
       </div>
 
       {/* Tags */}
-      {lead.tags.length > 0 && (
+      {(lead.tags ?? []).length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {lead.tags.map(tag => (
+          {(lead.tags ?? []).map(tag => (
             <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-white/8 text-white/50 border border-white/10">
               {tag}
             </span>
