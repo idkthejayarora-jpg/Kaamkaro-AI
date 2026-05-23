@@ -226,6 +226,209 @@ function CrmAnalyticsSection({ leads }: { leads: Lead[] }) {
   );
 }
 
+// ── Interaction Analytics ─────────────────────────────────────────────────────
+const TYPE_COLOR: Record<string, string> = {
+  call: '#60a5fa', message: '#a78bfa', meeting: '#34d399',
+  email: '#fb923c', diary: '#fbbf24',
+};
+
+function InteractionAnalytics({ interactions }: { interactions: Interaction[] }) {
+  if (interactions.length === 0) return null;
+
+  const sorted = [...interactions].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  // Response stats
+  const responded = sorted.filter(i => i.responded).length;
+  const responseRate = Math.round((responded / sorted.length) * 100);
+
+  // Avg gap between contacts
+  let avgGap: number | null = null;
+  if (sorted.length > 1) {
+    const gaps = sorted.slice(1).map((x, i) =>
+      (new Date(x.createdAt).getTime() - new Date(sorted[i].createdAt).getTime()) / 86400000
+    );
+    avgGap = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+  }
+
+  // Days since last contact
+  const lastContactDays = Math.round(
+    (Date.now() - new Date(sorted[sorted.length - 1].createdAt).getTime()) / 86400000
+  );
+
+  // Monthly bars — last 8 months
+  const now = new Date();
+  const months = Array.from({ length: 8 }, (_, i) => {
+    const d   = new Date(now.getFullYear(), now.getMonth() - (7 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const lbl = d.toLocaleDateString('en-IN', { month: 'short' });
+    const hits = sorted.filter(x => x.createdAt.startsWith(key));
+    const rr   = hits.length > 0 ? hits.filter(x => x.responded).length / hits.length : 0;
+    return { lbl, count: hits.length, rr };
+  });
+  const maxCount = Math.max(...months.map(m => m.count), 1);
+
+  // Type breakdown
+  const typeCounts = sorted.reduce<Record<string, number>>((acc, i) => {
+    acc[i.type] = (acc[i.type] || 0) + 1; return acc;
+  }, {});
+  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+
+  // Timeline dots — show last 30, each dot = 1 interaction
+  const timelineDots = sorted.slice(-30);
+
+  return (
+    <div className="card space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Activity size={14} className="text-indigo-400" />
+        <h3 className="text-white font-semibold text-sm">Interaction History</h3>
+        <span className="ml-auto text-white/25 text-[10px]">{sorted.length} total</span>
+      </div>
+
+      {/* Stat row */}
+      <div className="grid grid-cols-3 gap-2">
+        {/* Response rate */}
+        <div className="bg-dark-400 rounded-xl p-2.5 text-center">
+          <p className={`font-bold text-xl leading-none ${
+            responseRate >= 70 ? 'text-emerald-400' : responseRate >= 40 ? 'text-amber-400' : 'text-red-400'
+          }`}>{responseRate}%</p>
+          <p className="text-white/30 text-[10px] mt-1">Response</p>
+          <p className="text-white/20 text-[10px]">{responded}/{sorted.length} replied</p>
+        </div>
+        {/* Avg gap */}
+        <div className="bg-dark-400 rounded-xl p-2.5 text-center">
+          <p className={`font-bold text-xl leading-none ${
+            avgGap === null ? 'text-white/25'
+            : avgGap <= 7 ? 'text-emerald-400' : avgGap <= 21 ? 'text-amber-400' : 'text-red-400'
+          }`}>{avgGap ?? '—'}</p>
+          <p className="text-white/30 text-[10px] mt-1">Avg Cycle</p>
+          <p className="text-white/20 text-[10px]">{avgGap !== null ? 'days apart' : 'need 2+'}</p>
+        </div>
+        {/* Last contact */}
+        <div className="bg-dark-400 rounded-xl p-2.5 text-center">
+          <p className={`font-bold text-xl leading-none ${
+            lastContactDays <= 7 ? 'text-emerald-400' : lastContactDays <= 30 ? 'text-amber-400' : 'text-red-400'
+          }`}>{lastContactDays}</p>
+          <p className="text-white/30 text-[10px] mt-1">Last Contact</p>
+          <p className="text-white/20 text-[10px]">days ago</p>
+        </div>
+      </div>
+
+      {/* P/N response bar */}
+      <div>
+        <div className="flex justify-between mb-1.5">
+          <span className="text-white/30 text-[10px]">Response Pattern</span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />P · {responded}
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-red-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />N · {sorted.length - responded}
+            </span>
+          </div>
+        </div>
+        <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
+          {responded > 0 && (
+            <div className="bg-emerald-400/80 rounded-l-full transition-all duration-700"
+              style={{ flex: responded }} />
+          )}
+          {(sorted.length - responded) > 0 && (
+            <div className="bg-red-400/60 rounded-r-full transition-all duration-700"
+              style={{ flex: sorted.length - responded }} />
+          )}
+        </div>
+      </div>
+
+      {/* Timeline dots */}
+      <div>
+        <p className="text-white/30 text-[10px] mb-2">Contact Timeline {sorted.length > 30 ? '(last 30)' : ''}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {timelineDots.map((dot, i) => (
+            <div
+              key={dot.id}
+              title={`${fmtDate(dot.createdAt)} · ${dot.type} · ${dot.responded ? 'Responded' : 'No response'}`}
+              className={`w-3 h-3 rounded-full border transition-all ${
+                dot.responded
+                  ? 'bg-emerald-400/80 border-emerald-400/40'
+                  : 'bg-red-400/70 border-red-400/30'
+              }`}
+              style={{ opacity: 0.4 + (i / timelineDots.length) * 0.6 }}
+            />
+          ))}
+        </div>
+        <p className="text-white/20 text-[10px] mt-1.5">
+          Older →→ Recent &nbsp;·&nbsp;
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-400/80 inline-block" /> Responded
+          </span>
+          &nbsp;
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-red-400/70 inline-block" /> No response
+          </span>
+        </p>
+      </div>
+
+      {/* Monthly frequency bars */}
+      <div>
+        <p className="text-white/30 text-[10px] mb-2">Monthly Frequency</p>
+        <div className="flex items-end gap-1 h-14">
+          {months.map((m, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className="w-full flex flex-col justify-end" style={{ height: 44 }}>
+                {m.count > 0 ? (
+                  <div
+                    className="w-full rounded-t-sm transition-all duration-700"
+                    style={{
+                      height: `${Math.max((m.count / maxCount) * 44, 4)}px`,
+                      background: m.rr >= 0.7
+                        ? 'rgba(52,211,153,0.7)'
+                        : m.rr >= 0.4
+                        ? 'rgba(251,191,36,0.7)'
+                        : 'rgba(248,113,113,0.6)',
+                    }}
+                  />
+                ) : (
+                  <div className="w-full bg-white/5 rounded-sm" style={{ height: 3 }} />
+                )}
+              </div>
+              <span className="text-white/25 text-[9px] leading-none">{m.lbl}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-white/20 text-[10px] mt-1">Bar colour = response rate that month</p>
+      </div>
+
+      {/* Contact type breakdown */}
+      {typeEntries.length > 1 && (
+        <div>
+          <p className="text-white/30 text-[10px] mb-2.5">Channel Breakdown</p>
+          <div className="space-y-2">
+            {typeEntries.map(([type, count]) => (
+              <div key={type} className="flex items-center gap-2">
+                <span className="text-sm w-4 leading-none">{INTERACTION_ICONS[type] || '💬'}</span>
+                <span className="text-white/45 text-xs capitalize w-16 flex-shrink-0">{type}</span>
+                <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${(count / sorted.length) * 100}%`,
+                      background: TYPE_COLOR[type] ?? '#94a3b8',
+                      opacity: 0.75,
+                    }}
+                  />
+                </div>
+                <span className="text-white/30 text-xs w-4 text-right tabular-nums">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Section tab ───────────────────────────────────────────────────────────────
 type Tab = 'purchases' | 'interactions' | 'diary' | 'notes';
 
