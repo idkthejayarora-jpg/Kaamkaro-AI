@@ -977,17 +977,26 @@ export default function FollowupQueue() {
       {tab === 'queue' && (
         <>
           {/* Priority summary tiles */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {(['urgent', 'high', 'medium', 'low'] as const).map(p => {
-              const cfg = PRIORITY_CFG[p];
+              const cfg    = PRIORITY_CFG[p];
+              const active = priorityFilter === p;
               return (
                 <button
                   key={p}
-                  onClick={() => setPriority(priorityFilter === p ? 'all' : p)}
-                  className={`card text-left transition-all ${priorityFilter === p ? `${cfg.border} ${cfg.bg}` : ''}`}
+                  onClick={() => setPriority(active ? 'all' : p)}
+                  className={`rounded-2xl border p-3 text-left transition-all ${
+                    active ? `${cfg.border} ${cfg.bg}` : 'border-dark-50 bg-dark-300 hover:border-dark-50/80'
+                  }`}
                 >
-                  <p className={`text-2xl font-black ${cfg.color}`}>{counts[p]}</p>
-                  <p className="text-white/30 text-xs capitalize mt-0.5">{cfg.label}</p>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className={`w-2 h-2 rounded-full ${cfg.dot}`}
+                      style={p === 'urgent' ? { boxShadow: '0 0 6px rgba(239,68,68,0.8)' } : undefined}
+                    />
+                    {active && <CheckCircle2 size={10} className={cfg.color} />}
+                  </div>
+                  <p className={`text-xl font-black leading-none ${active ? cfg.color : 'text-white/70'}`}>{counts[p]}</p>
+                  <p className={`text-[10px] mt-1 font-medium ${active ? cfg.color : 'text-white/30'}`}>{cfg.label}</p>
                 </button>
               );
             })}
