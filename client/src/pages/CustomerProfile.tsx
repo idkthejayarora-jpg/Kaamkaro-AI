@@ -89,6 +89,216 @@ const LEAD_STAGE_LABELS: Record<string, string> = {
   follow_up: 'Follow Up', visit_scheduled: 'Visit Scheduled', won: 'Won', lost: 'Lost',
 };
 
+// ── Analytics Section ─────────────────────────────────────────────────────────
+function AnalyticsSection({
+  interactions, holdings, diaryMentions,
+}: {
+  interactions: Interaction[];
+  holdings: HoldingStock[];
+  diaryMentions: DiaryMention[];
+}) {
+  const dispatched = holdings.filter(h => h.status === 'dispatched');
+
+  // Response rate
+  const responded = interactions.filter(i => i.responded).length;
+  const responseRate = interactions.length > 0
+    ? Math.round((responded / interactions.length) * 100) : null;
+
+  // Avg days between interactions
+  const sorted = [...interactions].sort((a, b) =>
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  let avgGap: number | null = null;
+  if (sorted.length > 1) {
+    const gaps = sorted.slice(1).map((x, i) =>
+      (new Date(x.createdAt).getTime() - new Date(sorted[i].createdAt).getTime()) / 86400000);
+    avgGap = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+  }
+
+  // Interaction type breakdown
+  const typeCounts = interactions.reduce<Record<string, number>>((acc, i) => {
+    acc[i.type] = (acc[i.type] || 0) + 1; return acc;
+  }, {});
+  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+
+  // Sentiment split
+  const pos = diaryMentions.filter(m => m.sentiment === 'positive').length;
+  const neu = diaryMentions.filter(m => m.sentiment === 'neutral').length;
+  const neg = diaryMentions.filter(m => m.sentiment === 'negative').length;
+
+  // Monthly activity — last 6 months
+  const now = new Date();
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleDateString('en-IN', { month: 'short' });
+    const monthInt = interactions.filter(x => x.createdAt.startsWith(key)).length;
+    const monthOrd = dispatched.filter(h => (h.dispatchedAt || h.createdAt).startsWith(key)).length;
+    return { label, interactions: monthInt, orders: monthOrd };
+  });
+  const maxBar = Math.max(...months.map(m => m.interactions + m.orders), 1);
+
+  const noData = interactions.length === 0 && holdings.length === 0 && diaryMentions.length === 0;
+  if (noData) return null;
+
+  return (
+    <div className="card space-y-5">
+      <div className="flex items-center gap-2">
+        <Activity size={15} className="text-gold" />
+        <h3 className="text-white font-semibold text-sm">Analytics</h3>
+      </div>
+
+      {/* Row 1 — Response rate + Contact gap */}
+      {interactions.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          {/* Response rate */}
+          <div className="bg-dark-400 rounded-xl p-3">
+            <p className="text-white/35 text-[10px] uppercase tracking-wide mb-2">Response Rate</p>
+            <div className="flex items-end gap-1.5 mb-2">
+              <span className={`text-2xl font-bold leading-none ${
+                responseRate! >= 70 ? 'text-emerald-400' : responseRate! >= 40 ? 'text-amber-400' : 'text-red-400'
+              }`}>{responseRate}%</span>
+              <span className="text-white/25 text-[10px] mb-0.5">{responded}/{interactions.length}</span>
+            </div>
+            <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  responseRate! >= 70 ? 'bg-emerald-400' : responseRate! >= 40 ? 'bg-amber-400' : 'bg-red-400'
+                }`}
+                style={{ width: `${responseRate}%` }}
+              />
+            </div>
+            <p className="text-white/20 text-[10px] mt-1.5">
+              {responseRate! >= 70 ? 'Good engagement' : responseRate! >= 40 ? 'Moderate engagement' : 'Needs attention'}
+            </p>
+          </div>
+
+          {/* Avg contact gap */}
+          <div className="bg-dark-400 rounded-xl p-3">
+            <p className="text-white/35 text-[10px] uppercase tracking-wide mb-2">Avg Contact Gap</p>
+            {avgGap !== null ? (
+              <>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className={`text-2xl font-bold leading-none ${
+                    avgGap <= 7 ? 'text-emerald-400' : avgGap <= 14 ? 'text-amber-400' : 'text-red-400'
+                  }`}>{avgGap}</span>
+                  <span className="text-white/30 text-xs mb-0.5">days</span>
+                </div>
+                <p className="text-white/20 text-[10px]">
+                  {avgGap <= 7 ? 'Frequently touched' : avgGap <= 14 ? 'Moderate cadence' : 'Infrequent contact'}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-white/20 leading-none">—</p>
+                <p className="text-white/20 text-[10px] mt-1">Need 2+ interactions</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Monthly activity chart */}
+      {months.some(m => m.interactions > 0 || m.orders > 0) && (
+        <div>
+          <p className="text-white/35 text-[10px] uppercase tracking-wide mb-3">Activity · Last 6 Months</p>
+          <div className="flex items-end gap-1.5 h-16">
+            {months.map((m, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full relative flex flex-col justify-end gap-px" style={{ height: 52 }}>
+                  {m.orders > 0 && (
+                    <div
+                      className="w-full bg-gold/65 rounded-t-sm"
+                      style={{ height: `${Math.max((m.orders / maxBar) * 52, 4)}px` }}
+                    />
+                  )}
+                  {m.interactions > 0 && (
+                    <div
+                      className="w-full bg-indigo-400/65 rounded-t-sm"
+                      style={{ height: `${Math.max((m.interactions / maxBar) * 52, 4)}px` }}
+                    />
+                  )}
+                  {m.interactions === 0 && m.orders === 0 && (
+                    <div className="w-full bg-white/5 rounded-sm" style={{ height: 3 }} />
+                  )}
+                </div>
+                <span className="text-white/25 text-[10px] leading-none">{m.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 mt-2.5">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-indigo-400/65" />
+              <span className="text-white/30 text-[10px]">Interactions</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-gold/65" />
+              <span className="text-white/30 text-[10px]">Orders</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interaction type breakdown */}
+      {typeEntries.length > 0 && (
+        <div>
+          <p className="text-white/35 text-[10px] uppercase tracking-wide mb-3">Contact Breakdown</p>
+          <div className="space-y-2.5">
+            {typeEntries.map(([type, count]) => (
+              <div key={type} className="flex items-center gap-2">
+                <span className="text-base w-5 leading-none">{INTERACTION_ICONS[type] || '💬'}</span>
+                <span className="text-white/55 text-xs capitalize w-16 flex-shrink-0">{type}</span>
+                <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-400/70 rounded-full transition-all duration-700"
+                    style={{ width: `${(count / interactions.length) * 100}%` }}
+                  />
+                </div>
+                <span className="text-white/30 text-xs w-4 text-right tabular-nums">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Diary sentiment */}
+      {diaryMentions.length > 0 && (
+        <div>
+          <p className="text-white/35 text-[10px] uppercase tracking-wide mb-3">Diary Sentiment</p>
+          {/* Segmented bar */}
+          <div className="flex rounded-full overflow-hidden h-2 mb-3 gap-px">
+            {pos > 0 && <div className="bg-emerald-400/80" style={{ flex: pos }} />}
+            {neu > 0 && <div className="bg-white/20" style={{ flex: neu }} />}
+            {neg > 0 && <div className="bg-red-400/80" style={{ flex: neg }} />}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {pos > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <TrendingUp size={11} className="text-emerald-400" />
+                <span className="text-emerald-400 text-xs font-semibold">{pos}</span>
+                <span className="text-emerald-400/50 text-[10px]">positive</span>
+              </div>
+            )}
+            {neu > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                <Minus size={11} className="text-white/40" />
+                <span className="text-white/60 text-xs font-semibold">{neu}</span>
+                <span className="text-white/30 text-[10px]">neutral</span>
+              </div>
+            )}
+            {neg > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                <TrendingDown size={11} className="text-red-400" />
+                <span className="text-red-400 text-xs font-semibold">{neg}</span>
+                <span className="text-red-400/50 text-[10px]">negative</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Section tab ───────────────────────────────────────────────────────────────
 type Tab = 'purchases' | 'interactions' | 'diary' | 'notes';
 
