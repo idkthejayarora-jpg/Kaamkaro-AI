@@ -81,12 +81,12 @@ export function TabBar({ tabs, active, onChange, variant = 'pill-gold', classNam
             key={tab.id}
             ref={setRef(tab.id)}
             onClick={() => onChange(tab.id)}
-            className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-sm font-medium transition-colors duration-150 ${
+            className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-medium transition-colors duration-150 whitespace-nowrap ${
               isActive ? activeText : 'text-white/40 hover:text-white'
             }`}
           >
-            {Icon && <Icon size={14} />}
-            <span className="hidden sm:inline">{tab.label}</span>
+            {Icon && <Icon size={13} />}
+            <span>{tab.label}</span>
             {tab.count !== undefined && tab.count > 0 && (
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full transition-colors ${
                 isActive ? 'bg-black/15' : 'bg-white/8 text-white/30'
