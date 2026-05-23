@@ -184,7 +184,7 @@ function CrmAnalyticsSection({ leads }: { leads: Lead[] }) {
           <p className="text-white/20 text-[10px]">times</p>
         </div>
         <div className="bg-dark-400 rounded-xl p-2.5 text-center">
-          <p className="text-white font-bold text-lg leading-none">{lead.notes.length}</p>
+          <p className="text-white font-bold text-lg leading-none">{(lead.notes ?? []).length}</p>
           <p className="text-white/30 text-[10px] mt-1">Notes</p>
           <p className="text-white/20 text-[10px]">logged</p>
         </div>
