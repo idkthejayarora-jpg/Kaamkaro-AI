@@ -375,11 +375,9 @@ function HoldingCard({
       {expanded && (
         <div className="mt-4 space-y-1.5">
           {/* Column headers */}
-          <div className={`grid gap-2 px-3 pb-1 border-b border-white/[0.06] ${canEdit ? 'grid-cols-[1fr_100px_60px_80px]' : 'grid-cols-[1fr_60px_60px_80px]'}`}>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Unit</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Amount</span>
+          <div className="flex items-center justify-between px-3 pb-2 border-b border-white/[0.06]">
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item · Qty</span>
+            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Amount</span>
           </div>
 
           {holding.items.map(item => (
