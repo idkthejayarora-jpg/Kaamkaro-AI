@@ -745,28 +745,20 @@ function ShelfSection({ isAdmin, staffList }: { isAdmin: boolean; staffList: Sta
       ) : (
         /* Staff own view (or admin filtered to one staff) */
         <div className="card">
-          {/* Column headers */}
-          <div className="grid grid-cols-[1fr_56px_48px_80px] gap-2 px-3 pb-2 mb-1 border-b border-white/[0.06]">
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Item</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-center">Qty</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide">Unit</span>
-            <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wide text-right">Actions</span>
-          </div>
           <div className="space-y-0.5">
             {items.map(item => (
               <div
                 key={item.id}
-                className="grid grid-cols-[1fr_56px_48px_80px] gap-2 px-3 py-2.5 rounded-lg hover:bg-white/[0.04] group transition-colors items-center"
+                className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/[0.04] group transition-colors"
               >
-                <div className="min-w-0">
-                  <p className="text-white/85 text-sm font-medium truncate">{item.itemName}</p>
-                  {item.note && (
-                    <p className="text-white/25 text-xs truncate mt-0.5">{item.note}</p>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white/85 text-sm font-medium leading-snug">{item.itemName}</p>
+                  <p className="text-white/35 text-xs mt-0.5">
+                    <span className="text-blue-400 font-bold">{item.qty}</span> {item.unit}
+                    {item.note && <span className="text-white/25 italic ml-2">· {item.note}</span>}
+                  </p>
                 </div>
-                <span className="text-blue-400 font-bold text-sm text-center tabular-nums">{item.qty}</span>
-                <span className="text-white/35 text-xs">{item.unit}</span>
-                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={() => { setEditing(item); setShowModal(true); }}
                     className="p-1.5 rounded-lg hover:bg-dark-200 text-white/30 hover:text-white transition-colors"
