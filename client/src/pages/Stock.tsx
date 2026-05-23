@@ -728,13 +728,12 @@ function ShelfSection({ isAdmin, staffList }: { isAdmin: boolean; staffList: Sta
                 {/* Items table */}
                 <div className="space-y-1">
                   {staffItems.map(item => (
-                    <div key={item.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/[0.03] group transition-colors">
-                      <span className="text-white/80 text-sm font-medium flex-1 truncate">{item.itemName}</span>
-                      <span className="text-blue-400 font-bold text-sm tabular-nums">{item.qty}</span>
-                      <span className="text-white/30 text-xs w-8">{item.unit}</span>
-                      {item.note && (
-                        <span className="text-white/25 text-xs italic truncate max-w-[120px] hidden sm:block">{item.note}</span>
-                      )}
+                    <div key={item.id} className="px-2 py-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+                      <p className="text-white/80 text-sm font-medium leading-snug">{item.itemName}</p>
+                      <p className="text-white/30 text-xs mt-0.5">
+                        <span className="text-blue-400 font-bold">{item.qty}</span> {item.unit}
+                        {item.note && <span className="italic ml-2">· {item.note}</span>}
+                      </p>
                     </div>
                   ))}
                 </div>
