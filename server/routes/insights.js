@@ -145,9 +145,9 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
 
   const priorityScore = Math.max(0, Math.min(100, score));
   const priority =
-    priorityScore >= 72 ? 'urgent' :   // Multiple red flags stacking up
-    priorityScore >= 50 ? 'high'   :   // Needs attention this week
-    priorityScore >= 30 ? 'medium' :   // On the radar
+    priorityScore >= 78 ? 'urgent' :   // Multiple red flags stacking up
+    priorityScore >= 62 ? 'high'   :   // Needs attention this week
+    priorityScore >= 44 ? 'medium' :   // On the radar
                           'low';       // All good, recently touched
 
   // ── Context snippet for AI (compact) ─────────────────────────────────────
