@@ -110,35 +110,45 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   const staffConcern = latestNeg >= 2 && latestIxs.length >= 2;
 
   // ── Priority score ────────────────────────────────────────────────────────
-  let score = 35;
+  // Baseline: 20. Jewelry business cadence — 2-3 weeks between contacts is normal.
+  // Thresholds: urgent ≥72, high ≥50, medium ≥30, low <30.
+  let score = 20;
 
-  if (lastContactDays === null) score += 20;
-  else if (lastContactDays > 21) score += 18;
-  else if (lastContactDays > 14) score += 12;
-  else if (lastContactDays > 7)  score += 6;
-  else if (lastContactDays > 3)  score += 2;
-  else if (lastContactDays <= 1) score -= 18;
+  // Time since last contact — calibrated for jewelry B2B (biweekly contact is normal)
+  if      (lastContactDays === null)   score += 22; // never contacted at all
+  else if (lastContactDays > 45)       score += 20; // severely neglected
+  else if (lastContactDays > 30)       score += 14; // overdue
+  else if (lastContactDays > 21)       score += 8;  // getting stale
+  else if (lastContactDays > 14)       score += 4;  // mild nudge
+  else if (lastContactDays > 7)        score += 1;  // recent enough
+  else if (lastContactDays <= 1)       score -= 12; // freshly contacted
 
-  if      (responsiveness === 'ghosting') score += 14;
-  else if (responsiveness === 'ignoring') score += 8;
+  // Responsiveness (measured from interaction history)
+  if      (responsiveness === 'ghosting') score += 15;
+  else if (responsiveness === 'ignoring') score += 9;
   else if (responsiveness === 'slow')     score += 3;
 
-  if      (sentimentTrend === 'declining')  score += 10;
-  else if (sentimentTrend === 'improving')  score -= 8;
+  // Sentiment trend from recent diary/interaction data
+  if      (sentimentTrend === 'declining')  score += 8;
+  else if (sentimentTrend === 'improving')  score -= 6;
 
+  // Hard signals
   if (hasPaymentDelay) score += 8;
   if (staffConcern)    score += 6;
 
-  const stageBonus = { lead: 3, contacted: 2, interested: 6, negotiating: 10, closed: -35, churned: -15 };
+  // Pipeline stage — interested/negotiating get a moderate boost only
+  const stageBonus = { lead: 2, contacted: 1, interested: 5, negotiating: 7, closed: -30, churned: -12 };
   score += stageBonus[customer.status] || 0;
 
-  score += Math.round((negCount / total) * 10);
+  // Negative sentiment ratio (max +6)
+  score += Math.round((negCount / total) * 6);
 
   const priorityScore = Math.max(0, Math.min(100, score));
   const priority =
-    priorityScore >= 82 ? 'urgent' :
-    priorityScore >= 65 ? 'high'   :
-    priorityScore >= 45 ? 'medium' : 'low';
+    priorityScore >= 72 ? 'urgent' :   // Multiple red flags stacking up
+    priorityScore >= 50 ? 'high'   :   // Needs attention this week
+    priorityScore >= 30 ? 'medium' :   // On the radar
+                          'low';       // All good, recently touched
 
   // ── Context snippet for AI (compact) ─────────────────────────────────────
   const contextSnippet = [
