@@ -343,113 +343,100 @@ function QueueCard({
 }) {
   const cfg = PRIORITY_CFG[item.priority];
 
+  const contactColor =
+    item.lastContactDays === null  ? 'text-red-400' :
+    item.lastContactDays > 30      ? 'text-red-400' :
+    item.lastContactDays > 14      ? 'text-amber-400' :
+    item.lastContactDays > 7       ? 'text-white/50' : 'text-white/30';
+
+  const contactLabel =
+    item.lastContactDays === null ? 'Never contacted' :
+    item.lastContactDays === 0    ? 'Today' :
+    item.lastContactDays === 1    ? 'Yesterday' :
+    `${item.lastContactDays}d ago`;
+
   return (
-    <div className={`card border ${cfg.border} transition-all hover:border-opacity-60`}>
-      <div className="flex items-start gap-3">
-        {/* Priority dot */}
-        <div className="flex-shrink-0 pt-1">
-          <div
-            className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`}
-            style={
-              item.priority === 'urgent' ? { boxShadow: '0 0 8px rgba(239,68,68,0.85)' } :
-              item.priority === 'high'   ? { boxShadow: '0 0 7px rgba(251,146,60,0.7)' } :
-              item.priority === 'medium' ? { boxShadow: '0 0 7px rgba(212,175,55,0.6)' } : undefined
-            }
-          />
+    <div
+      className={`rounded-2xl border ${cfg.border} bg-dark-300 transition-all hover:bg-dark-200/60 cursor-pointer`}
+      onClick={() => onDetail(item)}
+    >
+      {/* Top accent bar */}
+      <div className={`h-0.5 rounded-t-2xl ${
+        item.priority === 'urgent' ? 'bg-red-500/70' :
+        item.priority === 'high'   ? 'bg-orange-400/60' :
+        item.priority === 'medium' ? 'bg-gold/50' : 'bg-white/10'
+      }`} />
+
+      <div className="flex items-start gap-3 px-4 py-3.5">
+        {/* Left: avatar initial */}
+        <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-sm font-bold ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
+          {item.customerName[0].toUpperCase()}
         </div>
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Header row */}
+          {/* Name + priority badge */}
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => onDetail(item)}
-              className="text-white font-semibold text-sm hover:text-gold transition-colors text-left"
-            >
-              {item.customerName}
-            </button>
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color} border-current/20`}>
+            <span className="text-white font-semibold text-sm">{item.customerName}</span>
+            <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md ${cfg.bg} ${cfg.color}`}>
               {cfg.label}
             </span>
-            <span className="text-[10px] capitalize text-white/30 bg-white/5 border border-white/8 rounded-full px-2 py-0.5">
-              {item.status}
-            </span>
+            {item.status && (
+              <span className="text-[9px] capitalize text-white/25 bg-white/4 rounded-md px-1.5 py-0.5">
+                {item.status}
+              </span>
+            )}
           </div>
 
-          {/* Sub-row: staff + phone + last contact */}
-          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+          {/* Meta row */}
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
             {isAdmin && (
-              <span className="text-gold/50 text-xs flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center text-[8px] font-bold text-gold">
+              <span className="flex items-center gap-1 text-[11px] text-white/35">
+                <div className="w-3.5 h-3.5 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center text-[7px] font-bold text-gold">
                   {item.assignedStaffAvatar}
                 </div>
                 {item.assignedStaffName}
               </span>
             )}
-            {item.phone && <span className="text-white/25 text-[11px]">{item.phone}</span>}
-            <span className={`text-[11px] font-medium ${
-              item.lastContactDays === null ? 'text-red-400' :
-              item.lastContactDays > 14    ? 'text-red-400' :
-              item.lastContactDays > 7     ? 'text-orange-400' : 'text-white/40'
-            }`}>
-              {item.lastContactDays === null ? '⚠ Never contacted' :
-               item.lastContactDays === 0   ? '✓ Contacted today' :
-               `${item.lastContactDays}d since contact`}
+            <span className={`flex items-center gap-1 text-[11px] font-medium ${contactColor}`}>
+              <Clock size={9} />
+              {contactLabel}
             </span>
+            {item.phone && (
+              <span className="text-white/20 text-[11px]">{item.phone}</span>
+            )}
           </div>
 
           {/* Pattern chips */}
           <PatternChips patterns={item.patterns} metrics={item.metrics} />
 
-          {/* AI insight */}
-          {(item.insight || item.nextAction) && (
-            <div className="mt-3 space-y-1.5">
-              {item.insight && (
-                <div className="flex items-start gap-2 text-[11px] text-white/55 leading-relaxed">
-                  <Brain size={11} className="text-gold/70 flex-shrink-0 mt-0.5 drop-shadow-[0_0_8px_rgba(212,175,55,0.65)]" />
-                  <span>{item.insight}</span>
-                </div>
-              )}
-              {item.nextAction && (
-                <div className="flex items-start gap-2 text-[11px] leading-relaxed">
-                  <Sparkles size={11} className="text-gold flex-shrink-0 mt-0.5" />
-                  <span className="text-gold/80 font-medium">{item.nextAction}</span>
-                </div>
-              )}
+          {/* AI suggestion — compact single line */}
+          {item.nextAction && (
+            <div className="flex items-start gap-1.5 mt-2 text-[11px]">
+              <Sparkles size={10} className="text-gold flex-shrink-0 mt-0.5" />
+              <span className="text-gold/70 font-medium leading-snug">{item.nextAction}</span>
             </div>
           )}
-
-          {/* Score bar */}
-          <div className="flex items-center gap-2 mt-3">
-            <div className="flex-1 h-1 bg-dark-200 rounded-full">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${item.priorityScore}%`,
-                  background: item.priorityScore >= 80 ? '#f87171' :
-                              item.priorityScore >= 60 ? '#f97316' : GOLD,
-                  boxShadow: item.priorityScore >= 80 ? '0 0 6px rgba(248,113,113,0.6)' :
-                             item.priorityScore >= 60 ? '0 0 6px rgba(249,115,22,0.6)' : '0 0 5px rgba(212,175,55,0.5)',
-                }}
-              />
-            </div>
-            <span className="text-white/20 text-[10px] flex-shrink-0">{item.priorityScore}/100</span>
-          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col gap-2 flex-shrink-0">
+        {/* Right: score + log button */}
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+          {/* Score ring */}
+          <div className="flex flex-col items-center">
+            <span className={`text-sm font-black tabular-nums ${cfg.color}`}>{item.priorityScore}</span>
+            <span className="text-white/20 text-[8px] uppercase tracking-wide">score</span>
+          </div>
           <button
-            onClick={() => onLog(item)}
-            className="btn-secondary text-[11px] py-1.5 px-2.5 flex items-center gap-1"
+            onClick={e => { e.stopPropagation(); onLog(item); }}
+            className={`text-[10px] py-1.5 px-2.5 rounded-xl border font-medium transition-all flex items-center gap-1
+              ${item.priority === 'urgent'
+                ? 'border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                : item.priority === 'high'
+                ? 'border-orange-400/35 bg-orange-500/8 text-orange-300 hover:bg-orange-500/15'
+                : 'border-dark-50 text-white/40 hover:text-white hover:border-white/20'
+              }`}
           >
-            <Phone size={11} /> Log
-          </button>
-          <button
-            onClick={() => onDetail(item)}
-            className="text-white/25 hover:text-gold transition-colors py-1.5 px-2.5 flex items-center gap-1 text-[11px]"
-          >
-            Logs <ChevronRight size={10} />
+            <Phone size={9} /> Log
           </button>
         </div>
       </div>
