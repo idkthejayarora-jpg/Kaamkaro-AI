@@ -1,6 +1,6 @@
 /**
- * Select — custom styled dropdown that replaces native <select> elements.
- * Renders via Portal so it's never clipped by overflow containers.
+ * Select — custom styled dropdown replacing native <select>.
+ * Portal-rendered so it's never clipped by overflow containers.
  * Drop-in replacement: same value / onChange / children (<option>) API.
  */
 import { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
@@ -21,22 +21,13 @@ function parseOptions(children: React.ReactNode): OptionData[] {
     if (!React.isValidElement(child)) return;
     if (child.type === 'option') {
       const p = child.props as { value?: string | number; children?: React.ReactNode; disabled?: boolean };
-      opts.push({
-        value:    String(p.value ?? ''),
-        label:    String(p.children ?? p.value ?? ''),
-        disabled: p.disabled,
-      });
+      opts.push({ value: String(p.value ?? ''), label: String(p.children ?? p.value ?? ''), disabled: p.disabled });
     } else if (child.type === 'optgroup') {
       const gp = child.props as { label?: string; children?: React.ReactNode };
       React.Children.forEach(gp.children, sub => {
         if (!React.isValidElement(sub) || sub.type !== 'option') return;
         const p = sub.props as { value?: string | number; children?: React.ReactNode; disabled?: boolean };
-        opts.push({
-          value:    String(p.value ?? ''),
-          label:    String(p.children ?? p.value ?? ''),
-          disabled: p.disabled,
-          group:    gp.label,
-        });
+        opts.push({ value: String(p.value ?? ''), label: String(p.children ?? p.value ?? ''), disabled: p.disabled, group: gp.label });
       });
     }
   });
@@ -53,40 +44,37 @@ interface SelectProps {
 }
 
 export default function Select({ value, defaultValue, onChange, children, className = '', disabled }: SelectProps) {
-  // Support both controlled (value) and uncontrolled/action (defaultValue) modes
-  const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState(defaultValue ?? '');
-  const activeValue = isControlled ? value : internalValue;
+  const isControlled    = value !== undefined;
+  const [internal, setInternal] = useState(defaultValue ?? '');
+  const activeValue     = isControlled ? value! : internal;
 
   const [open,      setOpen]      = useState(false);
   const [dropStyle, setDropStyle] = useState<React.CSSProperties>({});
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const btnRef   = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const options      = parseOptions(children);
-  const selectedOpt  = options.find(o => o.value === activeValue);
-  const selectedLabel = selectedOpt?.label ?? activeValue;
+  const options       = parseOptions(children);
+  const selectedLabel = options.find(o => o.value === activeValue)?.label ?? activeValue;
 
-  // ── Position the dropdown below (or above) the button ─────────────────────
+  // ── Position dropdown below (or above) the trigger button ─────────────────
   const position = useCallback(() => {
     if (!btnRef.current) return;
-    const rect        = btnRef.current.getBoundingClientRect();
-    const dropH       = Math.min(options.length * 40 + 8, 288);
-    const spaceBelow  = window.innerHeight - rect.bottom - 8;
-    const openUpward  = spaceBelow < dropH && rect.top > dropH;
-
+    const rect       = btnRef.current.getBoundingClientRect();
+    const dropH      = Math.min(options.length * 40 + 12, 288);
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    const openUp     = spaceBelow < dropH && rect.top > dropH;
     setDropStyle({
-      position: 'fixed',
-      left:     rect.left,
-      width:    Math.max(rect.width, 180),
-      ...(openUpward
-        ? { bottom: window.innerHeight - rect.top + 4 }
-        : { top:    rect.bottom + 4 }),
+      position : 'fixed',
+      left     : rect.left,
+      width    : Math.max(rect.width, 180),
+      zIndex   : 9999,
+      ...(openUp ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
     });
   }, [options.length]);
 
   useLayoutEffect(() => { if (open) position(); }, [open, position]);
 
-  // Close on scroll / resize
+  // Close on scroll or resize
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
@@ -98,31 +86,19 @@ export default function Select({ value, defaultValue, onChange, children, classN
     };
   }, [open]);
 
-  // Click outside
-  useEffect(() => {
-    if (!open) return;
-    const handle = (e: MouseEvent) => {
-      if (btnRef.current && !btnRef.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [open]);
-
+  // ── Select an option ───────────────────────────────────────────────────────
   const select = (v: string) => {
     onChange({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>);
-    if (!isControlled) {
-      // Action-select: reset back to defaultValue after firing
-      setInternalValue(defaultValue ?? '');
-    }
+    if (!isControlled) setInternal(defaultValue ?? ''); // reset action-selects
     setOpen(false);
   };
 
-  // ── Group rendering ────────────────────────────────────────────────────────
-  let lastGroup: string | undefined = undefined;
+  // ── Render ─────────────────────────────────────────────────────────────────
+  let lastGroup: string | undefined;
 
   return (
     <>
+      {/* Trigger button — styled identically to .input class */}
       <button
         ref={btnRef}
         type="button"
@@ -130,7 +106,7 @@ export default function Select({ value, defaultValue, onChange, children, classN
         onClick={() => !disabled && setOpen(o => !o)}
         className={`flex items-center justify-between gap-2 text-left cursor-pointer ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <span className={`truncate ${selectedLabel ? '' : 'text-white/25'}`}>
+        <span className={`truncate flex-1 ${selectedLabel ? '' : 'text-white/25'}`}>
           {selectedLabel || 'Select…'}
         </span>
         <ChevronDown
@@ -139,37 +115,45 @@ export default function Select({ value, defaultValue, onChange, children, classN
         />
       </button>
 
+      {/* Dropdown — portalled to body */}
       {open && createPortal(
         <>
-          {/* Invisible backdrop to close on outside click */}
-          <div className="fixed inset-0 z-[998]" onClick={() => setOpen(false)} />
-
-          {/* Dropdown panel */}
+          {/* Full-screen backdrop — click it to close. z-index just below panel. */}
           <div
-            className="z-[999] bg-dark-200 border border-dark-50 rounded-2xl shadow-2xl overflow-hidden"
+            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+            onMouseDown={() => setOpen(false)}
+          />
+
+          {/* Panel */}
+          <div
+            ref={panelRef}
             style={dropStyle}
+            className="bg-dark-200 border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
           >
-            <div className="max-h-72 overflow-y-auto py-1.5">
+            <div className="overflow-y-auto py-1.5" style={{ maxHeight: 280 }}>
               {options.map((opt, i) => {
-                const showGroupHeader = opt.group && opt.group !== lastGroup;
-                if (showGroupHeader) lastGroup = opt.group;
+                const showGroup = opt.group && opt.group !== lastGroup;
+                if (showGroup) lastGroup = opt.group;
                 return (
                   <div key={`${opt.value}-${i}`}>
-                    {showGroupHeader && (
-                      <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-widest text-white/25 font-semibold">
+                    {showGroup && (
+                      <p className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-widest text-white/25 font-semibold select-none">
                         {opt.group}
                       </p>
                     )}
                     <button
                       type="button"
                       disabled={opt.disabled}
+                      /* onMouseDown with stopPropagation prevents the backdrop's
+                         onMouseDown from firing and closing the panel before onClick */
+                      onMouseDown={e => e.stopPropagation()}
                       onClick={() => !opt.disabled && select(opt.value)}
                       className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm text-left transition-colors
                         ${opt.disabled
                           ? 'text-white/20 cursor-not-allowed'
                           : opt.value === activeValue
                           ? 'text-gold bg-gold/8 font-medium'
-                          : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
+                          : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
                         }`}
                     >
                       <span className="truncate">{opt.label}</span>
