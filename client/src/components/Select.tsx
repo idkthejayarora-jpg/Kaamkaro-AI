@@ -167,13 +167,13 @@ export default function Select({ value, defaultValue, onChange, children, classN
                       className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm text-left transition-colors
                         ${opt.disabled
                           ? 'text-white/20 cursor-not-allowed'
-                          : opt.value === value
+                          : opt.value === activeValue
                           ? 'text-gold bg-gold/8 font-medium'
                           : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
                         }`}
                     >
                       <span className="truncate">{opt.label}</span>
-                      {opt.value === value && (
+                      {opt.value === activeValue && (
                         <Check size={12} className="text-gold flex-shrink-0" />
                       )}
                     </button>
