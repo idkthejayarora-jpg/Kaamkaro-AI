@@ -44,21 +44,27 @@ function parseOptions(children: React.ReactNode): OptionData[] {
 }
 
 interface SelectProps {
-  value: string;
+  value?: string;
+  defaultValue?: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   children: React.ReactNode;
   className?: string;
   disabled?: boolean;
 }
 
-export default function Select({ value, onChange, children, className = '', disabled }: SelectProps) {
+export default function Select({ value, defaultValue, onChange, children, className = '', disabled }: SelectProps) {
+  // Support both controlled (value) and uncontrolled/action (defaultValue) modes
+  const isControlled = value !== undefined;
+  const [internalValue, setInternalValue] = useState(defaultValue ?? '');
+  const activeValue = isControlled ? value : internalValue;
+
   const [open,      setOpen]      = useState(false);
   const [dropStyle, setDropStyle] = useState<React.CSSProperties>({});
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const options      = parseOptions(children);
-  const selectedOpt  = options.find(o => o.value === value);
-  const selectedLabel = selectedOpt?.label ?? value;
+  const selectedOpt  = options.find(o => o.value === activeValue);
+  const selectedLabel = selectedOpt?.label ?? activeValue;
 
   // ── Position the dropdown below (or above) the button ─────────────────────
   const position = useCallback(() => {
