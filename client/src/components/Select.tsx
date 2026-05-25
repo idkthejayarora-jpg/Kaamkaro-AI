@@ -8,7 +8,7 @@
  *   • Option buttons use onClick normally — they fire AFTER mousedown,
  *     so the panel is still open when they fire.
  */
-import { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect, useCallback, useId } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import React from 'react';
