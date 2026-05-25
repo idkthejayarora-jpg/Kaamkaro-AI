@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { TabBar, AnimatedTabPanel } from '../components/TabBar';
 import {
   AlertTriangle, ShieldOff, RefreshCw, Loader2,
