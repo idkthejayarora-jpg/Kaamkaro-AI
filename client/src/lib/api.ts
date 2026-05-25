@@ -271,6 +271,7 @@ export const fraudAPI = {
   records:        () => api.get('/fraud/records').then(r => r.data),
   suspiciousNames:() => api.get('/fraud/suspicious-names').then(r => r.data),
   deleteCustomer: (id: string) => api.delete(`/fraud/suspicious-names/${id}`).then(r => r.data),
+  whitelistName:  (name: string) => api.post('/fraud/whitelist', { name }).then(r => r.data),
 };
 
 export const stockAPI = {
