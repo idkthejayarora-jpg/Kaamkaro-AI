@@ -855,69 +855,32 @@ export default function AntiFraud() {
           )}
 
           {!suspNamesLoading && suspNames.length > 0 && (
-            <div className="rounded-2xl border border-dark-50 overflow-hidden">
-              <div className="bg-dark-400 border-b border-dark-50 px-4 py-2.5 flex items-center gap-2">
+            <>
+              <div className="flex items-center gap-2 px-1">
                 <TextSearch size={13} className="text-amber-400" />
-                <span className="text-white/50 text-xs font-semibold uppercase tracking-wider">
+                <span className="text-white/40 text-xs font-semibold uppercase tracking-wider">
                   {suspNames.length} flagged name{suspNames.length !== 1 ? 's' : ''}
                 </span>
+                <span className="text-white/20 text-[10px] ml-auto hidden sm:block">← swipe to act on mobile</span>
               </div>
-              <div className="bg-dark-300 divide-y divide-dark-50/30">
-                {suspNames.map(c => {
-                  const reasonColor =
-                    c.reason.includes('pronoun') || c.reason.includes('interrogative')
-                      ? 'bg-red-500/15 text-red-400 border-red-500/20'
-                      : c.reason.includes('product') || c.reason.includes('Jewellery')
-                      ? 'bg-orange-500/15 text-orange-400 border-orange-500/20'
-                      : 'bg-amber-500/12 text-amber-400 border-amber-500/18';
-                  return (
-                    <div key={c.id} className="flex items-center gap-3 px-4 py-3 hover:bg-dark-200/40 transition-colors">
-                      {/* Avatar */}
-                      <div className="w-8 h-8 rounded-xl bg-dark-200 border border-dark-100 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white/40 text-xs font-bold">{c.name[0]?.toUpperCase() ?? '?'}</span>
-                      </div>
-
-                      {/* Name + meta */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-white text-sm font-semibold">{c.name}</p>
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${reasonColor}`}>
-                            {c.reason}
-                          </span>
-                        </div>
-                        <p className="text-white/25 text-[11px] mt-0.5">
-                          {c.staffName}
-                          {c.phone ? ` · ${c.phone}` : ''}
-                          {' · '}
-                          {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => navigate(`/customers/${c.id}`)}
-                          title="View profile"
-                          className="p-1.5 rounded-lg text-white/25 hover:text-gold hover:bg-gold/10 transition-colors"
-                        >
-                          <ExternalLink size={13} />
-                        </button>
-                        <button
-                          onClick={async () => {
-                            await fraudAPI.deleteCustomer(c.id);
-                            setSuspNames(prev => prev.filter(x => x.id !== c.id));
-                          }}
-                          title="Delete customer"
-                          className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="space-y-2">
+                {suspNames.map(c => (
+                  <SwipeCard
+                    key={c.id}
+                    customer={c}
+                    onDelete={async () => {
+                      await fraudAPI.deleteCustomer(c.id);
+                      setSuspNames(prev => prev.filter(x => x.id !== c.id));
+                    }}
+                    onLearn={async () => {
+                      await fraudAPI.whitelistName(c.name);
+                      setSuspNames(prev => prev.filter(x => x.id !== c.id));
+                    }}
+                    onView={() => navigate(`/customers/${c.id}`)}
+                  />
+                ))}
               </div>
-            </div>
+            </>
           )}
         </>
       )}
