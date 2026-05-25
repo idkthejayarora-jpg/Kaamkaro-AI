@@ -111,6 +111,10 @@ export default function Select({ value, defaultValue, onChange, children, classN
 
   const select = (v: string) => {
     onChange({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>);
+    if (!isControlled) {
+      // Action-select: reset back to defaultValue after firing
+      setInternalValue(defaultValue ?? '');
+    }
     setOpen(false);
   };
 
