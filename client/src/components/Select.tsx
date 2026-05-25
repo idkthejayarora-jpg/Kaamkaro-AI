@@ -141,13 +141,9 @@ export default function Select({ value, defaultValue, onChange, children, classN
               ? 'selectOut 0.18s cubic-bezier(0.4,0,1,1) forwards'
               : 'selectIn 0.22s cubic-bezier(0.16,1,0.3,1) forwards',
           }}
-          /* Stop mousedown so outside-click handler ignores panel clicks */
           onMouseDown={e => e.stopPropagation()}
-          /* Stop scroll leaking to the page behind */
           onWheel={e => e.stopPropagation()}
           onTouchMove={e => e.stopPropagation()}
-          className="rounded-2xl overflow-hidden"
-          style2={{}} /* ts trick — actual styles above */
         >
           {/* Glass layer */}
           <div
