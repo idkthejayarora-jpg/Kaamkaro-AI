@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useRef, useState } from 'react';
 import {
   Send, Plus, X, Radio, Users, MessageSquare, ChevronLeft,
@@ -271,10 +272,10 @@ function TransferTaskModal({ conv, staff, myId, onClose, onTransferred }: {
           {recipients.length > 1 && (
             <div>
               <label className="label">Transfer to</label>
-              <select className="input" value={selectedTo} onChange={e => setSelectedTo(e.target.value)}>
+              <Select className="input" value={selectedTo} onChange={e => setSelectedTo(e.target.value)}>
                 <option value="">Select recipient…</option>
                 {recipients.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
 

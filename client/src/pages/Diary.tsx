@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSSE } from '../hooks/useSSE';
@@ -554,7 +555,7 @@ export default function Diary() {
             {/* Staff filter */}
             <div className="relative">
               <Users size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
-              <select
+              <Select
                 value={staffFilter}
                 onChange={e => setStaffFilter(e.target.value)}
                 className="input pl-7 py-1.5 text-xs h-8 pr-8 min-w-[140px]"
@@ -563,10 +564,10 @@ export default function Diary() {
                 {staff.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             {/* Status filter */}
-            <select
+            <Select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
               className="input py-1.5 text-xs h-8 min-w-[120px]"
@@ -575,7 +576,7 @@ export default function Diary() {
               <option value="done">Saved ✓</option>
               <option value="processing">Processing…</option>
               <option value="error">Errors</option>
-            </select>
+            </Select>
           </div>
         )}
       </div>

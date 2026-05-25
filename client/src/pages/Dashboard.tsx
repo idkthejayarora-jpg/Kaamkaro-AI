@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -705,9 +706,9 @@ function AdminDashboard() {
             </div>
             <div className="space-y-4">
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Staff Member</label>
-                <select value={gStaffId} onChange={e => setGStaffId(e.target.value)} className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
+                <Select value={gStaffId} onChange={e => setGStaffId(e.target.value)} className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
                   <option value="">Select staff...</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select></div>
+                </Select></div>
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Target Points</label>
                 <input type="number" value={gTarget} onChange={e => setGTarget(e.target.value)} placeholder="e.g. 50" className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" /></div>
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Period</label>
@@ -735,9 +736,9 @@ function AdminDashboard() {
             </div>
             <div className="space-y-4">
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Staff Member</label>
-                <select value={aStaffId} onChange={e => setAStaffId(e.target.value)} className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
+                <Select value={aStaffId} onChange={e => setAStaffId(e.target.value)} className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
                   <option value="">Select staff...</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select></div>
+                </Select></div>
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Points (negative to deduct)</label>
                 <input type="number" value={aPoints} onChange={e => setAPoints(e.target.value)} placeholder="e.g. 10 or -5" className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" /></div>
               <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Reason</label>

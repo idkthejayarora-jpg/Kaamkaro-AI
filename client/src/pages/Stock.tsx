@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState, useCallback } from 'react';
 import {
   Package, Plus, Trash2, X, Send, CheckCircle2,
@@ -47,13 +48,13 @@ function ItemRow({
         value={item.qty}
         onChange={e => onChange('qty', e.target.value)}
       />
-      <select
+      <Select
         className="input text-sm py-2"
         value={item.unit}
         onChange={e => onChange('unit', e.target.value)}
       >
         {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-      </select>
+      </Select>
       <input
         type="number" min="0"
         className="input text-sm py-2 text-center"
@@ -176,14 +177,14 @@ function HoldingModal({
               onChange={e => setCustomerName(e.target.value)}
             />
             {customers.length > 0 && (
-              <select
+              <Select
                 className="input text-sm"
                 value={customerId}
                 onChange={e => handleCustomerPick(e.target.value)}
               >
                 <option value="">↳ Link to CRM customer (optional)</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
-              </select>
+              </Select>
             )}
           </div>
 
@@ -548,9 +549,9 @@ function ShelfItemModal({
             </div>
             <div>
               <label className="label">Unit</label>
-              <select className="input" value={unit} onChange={e => setUnit(e.target.value)}>
+              <Select className="input" value={unit} onChange={e => setUnit(e.target.value)}>
                 {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <div>
@@ -638,14 +639,14 @@ function ShelfSection({ isAdmin, staffList }: { isAdmin: boolean; staffList: Sta
         <div className="flex items-center gap-2 flex-wrap">
           {/* Admin staff filter */}
           {isAdmin && staffList.length > 0 && (
-            <select
+            <Select
               value={filterStaff}
               onChange={e => setFilterStaff(e.target.value)}
               className="input text-sm w-auto pr-8"
             >
               <option value="">All Staff</option>
               {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           )}
           {/* Staff can add; admin can also add (for their own) */}
           <button

@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState, useCallback } from 'react';
 import Portal from '../components/Portal';
 import {
@@ -275,28 +276,28 @@ function AddTaskModal({ staff, customers, onClose, onCreated }: {
               <input type="date" className="input" value={form.dueDate}
                 onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
             <div><label className="label">Time Slot</label>
-              <select className="input" value={form.dueTime}
+              <Select className="input" value={form.dueTime}
                 onChange={e => setForm(f => ({ ...f, dueTime: e.target.value }))}>
                 <option value="">Any time</option>
                 {WORK_SLOTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           {isAdmin && (
             <div><label className="label">Assign to Staff</label>
-              <select className="input" value={form.assignedTo}
+              <Select className="input" value={form.assignedTo}
                 onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value, customerId: '' }))}>
                 <option value="">Assign to myself</option>
                 {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
           <div><label className="label">Linked Customer (optional)</label>
-            <select className="input" value={form.customerId}
+            <Select className="input" value={form.customerId}
               onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}>
               <option value="">None</option>
               {filteredCustomers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div><label className="label">Notes</label>
             <textarea className="input resize-none" rows={2} placeholder="Additional details..."
@@ -393,10 +394,10 @@ function EditTaskModal({ task, onClose, onSaved }: {
             </div>
             <div>
               <label className="label">Time Slot</label>
-              <select className="input" value={dueTime} onChange={e => setDueTime(e.target.value)}>
+              <Select className="input" value={dueTime} onChange={e => setDueTime(e.target.value)}>
                 <option value="">Any time</option>
                 {WORK_SLOTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <div>
@@ -727,11 +728,11 @@ export default function Tasks() {
         {isAdmin && staff.length > 0 && (
           <div className="flex items-center gap-2">
             <Filter size={13} className="text-white/30" />
-            <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)}
+            <Select value={staffFilter} onChange={e => setStaffFilter(e.target.value)}
               className="input py-1.5 text-xs pr-7 w-auto">
               <option value="all">All Staff</option>
               {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
             {staffFilter !== 'all' && (
               <button onClick={() => setStaffFilter('all')} className="text-white/30 hover:text-white">
                 <X size={13} />

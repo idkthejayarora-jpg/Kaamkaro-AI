@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, X, Trash2, Copy, FileText, Paperclip, Image, File, CheckCheck, ExternalLink, Lock, Globe } from 'lucide-react';
 import { templatesAPI } from '../lib/api';
@@ -72,16 +73,16 @@ function AddTemplateModal({ onClose, onCreated }: { onClose: () => void; onCreat
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Type</label>
-              <select className="input" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as Template['type'] }))}>
+              <Select className="input" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as Template['type'] }))}>
                 {TYPE_OPTS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <label className="label">For Stage (optional)</label>
-              <select className="input" value={form.stage} onChange={e => setForm(f => ({ ...f, stage: e.target.value as PipelineStatus | '' }))}>
+              <Select className="input" value={form.stage} onChange={e => setForm(f => ({ ...f, stage: e.target.value as PipelineStatus | '' }))}>
                 <option value="">Any stage</option>
                 {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <div>

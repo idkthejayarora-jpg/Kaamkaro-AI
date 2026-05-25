@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, TrendingUp, CheckCircle, Target, Wifi, Phone, Home, RotateCcw, Award, Users } from 'lucide-react';
@@ -133,7 +134,7 @@ export default function Leaderboard() {
 
           {/* Team filter — admin only */}
           {isAdmin && data.teams.length > 0 && (
-            <select
+            <Select
               value={teamFilter}
               onChange={e => handleTeamFilter(e.target.value)}
               className="input text-xs py-1.5 px-3 h-auto"
@@ -142,7 +143,7 @@ export default function Leaderboard() {
               {data.teams.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
-            </select>
+            </Select>
           )}
 
           {isAdmin && (

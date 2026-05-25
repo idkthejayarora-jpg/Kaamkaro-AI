@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useState, useEffect, useCallback } from 'react';
 import { useTabSlider, AnimatedTabPanel } from '../components/TabBar';
 import {
@@ -457,14 +458,14 @@ export default function Calendar() {
           <p className="text-white/30 text-xs mt-0.5">{isAdmin ? 'All team activity' : 'Your activity log'}</p>
         </div>
         {isAdmin && (
-          <select
+          <Select
             value={filterStaff}
             onChange={e => { setFilterStaff(e.target.value); setSelected(null); }}
             className="ml-auto input w-auto pr-8"
           >
             <option value="">All Staff</option>
             {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          </Select>
         )}
       </div>
 

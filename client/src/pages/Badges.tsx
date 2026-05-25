@@ -11,6 +11,7 @@
  *  Badge grid — earned full-colour, unearned greyed with criteria shown
  */
 
+import Select from '../components/Select';
 import { useEffect, useState, useCallback } from 'react';
 import { Award, Lock, ChevronDown, ChevronUp, Save, RefreshCw, Settings2, Info } from 'lucide-react';
 import { badgesAPI, staffAPI } from '../lib/api';
@@ -344,7 +345,7 @@ export default function Badges() {
           </p>
         </div>
         {isAdmin && (
-          <select
+          <Select
             value={selectedStaff}
             onChange={e => setSelectedStaff(e.target.value)}
             className="bg-dark-300 border border-dark-50 text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-gold/50 min-w-[180px]"
@@ -353,7 +354,7 @@ export default function Badges() {
             {staffList.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
 

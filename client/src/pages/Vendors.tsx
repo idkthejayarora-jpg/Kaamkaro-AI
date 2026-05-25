@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState } from 'react';
 import { Plus, Search, Building2, Phone, Mail, X, Trash2, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { vendorsAPI } from '../lib/api';
@@ -42,9 +43,9 @@ function AddVendorModal({ onClose, onCreated }: { onClose: () => void; onCreated
           </div>
           <div>
             <label className="label">Category</label>
-            <select className="input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+            <Select className="input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            </Select>
           </div>
           <div><label className="label">Notes</label><textarea className="input resize-none" rows={2} placeholder="Notes..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
         </form>

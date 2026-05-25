@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -261,10 +262,10 @@ function LogInteractionModal({ customer, onClose, onLogged }: {
           {/* Update stage */}
           <div>
             <label className="label">Update Pipeline Stage</label>
-            <select className="input" value={form.newStatus}
+            <Select className="input" value={form.newStatus}
               onChange={e => setForm(f => ({ ...f, newStatus: e.target.value as PipelineStatus }))}>
               {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
+            </Select>
           </div>
 
           {/* Follow-up */}
@@ -421,9 +422,9 @@ function AddCustomerModal({ staff, isAdmin, selfId, onClose, onCreated }: {
           </div>
           <div>
             <label className="label">Stage</label>
-            <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as PipelineStatus }))}>
+            <Select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as PipelineStatus }))}>
               {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
+            </Select>
           </div>
           {/* Multi-staff assignment — admin only */}
           {isAdmin && staff.length > 0 && (
@@ -753,10 +754,10 @@ function CSVImportModal({ staff, onClose, onImported }: {
             onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
           <div>
             <label className="label">Assign all to staff (optional)</label>
-            <select className="input" value={assignTo} onChange={e => setAssignTo(e.target.value)}>
+            <Select className="input" value={assignTo} onChange={e => setAssignTo(e.target.value)}>
               <option value="">Unassigned</option>
               {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
           {preview.length > 0 && (
             <div className="overflow-x-auto border border-dark-50 rounded-xl">
@@ -792,20 +793,20 @@ function BulkToolbar({ selected, staff, onAction, onClear }: {
       <div className="flex gap-2 flex-wrap flex-1">
         {staff.length > 0 && (
           <div className="flex gap-1">
-            <select className="input py-1 text-xs h-8" value={assignTo} onChange={e => setAssignTo(e.target.value)}>
+            <Select className="input py-1 text-xs h-8" value={assignTo} onChange={e => setAssignTo(e.target.value)}>
               <option value="">Assign to...</option>
               {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
             <button disabled={!assignTo} onClick={() => onAction('assign', assignTo)} className="btn-secondary py-1 px-3 text-xs h-8 flex items-center gap-1">
               <Users size={11} />Assign
             </button>
           </div>
         )}
         <div className="flex gap-1">
-          <select className="input py-1 text-xs h-8" value={stage} onChange={e => setStage(e.target.value)}>
+          <Select className="input py-1 text-xs h-8" value={stage} onChange={e => setStage(e.target.value)}>
             <option value="">Move to stage...</option>
             {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
+          </Select>
           <button disabled={!stage} onClick={() => onAction('stage', stage)} className="btn-secondary py-1 px-3 text-xs h-8">
             Move
           </button>
@@ -1077,7 +1078,7 @@ export default function Customers() {
           {isAdmin && staff.length > 0 && (
             <div className="relative">
               <Filter size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
-              <select
+              <Select
                 className="input pl-8 w-auto"
                 value={staffFilter}
                 onChange={e => { setStaffFilter(e.target.value); setSelected([]); }}
@@ -1085,16 +1086,16 @@ export default function Customers() {
                 <option value="all">All Staff</option>
                 <option value="unassigned">Unassigned</option>
                 {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
           {allTags.length > 0 && (
             <div className="relative">
               <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-              <select className="input pl-8 w-auto" value={tagFilter} onChange={e => setTagFilter(e.target.value)}>
+              <Select className="input pl-8 w-auto" value={tagFilter} onChange={e => setTagFilter(e.target.value)}>
                 <option value="">All tags</option>
                 {allTags.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </Select>
             </div>
           )}
         </div>

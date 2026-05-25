@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Search, X, User, UserPlus, Check } from 'lucide-react';
@@ -382,10 +383,10 @@ export default function CRMForm() {
         {isAdmin && !isEdit && staffList.length > 0 && (
           <div>
             <label className="label">Assign to Staff</label>
-            <select className="input" value={form.assignedTo} onChange={e => set('assignedTo', e.target.value)}>
+            <Select className="input" value={form.assignedTo} onChange={e => set('assignedTo', e.target.value)}>
               <option value="">Assign to myself</option>
               {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
         )}
 
@@ -393,15 +394,15 @@ export default function CRMForm() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Source</label>
-            <select className="input" value={form.source} onChange={e => set('source', e.target.value as LeadSource)}>
+            <Select className="input" value={form.source} onChange={e => set('source', e.target.value as LeadSource)}>
               {SOURCES.map(s => <option key={s} value={s}>{SOURCE_LABELS[s]}</option>)}
-            </select>
+            </Select>
           </div>
           <div>
             <label className="label">Stage</label>
-            <select className="input" value={form.stage} onChange={e => set('stage', e.target.value as LeadStage)}>
+            <Select className="input" value={form.stage} onChange={e => set('stage', e.target.value as LeadStage)}>
               {STAGES.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
-            </select>
+            </Select>
           </div>
         </div>
 

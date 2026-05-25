@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState } from 'react';
 import { Download, RefreshCw, Shield } from 'lucide-react';
 import { auditAPI, exportAPI, staffAPI } from '../lib/api';
@@ -81,16 +82,16 @@ export default function AuditLog() {
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <select className="input w-auto flex-1 min-w-36"
+        <Select className="input w-auto flex-1 min-w-36"
           value={filterUser} onChange={e => setFilterUser(e.target.value)}>
           <option value="">All users</option>
           {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-        <select className="input w-auto flex-1 min-w-36"
+        </Select>
+        <Select className="input w-auto flex-1 min-w-36"
           value={filterResource} onChange={e => setFilterResource(e.target.value)}>
           <option value="">All resources</option>
           {resources.map(r => <option key={r} value={r}>{r}</option>)}
-        </select>
+        </Select>
       </div>
 
       {/* Log entries */}

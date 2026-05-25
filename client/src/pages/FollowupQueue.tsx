@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TabBar, AnimatedTabPanel } from '../components/TabBar';
@@ -1005,11 +1006,11 @@ export default function FollowupQueue() {
           {/* Filters */}
           {(isAdmin && queueStaff.length > 0) && (
             <div className="flex gap-3 flex-wrap">
-              <select className="input flex-shrink-0 w-auto" value={staffFilter}
+              <Select className="input flex-shrink-0 w-auto" value={staffFilter}
                 onChange={e => setStaffFilter(e.target.value)}>
                 <option value="all">All Staff</option>
                 {queueStaff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
 

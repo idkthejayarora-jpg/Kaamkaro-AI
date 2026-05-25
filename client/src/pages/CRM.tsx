@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -469,14 +470,14 @@ function BulkImportModal({ staffList, onClose, onImported }: {
                     {['name', 'phone', 'place', 'source', 'stage'].map(field => (
                       <div key={field}>
                         <label className="label capitalize">{field === 'place' ? 'City / Place' : field}</label>
-                        <select
+                        <Select
                           className="input text-xs"
                           value={colMap[field] || ''}
                           onChange={e => setColMap(m => ({ ...m, [field]: e.target.value }))}
                         >
                           <option value="">— Skip —</option>
                           {csvHeaders.map(h => <option key={h} value={h}>{h}</option>)}
-                        </select>
+                        </Select>
                       </div>
                     ))}
                   </div>
@@ -618,10 +619,10 @@ function BulkImportModal({ staffList, onClose, onImported }: {
           {staffList.length > 0 && (
             <div className="flex items-center gap-3">
               <label className="text-white/40 text-xs whitespace-nowrap">Assign to:</label>
-              <select className="input py-1.5 text-xs flex-1" value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
+              <Select className="input py-1.5 text-xs flex-1" value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
                 <option value="">Default (me / auto)</option>
                 {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
           <div className="flex gap-3">
@@ -1159,7 +1160,7 @@ export default function CRM() {
               </button>
             )}
           </div>
-          <select
+          <Select
             className="input w-32 sm:w-36 text-sm"
             value={sortBy}
             onChange={e => { setSortBy(e.target.value); resetPage(); }}
@@ -1169,7 +1170,7 @@ export default function CRM() {
             <option value="name">Name A–Z</option>
             <option value="stage">Stage</option>
             <option value="newest">Newest first</option>
-          </select>
+          </Select>
         </div>
       )}
 
@@ -1179,19 +1180,19 @@ export default function CRM() {
           {teams.length > 0 && (
             <div className="flex items-center gap-1.5">
               <Users size={13} className="text-white/30" />
-              <select value={teamFilter} onChange={e => handleTeamChange(e.target.value)} className="input py-1.5 text-xs w-auto">
+              <Select value={teamFilter} onChange={e => handleTeamChange(e.target.value)} className="input py-1.5 text-xs w-auto">
                 <option value="all">All Teams</option>
                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
           {filteredStaff.length > 0 && (
             <div className="flex items-center gap-1.5">
               <User size={13} className="text-white/30" />
-              <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} className="input py-1.5 text-xs w-auto">
+              <Select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} className="input py-1.5 text-xs w-auto">
                 <option value="all">{teamFilter !== 'all' ? 'All in team' : 'All Staff'}</option>
                 {filteredStaff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             </div>
           )}
           {(teamFilter !== 'all' || staffFilter !== 'all') && (
@@ -1396,7 +1397,7 @@ export default function CRM() {
             <div className="flex-1" />
 
             {/* Set stage */}
-            <select
+            <Select
               className="input py-1.5 text-xs w-auto"
               defaultValue=""
               onChange={e => { if (e.target.value) handleBulkAction('stage', e.target.value); e.target.value = ''; }}
@@ -1404,11 +1405,11 @@ export default function CRM() {
             >
               <option value="">Set Stage…</option>
               {STAGES.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
-            </select>
+            </Select>
 
             {/* Assign staff (admin) */}
             {isAdmin && staffList.length > 0 && (
-              <select
+              <Select
                 className="input py-1.5 text-xs w-auto"
                 defaultValue=""
                 onChange={e => { if (e.target.value) handleBulkAction('assign', e.target.value); e.target.value = ''; }}
@@ -1416,7 +1417,7 @@ export default function CRM() {
               >
                 <option value="">Assign Staff…</option>
                 {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </Select>
             )}
 
             {/* Set follow-up */}

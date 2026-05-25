@@ -1,3 +1,4 @@
+import Select from '../components/Select';
 import { useEffect, useState } from 'react';
 import { Target, Plus, X, Trash2, TrendingUp, Phone, CheckCircle, BarChart3 } from 'lucide-react';
 import { goalsAPI, staffAPI } from '../lib/api';
@@ -83,10 +84,10 @@ function AddGoalModal({ staff, onClose, onCreated }: {
 
           <div>
             <label className="label">Staff Member *</label>
-            <select className="input" value={form.staffId} onChange={e => setForm(f => ({ ...f, staffId: e.target.value }))}>
+            <Select className="input" value={form.staffId} onChange={e => setForm(f => ({ ...f, staffId: e.target.value }))}>
               <option value="">Select staff...</option>
               {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
 
           <div>
