@@ -319,6 +319,20 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
     box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.1);
   }
 
+  /* Native select inside custom Select component — style the OS dropdown */
+  select option {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    padding: 8px 12px;
+  }
+  select option:checked {
+    background-color: #2a2218;
+    color: #D4AF37;
+  }
+  select option:hover {
+    background-color: #252525;
+  }
+
   /* Label */
   .label {
     @apply block text-xs font-medium text-white/55 mb-1.5 uppercase tracking-wider;
