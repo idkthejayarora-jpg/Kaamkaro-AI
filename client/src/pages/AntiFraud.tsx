@@ -5,7 +5,7 @@ import {
   ChevronDown, Zap, Clock, ToggleLeft, TrendingUp,
   Award, Copy, BookOpen, CheckCircle2, Gavel,
   Eye, EyeOff, History, User, Clipboard, Users, type LucideIcon,
-  TextSearch, Trash2, ExternalLink,
+  TextSearch, Trash2, ExternalLink, Sparkles, Check,
 } from 'lucide-react';
 import { fraudAPI } from '../lib/api';
 import Portal from '../components/Portal';
