@@ -1,14 +1,11 @@
 /**
- * Select — fully custom dropdown, no native <select>, no browser chrome.
+ * Select — custom glass-UI dropdown. Apple-style frosted panel.
  *
- * How click-outside works (the tricky part):
- *   • Panel div has onMouseDown={e => e.stopPropagation()}
- *   • Document mousedown listener (bubble phase) only sees clicks that
- *     were NOT inside the panel, so it closes on true outside clicks.
- *   • Option buttons use onClick normally — they fire AFTER mousedown,
- *     so the panel is still open when they fire.
+ * Click-outside: panel onMouseDown stops propagation so the document
+ * listener only fires for true outside clicks.
+ * Scroll: wheel/touch events on the panel are stopped from reaching the page.
  */
-import { useState, useRef, useLayoutEffect, useEffect, useCallback, useId } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import React from 'react';
@@ -35,7 +32,6 @@ function parseOptions(children: React.ReactNode): Opt[] {
   return opts;
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
 interface SelectProps {
   value?: string;
   defaultValue?: string;
@@ -45,141 +41,185 @@ interface SelectProps {
   disabled?: boolean;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function Select({ value, defaultValue, onChange, children, className = '', disabled }: SelectProps) {
-  const isControlled  = value !== undefined;
+  const isControlled = value !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? '');
-  const active        = isControlled ? value! : internal;
+  const active = isControlled ? value! : internal;
 
-  const [open, setOpen]         = useState(false);
-  const [closing, setClosing]   = useState(false);
-  const [style, setStyle]       = useState<React.CSSProperties>({});
-  const btnRef                  = useRef<HTMLButtonElement>(null);
-  const closeTimer              = useRef<ReturnType<typeof setTimeout>>();
+  const [open,    setOpen]    = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [pos,     setPos]     = useState<React.CSSProperties>({});
+  const [openUp,  setOpenUp]  = useState(false);
 
-  // Animated close — play out animation then unmount
-  const close = useCallback(() => {
-    setClosing(true);
-    closeTimer.current = setTimeout(() => {
-      setOpen(false);
-      setClosing(false);
-    }, 160);
-  }, []);
-
-  useEffect(() => () => clearTimeout(closeTimer.current), []);
+  const btnRef   = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const timer    = useRef<ReturnType<typeof setTimeout>>();
 
   const opts          = parseOptions(children);
   const selectedLabel = opts.find(o => o.value === active)?.label ?? active;
 
-  // ── Position panel below (or above) trigger ───────────────────────────────
+  // ── Animated close ────────────────────────────────────────────────────────
+  const closeMenu = useCallback(() => {
+    setClosing(true);
+    timer.current = setTimeout(() => { setOpen(false); setClosing(false); }, 180);
+  }, []);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  // ── Position ──────────────────────────────────────────────────────────────
   const reposition = useCallback(() => {
     if (!btnRef.current) return;
-    const r      = btnRef.current.getBoundingClientRect();
-    const dropH  = Math.min(opts.length * 40 + 12, 272);
-    const below  = window.innerHeight - r.bottom;
-    const openUp = below < dropH && r.top > dropH;
-    setStyle({
+    const r     = btnRef.current.getBoundingClientRect();
+    const dropH = Math.min(opts.length * 44 + 16, 300);
+    const up    = window.innerHeight - r.bottom < dropH && r.top > dropH;
+    setOpenUp(up);
+    setPos({
       position : 'fixed',
       zIndex   : 9999,
       left     : r.left,
-      width    : Math.max(r.width, 192),
-      ...(openUp ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 }),
+      width    : Math.max(r.width, 200),
+      ...(up ? { bottom: window.innerHeight - r.top + 6 } : { top: r.bottom + 6 }),
     });
   }, [opts.length]);
 
   useLayoutEffect(() => { if (open) reposition(); }, [open, reposition]);
 
-  // ── Close on scroll / resize ──────────────────────────────────────────────
+  // ── Close on scroll / resize behind the panel ─────────────────────────────
   useEffect(() => {
     if (!open) return;
-    const onScroll = () => close();
-    window.addEventListener('scroll', onScroll, true);
-    window.addEventListener('resize', onScroll);
-    return () => { window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onScroll); };
-  }, [open, close]);
+    const close = () => closeMenu();
+    window.addEventListener('resize', close);
+    return () => window.removeEventListener('resize', close);
+  }, [open, closeMenu]);
 
-  // ── Close when mousedown happens OUTSIDE both trigger and panel ───────────
+  // ── Close on outside mousedown ────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (btnRef.current?.contains(e.target as Node)) return;
-      close();
+      closeMenu();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [open, close]);
+  }, [open, closeMenu]);
 
-  // ── Select an option ──────────────────────────────────────────────────────
+  // ── Pick option ───────────────────────────────────────────────────────────
   const pick = (v: string) => {
     onChange({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>);
     if (!isControlled) setInternal(defaultValue ?? '');
-    close();
+    closeMenu();
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   let lastGroup: string | undefined;
 
   return (
     <>
-      {/* Trigger */}
+      {/* ── Trigger ── */}
       <button
         ref={btnRef}
         type="button"
         disabled={disabled}
-        onClick={() => { if (disabled) return; open ? close() : setOpen(true); }}
-        className={`flex items-center justify-between gap-2 text-left ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        onClick={() => { if (disabled) return; open ? closeMenu() : setOpen(true); }}
+        className={`flex items-center justify-between gap-2 text-left ${className} ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
       >
-        <span className={`truncate flex-1 ${selectedLabel ? 'text-white' : 'text-white/30'}`}>
+        <span className={`truncate flex-1 ${selectedLabel ? '' : 'text-white/30'}`}>
           {selectedLabel || 'Select…'}
         </span>
         <ChevronDown
-          size={14}
-          className={`flex-shrink-0 text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          size={13}
+          className={`flex-shrink-0 text-white/40 transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
-      {/* Dropdown panel — portalled so it's never clipped */}
+      {/* ── Floating glass panel ── */}
       {open && createPortal(
         <div
+          ref={panelRef}
           style={{
-            ...style,
+            ...pos,
+            transformOrigin: openUp ? 'bottom center' : 'top center',
             animation: closing
-              ? 'selectOut 0.16s cubic-bezier(0.4,0,1,1) forwards'
-              : 'selectIn 0.18s cubic-bezier(0.16,1,0.3,1) forwards',
-            transformOrigin: style.bottom ? 'bottom center' : 'top center',
+              ? 'selectOut 0.18s cubic-bezier(0.4,0,1,1) forwards'
+              : 'selectIn 0.22s cubic-bezier(0.16,1,0.3,1) forwards',
           }}
+          /* Stop mousedown so outside-click handler ignores panel clicks */
           onMouseDown={e => e.stopPropagation()}
-          className="bg-dark-200 border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden"
+          /* Stop scroll leaking to the page behind */
+          onWheel={e => e.stopPropagation()}
+          onTouchMove={e => e.stopPropagation()}
+          className="rounded-2xl overflow-hidden"
+          style2={{}} /* ts trick — actual styles above */
         >
-          <div className="overflow-y-auto py-1.5" style={{ maxHeight: 272 }}>
-            {opts.map((opt, i) => {
-              const showGroup = opt.group && opt.group !== lastGroup;
-              if (showGroup) lastGroup = opt.group;
-              return (
-                <div key={`${opt.value}__${i}`}>
-                  {showGroup && (
-                    <p className="px-4 pt-2.5 pb-1 text-[10px] uppercase tracking-widest font-semibold text-white/25 select-none">
-                      {opt.group}
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    disabled={opt.disabled}
-                    onClick={() => !opt.disabled && pick(opt.value)}
-                    className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-left transition-colors duration-100
-                      ${opt.disabled
-                        ? 'text-white/20 cursor-not-allowed'
-                        : opt.value === active
-                        ? 'text-gold bg-gold/8 font-medium'
-                        : 'text-white/65 hover:bg-white/[0.05] hover:text-white'
-                      }`}
-                  >
-                    <span className="truncate">{opt.label}</span>
-                    {opt.value === active && <Check size={12} className="text-gold flex-shrink-0" />}
-                  </button>
-                </div>
-              );
-            })}
+          {/* Glass layer */}
+          <div
+            style={{
+              background      : 'rgba(28, 28, 30, 0.82)',
+              backdropFilter  : 'blur(24px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+              border          : '1px solid rgba(255,255,255,0.10)',
+              borderRadius    : 16,
+              boxShadow       : '0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06) inset',
+              overflow        : 'hidden',
+            }}
+          >
+            {/* Scrollable list */}
+            <div
+              style={{ maxHeight: 292, overflowY: 'auto', padding: '6px 0' }}
+              className="scrollbar-hide"
+            >
+              {opts.map((opt, i) => {
+                const showGroup = opt.group && opt.group !== lastGroup;
+                if (showGroup) lastGroup = opt.group;
+                const isActive = opt.value === active;
+                return (
+                  <div key={`${opt.value}__${i}`}>
+                    {showGroup && (
+                      <p
+                        style={{ padding: '10px 14px 4px', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', userSelect: 'none' }}
+                      >
+                        {opt.group}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      disabled={opt.disabled}
+                      onClick={() => !opt.disabled && pick(opt.value)}
+                      style={{
+                        width           : '100%',
+                        display         : 'flex',
+                        alignItems      : 'center',
+                        justifyContent  : 'space-between',
+                        gap             : 10,
+                        padding         : '10px 14px',
+                        fontSize        : 14,
+                        textAlign       : 'left',
+                        cursor          : opt.disabled ? 'not-allowed' : 'pointer',
+                        color           : opt.disabled ? 'rgba(255,255,255,0.2)'
+                                        : isActive     ? '#D4AF37'
+                                        :                'rgba(255,255,255,0.75)',
+                        background      : isActive ? 'rgba(212,175,55,0.10)' : 'transparent',
+                        fontWeight      : isActive ? 500 : 400,
+                        transition      : 'background 0.12s ease, color 0.12s ease',
+                        border          : 'none',
+                        outline         : 'none',
+                      }}
+                      onMouseEnter={e => {
+                        if (!opt.disabled && !isActive)
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
+                      }}
+                      onMouseLeave={e => {
+                        if (!isActive)
+                          (e.currentTarget as HTMLButtonElement).style.background = isActive ? 'rgba(212,175,55,0.10)' : 'transparent';
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {opt.label}
+                      </span>
+                      {isActive && <Check size={12} style={{ color: '#D4AF37', flexShrink: 0 }} />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>,
         document.body
