@@ -52,8 +52,21 @@ export default function Select({ value, defaultValue, onChange, children, classN
   const active        = isControlled ? value! : internal;
 
   const [open, setOpen]         = useState(false);
+  const [closing, setClosing]   = useState(false);
   const [style, setStyle]       = useState<React.CSSProperties>({});
   const btnRef                  = useRef<HTMLButtonElement>(null);
+  const closeTimer              = useRef<ReturnType<typeof setTimeout>>();
+
+  // Animated close — play out animation then unmount
+  const close = useCallback(() => {
+    setClosing(true);
+    closeTimer.current = setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, 160);
+  }, []);
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
 
   const opts          = parseOptions(children);
   const selectedLabel = opts.find(o => o.value === active)?.label ?? active;
