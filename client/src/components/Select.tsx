@@ -126,7 +126,7 @@ export default function Select({ value, defaultValue, onChange, children, classN
         ref={btnRef}
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setOpen(o => !o)}
+        onClick={() => { if (disabled) return; open ? close() : setOpen(true); }}
         className={`flex items-center justify-between gap-2 text-left ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className={`truncate flex-1 ${selectedLabel ? 'text-white' : 'text-white/30'}`}>
