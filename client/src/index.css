@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Custom Select dropdown animations ────────────────────────────────────────*/
+@keyframes selectIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+@keyframes selectOut {
+  from { opacity: 1; transform: scale(1)    translateY(0);    }
+  to   { opacity: 0; transform: scale(0.95) translateY(-6px); }
+}
+
 /* ── Color tokens ─────────────────────────────────────────────────────────────*/
 :root {
   /* Accent — set by ThemeContext. Defaults to gold. */
