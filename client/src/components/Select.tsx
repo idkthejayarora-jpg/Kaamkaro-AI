@@ -61,7 +61,7 @@ export default function Select({ value, defaultValue, onChange, children, classN
   // ── Animated close ────────────────────────────────────────────────────────
   const closeMenu = useCallback(() => {
     setClosing(true);
-    timer.current = setTimeout(() => { setOpen(false); setClosing(false); }, 180);
+    timer.current = setTimeout(() => { setOpen(false); setClosing(false); }, 140);
   }, []);
   useEffect(() => () => clearTimeout(timer.current), []);
 
