@@ -479,67 +479,128 @@ router.get('/records', adminOnly, async (req, res) => {
   }
 });
 
-// ── Suspicious name detection ─────────────────────────────────────────────────
+// ── Suspicious name detection — remodelled ────────────────────────────────────
+//
+// Core insight: the problem is PHRASES saved as customer names, not short names.
+// Indian single-word names (Raj, Soni, Priya, Ravi) are completely normal.
+// Business names with "collection", "jewellers" are real customers.
+// What's wrong: diary AI saving tasks/sentences like "earring ka order tha" as names.
+//
+// Detection priority:
+//   1. Hindi verb words → it's a task/phrase, not a person
+//   2. Hindi sentence connectors (ka/ke/ki/ko + another word) → phrase structure
+//   3. Number + word patterns ("5 sets", "10 piece") → quantity note
+//   4. 5+ words → almost certainly a sentence, not a name
+//   5. Pure interrogative pronouns as the entire name
+//   6. Placeholder/test names
+//   7. Pure product term with NO name component (standalone, not business names)
 
-const SUSPICIOUS_PRODUCTS = new Set([
-  'earring','earrings','jhumka','jhumke','jhumki','bangle','bangles','kangan',
-  'necklace','haar','mala','maang','tikka','maangtikka','nath',
-  'payal','anklet','ring','rings','pendant','pendants','locket',
-  'bracelet','bracelets','bajuband','baju',
-  'bridal','kundan','meenakari','polki','jadau','moti',
-  'chuda','chudiyan','chudi','chooda','churiya',
-  'chain','chains','set','sets','collection','design','designs',
-  'sample','samples','stock','piece','pieces','item','items',
-  'diamond','diamonds','ad','american','rose','gold','silver',
-  'oxidised','oxidized','polish','stone','stones','mehendi',
-  'tops','studs','kada','kara','satlada','kanthi','borla',
-  'pajeb','anguthi','armlet','nathni','pearl','pearls',
-  'solitaire','emerald','ruby','platinum','brass','copper',
-  'antique','vintage','lacquer','rhodium','cz','cubic','zirconia',
-  'catalogue','catalog','range','line','series','lot','bulk','delivery',
+// Hindi action/verb words — if present the entry is a task/diary note, not a name
+const HINDI_VERBS = new Set([
+  'milna','milega','milenge','milte','mila','mile',
+  'dikhana','dikhao','dikhaaye','dikhai','dikhani','dikha',
+  'bhejna','bhejni','bhejdo','bhejo','bheja','bhejege',
+  'dena','dedo','lena','lelo','lenge','lena','liya',
+  'karna','karo','karna','karunga','karni','karenge',
+  'aana','aao','aaega','aaegi','aaenge',
+  'jaana','jao','jaega','jayenge',
+  'batana','batao','bataega','bata',
+  'samjhana','samjhao','samjha',
+  'chahiye','chahte','chahta','chahti',
+  'pending','baaki','bakaya','bhejna',
+  'rakhna','rakho','rakh','rakha',
+  'lagana','lagao','laga',
+  'mangana','mangao','manga',
+  'bhejdo','bhejdena',
 ]);
 
-const SUSPICIOUS_PRONOUNS = new Set([
-  'kiska','iska','uska','kisi','koi','kuch','sab','saab',
-  'wala','wali','waale','aapka','mera','tera','hamara',
-  'tumhara','unka','inke','unke','jiska','kaun','kitna',
-  'kahan','kyun','kya','yeh','woh','hum','tum','aap',
-  'main','wo','ye','toh','tou','vo',
+// Hindi phrase connectors — when combined with other words they signal a sentence
+const PHRASE_CONNECTORS = ['ka','ke','ki','ko','se','mein','par','tak','wala','wali','waale','ne'];
+
+// Standalone whole-name pronouns only (not when mixed with real name words)
+const PURE_PRONOUNS = new Set([
+  'kiska','iska','uska','kisi','koi','kuch',
+  'aapka','mera','tera','hamara','tumhara','unka','inke','unke',
+  'jiska','kaun','kitna','kahan','kyun','kya',
 ]);
 
-const SUSPICIOUS_PLACEHOLDERS = new Set([
+// Only flag as product if the ENTIRE name is product vocabulary (no person-name component)
+const PRODUCT_ONLY_WORDS = new Set([
+  'earring','earrings','jhumka','jhumke','jhumki',
+  'bangle','bangles','kangan','necklace','haar',
+  'maangtikka','nath','payal','anklet','pendant','locket',
+  'bracelet','bracelets','bajuband','chuda','chudiyan','chooda',
+  'tops','studs','sets','pieces','items','samples','stock',
+  'catalogue','catalog','bulk','delivery','lot',
+]);
+
+// Clear test/placeholder names
+const PLACEHOLDERS = new Set([
   'test','demo','abc','xyz','temp','dummy','unknown','anonymous',
-  'na','nil','none','null','n/a','xxx','yyy','zzz','abcd','1234',
-  'customer','client','buyer','party','person',
+  'na','nil','none','null','abcd','1234','nnn','xxx','yyy','zzz',
 ]);
 
 function getSuspiciousReason(name) {
-  if (!name || typeof name !== 'string') return 'Empty name';
-  const lower = name.toLowerCase().trim();
-  const words = lower.split(/\s+/);
+  if (!name || typeof name !== 'string') return null;
+  const trimmed = name.trim();
+  const lower   = trimmed.toLowerCase();
+  const words   = lower.split(/\s+/).filter(Boolean);
+  const wcount  = words.length;
 
-  if (lower.length < 3)                  return 'Name too short';
-  if (/^\d+$/.test(lower))               return 'Name is a number';
-  if (SUSPICIOUS_PRONOUNS.has(lower))    return 'Hindi pronoun / interrogative';
-  if (SUSPICIOUS_PLACEHOLDERS.has(lower))return 'Placeholder / test name';
-  if (words.some(w => SUSPICIOUS_PRODUCTS.has(w)))  return 'Jewellery product term';
-  if (words.some(w => SUSPICIOUS_PRONOUNS.has(w)))  return 'Contains Hindi pronoun';
-  if (words.some(w => SUSPICIOUS_PLACEHOLDERS.has(w))) return 'Contains placeholder word';
-  if (lower.length <= 4 && words.length === 1)       return 'Very short single word';
-  return null; // not suspicious
+  // Too short to be any name
+  if (lower.length < 2) return 'Too short';
+
+  // Pure number
+  if (/^\d+$/.test(lower)) return 'Number, not a name';
+
+  // Number mixed with word ("5 sets", "10 piece ka", "3 jhumke")
+  if (/^\d+\s+\w/.test(lower) || /\w\s+\d+$/.test(lower)) return 'Quantity phrase';
+
+  // Placeholder/test names (whole name only, not partial)
+  if (PLACEHOLDERS.has(lower)) return 'Test / placeholder name';
+
+  // Pure interrogative pronoun as entire name
+  if (PURE_PRONOUNS.has(lower)) return 'Interrogative pronoun';
+
+  // Contains a Hindi verb → it's a task or diary note saved as a name
+  if (words.some(w => HINDI_VERBS.has(w))) return 'Hindi action phrase';
+
+  // Phrase connector pattern: word + ka/ke/ki + word (e.g. "earring ka order")
+  if (wcount >= 3 && words.some(w => PHRASE_CONNECTORS.includes(w))) {
+    // Check at least one non-connector word is also a product or common noun
+    const nonConnectors = words.filter(w => !PHRASE_CONNECTORS.includes(w));
+    if (nonConnectors.some(w => PRODUCT_ONLY_WORDS.has(w))) {
+      return 'Product phrase (not a name)';
+    }
+    // Even without product words, 4+ words with connector = likely sentence
+    if (wcount >= 4) return 'Sentence structure';
+  }
+
+  // 5+ words → almost certainly a sentence / note, not a person or business name
+  if (wcount >= 5) return 'Too many words — likely a phrase';
+
+  // Entire name is ONLY product/category words with no person-name component
+  if (wcount <= 2 && words.every(w => PRODUCT_ONLY_WORDS.has(w))) {
+    return 'Product term, not a name';
+  }
+
+  return null; // looks like a legitimate name
 }
 
 // ── GET /api/fraud/suspicious-names ──────────────────────────────────────────
 router.get('/suspicious-names', adminOnly, async (req, res) => {
   try {
-    const [customers, staffList] = await Promise.all([
+    const [customers, staffList, whitelist] = await Promise.all([
       readDB('customers').catch(() => []),
       readDB('staff').catch(() => []),
+      readDB('name_whitelist').catch(() => []),
     ]);
-    const staffMap = Object.fromEntries(staffList.map(s => [s.id, s.name]));
+    const staffMap      = Object.fromEntries(staffList.map(s => [s.id, s.name]));
+    const whitelistSet  = new Set(whitelist.map(w => w.name?.toLowerCase?.() ?? ''));
 
     const flagged = [];
     for (const c of customers) {
+      if (whitelistSet.has((c.name || '').toLowerCase().trim())) continue;
       const reason = getSuspiciousReason(c.name);
       if (reason) {
         flagged.push({
@@ -562,7 +623,7 @@ router.get('/suspicious-names', adminOnly, async (req, res) => {
   }
 });
 
-// ── DELETE /api/fraud/suspicious-names/:id ────────────────────────────────────
+// ── DELETE /api/fraud/suspicious-names/:id — delete the customer ──────────────
 router.delete('/suspicious-names/:id', adminOnly, async (req, res) => {
   try {
     const { deleteOne } = require('../utils/db');
@@ -570,6 +631,29 @@ router.delete('/suspicious-names/:id', adminOnly, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('[Fraud] delete customer error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/fraud/whitelist — learn: mark name as legitimate ────────────────
+router.post('/whitelist', adminOnly, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const existing = await readDB('name_whitelist').catch(() => []);
+    const lower    = name.toLowerCase().trim();
+    if (existing.some(w => w.name?.toLowerCase?.() === lower)) {
+      return res.json({ success: true, alreadyExists: true });
+    }
+    await insertOne('name_whitelist', {
+      id:        require('crypto').randomUUID(),
+      name:      name.trim(),
+      addedAt:   new Date().toISOString(),
+      addedBy:   req.user.id,
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[Fraud] whitelist error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
