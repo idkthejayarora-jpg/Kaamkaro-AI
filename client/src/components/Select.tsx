@@ -141,9 +141,13 @@ export default function Select({ value, defaultValue, onChange, children, classN
       {/* Dropdown panel — portalled so it's never clipped */}
       {open && createPortal(
         <div
-          style={style}
-          // stopPropagation on mousedown so the document handler above
-          // doesn't see clicks inside the panel and close it prematurely
+          style={{
+            ...style,
+            animation: closing
+              ? 'selectOut 0.16s cubic-bezier(0.4,0,1,1) forwards'
+              : 'selectIn 0.18s cubic-bezier(0.16,1,0.3,1) forwards',
+            transformOrigin: style.bottom ? 'bottom center' : 'top center',
+          }}
           onMouseDown={e => e.stopPropagation()}
           className="bg-dark-200 border border-white/10 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden"
         >
