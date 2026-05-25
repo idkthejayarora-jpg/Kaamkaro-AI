@@ -284,6 +284,140 @@ function SeverityBar({ alerts }: { alerts: FraudAlert[] }) {
   );
 }
 
+// ── SwipeCard — swipe left to delete, swipe right to learn/whitelist ──────────
+function SwipeCard({
+  customer,
+  onDelete,
+  onLearn,
+  onView,
+}: {
+  customer: SuspiciousCustomer;
+  onDelete: () => void;
+  onLearn:  () => void;
+  onView:   () => void;
+}) {
+  const [dx, setDx]           = useState(0);
+  const [dragging, setDrag]   = useState(false);
+  const [dismissed, setDism]  = useState(false);
+  const startX                = useRef(0);
+  const startY                = useRef(0);
+  const isSwipe               = useRef(false);
+  const THRESHOLD             = 90;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    isSwipe.current = false;
+    setDrag(true);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const distX = e.touches[0].clientX - startX.current;
+    const distY = Math.abs(e.touches[0].clientY - startY.current);
+    if (!isSwipe.current && distY > 8) { setDrag(false); return; } // vertical scroll
+    if (Math.abs(distX) > 6) isSwipe.current = true;
+    if (isSwipe.current) { e.preventDefault(); setDx(distX); }
+  };
+  const onTouchEnd = () => {
+    setDrag(false);
+    if (dx < -THRESHOLD) {
+      // Swipe left → delete
+      setDism(true);
+      setTimeout(onDelete, 320);
+    } else if (dx > THRESHOLD) {
+      // Swipe right → learn
+      setDism(true);
+      setTimeout(onLearn, 320);
+    } else {
+      setDx(0);
+    }
+  };
+
+  const reasonColor =
+    customer.reason.includes('phrase') || customer.reason.includes('Hindi action') || customer.reason.includes('Sentence')
+      ? { pill: 'bg-red-500/15 text-red-400 border-red-500/20', dot: '#f87171' }
+      : customer.reason.includes('product') || customer.reason.includes('Quantity')
+      ? { pill: 'bg-orange-500/15 text-orange-400 border-orange-500/20', dot: '#fb923c' }
+      : customer.reason.includes('pronoun') || customer.reason.includes('placeholder') || customer.reason.includes('Number')
+      ? { pill: 'bg-amber-500/12 text-amber-400 border-amber-500/18', dot: '#fbbf24' }
+      : { pill: 'bg-white/8 text-white/40 border-white/10', dot: '#666' };
+
+  const clampedDx  = Math.max(-160, Math.min(160, dx));
+  const swipeLeft  = clampedDx < -20;
+  const swipeRight = clampedDx > 20;
+  const opacity    = dismissed ? 0 : 1;
+  const maxH       = dismissed ? 0 : 80;
+
+  return (
+    <div
+      style={{ overflow: 'hidden', transition: dismissed ? 'max-height 0.32s ease, opacity 0.28s ease' : '', maxHeight: maxH, opacity }}
+    >
+      <div className="relative mx-0" style={{ touchAction: 'pan-y' }}>
+        {/* Left reveal — delete (red) */}
+        <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 rounded-r-2xl"
+          style={{ background: 'rgba(239,68,68,0.18)', width: '100%', opacity: swipeLeft ? Math.min(1, Math.abs(clampedDx) / THRESHOLD) : 0, transition: dragging ? 'none' : 'opacity 0.2s' }}>
+          <div className="flex flex-col items-center gap-1">
+            <Trash2 size={18} className="text-red-400" />
+            <span className="text-red-400 text-[10px] font-bold uppercase tracking-wide">Delete</span>
+          </div>
+        </div>
+
+        {/* Right reveal — learn (green) */}
+        <div className="absolute inset-y-0 left-0 flex items-center justify-start pl-5 rounded-l-2xl"
+          style={{ background: 'rgba(52,211,153,0.18)', width: '100%', opacity: swipeRight ? Math.min(1, clampedDx / THRESHOLD) : 0, transition: dragging ? 'none' : 'opacity 0.2s' }}>
+          <div className="flex flex-col items-center gap-1">
+            <Sparkles size={18} className="text-emerald-400" />
+            <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-wide">Learn</span>
+          </div>
+        </div>
+
+        {/* Card */}
+        <div
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{
+            transform: `translateX(${clampedDx}px)`,
+            transition: dragging ? 'none' : 'transform 0.35s cubic-bezier(0.16,1,0.3,1)',
+          }}
+          className="relative bg-dark-300 border border-dark-50 rounded-2xl px-4 py-3 flex items-center gap-3 select-none"
+        >
+          {/* Colour dot */}
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: reasonColor.dot, boxShadow: `0 0 6px ${reasonColor.dot}80` }} />
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-white text-sm font-semibold">{customer.name}</p>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${reasonColor.pill}`}>
+                {customer.reason}
+              </span>
+            </div>
+            <p className="text-white/25 text-[11px] mt-0.5">
+              {customer.staffName}
+              {customer.phone ? ` · ${customer.phone}` : ''}
+              {' · '}
+              {new Date(customer.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            </p>
+          </div>
+
+          {/* Desktop action buttons (hidden on touch) */}
+          <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+            <button onClick={onView}   className="p-1.5 rounded-lg text-white/25 hover:text-gold hover:bg-gold/10 transition-colors" title="View">
+              <ExternalLink size={13} />
+            </button>
+            <button onClick={onLearn}  className="p-1.5 rounded-lg text-white/25 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors" title="Mark as valid name — teach the model">
+              <Check size={13} />
+            </button>
+            <button onClick={onDelete} className="p-1.5 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete customer">
+              <Trash2 size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function AntiFraud() {
   const navigate = useNavigate();
