@@ -92,30 +92,28 @@ export default function Select({ value, defaultValue, onChange, children, classN
   // ── Close on scroll / resize ──────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); };
-  }, [open]);
+    const onScroll = () => close();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onScroll); };
+  }, [open, close]);
 
   // ── Close when mousedown happens OUTSIDE both trigger and panel ───────────
-  // Uses bubble phase so panel's own stopPropagation blocks it for inside clicks.
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      // Ignore clicks on the trigger — onClick already toggles it
       if (btnRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
+      close();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  }, [open, close]);
 
   // ── Select an option ──────────────────────────────────────────────────────
   const pick = (v: string) => {
     onChange({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>);
     if (!isControlled) setInternal(defaultValue ?? '');
-    setOpen(false);
+    close();
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
