@@ -257,6 +257,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     detectRef.current = setInterval(async () => {
       const video = videoRef.current;
       if (!video || video.readyState < 3) return;
+      if (!modelsLoadedRef.current) return; // face-api still loading
 
       const det = await faceapi
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
