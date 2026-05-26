@@ -69,8 +69,13 @@ function AppRoutes() {
   const { user } = useAuth();
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+      {/* Public routes */}
+      <Route path="/login" element={user ? (user.role === 'attendance_manager' ? <Navigate to="/attendance-portal" replace /> : <Navigate to="/dashboard" replace />) : <Login />} />
+      <Route path="/kiosk" element={<AttendanceKiosk />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* Attendance manager portal — isolated, no sidebar */}
+      <Route path="/attendance-portal" element={<AttendanceManagerRoute><AttendancePortal /></AttendanceManagerRoute>} />
       <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route path="/dashboard"       element={<Dashboard />} />
         <Route path="/staff"           element={<PrivateRoute adminOnly><Staff /></PrivateRoute>} />
