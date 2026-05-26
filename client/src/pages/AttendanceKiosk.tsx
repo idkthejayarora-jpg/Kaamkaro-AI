@@ -467,16 +467,19 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         style={{ transform: 'scaleX(-1)' }}
       />
 
-      {/* ── Loading overlay — on top of camera, not instead of it ── */}
+      {/* ── Loading overlay — camera permission / camera starting ── */}
       {kioskState === 'loading' && (
-        <div className="absolute inset-0 bg-dark-500/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-40">
+        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-4 z-40">
           {onClose && (
-            <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-dark-300 text-white/40 hover:text-white transition-colors">
+            <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 text-white/40 hover:text-white transition-colors">
               <X size={18} />
             </button>
           )}
-          <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-          <p className="text-white/50 text-sm">{modelStatus || 'Starting…'}</p>
+          <div className="w-12 h-12 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          <div className="text-center space-y-1 px-8">
+            <p className="text-white/70 text-sm font-medium">{modelStatus || 'Starting camera…'}</p>
+            <p className="text-white/25 text-xs">Allow camera access when prompted</p>
+          </div>
         </div>
       )}
 
