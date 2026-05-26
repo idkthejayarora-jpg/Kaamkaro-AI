@@ -1864,11 +1864,11 @@ export default function AttendancePortal() {
 
   return (
     <div className="space-y-5">
-      {/* Inline kiosk overlay — no new tab */}
-      {showKiosk && (
-        <div className="fixed inset-0 z-50">
-          <KioskView pin="__auto__" onClose={() => setShowKiosk(false)} />
-        </div>
+      {/* Kiosk overlay — rendered at document.body via portal so it covers
+          the nav sidebar (which has z-50 + CSS transform stacking context) */}
+      {showKiosk && createPortal(
+        <KioskView pin="__auto__" onClose={() => setShowKiosk(false)} />,
+        document.body
       )}
       {/* Page header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
