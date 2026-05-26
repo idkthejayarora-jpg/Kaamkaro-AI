@@ -343,6 +343,111 @@ export default function StaffProfile() {
         </div>
       )}
 
+      {/* ── Attendance tab ── */}
+      {activeTab === 'attendance' && (
+        <div className="space-y-4">
+          {/* Month selector */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                const [y, m] = attMonth.split('-').map(Number);
+                const d = new Date(y, m - 2, 1);
+                setAttMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+              }}
+              className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white transition-colors"
+            >‹</button>
+            <p className="text-white font-semibold flex-1 text-center text-sm">
+              {new Date(attMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+            </p>
+            <button
+              onClick={() => {
+                const [y, m] = attMonth.split('-').map(Number);
+                const d = new Date(y, m, 1);
+                setAttMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+              }}
+              className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white transition-colors"
+            >›</button>
+          </div>
+
+          {/* Summary tiles */}
+          {attSummary && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Present',   val: attSummary.presentDays, color: 'text-green-400' },
+                { label: 'Late',      val: attSummary.lateDays,    color: 'text-amber-400' },
+                { label: 'Hrs',       val: `${attSummary.totalHours.toFixed(1)}h`, color: 'text-white' },
+                { label: 'OT / UT',  val: attSummary.overtimeHours > 0 ? `+${attSummary.overtimeHours.toFixed(1)}h` : `-${attSummary.undertimeHours.toFixed(1)}h`,
+                  color: attSummary.overtimeHours > 0 ? 'text-green-400' : 'text-red-400' },
+              ].map(t => (
+                <div key={t.label} className="card text-center py-3">
+                  <p className={`text-xl font-black ${t.color}`}>{t.val}</p>
+                  <p className="text-white/30 text-xs mt-0.5">{t.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Mini calendar heatmap */}
+          {Object.keys(attData).length > 0 && (() => {
+            const lastDay = new Date(parseInt(attMonth.split('-')[0]), parseInt(attMonth.split('-')[1]), 0).getDate();
+            const days = Array.from({ length: lastDay }, (_, i) => String(i + 1).padStart(2, '0'));
+            const cellColor = (v?: string) => {
+              if (!v || v === 'absent')   return 'bg-red-500/15';
+              if (v === 'late')           return 'bg-amber-400/30';
+              if (v === 'present')        return 'bg-green-500/20';
+              if (v === 'leave')          return 'bg-blue-500/20';
+              if (v === 'sick')           return 'bg-amber-600/25';
+              if (v === 'half_day')       return 'bg-purple-500/20';
+              return 'bg-dark-200';
+            };
+            return (
+              <div className="card">
+                <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Calendar</p>
+                <div className="flex flex-wrap gap-1">
+                  {days.map(d => (
+                    <div
+                      key={d}
+                      className={`w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-bold text-white/50 ${cellColor(attData[d])}`}
+                      title={attData[d] || 'no data'}
+                    >
+                      {parseInt(d)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Recent records table */}
+          {attRecords.length > 0 && (
+            <div className="card overflow-hidden">
+              <p className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Recent Records</p>
+              <div className="space-y-0 divide-y divide-dark-50/30">
+                {attRecords.slice(0, 10).map(r => (
+                  <div key={r.date} className="flex items-center gap-3 py-2 text-sm">
+                    <Clock size={12} className="text-white/20 flex-shrink-0" />
+                    <span className="text-white/60 w-24 flex-shrink-0">
+                      {new Date(r.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <span className="text-white/40 text-xs flex-1">
+                      {r.loginAt ? fmt(r.loginAt) : '—'} → {r.logoutAt ? fmt(r.logoutAt) : '—'}
+                    </span>
+                    <span className="text-white/50 text-xs w-12 text-right">{r.hoursWorked > 0 ? `${r.hoursWorked.toFixed(1)}h` : '—'}</span>
+                    {r.isLate && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">Late</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {attRecords.length === 0 && !attSummary && (
+            <div className="card text-center py-10">
+              <p className="text-white/20 text-sm">No attendance data for this month</p>
+            </div>
+          )}
+        </div>
+      )}
+
       </AnimatedTabPanel>
     </div>
   );
