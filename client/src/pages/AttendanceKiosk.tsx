@@ -160,63 +160,72 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     return () => clearInterval(t);
   }, []);
 
-  // ── Load models + camera — runs ONCE on mount ──────────────────────────────
-  // CRITICAL: deps must be [] (empty). Including kioskState would cause cleanup
-  // to run every time kioskState changes — killing the stream after first init.
-  // pin is captured via closure and never changes during component lifetime.
+  // ── Camera + model init — runs ONCE on mount ───────────────────────────────
+  // Sequence: camera first (instant feedback) → models in background.
+  // This prevents a 5-30s black spinner if CDN is slow, and means any model
+  // error doesn't black out the camera.
 
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
+      // ── Step 1: open camera immediately ────────────────────────────────────
+      setModelStatus('Requesting camera…');
+      let stream: MediaStream;
       try {
-        setModelStatus('Loading face models…');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setModelStatus('Camera denied — allow access in browser settings and reload');
+        console.error('[Kiosk] getUserMedia failed:', err);
+        return; // stay on loading screen with the error message
+      }
+      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+
+      streamRef.current = stream;
+      const vid = videoRef.current;
+      if (vid) {
+        vid.srcObject = stream;
+        try { await vid.play(); } catch { /* Safari needs user gesture; video shows when user taps */ }
+      }
+
+      // Camera is live — switch to idle so user sees themselves right away
+      if (!cancelled) setKioskState('idle');
+
+      // Load staff descriptors in parallel with models
+      kioskAPI.descriptors(pin).then(d => { if (!cancelled) setDescriptors(d); }).catch(() => {});
+
+      // ── Step 2: load face-api models in background ─────────────────────────
+      setModelStatus('Loading face recognition…');
+      try {
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
-        if (cancelled) return;
-
-        setModelStatus('Starting camera…');
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
-        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-
-        streamRef.current = stream;
-        // videoRef is always in DOM now (rendered unconditionally), so srcObject
-        // assignment reliably works here
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {/* autoplay policy — ignore */});
-        }
-
-        // Load staff descriptors
-        try { setDescriptors(await kioskAPI.descriptors(pin)); } catch {}
-        if (!cancelled) setKioskState('idle');
+        if (!cancelled) modelsLoadedRef.current = true;
       } catch (err) {
-        if (!cancelled) {
-          setModelStatus('Camera access denied — check browser permissions');
-          console.error('[KioskView init]', err);
-        }
+        console.error('[Kiosk] model load failed:', err);
+        // Camera still works; face detection won't run but manual enroll can
       }
     }
 
     init();
 
-    // Cleanup ONLY on unmount — never on kioskState change
+    // Cleanup on unmount ONLY — never tied to kioskState changes
     return () => {
       cancelled = true;
       streamRef.current?.getTracks().forEach(t => t.stop());
       streamRef.current = null;
-      if (detectRef.current)   clearInterval(detectRef.current);
+      if (detectRef.current)    clearInterval(detectRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← empty deps is intentional and correct here
+  }, []); // intentionally empty — runs once on mount
 
   // Refresh today status
   const refreshToday = useCallback(async () => {
