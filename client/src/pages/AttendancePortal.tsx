@@ -1466,6 +1466,11 @@ function StaffTab() {
                           <XCircle size={9} /> No face
                         </span>
                       )}
+                      {s.gender === 'female' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/12 text-pink-400 border border-pink-500/20">
+                          ♀ Women's shift
+                        </span>
+                      )}
                       {s.role === 'attendance_manager' && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-400 border border-amber-500/20">
                           Manager
