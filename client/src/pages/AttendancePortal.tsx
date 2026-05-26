@@ -1825,6 +1825,60 @@ function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
         </div>
       </div>
 
+      {/* Women's Shift */}
+      <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-white font-semibold flex items-center gap-2">
+              <span className="text-base">👩</span> Women's Shift
+            </p>
+            <p className="text-white/30 text-xs mt-0.5">Separate hours for female staff. Set gender on each staff member in the Staff tab.</p>
+          </div>
+          <button
+            onClick={() => {
+              if (cfg.womenShift) {
+                setCfg({ ...cfg, womenShift: undefined });
+              } else {
+                setCfg({ ...cfg, womenShift: { shiftStart: cfg.shiftStart, shiftEnd: '19:00', expectedHours: 9.5 } });
+              }
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors
+              ${cfg.womenShift
+                ? 'bg-pink-500/15 border-pink-500/30 text-pink-400 hover:bg-red-500/10 hover:text-red-400'
+                : 'border-dark-50 text-white/30 hover:text-white hover:border-white/20'}`}
+          >
+            {cfg.womenShift ? 'Enabled' : 'Enable'}
+          </button>
+        </div>
+        {cfg.womenShift && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-white/40 text-xs mb-1 block">Shift Start</label>
+                <input type="time" value={cfg.womenShift.shiftStart}
+                  onChange={e => setCfg({ ...cfg, womenShift: { ...cfg.womenShift!, shiftStart: e.target.value } })}
+                  className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
+                />
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1 block">Shift End</label>
+                <input type="time" value={cfg.womenShift.shiftEnd}
+                  onChange={e => setCfg({ ...cfg, womenShift: { ...cfg.womenShift!, shiftEnd: e.target.value } })}
+                  className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-white/40 text-xs mb-1 block">Expected Hours/Day</label>
+              <input type="number" min={1} max={24} step={0.5} value={cfg.womenShift.expectedHours}
+                onChange={e => setCfg({ ...cfg, womenShift: { ...cfg.womenShift!, expectedHours: +e.target.value } })}
+                className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 space-y-3">
         <p className="text-white font-semibold">Kiosk PIN</p>
         <p className="text-white/30 text-xs">PIN required to unlock the tablet kiosk. Share only with trusted staff.</p>
