@@ -33,4 +33,13 @@ function adminOnly(req, res, next) {
   next();
 }
 
-module.exports = { authMiddleware, adminOnly, JWT_SECRET };
+// Allows both admin and attendance_manager roles
+function attendanceManagerOrAdmin(req, res, next) {
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'attendance_manager') {
+    return res.status(403).json({ error: 'Attendance manager or admin access required' });
+  }
+  next();
+}
+
+module.exports = { authMiddleware, adminOnly, attendanceManagerOrAdmin, JWT_SECRET };
