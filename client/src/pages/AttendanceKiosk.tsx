@@ -259,8 +259,10 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       if (!video || video.readyState < 3) return;
       if (!modelsLoadedRef.current) return; // face-api still loading
 
+      // inputSize 224 is ~3.5× faster than the default 416 (area scales quadratically).
+      // scoreThreshold 0.4 picks up faces sooner / at more angles.
       const det = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
         .withFaceLandmarks(true)
         .withFaceDescriptor();
 
