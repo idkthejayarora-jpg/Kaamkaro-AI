@@ -184,6 +184,36 @@ router.patch('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
   }
 });
 
+// PATCH /api/staff/:id/tour — enable/disable self-checkin for touring staff
+router.patch('/:id/tour', attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const updated = await updateOne('staff', req.params.id, { canSelfCheckin: !!req.body.canSelfCheckin });
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    const { password: _, ...safe } = updated;
+    res.json(safe);
+  } catch (err) {
+    console.error('[Tour toggle]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PATCH /api/staff/:id/gender — set staff gender (male/female)
+router.patch('/:id/gender', attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const { gender } = req.body;
+    if (!['male', 'female'].includes(gender)) {
+      return res.status(400).json({ error: 'gender must be male or female' });
+    }
+    const updated = await updateOne('staff', req.params.id, { gender });
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    const { password: _, ...safe } = updated;
+    res.json(safe);
+  } catch (err) {
+    console.error('[Gender set]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // DELETE /api/staff/:id/face — clear face enrollment
 router.delete('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
   try {
