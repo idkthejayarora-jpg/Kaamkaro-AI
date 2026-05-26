@@ -16,9 +16,9 @@ router.post('/register', async (req, res) => {
     if (password.length < 4)
       return res.status(400).json({ error: 'Password must be at least 4 characters' });
 
-    // Check phone not already taken (users + staff)
-    const [users, staff] = await Promise.all([readDB('users'), readDB('staff')]);
-    const taken = [...users, ...staff].find(u => u.phone === phone.trim());
+    // Check phone not already taken (users + staff + attendance_managers)
+    const [users, staff, managers] = await Promise.all([readDB('users'), readDB('staff'), readDB('attendance_managers')]);
+    const taken = [...users, ...staff, ...managers].find(u => u.phone === phone.trim());
     if (taken) return res.status(409).json({ error: 'This phone number is already registered' });
 
     const hashed = await bcrypt.hash(password, 10);
