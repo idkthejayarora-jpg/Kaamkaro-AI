@@ -61,6 +61,15 @@ export const authAPI = {
   adminListUsers: () => api.get('/auth/admin/users').then(r => r.data),
   switchToStaff: (staffId: string) =>
     api.post(`/auth/switch/${staffId}`).then(r => r.data),
+  // Attendance manager management
+  listManagers: () =>
+    api.get('/auth/managers').then(r => r.data),
+  createManager: (data: { name: string; phone: string; password: string }) =>
+    api.post('/auth/managers', data).then(r => r.data),
+  deleteManager: (id: string) =>
+    api.delete(`/auth/managers/${id}`).then(r => r.data),
+  resetManagerPassword: (id: string, newPassword: string) =>
+    api.patch(`/auth/managers/${id}/reset-password`, { newPassword }).then(r => r.data),
 };
 
 export const staffAPI = {
