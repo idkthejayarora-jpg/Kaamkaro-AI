@@ -911,6 +911,62 @@ function StaffDashboard() {
         );
       })()}
 
+      {/* ── MARK ATTENDANCE — only for on-tour staff ──────────────────────── */}
+      {selfStaff?.canSelfCheckin && (() => {
+        const faceDesc = selfStaff.faceDescriptors || [];
+        const isCheckedIn = selfStatus === 'in';
+        const hasFace = faceDesc.length > 0;
+        return (
+          <>
+            {showSelfScan && hasFace && (
+              <SelfScanModal
+                faceDescriptors={faceDesc}
+                currentStatus={selfStatus}
+                onClose={() => setShowSelfScan(false)}
+                onDone={() => { loadSelfCheckin(); setShowSelfScan(false); }}
+              />
+            )}
+            <div className={`rounded-2xl border overflow-hidden relative ${isCheckedIn ? 'border-green-500/25 bg-green-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
+              {/* Top accent stripe */}
+              <div className={`h-[2px] ${isCheckedIn ? 'bg-gradient-to-r from-green-500/70 to-transparent' : 'bg-gradient-to-r from-amber-500/70 to-transparent'}`} />
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center gap-4">
+                  {/* Icon */}
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border ${isCheckedIn ? 'bg-green-500/12 border-green-500/20' : 'bg-amber-500/12 border-amber-500/20'}`}>
+                    <ScanFace size={26} className={isCheckedIn ? 'text-green-400' : 'text-amber-400'} />
+                  </div>
+                  {/* Text */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-black text-base leading-tight">
+                      {isCheckedIn ? 'You\'re Checked In' : 'Mark Your Attendance'}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isCheckedIn ? 'text-green-400/70' : 'text-amber-400/70'}`}>
+                      {isCheckedIn ? 'Tap to clock out when done' : 'On tour — scan your face to clock in'}
+                    </p>
+                  </div>
+                  {/* Button */}
+                  {hasFace ? (
+                    <button
+                      onClick={() => setShowSelfScan(true)}
+                      className={`flex-shrink-0 px-4 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 ${isCheckedIn
+                        ? 'bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25'
+                        : 'bg-amber-500/15 border border-amber-500/30 text-amber-400 hover:bg-amber-500/25'
+                      }`}
+                    >
+                      {isCheckedIn ? 'Clock Out' : 'Clock In'}
+                    </button>
+                  ) : (
+                    <span className="text-white/25 text-xs flex-shrink-0 text-right max-w-[100px]">
+                      Face not enrolled — visit office kiosk
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
       {/* ── STREAK HERO ───────────────────────────────────────────────────── */}
       <div className="rounded-3xl border border-gold/18 bg-dark-300 overflow-hidden relative"
         style={{ boxShadow: streak > 0 ? '0 0 60px rgba(212,175,55,0.06)' : undefined }}>
