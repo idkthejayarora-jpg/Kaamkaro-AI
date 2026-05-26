@@ -102,7 +102,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const [showSwitcher, setShowSwitcher] = useState(false);
 
-  const defaultNav = isAdmin ? adminNav : staffNav;
+  const defaultNav = user?.role === 'attendance_manager' ? attendanceManagerNav : isAdmin ? adminNav : staffNav;
   const role       = user?.role || 'staff';
   const userId     = user?.id   || 'unknown';
 
