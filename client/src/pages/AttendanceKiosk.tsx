@@ -31,7 +31,10 @@ type KioskState =
   | 'matched'      // face matched, confirming
   | 'processing'   // API call in progress
   | 'success'      // check-in/out confirmed
-  | 'error';       // something went wrong
+  | 'error'        // something went wrong
+  | 'enrolling';   // unknown face — link to staff or create new
+
+interface StaffBasic { id: string; name: string; avatar: string; }
 
 const MATCH_THRESHOLD = 0.5;    // FaceMatcher distance — lower = stricter
 const COOLDOWN_MS     = 60_000; // 60s per staff after successful scan
