@@ -176,6 +176,12 @@ router.post('/checkin', async (req, res) => {
     }
 
     await writeDB('attendance', records);
+
+    // Sync availability — checked in = available
+    const staffList = await readDB('staff');
+    const idx = staffList.findIndex(s => s.id === staffId);
+    if (idx !== -1) { staffList[idx].availability = 'available'; await writeDB('staff', staffList); }
+
     res.json(record);
   } catch (err) {
     console.error('[Kiosk checkin]', err);
