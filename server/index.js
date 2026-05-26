@@ -69,6 +69,7 @@ app.use('/api/badges',       require('./routes/badges'));
 app.use('/api/calendar',     require('./routes/calendar'));
 app.use('/api/fraud',        require('./routes/fraud'));
 app.use('/api/tag-defs',     require('./routes/tagDefs'));
+app.use('/api/payroll',      require('./routes/payroll'));
 
 // ── Static frontend serving ────────────────────────────────────────────────────
 // Serve React app whenever the dist folder exists — works on Railway regardless
