@@ -1,1 +1,9 @@
-[]
+{
+  "attendance": {
+    "shiftStart": "09:30",
+    "shiftEnd": "18:30",
+    "lateGraceMins": 15,
+    "expectedHours": 9,
+    "kioskPin": "1234"
+  }
+}
