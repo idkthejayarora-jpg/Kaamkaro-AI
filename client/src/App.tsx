@@ -57,10 +57,8 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/login" element={user ? (user.role === 'attendance_manager' ? <Navigate to="/attendance-portal" replace /> : <Navigate to="/dashboard" replace />) : <Login />} />
       <Route path="/kiosk" element={<AttendanceKiosk />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to={user?.role === 'attendance_manager' ? '/attendance-portal' : '/dashboard'} replace />} />
 
-      {/* Attendance manager portal — isolated, no sidebar */}
-      <Route path="/attendance-portal" element={<AttendanceManagerRoute><AttendancePortal /></AttendanceManagerRoute>} />
       <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route path="/dashboard"       element={<Dashboard />} />
         <Route path="/staff"           element={<PrivateRoute adminOnly><Staff /></PrivateRoute>} />
