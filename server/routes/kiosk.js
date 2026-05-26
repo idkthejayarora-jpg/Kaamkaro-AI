@@ -215,14 +215,16 @@ router.post('/checkout', async (req, res) => {
     record.hoursWorked = calcHours(sessions);
     record.sessions    = sessions;
 
-    // Overtime / undertime — use per-staff shift duration if override is set
+    // Overtime / undertime — priority: shiftOverride → gender shift → default
     const cfg = req.attendanceCfg;
     const staffList = await readDB('staff');
     const staffMember = staffList.find(s => s.id === staffId);
     let expected = cfg.expectedHours || 9;
-    if (staffMember?.shiftOverride) {
-      const [sh, sm] = staffMember.shiftOverride.shiftStart.split(':').map(Number);
-      const [eh, em] = staffMember.shiftOverride.shiftEnd.split(':').map(Number);
+    const genderShiftOut = (staffMember?.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+    const effectiveShiftOut = staffMember?.shiftOverride || genderShiftOut;
+    if (effectiveShiftOut) {
+      const [sh, sm] = effectiveShiftOut.shiftStart.split(':').map(Number);
+      const [eh, em] = effectiveShiftOut.shiftEnd.split(':').map(Number);
       expected = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
     }
     record.overtimeHours  = Math.max(0, Math.round((record.hoursWorked - expected) * 100) / 100);
@@ -230,8 +232,7 @@ router.post('/checkout', async (req, res) => {
 
     await writeDB('attendance', records);
 
-    // Sync availability — checked out = out of office
-    const staffList = await readDB('staff');
+    // Sync availability — checked out = out of office (reuse staffList already loaded above)
     const sidx = staffList.findIndex(s => s.id === staffId);
     if (sidx !== -1) { staffList[sidx].availability = 'out_of_office'; await writeDB('staff', staffList); }
 
