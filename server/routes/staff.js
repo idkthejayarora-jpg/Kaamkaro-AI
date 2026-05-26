@@ -21,6 +21,19 @@ router.get('/', async (req, res) => {
 
 // checkin / checkout removed — attendance feature wiped
 
+// GET /api/staff/face-check — staff with enrolled faces (JWT auth, no kiosk PIN needed)
+router.get('/face-check', attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const staff = await readDB('staff');
+    const withFaces = staff
+      .filter(s => s.active !== false && s.faceDescriptors?.length)
+      .map(({ id, name, faceDescriptors }) => ({ id, name, faceDescriptors }));
+    res.json(withFaces);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/staff/:id
 router.get('/:id', async (req, res) => {
   try {
