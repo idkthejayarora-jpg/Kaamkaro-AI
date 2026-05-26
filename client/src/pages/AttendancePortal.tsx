@@ -1272,7 +1272,7 @@ function PayrollTab() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
 
                 {/* Totals row */}
