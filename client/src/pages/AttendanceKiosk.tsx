@@ -310,7 +310,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         if (!matchedStaff) return;
         if ((cooldownRef.current[matchedStaff.id] || 0) > Date.now()) return;
         const todayRec = today.find(r => r.staffId === matchedStaff.id);
-        triggerMatch(matchedStaff, !todayRec || todayRec.status === 'out');
+        triggerMatch(matchedStaff, !todayRec || todayRec.status !== 'in');
       } else {
         unknownDescRef.current = det.descriptor;
         if (!hasUnk) { hasUnknownRef.current = true; setHasUnknown(true); }
