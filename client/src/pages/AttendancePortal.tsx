@@ -47,6 +47,7 @@ interface StaffMember {
   role?: string;
   phone?: string;
   gender?: 'male' | 'female';
+  canSelfCheckin?: boolean;
   faceDescriptors?: number[][];
   shiftOverride?: { shiftStart: string; shiftEnd: string } | null;
 }
