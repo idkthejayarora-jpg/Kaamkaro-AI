@@ -197,14 +197,20 @@ router.get('/admin/users', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
-// POST /api/auth/switch/:staffId — admin switches into a staff account (no password needed)
-// Issues a short-lived JWT for the target staff member, stored client-side.
-// The admin's original session is preserved in localStorage under kk_admin_token.
-router.post('/switch/:staffId', authMiddleware, adminOnly, async (req, res) => {
+// POST /api/auth/switch/:userId — admin switches into any account (staff or attendance_manager)
+router.post('/switch/:userId', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const staff = await readDB('staff');
-    const target = staff.find(s => s.id === req.params.staffId && s.active !== false);
-    if (!target) return res.status(404).json({ error: 'Staff member not found or inactive' });
+    const { userId } = req.params;
+
+    // Search staff first, then attendance_managers
+    const [staffList, managers] = await Promise.all([
+      readDB('staff'),
+      readDB('attendance_managers'),
+    ]);
+
+    let target = staffList.find(s => s.id === userId && s.active !== false);
+    if (!target) target = managers.find(m => m.id === userId);
+    if (!target) return res.status(404).json({ error: 'Account not found' });
 
     const token = jwt.sign(
       { id: target.id, phone: target.phone, role: target.role, name: target.name },
@@ -213,10 +219,110 @@ router.post('/switch/:staffId', authMiddleware, adminOnly, async (req, res) => {
     );
 
     const { password: _, ...safeUser } = target;
-    console.log(`[Auth] Admin ${req.user.name} switched to staff account: ${target.name}`);
+    console.log(`[Auth] Admin ${req.user.name} switched to: ${target.name} (${target.role})`);
     res.json({ token, user: safeUser });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── Attendance Manager management (admin only) ─────────────────────────────────
+
+// GET /api/auth/managers — list all attendance managers
+router.get('/managers', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const managers = await readDB('attendance_managers').catch(() => []);
+    const safe = managers.map(({ password: _, ...m }) => m);
+    res.json(safe);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/managers — create a new attendance manager
+router.post('/managers', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { name, phone, password } = req.body;
+    if (!name?.trim() || !phone?.trim() || !password?.trim())
+      return res.status(400).json({ error: 'Name, phone (login ID), and password are required' });
+    if (password.length < 4)
+      return res.status(400).json({ error: 'Password must be at least 4 characters' });
+
+    // Unique phone check across all collections
+    const [users, staff, managers] = await Promise.all([
+      readDB('users'),
+      readDB('staff'),
+      readDB('attendance_managers').catch(() => []),
+    ]);
+    const taken = [...users, ...staff, ...managers].find(u => u.phone === phone.trim());
+    if (taken) return res.status(409).json({ error: 'This login ID is already in use' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    const manager = {
+      id:        uuidv4(),
+      name:      name.trim(),
+      phone:     phone.trim(),
+      password:  hashed,
+      role:      'attendance_manager',
+      avatar:    name.trim()[0].toUpperCase(),
+      createdAt: new Date().toISOString(),
+    };
+
+    const allManagers = await readDB('attendance_managers').catch(() => []);
+    allManagers.push(manager);
+    const { readDB: _, writeDB: __ } = require('../utils/db'); // already required
+    const { writeDB: wdb } = require('../utils/db');
+    await wdb('attendance_managers', allManagers);
+
+    const { password: _pw, ...safeManager } = manager;
+    console.log(`[Auth] Admin ${req.user.name} created attendance manager: ${manager.name} (${manager.phone})`);
+
+    // Return manager + plaintext password so admin can share credentials
+    res.status(201).json({ manager: safeManager, plainPassword: password.trim() });
+  } catch (err) {
+    console.error('[Create manager]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/auth/managers/:id — remove a manager
+router.delete('/managers/:id', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const managers = await readDB('attendance_managers').catch(() => []);
+    const idx = managers.findIndex(m => m.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'Manager not found' });
+
+    const [removed] = managers.splice(idx, 1);
+    const { writeDB: wdb } = require('../utils/db');
+    await wdb('attendance_managers', managers);
+
+    console.log(`[Auth] Admin ${req.user.name} removed attendance manager: ${removed.name}`);
+    res.json({ message: 'Manager removed' });
+  } catch (err) {
+    console.error('[Delete manager]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PATCH /api/auth/managers/:id/reset-password — admin resets a manager's password
+router.patch('/managers/:id/reset-password', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 4)
+      return res.status(400).json({ error: 'Password must be at least 4 characters' });
+
+    const managers = await readDB('attendance_managers').catch(() => []);
+    const idx = managers.findIndex(m => m.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'Manager not found' });
+
+    managers[idx].password = await bcrypt.hash(newPassword, 10);
+    const { writeDB: wdb } = require('../utils/db');
+    await wdb('attendance_managers', managers);
+
+    res.json({ message: 'Password updated', plainPassword: newPassword });
+  } catch (err) {
+    console.error('[Reset manager pw]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
