@@ -519,60 +519,68 @@ function ManualEntryModal({ staffList, onClose, onSaved }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-dark-400 border border-dark-50 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-dark-400 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-dark-50">
           <div className="flex items-center gap-2">
-            <Edit2 size={14} className="text-gold" />
-            <p className="text-white font-semibold">Manual Entry</p>
+            <Edit2 size={13} className="text-gold" />
+            <p className="text-white font-semibold text-sm">Manual Entry</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-dark-200 text-white/30 hover:text-white transition-colors">
-            <XCircle size={16} />
+            <XCircle size={15} />
           </button>
         </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="text-white/40 text-xs mb-1 block">Staff *</label>
-            <Select
-              value={staffId}
-              onChange={e => setStaffId(e.target.value)}
-              className="w-full"
-            >
-              <option value="">Select staff…</option>
-              {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </Select>
-          </div>
-          <div>
-            <label className="text-white/40 text-xs mb-1 block">Date *</label>
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+
+        {/* Form — compact grid, no scrolling */}
+        <div className="p-4 space-y-3">
+          {/* Staff + Date on same row */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="col-span-2">
+              <label className="text-white/40 text-[10px] mb-1 block">Staff *</label>
+              <Select
+                value={staffId}
+                onChange={e => setStaffId(e.target.value)}
+                className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm"
+              >
+                <option value="">Select staff…</option>
+                {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </Select>
+            </div>
             <div>
-              <label className="text-white/40 text-xs mb-1 block">Login Time *</label>
+              <label className="text-white/40 text-[10px] mb-1 block">Date *</label>
               <input
-                type="time"
-                value={loginAt}
-                onChange={e => setLoginAt(e.target.value)}
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
                 className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
               />
             </div>
-            <div>
-              <label className="text-white/40 text-xs mb-1 block">Logout Time</label>
-              <input
-                type="time"
-                value={logoutAt}
-                onChange={e => setLogoutAt(e.target.value)}
-                className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-white/40 text-[10px] mb-1 block">In *</label>
+                <input
+                  type="time"
+                  value={loginAt}
+                  onChange={e => setLoginAt(e.target.value)}
+                  className="w-full bg-dark-300 border border-dark-50 rounded-xl px-2 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
+                />
+              </div>
+              <div>
+                <label className="text-white/40 text-[10px] mb-1 block">Out</label>
+                <input
+                  type="time"
+                  value={logoutAt}
+                  onChange={e => setLogoutAt(e.target.value)}
+                  className="w-full bg-dark-300 border border-dark-50 rounded-xl px-2 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
+                />
+              </div>
             </div>
           </div>
+
           {error && <p className="text-red-400 text-xs">{error}</p>}
-          <div className="flex gap-3">
+
+          <div className="flex gap-2.5 pt-1">
             <button
               onClick={submit}
               disabled={saving || !staffId || !date || !loginAt}
