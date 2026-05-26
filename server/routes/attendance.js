@@ -218,7 +218,7 @@ router.get('/monthly', authMiddleware, attendanceManagerOrAdmin, async (req, res
         const recs = monthRecs.filter(r => r.staffId === s.id);
 
         // dailyMap: { 'DD': 'present' | 'late' | 'absent' }
-        const dailyMap: Record<string, string> = {};
+        const dailyMap = {};
         let totalHours  = 0;
         let presentDays = 0;
         let lateDays    = 0;
