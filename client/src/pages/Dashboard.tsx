@@ -113,6 +113,15 @@ function AdminDashboard() {
       setAllTasks(tasks); setCustomers(cust as Customer[]);
       setAllInteractions(ints as Interaction[]);
       setFraudAlerts((fraud as { alerts: FraudAlert[] }).alerts || []);
+      // Attendance today card
+      attendanceAPI.today().then((recs: { status: string; isLate: boolean }[]) => {
+        setTodayAtt({
+          inCount: recs.filter((r: { status: string }) => r.status === 'in').length,
+          total:   recs.length,
+          late:    recs.filter((r: { isLate: boolean }) => r.isLate).length,
+          absent:  recs.filter((r: { status: string }) => r.status === 'absent').length,
+        });
+      }).catch(() => {});
       if (s.length > 0) {
         const allPerf = await Promise.all(s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => [])));
         setPerf(allPerf.flat());
