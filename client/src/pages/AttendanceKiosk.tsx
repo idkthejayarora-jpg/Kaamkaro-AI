@@ -275,26 +275,22 @@ export default function AttendanceKiosk() {
         }
       }
 
-      // Match against descriptors
-      const descriptor = Array.from(det.descriptor);
-      let bestDist = Infinity;
-      let bestStaff: StaffDescriptor | null = null;
+      // Match against descriptors using FaceMatcher (more accurate with multi-descriptor)
+      const matcher = faceMatcherRef.current;
+      if (!matcher) return;
 
-      for (const s of descriptors) {
-        for (const fd of s.faceDescriptors) {
-          const dist = euclideanDistance(descriptor, fd);
-          if (dist < bestDist) { bestDist = dist; bestStaff = s; }
-        }
-      }
+      const bestMatch = matcher.findBestMatch(det.descriptor);
+      if (bestMatch.label !== 'unknown') {
+        const matchedStaff = descriptors.find(s => s.id === bestMatch.label);
+        if (!matchedStaff) return;
 
-      if (bestDist < MATCH_THRESHOLD && bestStaff) {
         const now = Date.now();
-        if ((cooldownRef.current[bestStaff.id] || 0) > now) return; // cooldown active
+        if ((cooldownRef.current[matchedStaff.id] || 0) > now) return; // cooldown active
 
         // Determine check-in or check-out
-        const todayRec = todayStatus.find(r => r.staffId === bestStaff!.id);
+        const todayRec = todayStatus.find(r => r.staffId === matchedStaff.id);
         const isCheckin = !todayRec || todayRec.status === 'out';
-        triggerMatch(bestStaff, isCheckin);
+        triggerMatch(matchedStaff, isCheckin);
       }
     }, 500);
 
