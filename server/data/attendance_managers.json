@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "17b17ece-c2ab-4da2-8285-d76696e1fd40",
+    "name": "Attendance Manager",
+    "phone": "attendance",
+    "password": "$2a$10$iqoN1r4Hh9MX4af2ZacQqu5kYXj062stda3pmcPVwMtbcu/KOdDJ.",
+    "role": "attendance_manager",
+    "email": "",
+    "avatar": "AM",
+    "joinDate": "2026-05-26T06:11:41.294Z",
+    "createdAt": "2026-05-26T06:11:41.295Z"
+  }
+]
