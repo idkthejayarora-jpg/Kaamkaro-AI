@@ -138,8 +138,9 @@ router.post('/checkin', async (req, res) => {
     const today = todayStr();
     const cfg   = req.attendanceCfg;
 
-    // Late calculation — use per-staff shiftOverride if set, else global config
-    const effectiveShift = member.shiftOverride || cfg;
+    // Late calculation — priority: personal shiftOverride → gender-based shift → default
+    const genderShift = (member.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+    const effectiveShift = member.shiftOverride || genderShift || cfg;
     const [shiftH, shiftM] = effectiveShift.shiftStart.split(':').map(Number);
     const deadline = new Date(now);
     deadline.setHours(shiftH, shiftM + (cfg.lateGraceMins || 0), 0, 0);
