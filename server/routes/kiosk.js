@@ -229,4 +229,91 @@ router.post('/checkout', async (req, res) => {
   }
 });
 
+// ── GET /api/kiosk/staff-list ──────────────────────────────────────────────────
+// All active staff (id, name, avatar) — for enrollment dropdown
+router.get('/staff-list', async (req, res) => {
+  try {
+    const staff = await readDB('staff');
+    const list = staff
+      .filter(s => s.active !== false)
+      .map(({ id, name, avatar }) => ({ id, name, avatar: avatar || name[0].toUpperCase() }));
+    res.json(list);
+  } catch (err) {
+    console.error('[Kiosk staff-list]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/kiosk/enroll ─────────────────────────────────────────────────────
+// Link captured face descriptors to an existing staff member
+// Body: { staffId, descriptors: number[][] }
+router.post('/enroll', async (req, res) => {
+  try {
+    const { staffId, descriptors } = req.body;
+    if (!staffId || !Array.isArray(descriptors) || descriptors.length === 0)
+      return res.status(400).json({ error: 'staffId and descriptors required' });
+
+    const staff = await readDB('staff');
+    const idx   = staff.findIndex(s => s.id === staffId);
+    if (idx === -1) return res.status(404).json({ error: 'Staff not found' });
+
+    staff[idx].faceDescriptors = descriptors;
+    staff[idx].updatedAt = new Date().toISOString();
+    await writeDB('staff', staff);
+
+    const { password: _, faceDescriptors: __, ...safe } = staff[idx];
+    console.log(`[Kiosk] Face enrolled for: ${staff[idx].name}`);
+    res.json({ message: 'Face enrolled', staff: safe });
+  } catch (err) {
+    console.error('[Kiosk enroll]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/kiosk/quick-staff ────────────────────────────────────────────────
+// Create a minimal staff record from the kiosk (name only required)
+// Body: { name, phone? }
+router.post('/quick-staff', async (req, res) => {
+  try {
+    const { v4: uuidv4 } = require('uuid');
+    const bcrypt = require('bcryptjs');
+    const { name, phone } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+
+    const staff = await readDB('staff');
+
+    // Phone uniqueness check if provided
+    if (phone?.trim()) {
+      const [users, managers] = await Promise.all([readDB('users'), readDB('attendance_managers').catch(() => [])]);
+      const taken = [...users, ...staff, ...managers].find(u => u.phone === phone.trim());
+      if (taken) return res.status(409).json({ error: 'Phone number already in use' });
+    }
+
+    const autoPhone = phone?.trim() || `kiosk_${Date.now()}`;
+    const hashed    = await bcrypt.hash(uuidv4(), 10); // random unguessable password
+    const newStaff  = {
+      id:           uuidv4(),
+      name:         name.trim(),
+      phone:        autoPhone,
+      password:     hashed,
+      role:         'staff',
+      active:       true,
+      avatar:       name.trim()[0].toUpperCase(),
+      streakData:   { currentStreak: 0, lastActivityDate: null, longestStreak: 0 },
+      createdAt:    new Date().toISOString(),
+      kioskCreated: true,
+    };
+
+    staff.push(newStaff);
+    await writeDB('staff', staff);
+
+    const { password: _, ...safe } = newStaff;
+    console.log(`[Kiosk] Quick staff created: ${newStaff.name}`);
+    res.status(201).json(safe);
+  } catch (err) {
+    console.error('[Kiosk quick-staff]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
