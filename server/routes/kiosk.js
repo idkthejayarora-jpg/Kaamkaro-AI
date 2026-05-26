@@ -42,6 +42,23 @@ async function kioskPinMiddleware(req, res, next) {
   try {
     const sentPin = req.headers['x-kiosk-pin'];
     if (!sentPin) return res.status(401).json({ error: 'Kiosk PIN required' });
+
+    // Auto-unlock bypass: admin/manager opened kiosk from within the portal.
+    // They send '__auto__' as the PIN; we verify their JWT instead of the kiosk PIN.
+    if (sentPin === '__auto__') {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+          if (decoded.role === 'admin' || decoded.role === 'attendance_manager') {
+            req.attendanceCfg = await getAttendanceConfig();
+            return next();
+          }
+        } catch { /* invalid JWT — fall through to PIN check */ }
+      }
+      return res.status(401).json({ error: 'Invalid kiosk PIN' });
+    }
+
     const cfg = await getAttendanceConfig();
     if (sentPin !== String(cfg.kioskPin)) {
       return res.status(401).json({ error: 'Invalid kiosk PIN' });
