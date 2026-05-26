@@ -33,15 +33,9 @@ type KioskState =
   | 'success'      // check-in/out confirmed
   | 'error';       // something went wrong
 
-const MATCH_THRESHOLD = 0.55;   // euclidean distance — lower = stricter
+const MATCH_THRESHOLD = 0.5;    // FaceMatcher distance — lower = stricter
 const COOLDOWN_MS     = 60_000; // 60s per staff after successful scan
 const CONFIRM_SECS    = 3;      // countdown before auto-confirm
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function euclideanDistance(a: number[], b: number[]): number {
-  return Math.sqrt(a.reduce((sum, v, i) => sum + (v - b[i]) ** 2, 0));
-}
 
 function now12h() {
   return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
