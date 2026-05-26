@@ -370,6 +370,12 @@ export const kioskAPI = {
     api.post('/kiosk/checkout', { staffId }, { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
   today: (pin: string) =>
     api.get('/kiosk/today', { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+  staffList: (pin: string) =>
+    api.get('/kiosk/staff-list', { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+  enroll: (pin: string, staffId: string, descriptors: number[][]) =>
+    api.post('/kiosk/enroll', { staffId, descriptors }, { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+  quickStaff: (pin: string, name: string, phone?: string) =>
+    api.post('/kiosk/quick-staff', { name, phone }, { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
 };
 
 export default api;
