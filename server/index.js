@@ -122,6 +122,26 @@ async function seed() {
     console.log(`✅ Found ${users.length} admin user(s)`);
   }
 
+  // Create default attendance manager if none exist
+  const managers = await readDB('attendance_managers').catch(() => []);
+  if (!Array.isArray(managers) || managers.length === 0) {
+    const mgrHashed = await bcrypt.hash('Attend@2024', 10);
+    await writeDB('attendance_managers', [{
+      id: '20d5a473-9b98-445b-b20a-a9d98d4edc90',
+      name: 'Arkan',
+      phone: 'arkan',
+      password: mgrHashed,
+      role: 'attendance_manager',
+      active: true,
+      createdAt: new Date().toISOString(),
+    }]);
+    console.log('✅ Attendance manager created');
+    console.log('   Phone:    arkan');
+    console.log('   Password: Attend@2024');
+  } else {
+    console.log(`✅ Found ${managers.length} attendance manager(s)`);
+  }
+
   // Ensure all other collections exist (never overwrite existing data)
   const collections = ['staff', 'customers', 'vendors', 'performance', 'interactions', 'tasks', 'diary', 'auditLog', 'goals', 'templates', 'broadcasts', 'merits', 'meritGoals', 'vendorInteractions', 'config', 'teams', 'badges', 'tagDefs', 'shelfItems', 'leads', 'attendance', 'attendance_managers', 'leaves', 'payroll_config'];
   for (const col of collections) {
