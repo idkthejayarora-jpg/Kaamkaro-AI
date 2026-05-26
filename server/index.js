@@ -57,7 +57,8 @@ app.use('/api/events',       require('./routes/events'));
 app.use('/api/broadcast',    require('./routes/broadcast'));
 app.use('/api/chat',         require('./routes/chat'));
 app.use('/api/merits',       require('./routes/merits'));
-// attendance removed
+app.use('/api/attendance',   require('./routes/attendance'));
+app.use('/api/kiosk',        require('./routes/kiosk'));
 app.use('/api/insights',     require('./routes/insights'));
 app.use('/api/pdf',          require('./routes/pdf'));
 app.use('/api/teams',        require('./routes/teams'));
