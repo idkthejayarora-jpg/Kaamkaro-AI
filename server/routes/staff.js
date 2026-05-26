@@ -139,6 +139,33 @@ router.patch('/:id/availability', async (req, res) => {
   }
 });
 
+// PATCH /api/staff/:id/shift — set per-staff shift override (or clear with null)
+// Body: { shiftStart: 'HH:MM', shiftEnd: 'HH:MM' } OR { shiftOverride: null } to clear
+router.patch('/:id/shift', attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const { shiftStart, shiftEnd, shiftOverride } = req.body;
+    let update;
+    if (shiftOverride === null) {
+      update = { shiftOverride: null };
+    } else {
+      if (!shiftStart || !shiftEnd) {
+        return res.status(400).json({ error: 'shiftStart and shiftEnd required' });
+      }
+      if (!/^\d{2}:\d{2}$/.test(shiftStart) || !/^\d{2}:\d{2}$/.test(shiftEnd)) {
+        return res.status(400).json({ error: 'Times must be HH:MM format' });
+      }
+      update = { shiftOverride: { shiftStart, shiftEnd } };
+    }
+    const updated = await updateOne('staff', req.params.id, update);
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    const { password: _, ...safe } = updated;
+    res.json(safe);
+  } catch (err) {
+    console.error('[Shift override]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // PATCH /api/staff/:id/face — save face descriptors (admin or attendance_manager)
 // Body: { descriptors: number[][] }  (array of 128-D float arrays)
 router.patch('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
