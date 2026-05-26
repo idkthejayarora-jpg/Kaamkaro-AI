@@ -44,24 +44,9 @@ function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNo
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
-  // attendance_managers are routed to their portal, not the main app
-  if (user.role === 'attendance_manager') return <Navigate to="/attendance-portal" replace />;
+  // attendance_managers can only access attendance-related routes
+  if (user.role === 'attendance_manager' && adminOnly) return <Navigate to="/attendance-portal" replace />;
   if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
-  return <>{children}</>;
-}
-
-function AttendanceManagerRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-dark-500">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-        <span className="text-white/30 text-sm">Loading…</span>
-      </div>
-    </div>
-  );
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== 'attendance_manager' && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
