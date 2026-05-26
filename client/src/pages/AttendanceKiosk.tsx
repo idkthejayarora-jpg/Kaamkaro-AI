@@ -317,7 +317,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         unknownDescRef.current = det.descriptor;
         if (!hasUnk) { hasUnknownRef.current = true; setHasUnknown(true); }
       }
-    }, 600);
+    }, 250);
 
     return () => { if (detectRef.current) clearInterval(detectRef.current); };
   // Only restart when kioskState changes — everything else read from refs
