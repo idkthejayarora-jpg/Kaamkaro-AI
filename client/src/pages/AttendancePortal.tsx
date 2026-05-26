@@ -533,14 +533,14 @@ function ManualEntryModal({ staffList, onClose, onSaved }: {
         <div className="p-5 space-y-4">
           <div>
             <label className="text-white/40 text-xs mb-1 block">Staff *</label>
-            <select
+            <Select
               value={staffId}
-              onChange={e => setStaffId(e.target.value)}
-              className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/40"
+              onChange={v => setStaffId(v)}
+              className="w-full"
             >
               <option value="">Select staff…</option>
               {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div>
             <label className="text-white/40 text-xs mb-1 block">Date *</label>
