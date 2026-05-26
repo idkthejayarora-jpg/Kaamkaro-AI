@@ -121,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('kk_user', JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
+    return data.user as User;
   };
 
   const register = async (name: string, phone: string, password: string) => {
