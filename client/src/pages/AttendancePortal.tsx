@@ -18,6 +18,8 @@ import {
 } from 'recharts';
 import * as faceapi from '@vladmandic/face-api';
 import { attendanceAPI, staffAPI, leavesAPI, broadcastAPI, payrollAPI } from '../lib/api';
+import Select from '../components/Select';
+import { KioskView } from './AttendanceKiosk';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
