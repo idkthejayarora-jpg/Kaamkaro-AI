@@ -463,8 +463,11 @@ export default function NotificationsBell() {
 
   const buildNotifications = async () => {
     try {
-      if (isAdmin) await buildAdminNotifications();
-      else         await buildStaffNotifications();
+      if (isAdmin)   await buildAdminNotifications();
+      else if (user?.role === 'attendance_manager') {
+        // Managers are senders, not recipients — no broadcast/task noise for them
+        setNotifs([{ id: 'mgr_ok', type: 'well_done', title: 'No alerts', body: 'Manage attendance from the Attendance tab.', read: true }]);
+      } else await buildStaffNotifications();
     } catch { /* non-fatal */ }
   };
 
