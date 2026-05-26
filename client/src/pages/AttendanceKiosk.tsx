@@ -1,15 +1,19 @@
 /**
- * AttendanceKiosk — full-screen tablet kiosk.
- * Public route (/kiosk) — no JWT needed, uses X-Kiosk-Pin header.
+ * AttendanceKiosk — face-recognition attendance kiosk.
  *
- * Flow:
- *   PIN lock screen → (unlocked) → live camera + face detection loop
- *   → face matched → confirm panel (2s countdown) → check-in / check-out
- *   → success flash → back to idle
+ * Exports:
+ *   default  AttendanceKiosk  — standalone full-screen page at /kiosk (PIN protected)
+ *   named    KioskView        — embeddable inline component (no PIN, for portal overlay)
+ *
+ * Layout is responsive:
+ *   Mobile  — camera fills screen, bottom sheet slides up for status/enrollment
+ *   Desktop — camera left (flex-1), side panel right (w-72)
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
+import { X } from 'lucide-react';
 import { kioskAPI } from '../lib/api';
+import Select from '../components/Select';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -17,33 +21,29 @@ interface StaffDescriptor {
   id: string; name: string; avatar: string;
   faceDescriptors: number[][];
 }
-
 interface TodayRecord {
   staffId: string; staffName: string; avatar: string;
-  status: 'in' | 'out' | 'absent';
-  loginAt: string | null;
+  status: 'in' | 'out' | 'absent'; loginAt: string | null;
 }
-
-type KioskState =
-  | 'pin'          // PIN lock screen
-  | 'loading'      // loading face models
-  | 'idle'         // camera live, no face / no match
-  | 'matched'      // face matched, confirming
-  | 'processing'   // API call in progress
-  | 'success'      // check-in/out confirmed
-  | 'error'        // something went wrong
-  | 'enrolling';   // unknown face — link to staff or create new
-
 interface StaffBasic { id: string; name: string; avatar: string; }
 
-const MATCH_THRESHOLD = 0.5;    // FaceMatcher distance — lower = stricter
-const COOLDOWN_MS     = 60_000; // 60s per staff after successful scan
-const CONFIRM_SECS    = 3;      // countdown before auto-confirm
+type KioskState =
+  | 'pin'        // PIN lock (standalone only)
+  | 'loading'    // loading face models
+  | 'idle'       // camera live, detecting
+  | 'matched'    // face matched — confirming
+  | 'processing' // API call
+  | 'success'    // check-in/out done
+  | 'error'      // error
+  | 'enrolling'; // unknown face — link or create staff
+
+const MATCH_THRESHOLD = 0.5;
+const COOLDOWN_MS     = 60_000;
+const CONFIRM_SECS    = 3;
 
 function now12h() {
   return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
-
 function todayLong() {
   return new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 }
@@ -51,62 +51,43 @@ function todayLong() {
 // ── PIN Screen ─────────────────────────────────────────────────────────────────
 
 function PinScreen({ onUnlock }: { onUnlock: (pin: string) => void }) {
-  const [entered, setEntered]   = useState('');
-  const [shake,   setShake]     = useState(false);
-  const [error,   setError]     = useState('');
-
+  const [entered, setEntered] = useState('');
+  const [shake,   setShake]   = useState(false);
   const DIGITS = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
 
   const press = (d: string) => {
-    if (d === '⌫') { setEntered(p => p.slice(0, -1)); setError(''); return; }
+    if (d === '⌫') { setEntered(p => p.slice(0, -1)); return; }
     if (d === '') return;
     const next = entered + d;
     setEntered(next);
     if (next.length >= 4) {
       onUnlock(next);
-      setEntered('');
+      setTimeout(() => setEntered(''), 500);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-dark-500 flex flex-col items-center justify-center gap-8 p-8">
-      {/* Logo */}
       <div className="text-center">
         <div className="w-16 h-16 rounded-2xl bg-gold/15 border border-gold/25 flex items-center justify-center mx-auto mb-4">
           <span className="text-gold font-black text-2xl">K</span>
         </div>
         <p className="text-white font-bold text-xl">Attendance Kiosk</p>
-        <p className="text-white/30 text-sm mt-1">Enter kiosk PIN to unlock</p>
+        <p className="text-white/30 text-sm mt-1">Enter PIN to unlock</p>
       </div>
-
-      {/* PIN dots */}
       <div className={`flex gap-4 ${shake ? 'animate-wiggle' : ''}`}>
         {[0,1,2,3].map(i => (
-          <div
-            key={i}
-            className="w-4 h-4 rounded-full border-2 transition-all"
-            style={{
-              borderColor: i < entered.length ? '#D4AF37' : 'rgba(255,255,255,0.2)',
-              background:  i < entered.length ? '#D4AF37' : 'transparent',
-            }}
-          />
+          <div key={i} className={`w-4 h-4 rounded-full border-2 transition-colors ${i < entered.length ? 'bg-gold border-gold' : 'border-white/20'}`} />
         ))}
       </div>
-
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-
-      {/* Numpad */}
       <div className="grid grid-cols-3 gap-3 w-full max-w-[240px]">
         {DIGITS.map((d, i) => (
           <button
             key={i}
             onClick={() => press(d)}
-            disabled={d === ''}
-            className={`h-16 rounded-2xl text-white font-bold text-xl transition-all active:scale-95 ${
-              d === '' ? 'opacity-0 pointer-events-none'
-              : d === '⌫' ? 'bg-dark-300 border border-dark-50 text-white/50'
-              : 'bg-dark-400 border border-dark-50 hover:bg-dark-300 hover:border-white/20'
-            }`}
+            disabled={!d && d !== '0'}
+            className={`h-14 rounded-2xl text-xl font-semibold transition-all active:scale-95
+              ${d ? 'bg-dark-300 hover:bg-dark-200 border border-dark-50 text-white active:bg-dark-100' : 'opacity-0 pointer-events-none'}`}
           >
             {d}
           </button>
@@ -116,53 +97,48 @@ function PinScreen({ onUnlock }: { onUnlock: (pin: string) => void }) {
   );
 }
 
-// ── Main Kiosk ─────────────────────────────────────────────────────────────────
+// ── KioskView — embeddable camera + detection + enrollment ─────────────────────
 
-export default function AttendanceKiosk() {
-  const [kioskState,   setKioskState]   = useState<KioskState>('pin');
-  const [pin,          setPin]          = useState('');
-  const [pinError,     setPinError]     = useState(false);
-  const [modelStatus,  setModelStatus]  = useState('');
-  const [descriptors,  setDescriptors]  = useState<StaffDescriptor[]>([]);
-  const [todayStatus,  setTodayStatus]  = useState<TodayRecord[]>([]);
-  const [time,         setTime]         = useState(now12h());
-  const [matched,      setMatched]      = useState<StaffDescriptor | null>(null);
-  const [actionType,   setActionType]   = useState<'checkin' | 'checkout'>('checkin');
-  const [countdown,    setCountdown]    = useState(CONFIRM_SECS);
-  const [successMsg,   setSuccessMsg]   = useState('');
-  const [isLate,       setIsLate]       = useState(false);
-  const [lateMinutes,  setLateMinutes]  = useState(0);
-  const [errorMsg,     setErrorMsg]     = useState('');
+export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void }) {
+  const [kioskState,    setKioskState]    = useState<KioskState>('loading');
+  const [modelStatus,   setModelStatus]   = useState('');
+  const [descriptors,   setDescriptors]   = useState<StaffDescriptor[]>([]);
+  const [todayStatus,   setTodayStatus]   = useState<TodayRecord[]>([]);
+  const [time,          setTime]          = useState(now12h());
+  const [matched,       setMatched]       = useState<StaffDescriptor | null>(null);
+  const [actionType,    setActionType]    = useState<'checkin' | 'checkout'>('checkin');
+  const [countdown,     setCountdown]     = useState(CONFIRM_SECS);
+  const [successMsg,    setSuccessMsg]    = useState('');
+  const [isLate,        setIsLate]        = useState(false);
+  const [lateMinutes,   setLateMinutes]   = useState(0);
+  const [errorMsg,      setErrorMsg]      = useState('');
+  const [hasUnknown,    setHasUnknown]    = useState(false);
 
-  // Enrollment state
-  const [unknownDesc,    setUnknownDesc]    = useState<Float32Array | null>(null);
+  // Enrollment
   const [enrollStaffList, setEnrollStaffList] = useState<StaffBasic[]>([]);
-  const [enrollMode,     setEnrollMode]     = useState<'select' | 'create'>('select');
-  const [enrollStaffId,  setEnrollStaffId]  = useState('');
-  const [enrollNewName,  setEnrollNewName]  = useState('');
-  const [enrollNewPhone, setEnrollNewPhone] = useState('');
-  const [enrollBusy,     setEnrollBusy]     = useState(false);
-  const [enrollMsg,      setEnrollMsg]      = useState('');
+  const [enrollMode,      setEnrollMode]      = useState<'select' | 'create'>('select');
+  const [enrollStaffId,   setEnrollStaffId]   = useState('');
+  const [enrollNewName,   setEnrollNewName]   = useState('');
+  const [enrollNewPhone,  setEnrollNewPhone]  = useState('');
+  const [enrollBusy,      setEnrollBusy]      = useState(false);
+  const [enrollMsg,       setEnrollMsg]       = useState('');
 
-  const videoRef      = useRef<HTMLVideoElement>(null);
-  const canvasRef     = useRef<HTMLCanvasElement>(null);
-  const streamRef     = useRef<MediaStream | null>(null);
-  const detectRef     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const cooldownRef   = useRef<Record<string, number>>({});
-  const countdownRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const confirmedRef  = useRef(false);
+  const videoRef       = useRef<HTMLVideoElement>(null);
+  const canvasRef      = useRef<HTMLCanvasElement>(null);
+  const streamRef      = useRef<MediaStream | null>(null);
+  const detectRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cooldownRef    = useRef<Record<string, number>>({});
+  const countdownRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const confirmedRef   = useRef(false);
   const faceMatcherRef = useRef<faceapi.FaceMatcher | null>(null);
-  const unknownDescRef = useRef<Float32Array | null>(null); // latest unknown frame descriptor
+  const unknownDescRef = useRef<Float32Array | null>(null);
 
-  // Rebuild FaceMatcher whenever descriptors change
+  // Rebuild FaceMatcher when descriptors change
   useEffect(() => {
     if (!descriptors.length) { faceMatcherRef.current = null; return; }
     try {
       const labeled = descriptors.map(s =>
-        new faceapi.LabeledFaceDescriptors(
-          s.id,
-          s.faceDescriptors.map(d => new Float32Array(d)),
-        )
+        new faceapi.LabeledFaceDescriptors(s.id, s.faceDescriptors.map(d => new Float32Array(d)))
       );
       faceMatcherRef.current = new faceapi.FaceMatcher(labeled, MATCH_THRESHOLD);
     } catch { faceMatcherRef.current = null; }
@@ -174,49 +150,7 @@ export default function AttendanceKiosk() {
     return () => clearInterval(t);
   }, []);
 
-  // ── Unlock ─────────────────────────────────────────────────────────────────
-
-  const unlock = useCallback(async (enteredPin: string) => {
-    // Try the pin by calling descriptors endpoint
-    try {
-      const staff = await kioskAPI.descriptors(enteredPin);
-      setPin(enteredPin);
-      sessionStorage.setItem('kiosk_pin', enteredPin);
-      setDescriptors(staff);
-      setKioskState('loading');
-      setPinError(false);
-    } catch {
-      setPinError(true);
-      setTimeout(() => setPinError(false), 1500);
-    }
-  }, []);
-
-  // Check for saved PIN or auto-unlock flag on mount
-  useEffect(() => {
-    // Auto-unlock: portal set this flag when "Open Kiosk" was clicked by an authenticated admin/manager
-    const autoUnlock = sessionStorage.getItem('kk_kiosk_autounlock');
-    if (autoUnlock) {
-      sessionStorage.removeItem('kk_kiosk_autounlock');
-      // Fetch descriptors without PIN validation — use a bypass sentinel
-      kioskAPI.descriptors('__auto__')
-        .then(staff => {
-          setDescriptors(staff);
-          setPin('__auto__');
-          sessionStorage.setItem('kiosk_pin', '__auto__');
-          setKioskState('loading');
-        })
-        .catch(() => {
-          // Auto-unlock failed (e.g. no descriptors endpoint) — fall back to PIN
-          const saved = sessionStorage.getItem('kiosk_pin');
-          if (saved) unlock(saved);
-        });
-      return;
-    }
-    const saved = sessionStorage.getItem('kiosk_pin');
-    if (saved) unlock(saved);
-  }, [unlock]);
-
-  // ── Load face-api models and start camera ──────────────────────────────────
+  // ── Load models + camera ────────────────────────────────────────────────────
 
   useEffect(() => {
     if (kioskState !== 'loading') return;
@@ -224,7 +158,7 @@ export default function AttendanceKiosk() {
 
     async function init() {
       try {
-        setModelStatus('Loading face detection models…');
+        setModelStatus('Loading face models…');
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -236,15 +170,24 @@ export default function AttendanceKiosk() {
         setModelStatus('Starting camera…');
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
         });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
+
+        // Load staff descriptors
+        try { setDescriptors(await kioskAPI.descriptors(pin)); } catch {}
         if (!cancelled) setKioskState('idle');
-      } catch (e) {
-        if (!cancelled) { setErrorMsg('Camera access denied or models failed to load.'); setKioskState('error'); }
+      } catch (err) {
+        if (!cancelled) {
+          setModelStatus('Camera access denied — please allow camera permissions');
+          console.error('[KioskView init]', err);
+        }
       }
     }
 
@@ -252,11 +195,11 @@ export default function AttendanceKiosk() {
     return () => {
       cancelled = true;
       streamRef.current?.getTracks().forEach(t => t.stop());
+      if (detectRef.current) clearInterval(detectRef.current);
     };
-  }, [kioskState]);
+  }, [kioskState, pin]);
 
-  // ── Refresh today's status every 30s ──────────────────────────────────────
-
+  // Refresh today status
   const refreshToday = useCallback(async () => {
     try { setTodayStatus(await kioskAPI.today(pin)); } catch {}
   }, [pin]);
@@ -269,7 +212,7 @@ export default function AttendanceKiosk() {
     }
   }, [kioskState, refreshToday]);
 
-  // ── Detection loop (every 500ms) ────────────────────────────────────────────
+  // ── Detection loop ──────────────────────────────────────────────────────────
 
   const triggerMatch = useCallback((staff: StaffDescriptor, isCheckin: boolean) => {
     setMatched(staff);
@@ -280,7 +223,7 @@ export default function AttendanceKiosk() {
   }, []);
 
   useEffect(() => {
-    if (kioskState !== 'idle') return; // pause detection during match/enroll/etc
+    if (kioskState !== 'idle') return;
     if (detectRef.current) clearInterval(detectRef.current);
 
     detectRef.current = setInterval(async () => {
@@ -291,88 +234,71 @@ export default function AttendanceKiosk() {
         .withFaceLandmarks(true)
         .withFaceDescriptor();
 
-      if (!det) return;
-
-      // Draw bounding box on canvas
+      // Draw bounding box
       if (canvasRef.current && videoRef.current) {
         const dims = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
         faceapi.matchDimensions(canvasRef.current, dims);
-        const resized = faceapi.resizeResults(det, dims);
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.strokeStyle = 'rgba(212,175,55,0.8)';
-          ctx.lineWidth   = 2;
-          const { x, y, width, height } = resized.detection.box;
-          ctx.strokeRect(x, y, width, height);
+          if (det) {
+            const resized = faceapi.resizeResults(det, dims);
+            ctx.strokeStyle = 'rgba(212,175,55,0.8)';
+            ctx.lineWidth   = 2;
+            const { x, y, width, height } = resized.detection.box;
+            ctx.strokeRect(x, y, width, height);
+          }
         }
       }
 
-      // Match against descriptors using FaceMatcher
-      const matcher = faceMatcherRef.current;
+      if (!det) {
+        if (hasUnknown) { setHasUnknown(false); unknownDescRef.current = null; }
+        return;
+      }
 
+      const matcher = faceMatcherRef.current;
       if (!matcher) {
-        // No enrolled faces yet — every face is "unknown", store for enrollment
+        // No enrolled faces — store for enrollment
         unknownDescRef.current = det.descriptor;
-        setUnknownDesc(det.descriptor);
+        if (!hasUnknown) setHasUnknown(true);
         return;
       }
 
       const bestMatch = matcher.findBestMatch(det.descriptor);
       if (bestMatch.label !== 'unknown') {
-        unknownDescRef.current = null;
-        setUnknownDesc(null);
+        if (hasUnknown) { setHasUnknown(false); unknownDescRef.current = null; }
         const matchedStaff = descriptors.find(s => s.id === bestMatch.label);
         if (!matchedStaff) return;
-
-        const now = Date.now();
-        if ((cooldownRef.current[matchedStaff.id] || 0) > now) return; // cooldown active
-
-        // Determine check-in or check-out
+        if ((cooldownRef.current[matchedStaff.id] || 0) > Date.now()) return;
         const todayRec = todayStatus.find(r => r.staffId === matchedStaff.id);
-        const isCheckin = !todayRec || todayRec.status === 'out';
-        triggerMatch(matchedStaff, isCheckin);
+        triggerMatch(matchedStaff, !todayRec || todayRec.status === 'out');
       } else {
-        // Unknown face — store descriptor for potential enrollment
         unknownDescRef.current = det.descriptor;
-        setUnknownDesc(det.descriptor);
+        if (!hasUnknown) setHasUnknown(true);
       }
     }, 500);
 
     return () => { if (detectRef.current) clearInterval(detectRef.current); };
-  }, [kioskState, descriptors, todayStatus, triggerMatch]);
+  }, [kioskState, descriptors, todayStatus, triggerMatch, hasUnknown]);
 
-  // ── Countdown timer ─────────────────────────────────────────────────────────
+  // ── Confirm action ──────────────────────────────────────────────────────────
 
   const confirmAction = useCallback(async () => {
     if (confirmedRef.current || !matched) return;
     confirmedRef.current = true;
     if (countdownRef.current) clearInterval(countdownRef.current);
     setKioskState('processing');
-
     try {
       let result;
       if (actionType === 'checkin') result = await kioskAPI.checkin(pin, matched.id);
       else                          result = await kioskAPI.checkout(pin, matched.id);
-
       setIsLate(result.isLate || false);
       setLateMinutes(result.lateMinutes || 0);
-
-      const action = actionType === 'checkin' ? 'Checked in' : 'Checked out';
-      setSuccessMsg(`${action} — ${result.isLate ? `${result.lateMinutes} mins late` : 'On time'}`);
-
-      // Set cooldown
+      setSuccessMsg(`${actionType === 'checkin' ? 'Checked in' : 'Checked out'} — ${result.isLate ? `${result.lateMinutes} mins late` : 'On time'}`);
       cooldownRef.current[matched.id] = Date.now() + COOLDOWN_MS;
-
       setKioskState('success');
       refreshToday();
-
-      // Return to idle after 4s
-      setTimeout(() => {
-        setKioskState('idle');
-        setMatched(null);
-        setSuccessMsg('');
-      }, 4000);
+      setTimeout(() => { setKioskState('idle'); setMatched(null); setSuccessMsg(''); }, 4000);
     } catch {
       setErrorMsg('Action failed — please try again.');
       setKioskState('error');
@@ -383,18 +309,13 @@ export default function AttendanceKiosk() {
   useEffect(() => {
     if (kioskState !== 'matched') return;
     if (countdownRef.current) clearInterval(countdownRef.current);
-
     let c = CONFIRM_SECS;
     setCountdown(c);
     countdownRef.current = setInterval(() => {
       c--;
       setCountdown(c);
-      if (c <= 0) {
-        clearInterval(countdownRef.current!);
-        confirmAction();
-      }
+      if (c <= 0) { clearInterval(countdownRef.current!); confirmAction(); }
     }, 1000);
-
     return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
   }, [kioskState, confirmAction]);
 
@@ -405,7 +326,7 @@ export default function AttendanceKiosk() {
     setKioskState('idle');
   };
 
-  // ── Enrollment helpers ──────────────────────────────────────────────────────
+  // ── Enrollment ──────────────────────────────────────────────────────────────
 
   const openEnroll = useCallback(async () => {
     if (detectRef.current) clearInterval(detectRef.current);
@@ -415,71 +336,50 @@ export default function AttendanceKiosk() {
     setEnrollNewName('');
     setEnrollNewPhone('');
     setEnrollMsg('');
-    try {
-      const list = await kioskAPI.staffList(pin);
-      setEnrollStaffList(list);
-    } catch { setEnrollStaffList([]); }
+    try { setEnrollStaffList(await kioskAPI.staffList(pin)); } catch { setEnrollStaffList([]); }
   }, [pin]);
 
   const cancelEnroll = useCallback(() => {
-    setKioskState('idle');
-    setUnknownDesc(null);
+    setHasUnknown(false);
     unknownDescRef.current = null;
     setEnrollMsg('');
+    setKioskState('idle');
   }, []);
 
-  // Capture 5 frames over ~2s, then save
   const captureAndEnroll = useCallback(async (staffId: string) => {
     if (!videoRef.current) return;
     setEnrollBusy(true);
     setEnrollMsg('Capturing face…');
     try {
       const captures: Float32Array[] = [];
-      // Seed with the already-detected unknown descriptor
       if (unknownDescRef.current) captures.push(unknownDescRef.current);
-
-      // Capture remaining frames
       while (captures.length < 5) {
         await new Promise(r => setTimeout(r, 400));
         const det = await faceapi
           .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 }))
-          .withFaceLandmarks(true)
-          .withFaceDescriptor();
+          .withFaceLandmarks(true).withFaceDescriptor();
         if (det) captures.push(det.descriptor);
       }
-
-      if (captures.length === 0) {
-        setEnrollMsg('No face detected — please look at the camera');
-        setEnrollBusy(false);
-        return;
-      }
-
+      if (captures.length === 0) { setEnrollMsg('No face — look at the camera'); setEnrollBusy(false); return; }
       await kioskAPI.enroll(pin, staffId, captures.map(d => Array.from(d)));
-      setEnrollMsg('✓ Face enrolled successfully!');
-
-      // Refresh descriptors so this person is recognised immediately
+      setEnrollMsg('✓ Face enrolled!');
       const updated = await kioskAPI.descriptors(pin);
       setDescriptors(updated);
-
-      setTimeout(() => cancelEnroll(), 2000);
-    } catch {
-      setEnrollMsg('Enrollment failed — please try again');
-      setEnrollBusy(false);
-    }
+      setTimeout(() => cancelEnroll(), 1500);
+    } catch { setEnrollMsg('Enrollment failed — try again'); setEnrollBusy(false); }
   }, [pin, cancelEnroll]);
 
   const handleEnrollLink = useCallback(async () => {
     if (enrollMode === 'select') {
-      if (!enrollStaffId) { setEnrollMsg('Please select a staff member'); return; }
+      if (!enrollStaffId) { setEnrollMsg('Select a staff member'); return; }
       await captureAndEnroll(enrollStaffId);
     } else {
-      if (!enrollNewName.trim()) { setEnrollMsg('Please enter a name'); return; }
+      if (!enrollNewName.trim()) { setEnrollMsg('Enter a name'); return; }
       setEnrollBusy(true);
       setEnrollMsg('Creating staff…');
       try {
-        const newStaff = await kioskAPI.quickStaff(pin, enrollNewName.trim(), enrollNewPhone.trim() || undefined);
-        setEnrollMsg('Staff created — capturing face…');
-        await captureAndEnroll(newStaff.id);
+        const s = await kioskAPI.quickStaff(pin, enrollNewName.trim(), enrollNewPhone.trim() || undefined);
+        await captureAndEnroll(s.id);
       } catch (e: unknown) {
         const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
         setEnrollMsg(msg || 'Failed to create staff');
@@ -488,326 +388,330 @@ export default function AttendanceKiosk() {
     }
   }, [enrollMode, enrollStaffId, enrollNewName, enrollNewPhone, pin, captureAndEnroll]);
 
-  // ── Idle timeout → re-lock (30 min) ────────────────────────────────────────
+  // ── Computed ────────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (kioskState === 'pin') return;
-    const t = setTimeout(() => {
-      sessionStorage.removeItem('kiosk_pin');
-      setKioskState('pin');
-    }, 30 * 60 * 1000);
-    return () => clearTimeout(t);
-  }, [kioskState]);
+  const inCount  = todayStatus.filter(r => r.status === 'in').length;
+  const allCount = todayStatus.length;
 
-  // ── Render: PIN ─────────────────────────────────────────────────────────────
+  // Whether the bottom panel is "expanded" (has content beyond just dots)
+  const panelExpanded = kioskState === 'enrolling'
+    || kioskState === 'matched'
+    || kioskState === 'processing'
+    || kioskState === 'success'
+    || (kioskState === 'idle' && hasUnknown)
+    || (kioskState === 'error' && !!errorMsg);
 
-  if (kioskState === 'pin') {
-    return (
-      <div className={pinError ? 'animate-wiggle' : ''}>
-        <PinScreen onUnlock={unlock} />
-        {pinError && (
-          <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-red-500/20 border border-red-500/30 text-red-400 px-5 py-2.5 rounded-xl text-sm font-semibold">
-            Incorrect PIN — try again
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ── Render: Loading models ──────────────────────────────────────────────────
+  // ── Loading screen ──────────────────────────────────────────────────────────
 
   if (kioskState === 'loading') {
     return (
-      <div className="fixed inset-0 bg-dark-500 flex flex-col items-center justify-center gap-4">
+      <div className="fixed inset-0 bg-dark-500 flex flex-col items-center justify-center gap-4 z-50">
+        {onClose && (
+          <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-dark-300 text-white/40 hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        )}
         <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
         <p className="text-white/50 text-sm">{modelStatus}</p>
       </div>
     );
   }
 
-  // ── Today status bar (dots) ─────────────────────────────────────────────────
-
-  const inCount  = todayStatus.filter(r => r.status === 'in').length;
-  const allCount = todayStatus.length;
-
-  // ── Render: Main kiosk ──────────────────────────────────────────────────────
+  // ── Main render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="fixed inset-0 bg-dark-500 overflow-hidden select-none" style={{ fontFamily: 'inherit' }}>
+    <div className="fixed inset-0 bg-black overflow-hidden select-none" style={{ fontFamily: 'inherit', zIndex: 50 }}>
 
-      {/* Header bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-3 bg-dark-400/80 backdrop-blur-sm border-b border-white/5 z-20">
-        <div className="flex items-center gap-3">
+      {/* ── Camera (full background) ── */}
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ transform: 'scaleX(-1)', right: undefined }}
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ transform: 'scaleX(-1)' }}
+      />
+
+      {/* Scan line — idle only */}
+      {kioskState === 'idle' && (
+        <div className="absolute left-0 right-0 h-px bg-gold/25 pointer-events-none"
+          style={{ animation: 'scanLine 3s ease-in-out infinite' }} />
+      )}
+
+      {/* Idle camera hint */}
+      {kioskState === 'idle' && !hasUnknown && (
+        <div className="absolute bottom-28 md:bottom-8 left-0 right-0 md:right-72 text-center pointer-events-none">
+          <p className="text-white/30 text-sm font-medium drop-shadow-lg">Look at the camera to check in / check out</p>
+        </div>
+      )}
+
+      {/* ── Header bar ── */}
+      <div className="absolute top-0 left-0 right-0 md:right-72 flex items-center justify-between px-4 py-3
+        bg-black/50 backdrop-blur-sm border-b border-white/5 z-20">
+        <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gold/15 border border-gold/25 flex items-center justify-center">
             <span className="text-gold font-black text-sm">K</span>
           </div>
-          <span className="text-white/60 text-sm font-semibold">Attendance</span>
+          <span className="text-white/70 text-sm font-semibold hidden sm:block">Attendance</span>
         </div>
         <div className="text-center">
-          <p className="text-white font-bold text-lg">{time}</p>
-          <p className="text-white/30 text-xs">{todayLong()}</p>
+          <p className="text-white font-bold text-base sm:text-lg leading-tight">{time}</p>
+          <p className="text-white/30 text-[10px] sm:text-xs">{todayLong()}</p>
         </div>
-        <div className="flex items-center gap-2 text-white/40 text-xs">
-          <span>{inCount}/{allCount} in</span>
-          <button
-            onClick={() => { sessionStorage.removeItem('kiosk_pin'); setKioskState('pin'); }}
-            className="p-1.5 rounded-lg hover:bg-dark-200 hover:text-white transition-colors text-[10px] ml-2"
-          >
-            🔒
-          </button>
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-xs">{inCount}/{allCount} in</span>
+          {onClose ? (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors ml-1"
+              title="Close kiosk"
+            >
+              <X size={15} />
+            </button>
+          ) : (
+            <button
+              onClick={() => { sessionStorage.removeItem('kiosk_pin'); window.location.reload(); }}
+              className="p-1.5 rounded-lg hover:bg-dark-200 hover:text-white text-white/30 transition-colors ml-1 text-[10px]"
+              title="Lock"
+            >🔒</button>
+          )}
         </div>
       </div>
 
-      {/* Camera + overlay */}
-      <div className="absolute inset-0 flex">
+      {/* ── Side panel (desktop right) / Bottom sheet (mobile) ── */}
+      <div className={`
+        absolute left-0 right-0 bottom-0 z-30
+        md:top-0 md:left-auto md:right-0 md:w-72 md:bottom-0
+        bg-dark-400/95 md:bg-dark-400 backdrop-blur-xl md:backdrop-blur-none
+        border-t border-white/5 md:border-t-0 md:border-l md:border-white/5
+        transition-all duration-300 ease-out
+        ${panelExpanded ? 'max-h-[60vh] md:max-h-none' : 'max-h-24 md:max-h-none'}
+        overflow-y-auto md:overflow-y-auto md:flex md:flex-col md:pt-14
+      `}>
 
-        {/* LEFT: Camera panel */}
-        <div className="relative flex-1 bg-black flex items-center justify-center">
-          <video
-            ref={videoRef}
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-            style={{ transform: 'scaleX(-1)' }}
-          />
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full"
-            style={{ transform: 'scaleX(-1)', pointerEvents: 'none' }}
-          />
+        {/* Panel content */}
+        <div className="flex flex-col items-center justify-center p-4 md:p-6 md:flex-1">
 
-          {/* Idle overlay text */}
-          {(kioskState === 'idle') && (
-            <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none">
-              <p className="text-white/40 text-sm font-medium">
-                Look at the camera to check in / check out
-              </p>
+          {/* ── Idle / Error ── */}
+          {(kioskState === 'idle' || kioskState === 'error') && (
+            <div className="w-full">
+              {hasUnknown ? (
+                // Unknown face — offer enrollment
+                <div className="flex items-center gap-3 md:flex-col md:gap-4 md:text-center">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl md:text-3xl">🔍</span>
+                  </div>
+                  <div className="flex-1 md:flex-none">
+                    <p className="text-amber-400 font-semibold text-sm">Unknown Face</p>
+                    <p className="text-white/30 text-xs">Not enrolled yet</p>
+                  </div>
+                  <button
+                    onClick={openEnroll}
+                    className="flex-shrink-0 md:w-full px-4 py-2 md:py-2.5 rounded-xl bg-gold/15 border border-gold/30 text-gold font-semibold text-xs md:text-sm hover:bg-gold/25 transition-all active:scale-95"
+                  >
+                    + Enroll
+                  </button>
+                </div>
+              ) : (
+                // Waiting — compact on mobile
+                <div className="flex items-center justify-between md:flex-col md:justify-center md:gap-4 md:text-center">
+                  <div className="flex items-center gap-2 md:flex-col md:gap-0">
+                    <span className="text-2xl md:text-4xl md:mb-2">👤</span>
+                    <p className="text-white/20 text-xs md:text-sm">Waiting for face…</p>
+                  </div>
+                  {/* Today dots — visible in compact state on mobile */}
+                  <div className="flex gap-1.5 flex-wrap justify-end md:hidden max-w-[140px]">
+                    {todayStatus.slice(0, 8).map(r => (
+                      <div
+                        key={r.staffId}
+                        title={`${r.staffName} — ${r.status}`}
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold"
+                        style={{
+                          background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.05)',
+                          border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                          color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
+                        }}
+                      >
+                        {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {errorMsg && <p className="text-red-400 text-xs text-center mt-2">{errorMsg}</p>}
             </div>
           )}
 
-          {/* Scan line animation for idle */}
-          {kioskState === 'idle' && (
-            <div
-              className="absolute left-0 right-0 h-px bg-gold/30 pointer-events-none"
-              style={{
-                animation: 'scanLine 3s ease-in-out infinite',
-              }}
-            />
-          )}
-        </div>
-
-        {/* RIGHT: Status panel */}
-        <div className="w-80 flex-shrink-0 bg-dark-400 border-l border-white/5 flex flex-col pt-14">
-
-          {/* Match / Success card */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6">
-
-            {(kioskState === 'idle' || kioskState === 'error') && (
-              <div className="text-center space-y-4 w-full">
-                {unknownDesc ? (
-                  // Unknown face detected — offer enrollment
-                  <div className="space-y-3">
-                    <div className="w-20 h-20 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto animate-pulse">
-                      <span className="text-4xl">🔍</span>
-                    </div>
-                    <div>
-                      <p className="text-amber-400 font-semibold text-sm">Unknown Face</p>
-                      <p className="text-white/30 text-xs mt-0.5">Not in the system yet</p>
-                    </div>
-                    <button
-                      onClick={openEnroll}
-                      className="w-full py-2.5 rounded-xl bg-gold/15 border border-gold/30 text-gold font-semibold text-sm hover:bg-gold/25 transition-all active:scale-95"
-                    >
-                      + Enroll This Person
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="w-20 h-20 rounded-2xl bg-dark-300 border border-dark-50 flex items-center justify-center mx-auto">
-                      <span className="text-4xl">👤</span>
-                    </div>
-                    <p className="text-white/20 text-sm mt-3">Waiting for face…</p>
-                  </div>
-                )}
-                {errorMsg && <p className="text-red-400 text-xs">{errorMsg}</p>}
-              </div>
-            )}
-
-            {kioskState === 'enrolling' && (
-              <div className="w-full space-y-3">
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/25 flex items-center justify-center mx-auto mb-2">
-                    <span className="text-3xl">🆔</span>
-                  </div>
-                  <p className="text-white font-semibold text-sm">Enroll Face</p>
-                  <p className="text-white/30 text-xs mt-0.5">Link this face to a staff member</p>
-                </div>
-
-                {/* Mode toggle */}
-                <div className="flex rounded-xl overflow-hidden border border-dark-50">
-                  <button
-                    onClick={() => setEnrollMode('select')}
-                    className={`flex-1 py-2 text-xs font-semibold transition-colors
-                      ${enrollMode === 'select' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
-                  >
-                    Select Staff
-                  </button>
-                  <button
-                    onClick={() => setEnrollMode('create')}
-                    className={`flex-1 py-2 text-xs font-semibold transition-colors border-l border-dark-50
-                      ${enrollMode === 'create' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
-                  >
-                    New Staff
-                  </button>
-                </div>
-
-                {enrollMode === 'select' ? (
-                  <select
-                    value={enrollStaffId}
-                    onChange={e => setEnrollStaffId(e.target.value)}
-                    className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/40 appearance-none"
-                  >
-                    <option value="">— Select staff member —</option>
-                    {enrollStaffList.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      placeholder="Full name *"
-                      value={enrollNewName}
-                      onChange={e => setEnrollNewName(e.target.value)}
-                      className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Phone (optional)"
-                      value={enrollNewPhone}
-                      onChange={e => setEnrollNewPhone(e.target.value)}
-                      className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
-                    />
-                  </div>
-                )}
-
-                {enrollMsg && (
-                  <p className={`text-xs text-center ${enrollMsg.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}`}>
-                    {enrollMsg}
-                  </p>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleEnrollLink}
-                    disabled={enrollBusy}
-                    className="flex-1 py-2.5 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40"
-                  >
-                    {enrollBusy ? 'Saving…' : 'Link Face'}
-                  </button>
-                  <button
-                    onClick={cancelEnroll}
-                    disabled={enrollBusy}
-                    className="px-4 py-2.5 rounded-xl border border-dark-50 text-white/40 hover:text-white text-sm transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {(kioskState === 'matched' || kioskState === 'processing') && matched && (
-              <div className="w-full space-y-4 text-center">
-                {/* Avatar */}
-                <div className="w-20 h-20 rounded-2xl bg-dark-300 border border-dark-100 flex items-center justify-center mx-auto">
-                  <span className="text-white/60 font-black text-2xl">
-                    {matched.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+          {/* ── Matched / Processing ── */}
+          {(kioskState === 'matched' || kioskState === 'processing') && matched && (
+            <div className="w-full space-y-3 text-center">
+              <div className="flex items-center gap-3 md:flex-col md:gap-4">
+                <div className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-dark-300 border border-dark-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white/60 font-black text-xl md:text-2xl">
+                    {matched.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                   </span>
                 </div>
-
-                <div>
-                  <p className="text-white font-bold text-xl">{matched.name}</p>
-                  <p className="text-white/40 text-sm mt-1">
+                <div className="flex-1 text-left md:text-center">
+                  <p className="text-white font-bold text-base md:text-xl">{matched.name}</p>
+                  <p className="text-white/40 text-xs md:text-sm">
                     {actionType === 'checkin' ? '→ Checking In' : '← Checking Out'}
                   </p>
-                  <p className="text-white/30 text-xs mt-0.5">{now12h()}</p>
+                  <p className="text-white/30 text-[10px] md:text-xs">{now12h()}</p>
                 </div>
-
-                {/* Countdown ring */}
                 {kioskState === 'matched' && (
-                  <div className="relative w-16 h-16 mx-auto">
+                  <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0 md:mx-auto">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
                       <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-                      <circle
-                        cx="32" cy="32" r="28" fill="none"
+                      <circle cx="32" cy="32" r="28" fill="none"
                         stroke={actionType === 'checkin' ? '#4ade80' : '#60a5fa'}
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray={`${175.9}`}
+                        strokeWidth="4" strokeLinecap="round"
+                        strokeDasharray="175.9"
                         strokeDashoffset={`${175.9 * (1 - countdown / CONFIRM_SECS)}`}
                         style={{ transition: 'stroke-dashoffset 1s linear' }}
                       />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-white font-black text-2xl">
-                      {countdown}
-                    </span>
+                    <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xl md:text-2xl">{countdown}</span>
                   </div>
                 )}
-
                 {kioskState === 'processing' && (
-                  <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-                )}
-
-                {kioskState === 'matched' && (
-                  <button
-                    onClick={cancelMatch}
-                    className="text-white/25 text-xs hover:text-white/50 transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin flex-shrink-0" />
                 )}
               </div>
-            )}
+              {kioskState === 'matched' && (
+                <button onClick={cancelMatch} className="text-white/25 text-xs hover:text-white/50 transition-colors">
+                  Cancel
+                </button>
+              )}
+            </div>
+          )}
 
-            {kioskState === 'success' && matched && (
-              <div className="w-full space-y-4 text-center animate-scale-in">
-                <div className="w-20 h-20 rounded-2xl bg-green-500/15 border border-green-500/30 flex items-center justify-center mx-auto">
-                  <span className="text-4xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
+          {/* ── Success ── */}
+          {kioskState === 'success' && matched && (
+            <div className="w-full space-y-3 text-center">
+              <div className="flex items-center gap-3 md:flex-col md:gap-4">
+                <div className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl md:text-4xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
                 </div>
-                <div>
-                  <p className="text-white font-bold text-xl">{matched.name}</p>
-                  <p className="text-green-400 font-semibold text-sm mt-1">{successMsg}</p>
+                <div className="flex-1 text-left md:text-center">
+                  <p className="text-white font-bold text-base md:text-xl">{matched.name}</p>
+                  <p className="text-green-400 font-semibold text-sm">{successMsg}</p>
                   {isLate && lateMinutes > 0 && (
-                    <p className="text-amber-400 text-xs mt-1">⚠ {lateMinutes} mins late today</p>
+                    <p className="text-amber-400 text-xs mt-0.5">⚠ {lateMinutes} mins late</p>
                   )}
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Today's status dots */}
-          <div className="border-t border-white/5 p-4">
-            <p className="text-white/25 text-[10px] uppercase tracking-wider mb-2">Today</p>
-            <div className="flex flex-wrap gap-2">
-              {todayStatus.map(r => (
-                <div
-                  key={r.staffId}
-                  className="flex flex-col items-center gap-1"
-                  title={`${r.staffName} — ${r.status}`}
-                >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-                    style={{
-                      background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.05)',
-                      border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                      color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
-                    }}
-                  >
-                    {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                  </div>
-                </div>
-              ))}
             </div>
+          )}
+
+          {/* ── Enrolling ── */}
+          {kioskState === 'enrolling' && (
+            <div className="w-full space-y-3">
+              <div className="flex items-center gap-3 md:flex-col md:text-center mb-1">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gold/10 border border-gold/25 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">🆔</span>
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm">Enroll Face</p>
+                  <p className="text-white/30 text-xs">Link this face to a staff member</p>
+                </div>
+              </div>
+
+              {/* Mode toggle */}
+              <div className="flex rounded-xl overflow-hidden border border-dark-50">
+                <button
+                  onClick={() => setEnrollMode('select')}
+                  className={`flex-1 py-2 text-xs font-semibold transition-colors
+                    ${enrollMode === 'select' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
+                >
+                  Select Staff
+                </button>
+                <button
+                  onClick={() => setEnrollMode('create')}
+                  className={`flex-1 py-2 text-xs font-semibold transition-colors border-l border-dark-50
+                    ${enrollMode === 'create' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
+                >
+                  New Staff
+                </button>
+              </div>
+
+              {enrollMode === 'select' ? (
+                <Select
+                  value={enrollStaffId}
+                  onChange={e => setEnrollStaffId(e.target.value)}
+                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-sm"
+                >
+                  <option value="">— Select staff member —</option>
+                  {enrollStaffList.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Select>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Full name *"
+                    value={enrollNewName}
+                    onChange={e => setEnrollNewName(e.target.value)}
+                    className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone (optional)"
+                    value={enrollNewPhone}
+                    onChange={e => setEnrollNewPhone(e.target.value)}
+                    className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
+                  />
+                </div>
+              )}
+
+              {enrollMsg && (
+                <p className={`text-xs text-center ${enrollMsg.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}`}>
+                  {enrollMsg}
+                </p>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleEnrollLink}
+                  disabled={enrollBusy}
+                  className="flex-1 py-2.5 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40"
+                >
+                  {enrollBusy ? 'Saving…' : 'Link Face'}
+                </button>
+                <button
+                  onClick={cancelEnroll}
+                  disabled={enrollBusy}
+                  className="px-3 py-2.5 rounded-xl border border-dark-50 text-white/40 hover:text-white text-sm transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Today dots — desktop only sidebar section */}
+        <div className="hidden md:block border-t border-white/5 p-4 flex-shrink-0">
+          <p className="text-white/25 text-[10px] uppercase tracking-wider mb-2">Today</p>
+          <div className="flex flex-wrap gap-2">
+            {todayStatus.map(r => (
+              <div
+                key={r.staffId}
+                title={`${r.staffName} — ${r.status}`}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+                style={{
+                  background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.05)',
+                  border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                  color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
+                }}
+              >
+                {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -823,4 +727,52 @@ export default function AttendanceKiosk() {
       `}</style>
     </div>
   );
+}
+
+// ── Standalone Kiosk (PIN-protected, at /kiosk route) ─────────────────────────
+
+export default function AttendanceKiosk() {
+  const [pin,      setPin]      = useState('');
+  const [pinError, setPinError] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  const unlock = useCallback(async (enteredPin: string) => {
+    try {
+      await kioskAPI.descriptors(enteredPin); // validates PIN
+      setPin(enteredPin);
+      sessionStorage.setItem('kiosk_pin', enteredPin);
+      setUnlocked(true);
+    } catch {
+      setPinError(true);
+      setTimeout(() => setPinError(false), 1500);
+    }
+  }, []);
+
+  // Restore saved PIN or check auto-unlock
+  useEffect(() => {
+    const auto = sessionStorage.getItem('kk_kiosk_autounlock');
+    if (auto) {
+      sessionStorage.removeItem('kk_kiosk_autounlock');
+      setPin('__auto__');
+      setUnlocked(true);
+      return;
+    }
+    const saved = sessionStorage.getItem('kiosk_pin');
+    if (saved) unlock(saved);
+  }, [unlock]);
+
+  if (!unlocked) {
+    return (
+      <div className={pinError ? 'animate-wiggle' : ''}>
+        <PinScreen onUnlock={unlock} />
+        {pinError && (
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-red-500/20 border border-red-500/30 text-red-400 px-5 py-2.5 rounded-xl text-sm font-semibold z-50">
+            Incorrect PIN — try again
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return <KioskView pin={pin} />;
 }
