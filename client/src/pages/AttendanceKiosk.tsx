@@ -236,59 +236,71 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     if (detectRef.current) clearInterval(detectRef.current);
 
     detectRef.current = setInterval(async () => {
-      if (!videoRef.current || videoRef.current.readyState < 2) return;
+      const video = videoRef.current;
+      if (!video || video.readyState < 3) return;
 
       const det = await faceapi
-        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }))
         .withFaceLandmarks(true)
         .withFaceDescriptor();
 
-      // Draw bounding box
-      if (canvasRef.current && videoRef.current) {
-        const dims = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
-        faceapi.matchDimensions(canvasRef.current, dims);
-        const ctx = canvasRef.current.getContext('2d');
+      // Draw bounding box — read canvas dims from actual video element each tick
+      const canvas = canvasRef.current;
+      if (canvas && video.videoWidth > 0) {
+        if (canvas.width !== video.videoWidth)  canvas.width  = video.videoWidth;
+        if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           if (det) {
-            const resized = faceapi.resizeResults(det, dims);
-            ctx.strokeStyle = 'rgba(212,175,55,0.8)';
+            const resized = faceapi.resizeResults(det,
+              { width: video.videoWidth, height: video.videoHeight });
+            ctx.strokeStyle = 'rgba(212,175,55,0.85)';
             ctx.lineWidth   = 2;
             const { x, y, width, height } = resized.detection.box;
-            ctx.strokeRect(x, y, width, height);
+            ctx.beginPath();
+            ctx.roundRect(x, y, width, height, 6);
+            ctx.stroke();
           }
         }
       }
 
+      // Read volatile values from refs — no dependency on state
+      const hasUnk  = hasUnknownRef.current;
+      const descs   = descriptorsRef.current;
+      const today   = todayStatusRef.current;
+      const matcher = faceMatcherRef.current;
+
       if (!det) {
-        if (hasUnknown) { setHasUnknown(false); unknownDescRef.current = null; }
+        if (hasUnk) { hasUnknownRef.current = false; setHasUnknown(false); unknownDescRef.current = null; }
         return;
       }
 
-      const matcher = faceMatcherRef.current;
       if (!matcher) {
-        // No enrolled faces — store for enrollment
+        // No enrolled staff yet — offer enrollment
         unknownDescRef.current = det.descriptor;
-        if (!hasUnknown) setHasUnknown(true);
+        if (!hasUnk) { hasUnknownRef.current = true; setHasUnknown(true); }
         return;
       }
 
       const bestMatch = matcher.findBestMatch(det.descriptor);
       if (bestMatch.label !== 'unknown') {
-        if (hasUnknown) { setHasUnknown(false); unknownDescRef.current = null; }
-        const matchedStaff = descriptors.find(s => s.id === bestMatch.label);
+        if (hasUnk) { hasUnknownRef.current = false; setHasUnknown(false); unknownDescRef.current = null; }
+        const matchedStaff = descs.find(s => s.id === bestMatch.label);
         if (!matchedStaff) return;
         if ((cooldownRef.current[matchedStaff.id] || 0) > Date.now()) return;
-        const todayRec = todayStatus.find(r => r.staffId === matchedStaff.id);
+        const todayRec = today.find(r => r.staffId === matchedStaff.id);
         triggerMatch(matchedStaff, !todayRec || todayRec.status === 'out');
       } else {
         unknownDescRef.current = det.descriptor;
-        if (!hasUnknown) setHasUnknown(true);
+        if (!hasUnk) { hasUnknownRef.current = true; setHasUnknown(true); }
       }
-    }, 500);
+    }, 600);
 
     return () => { if (detectRef.current) clearInterval(detectRef.current); };
-  }, [kioskState, descriptors, todayStatus, triggerMatch, hasUnknown]);
+  // Only restart when kioskState changes — everything else read from refs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kioskState]);
 
   // ── Confirm action ──────────────────────────────────────────────────────────
 
