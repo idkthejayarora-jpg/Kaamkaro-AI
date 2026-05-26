@@ -53,6 +53,7 @@ interface StaffMember {
 interface AttendanceCfg {
   shiftStart: string; shiftEnd: string; lateGraceMins: number;
   expectedHours: number; kioskPin: string;
+  womenShift?: { shiftStart: string; shiftEnd: string; expectedHours: number };
 }
 
 interface LeaveRecord {
