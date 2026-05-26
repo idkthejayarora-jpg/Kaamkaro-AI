@@ -177,8 +177,27 @@ export default function AttendanceKiosk() {
     }
   }, []);
 
-  // Check for saved PIN on mount
+  // Check for saved PIN or auto-unlock flag on mount
   useEffect(() => {
+    // Auto-unlock: portal set this flag when "Open Kiosk" was clicked by an authenticated admin/manager
+    const autoUnlock = sessionStorage.getItem('kk_kiosk_autounlock');
+    if (autoUnlock) {
+      sessionStorage.removeItem('kk_kiosk_autounlock');
+      // Fetch descriptors without PIN validation — use a bypass sentinel
+      kioskAPI.descriptors('__auto__')
+        .then(staff => {
+          setDescriptors(staff);
+          setPin('__auto__');
+          sessionStorage.setItem('kiosk_pin', '__auto__');
+          setKioskState('loading');
+        })
+        .catch(() => {
+          // Auto-unlock failed (e.g. no descriptors endpoint) — fall back to PIN
+          const saved = sessionStorage.getItem('kiosk_pin');
+          if (saved) unlock(saved);
+        });
+      return;
+    }
     const saved = sessionStorage.getItem('kiosk_pin');
     if (saved) unlock(saved);
   }, [unlock]);
