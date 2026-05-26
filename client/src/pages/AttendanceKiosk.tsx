@@ -439,7 +439,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   // early return that would unmount the video element.
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden select-none" style={{ fontFamily: 'inherit', zIndex: 50 }}>
+    <div className="fixed inset-0 bg-black overflow-hidden select-none" style={{ fontFamily: 'inherit', zIndex: 200 }}>
 
       {/* ── Camera (full background) — always in DOM ── */}
       <video
