@@ -405,6 +405,89 @@ export default function AttendanceKiosk() {
     setKioskState('idle');
   };
 
+  // ── Enrollment helpers ──────────────────────────────────────────────────────
+
+  const openEnroll = useCallback(async () => {
+    if (detectRef.current) clearInterval(detectRef.current);
+    setKioskState('enrolling');
+    setEnrollMode('select');
+    setEnrollStaffId('');
+    setEnrollNewName('');
+    setEnrollNewPhone('');
+    setEnrollMsg('');
+    try {
+      const list = await kioskAPI.staffList(pin);
+      setEnrollStaffList(list);
+    } catch { setEnrollStaffList([]); }
+  }, [pin]);
+
+  const cancelEnroll = useCallback(() => {
+    setKioskState('idle');
+    setUnknownDesc(null);
+    unknownDescRef.current = null;
+    setEnrollMsg('');
+  }, []);
+
+  // Capture 5 frames over ~2s, then save
+  const captureAndEnroll = useCallback(async (staffId: string) => {
+    if (!videoRef.current) return;
+    setEnrollBusy(true);
+    setEnrollMsg('Capturing face…');
+    try {
+      const captures: Float32Array[] = [];
+      // Seed with the already-detected unknown descriptor
+      if (unknownDescRef.current) captures.push(unknownDescRef.current);
+
+      // Capture remaining frames
+      while (captures.length < 5) {
+        await new Promise(r => setTimeout(r, 400));
+        const det = await faceapi
+          .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 }))
+          .withFaceLandmarks(true)
+          .withFaceDescriptor();
+        if (det) captures.push(det.descriptor);
+      }
+
+      if (captures.length === 0) {
+        setEnrollMsg('No face detected — please look at the camera');
+        setEnrollBusy(false);
+        return;
+      }
+
+      await kioskAPI.enroll(pin, staffId, captures.map(d => Array.from(d)));
+      setEnrollMsg('✓ Face enrolled successfully!');
+
+      // Refresh descriptors so this person is recognised immediately
+      const updated = await kioskAPI.descriptors(pin);
+      setDescriptors(updated);
+
+      setTimeout(() => cancelEnroll(), 2000);
+    } catch {
+      setEnrollMsg('Enrollment failed — please try again');
+      setEnrollBusy(false);
+    }
+  }, [pin, cancelEnroll]);
+
+  const handleEnrollLink = useCallback(async () => {
+    if (enrollMode === 'select') {
+      if (!enrollStaffId) { setEnrollMsg('Please select a staff member'); return; }
+      await captureAndEnroll(enrollStaffId);
+    } else {
+      if (!enrollNewName.trim()) { setEnrollMsg('Please enter a name'); return; }
+      setEnrollBusy(true);
+      setEnrollMsg('Creating staff…');
+      try {
+        const newStaff = await kioskAPI.quickStaff(pin, enrollNewName.trim(), enrollNewPhone.trim() || undefined);
+        setEnrollMsg('Staff created — capturing face…');
+        await captureAndEnroll(newStaff.id);
+      } catch (e: unknown) {
+        const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        setEnrollMsg(msg || 'Failed to create staff');
+        setEnrollBusy(false);
+      }
+    }
+  }, [enrollMode, enrollStaffId, enrollNewName, enrollNewPhone, pin, captureAndEnroll]);
+
   // ── Idle timeout → re-lock (30 min) ────────────────────────────────────────
 
   useEffect(() => {
