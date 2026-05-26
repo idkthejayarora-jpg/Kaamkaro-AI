@@ -30,6 +30,8 @@ import Badges from './pages/Badges';
 import Calendar from './pages/Calendar';
 import Settings from './pages/Settings';
 import AntiFraud from './pages/AntiFraud';
+import AttendancePortal from './pages/AttendancePortal';
+import AttendanceKiosk from './pages/AttendanceKiosk';
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
