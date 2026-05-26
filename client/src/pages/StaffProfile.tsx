@@ -24,7 +24,14 @@ export default function StaffProfile() {
   const [performance, setPerformance] = useState<Performance[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [loading, setLoading]         = useState(true);
-  const [activeTab, setActiveTab]     = useState<'activity' | 'customers'>('activity');
+  const [activeTab, setActiveTab]     = useState<'activity' | 'customers' | 'attendance'>('activity');
+  const [attMonth,  setAttMonth]      = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [attData,   setAttData]       = useState<Record<string, string>>({});
+  const [attSummary, setAttSummary]   = useState<{ presentDays: number; lateDays: number; totalHours: number; overtimeHours: number; undertimeHours: number } | null>(null);
+  const [attRecords, setAttRecords]   = useState<{ date: string; loginAt: string | null; logoutAt: string | null; hoursWorked: number; isLate: boolean }[]>([]);
   const [badges, setBadges]           = useState<Badge[]>([]);
 
   useEffect(() => {
