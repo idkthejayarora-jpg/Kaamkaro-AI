@@ -126,6 +126,35 @@ router.patch('/:id/availability', async (req, res) => {
   }
 });
 
+// PATCH /api/staff/:id/face — save face descriptors (admin or attendance_manager)
+// Body: { descriptors: number[][] }  (array of 128-D float arrays)
+router.patch('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const { descriptors } = req.body;
+    if (!Array.isArray(descriptors) || descriptors.length === 0) {
+      return res.status(400).json({ error: 'descriptors array required' });
+    }
+    const updated = await updateOne('staff', req.params.id, { faceDescriptors: descriptors });
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    const { password: _, ...safe } = updated;
+    res.json({ message: 'Face enrolled', staff: safe });
+  } catch (err) {
+    console.error('[Face enroll]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/staff/:id/face — clear face enrollment
+router.delete('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const updated = await updateOne('staff', req.params.id, { faceDescriptors: [] });
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    res.json({ message: 'Face enrollment cleared' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/staff/:id/performance
 router.get('/:id/performance', async (req, res) => {
   try {
