@@ -603,12 +603,116 @@ export default function AttendanceKiosk() {
           <div className="flex-1 flex flex-col items-center justify-center p-6">
 
             {(kioskState === 'idle' || kioskState === 'error') && (
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 rounded-2xl bg-dark-300 border border-dark-50 flex items-center justify-center mx-auto">
-                  <span className="text-4xl">👤</span>
-                </div>
-                <p className="text-white/20 text-sm">Waiting for face…</p>
+              <div className="text-center space-y-4 w-full">
+                {unknownDesc ? (
+                  // Unknown face detected — offer enrollment
+                  <div className="space-y-3">
+                    <div className="w-20 h-20 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto animate-pulse">
+                      <span className="text-4xl">🔍</span>
+                    </div>
+                    <div>
+                      <p className="text-amber-400 font-semibold text-sm">Unknown Face</p>
+                      <p className="text-white/30 text-xs mt-0.5">Not in the system yet</p>
+                    </div>
+                    <button
+                      onClick={openEnroll}
+                      className="w-full py-2.5 rounded-xl bg-gold/15 border border-gold/30 text-gold font-semibold text-sm hover:bg-gold/25 transition-all active:scale-95"
+                    >
+                      + Enroll This Person
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="w-20 h-20 rounded-2xl bg-dark-300 border border-dark-50 flex items-center justify-center mx-auto">
+                      <span className="text-4xl">👤</span>
+                    </div>
+                    <p className="text-white/20 text-sm mt-3">Waiting for face…</p>
+                  </div>
+                )}
                 {errorMsg && <p className="text-red-400 text-xs">{errorMsg}</p>}
+              </div>
+            )}
+
+            {kioskState === 'enrolling' && (
+              <div className="w-full space-y-3">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/25 flex items-center justify-center mx-auto mb-2">
+                    <span className="text-3xl">🆔</span>
+                  </div>
+                  <p className="text-white font-semibold text-sm">Enroll Face</p>
+                  <p className="text-white/30 text-xs mt-0.5">Link this face to a staff member</p>
+                </div>
+
+                {/* Mode toggle */}
+                <div className="flex rounded-xl overflow-hidden border border-dark-50">
+                  <button
+                    onClick={() => setEnrollMode('select')}
+                    className={`flex-1 py-2 text-xs font-semibold transition-colors
+                      ${enrollMode === 'select' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
+                  >
+                    Select Staff
+                  </button>
+                  <button
+                    onClick={() => setEnrollMode('create')}
+                    className={`flex-1 py-2 text-xs font-semibold transition-colors border-l border-dark-50
+                      ${enrollMode === 'create' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
+                  >
+                    New Staff
+                  </button>
+                </div>
+
+                {enrollMode === 'select' ? (
+                  <select
+                    value={enrollStaffId}
+                    onChange={e => setEnrollStaffId(e.target.value)}
+                    className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/40 appearance-none"
+                  >
+                    <option value="">— Select staff member —</option>
+                    {enrollStaffList.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Full name *"
+                      value={enrollNewName}
+                      onChange={e => setEnrollNewName(e.target.value)}
+                      className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Phone (optional)"
+                      value={enrollNewPhone}
+                      onChange={e => setEnrollNewPhone(e.target.value)}
+                      className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
+                    />
+                  </div>
+                )}
+
+                {enrollMsg && (
+                  <p className={`text-xs text-center ${enrollMsg.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}`}>
+                    {enrollMsg}
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleEnrollLink}
+                    disabled={enrollBusy}
+                    className="flex-1 py-2.5 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40"
+                  >
+                    {enrollBusy ? 'Saving…' : 'Link Face'}
+                  </button>
+                  <button
+                    onClick={cancelEnroll}
+                    disabled={enrollBusy}
+                    className="px-4 py-2.5 rounded-xl border border-dark-50 text-white/40 hover:text-white text-sm transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
 
