@@ -13,7 +13,8 @@ api.interceptors.response.use(
   res => res,
   err => {
     // 401 → force logout and redirect to login
-    if (err.response?.status === 401) {
+    // EXCEPT for kiosk routes — the kiosk overlay handles auth errors internally
+    if (err.response?.status === 401 && !err.config?.url?.includes('/kiosk/')) {
       localStorage.removeItem('kk_token');
       localStorage.removeItem('kk_user');
       window.location.href = '/login';
