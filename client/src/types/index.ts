@@ -2,7 +2,7 @@ export interface User {
   id: string;
   name: string;
   phone: string;
-  role: 'admin' | 'staff';
+  role: 'admin' | 'staff' | 'attendance_manager';
   email?: string;
   avatar: string;
   joinDate: string;
