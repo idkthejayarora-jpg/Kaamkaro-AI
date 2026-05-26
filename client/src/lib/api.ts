@@ -332,6 +332,16 @@ export const attendanceAPI = {
     api.get(`/attendance/staff/${id}`, { params: { from, to } }).then(r => r.data),
   config:       () => api.get('/attendance/config').then(r => r.data),
   updateConfig: (d: Record<string, unknown>) => api.patch('/attendance/config', d).then(r => r.data),
+  analytics:    (days = 30) => api.get('/attendance/analytics', { params: { days } }).then(r => r.data),
+  manual:       (data: { staffId: string; date: string; loginAt?: string; logoutAt?: string }) =>
+    api.post('/attendance/manual', data).then(r => r.data),
+};
+
+export const payrollAPI = {
+  configs: () => api.get('/payroll/config').then(r => r.data),
+  setConfig: (staffId: string, data: { monthlySalary: number; overtimeMultiplier?: number; latePenaltyPerMin?: number; workingDaysOverride?: number | null }) =>
+    api.patch(`/payroll/config/${staffId}`, data).then(r => r.data),
+  summary: (month: string) => api.get('/payroll/summary', { params: { month } }).then(r => r.data),
 };
 
 export const leavesAPI = {
