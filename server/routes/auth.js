@@ -108,6 +108,10 @@ router.get('/me', authMiddleware, async (req, res) => {
       const staff = await readDB('staff');
       user = staff.find(s => s.id === req.user.id);
     }
+    if (!user) {
+      const managers = await readDB('attendance_managers');
+      user = managers.find(m => m.id === req.user.id);
+    }
     if (!user) return res.status(404).json({ error: 'User not found' });
     const { password: _, ...safeUser } = user;
     res.json(safeUser);
