@@ -292,8 +292,7 @@ router.delete('/managers/:id', authMiddleware, adminOnly, async (req, res) => {
     if (idx === -1) return res.status(404).json({ error: 'Manager not found' });
 
     const [removed] = managers.splice(idx, 1);
-    const { writeDB: wdb } = require('../utils/db');
-    await wdb('attendance_managers', managers);
+    await writeDB('attendance_managers', managers);
 
     console.log(`[Auth] Admin ${req.user.name} removed attendance manager: ${removed.name}`);
     res.json({ message: 'Manager removed' });
