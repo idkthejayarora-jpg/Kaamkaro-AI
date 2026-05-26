@@ -157,15 +157,21 @@ router.patch('/config', authMiddleware, attendanceManagerOrAdmin, async (req, re
 // Today's status for all staff — who's in, out, or absent.
 router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
   try {
-    const [staff, attendance] = await Promise.all([readDB('staff'), readDB('attendance')]);
     const today = todayStr();
-    const todayRecs = attendance.filter(r => r.date === today);
+    const [staff, attendance, leaves] = await Promise.all([
+      readDB('staff'),
+      readDB('attendance'),
+      readDB('leaves').catch(() => []),
+    ]);
+    const todayRecs   = attendance.filter(r => r.date === today);
+    const todayLeaves = leaves.filter(l => l.date === today);
 
     const result = staff
       .filter(s => s.active !== false)
       .map(s => {
         const rec = todayRecs.find(r => r.staffId === s.id);
         const openSession = rec?.sessions?.find(ss => !ss.logoutAt);
+        const leaveRec = todayLeaves.find(l => l.staffId === s.id);
         return {
           staffId:     s.id,
           staffName:   s.name,
@@ -177,6 +183,7 @@ router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) 
           lateMinutes: rec?.lateMinutes || 0,
           hoursWorked: rec?.hoursWorked || 0,
           faceEnrolled: !!(s.faceDescriptors?.length),
+          leaveToday:  leaveRec ? { type: leaveRec.type, reason: leaveRec.reason } : null,
         };
       })
       .sort((a, b) => {
