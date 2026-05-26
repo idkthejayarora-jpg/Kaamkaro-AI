@@ -39,7 +39,7 @@ type KioskState =
 
 const MATCH_THRESHOLD = 0.5;
 const COOLDOWN_MS     = 60_000;
-const CONFIRM_SECS    = 3;
+const CONFIRM_SECS    = 2;  // faster confirmation after match
 
 function now12h() {
   return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
