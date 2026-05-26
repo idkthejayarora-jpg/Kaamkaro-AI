@@ -1168,86 +1168,68 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 export default function AttendancePortal() {
   const [tab, setTab] = useState<Tab>('today');
   const [broadcastOpen, setBroadcastOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user && user.role !== 'attendance_manager' && user.role !== 'admin') {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-dark-500 flex flex-col">
-      {/* Top nav */}
-      <header className="bg-dark-400 border-b border-dark-50 px-4 py-3 flex items-center gap-4 flex-shrink-0">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gold/15 border border-gold/25 flex items-center justify-center">
-            <Clock size={14} className="text-gold" />
-          </div>
-          <span className="text-white font-bold text-sm hidden sm:block">Attendance</span>
+    <div className="space-y-5">
+      {/* Page header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-white font-bold text-xl">Attendance</h1>
+          <p className="text-white/30 text-sm mt-0.5">Track staff hours, leaves and face recognition</p>
         </div>
 
-        {/* Tab bar */}
-        <nav className="flex items-center gap-1 flex-1 overflow-x-auto">
-          {TABS.map(t => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-                  active
-                    ? 'bg-gold/15 border border-gold/30 text-gold'
-                    : 'text-white/40 hover:text-white hover:bg-dark-200'
-                }`}
-              >
-                <Icon size={12} />
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Right actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Broadcast button */}
+        <div className="flex items-center gap-2">
+          {/* Broadcast */}
           <button
             onClick={() => setBroadcastOpen(true)}
-            className="p-1.5 rounded-xl border border-dark-50 text-white/30 hover:text-white hover:border-white/20 transition-colors"
-            title="Send broadcast"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors"
+            title="Send broadcast to all staff"
           >
-            <Megaphone size={14} />
+            <Megaphone size={13} />
+            Broadcast
           </button>
 
-          {/* Kiosk link */}
+          {/* Open kiosk */}
           <a
             href="/kiosk"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors whitespace-nowrap"
           >
-            <MonitorSmartphone size={12} />
-            <span className="hidden sm:block">Kiosk</span>
+            <MonitorSmartphone size={13} />
+            Open Kiosk
           </a>
-
-          {/* User + logout */}
-          <span className="text-white/30 text-xs hidden sm:block">{user?.name}</span>
-          <button onClick={logout} className="p-1.5 rounded-lg hover:bg-dark-200 text-white/30 hover:text-white transition-colors" title="Logout">
-            <LogOut size={14} />
-          </button>
         </div>
-      </header>
+      </div>
 
-      {/* Content */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-5xl w-full mx-auto">
-        {tab === 'today'    && <TodayTab />}
-        {tab === 'monthly'  && <MonthlyTab />}
-        {tab === 'staff'    && <StaffTab />}
-        {tab === 'leaves'   && <LeavesTab />}
-        {tab === 'settings' && <SettingsTab />}
-      </main>
+      {/* Tab row */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+                active
+                  ? 'bg-gold/15 border border-gold/30 text-gold'
+                  : 'text-white/40 hover:text-white hover:bg-dark-200 border border-transparent'
+              }`}
+            >
+              <Icon size={12} />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      {tab === 'today'    && <TodayTab />}
+      {tab === 'monthly'  && <MonthlyTab />}
+      {tab === 'staff'    && <StaffTab />}
+      {tab === 'leaves'   && <LeavesTab />}
+      {tab === 'settings' && <SettingsTab />}
 
       {/* Broadcast modal */}
       {broadcastOpen && <BroadcastModal onClose={() => setBroadcastOpen(false)} />}
