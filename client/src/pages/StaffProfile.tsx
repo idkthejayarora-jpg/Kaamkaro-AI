@@ -3,7 +3,7 @@ import { TabBar, AnimatedTabPanel } from '../components/TabBar';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, Calendar, Flame, TrendingUp, Users, Clock } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
-import { staffAPI, customersAPI, interactionsAPI, badgesAPI } from '../lib/api';
+import { staffAPI, customersAPI, interactionsAPI, badgesAPI, attendanceAPI } from '../lib/api';
 import type { Staff, Customer, Performance, Interaction, Badge } from '../types';
 import { BADGE_META } from '../types';
 import { useAuth } from '../contexts/AuthContext';
