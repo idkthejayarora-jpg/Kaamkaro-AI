@@ -77,6 +77,9 @@ export const staffAPI = {
   enrollFace: (id: string, descriptors: number[][]) =>
     api.patch(`/staff/${id}/face`, { descriptors }).then(r => r.data),
   clearFace: (id: string) => api.delete(`/staff/${id}/face`).then(r => r.data),
+  setShift: (id: string, shift: { shiftStart: string; shiftEnd: string } | null) =>
+    api.patch(`/staff/${id}/shift`, shift === null ? { shiftOverride: null } : { shiftStart: shift.shiftStart, shiftEnd: shift.shiftEnd }).then(r => r.data),
+  faceCheck: () => api.get('/staff/face-check').then(r => r.data),
 };
 
 export const broadcastAPI = {
