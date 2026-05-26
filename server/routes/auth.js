@@ -129,7 +129,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
     if (newPassword.length < 4)
       return res.status(400).json({ error: 'New password must be at least 4 characters' });
 
-    // Find in users then staff
+    // Find in users then staff then attendance_managers
     const users = await readDB('users');
     let user = users.find(u => u.id === req.user.id);
     let collection = 'users';
@@ -137,6 +137,11 @@ router.post('/change-password', authMiddleware, async (req, res) => {
       const staff = await readDB('staff');
       user = staff.find(s => s.id === req.user.id);
       collection = 'staff';
+    }
+    if (!user) {
+      const managers = await readDB('attendance_managers');
+      user = managers.find(m => m.id === req.user.id);
+      collection = 'attendance_managers';
     }
     if (!user) return res.status(404).json({ error: 'User not found' });
 
