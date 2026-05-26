@@ -89,6 +89,10 @@ export const staffAPI = {
   clearFace: (id: string) => api.delete(`/staff/${id}/face`).then(r => r.data),
   setShift: (id: string, shift: { shiftStart: string; shiftEnd: string } | null) =>
     api.patch(`/staff/${id}/shift`, shift === null ? { shiftOverride: null } : { shiftStart: shift.shiftStart, shiftEnd: shift.shiftEnd }).then(r => r.data),
+  setTour: (id: string, canSelfCheckin: boolean) =>
+    api.patch(`/staff/${id}/tour`, { canSelfCheckin }).then(r => r.data),
+  setGender: (id: string, gender: 'male' | 'female') =>
+    api.patch(`/staff/${id}/gender`, { gender }).then(r => r.data),
   faceCheck: () => api.get('/staff/face-check').then(r => r.data),
 };
 
