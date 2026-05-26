@@ -1607,7 +1607,7 @@ function LeavesTab() {
             <label className="text-white/40 text-xs mb-1 block">Staff</label>
             <Select
               value={selStaff}
-              onChange={v => setSelStaff(v)}
+              onChange={e => setSelStaff(e.target.value)}
               className="w-full"
             >
               <option value="">Select staff…</option>
