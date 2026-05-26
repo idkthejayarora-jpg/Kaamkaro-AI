@@ -1416,6 +1416,14 @@ function StaffTab() {
     finally { setSavingShift(null); }
   };
 
+  const toggleGender = async (s: StaffMember) => {
+    const next = s.gender === 'female' ? 'male' : 'female';
+    try {
+      await staffAPI.update(s.id, { gender: next });
+      load();
+    } catch {}
+  };
+
   const toggleManagerRole = async (s: StaffMember) => {
     const isManager = s.role === 'attendance_manager';
     setTogglingRole(s.id);
