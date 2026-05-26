@@ -1484,6 +1484,17 @@ function StaffTab() {
                       </button>
                     ) : null}
                     <button
+                      onClick={() => toggleManagerRole(s)}
+                      disabled={togglingRole === s.id}
+                      className={`p-1.5 rounded-xl transition-colors text-xs font-bold disabled:opacity-40
+                        ${s.role === 'attendance_manager'
+                          ? 'text-amber-400 bg-amber-500/10 hover:bg-red-500/10 hover:text-red-400 border border-amber-500/20'
+                          : 'text-white/20 hover:text-amber-400 hover:bg-amber-500/10 border border-white/10'}`}
+                      title={s.role === 'attendance_manager' ? 'Remove manager role' : 'Make attendance manager'}
+                    >
+                      {togglingRole === s.id ? '…' : '🛡'}
+                    </button>
+                    <button
                       onClick={() => {
                         setExpandedId(isExpanded ? null : s.id);
                         setShiftEdits(prev => ({ ...prev, [s.id]: editVal }));
