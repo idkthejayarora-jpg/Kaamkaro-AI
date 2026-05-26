@@ -341,7 +341,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       cooldownRef.current[matched.id] = Date.now() + COOLDOWN_MS;
       setKioskState('success');
       refreshToday();
-      setTimeout(() => { setKioskState('idle'); setMatched(null); setSuccessMsg(''); }, 4000);
+      setTimeout(() => { setKioskState('idle'); setMatched(null); setSuccessMsg(''); }, 2500);
     } catch (err: unknown) {
       const serverMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setErrorMsg(serverMsg || 'Action failed — please try again.');
