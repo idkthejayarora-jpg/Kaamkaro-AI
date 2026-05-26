@@ -645,7 +645,7 @@ function SettingsTab() {
 
 type Tab = 'today' | 'monthly' | 'staff' | 'settings';
 
-const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
+const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'today',    label: 'Today',    icon: Clock },
   { id: 'monthly',  label: 'Monthly',  icon: Calendar },
   { id: 'staff',    label: 'Staff',    icon: Users },
