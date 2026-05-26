@@ -423,34 +423,23 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     || (kioskState === 'idle' && hasUnknown)
     || (kioskState === 'error' && !!errorMsg);
 
-  // ── Loading screen ──────────────────────────────────────────────────────────
-
-  if (kioskState === 'loading') {
-    return (
-      <div className="fixed inset-0 bg-dark-500 flex flex-col items-center justify-center gap-4 z-50">
-        {onClose && (
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-dark-300 text-white/40 hover:text-white transition-colors">
-            <X size={18} />
-          </button>
-        )}
-        <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-        <p className="text-white/50 text-sm">{modelStatus}</p>
-      </div>
-    );
-  }
-
   // ── Main render ─────────────────────────────────────────────────────────────
+  // IMPORTANT: <video> + <canvas> are ALWAYS rendered so the stream can be
+  // attached during the loading phase (videoRef.current must be non-null when
+  // init() calls video.srcObject = stream). Loading UI is an overlay, not an
+  // early return that would unmount the video element.
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden select-none" style={{ fontFamily: 'inherit', zIndex: 50 }}>
 
-      {/* ── Camera (full background) ── */}
+      {/* ── Camera (full background) — always in DOM ── */}
       <video
         ref={videoRef}
         muted
         playsInline
+        autoPlay
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ transform: 'scaleX(-1)', right: undefined }}
+        style={{ transform: 'scaleX(-1)' }}
       />
       <canvas
         ref={canvasRef}
@@ -458,6 +447,22 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         style={{ transform: 'scaleX(-1)' }}
       />
 
+      {/* ── Loading overlay — on top of camera, not instead of it ── */}
+      {kioskState === 'loading' && (
+        <div className="absolute inset-0 bg-dark-500/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-40">
+          {onClose && (
+            <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-dark-300 text-white/40 hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+          )}
+          <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          <p className="text-white/50 text-sm">{modelStatus || 'Starting…'}</p>
+        </div>
+      )}
+
+      {/* ── Everything below only shown after loading ── */}
+      {kioskState !== 'loading' && (
+        <>
       {/* Scan line — idle only */}
       {kioskState === 'idle' && (
         <div className="absolute left-0 right-0 h-px bg-gold/25 pointer-events-none"
