@@ -237,8 +237,10 @@ router.get('/monthly', authMiddleware, attendanceManagerOrAdmin, async (req, res
         const recs   = monthRecs.filter(r => r.staffId === s.id);
         const leaves = monthLeaves.filter(l => l.staffId === s.id);
 
-        // Per-staff effective expected hours
-        const staffExpected = s.shiftOverride ? shiftDurationHours(s.shiftOverride) : expected;
+        // Per-staff effective expected hours — priority: shiftOverride → gender shift → default
+        const genderShift = (s.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+        const effectiveShift = s.shiftOverride || genderShift;
+        const staffExpected = effectiveShift ? shiftDurationHours(effectiveShift) : expected;
 
         // dailyMap: { 'DD': 'present' | 'late' | 'absent' | 'leave' | 'sick' | 'half_day' }
         const dailyMap = {};
