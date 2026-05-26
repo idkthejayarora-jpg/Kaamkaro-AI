@@ -10,7 +10,7 @@ import {
   CheckCircle, Clock, ChevronRight,
   MessageSquare, Target, Zap, Trophy, AlertCircle,
   Award, Plus, X, Star, TrendingDown, Flame, Mic,
-  ShieldAlert,
+  ShieldAlert, ScanFace,
 } from 'lucide-react';
 import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI, attendanceAPI } from '../lib/api';
 import Portal from '../components/Portal';
@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSSE } from '../hooks/useSSE';
 import type { Staff, Customer, Performance, DashboardSummary, Task, MeritSummary, MeritGoal, Interaction } from '../types';
+import { SelfScanModal } from '../components/SelfScanModal';
 
 function playNotifBeep() {
   try {
