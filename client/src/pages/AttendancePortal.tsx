@@ -1512,6 +1512,16 @@ function StaffTab() {
                       </button>
                     ) : null}
                     <button
+                      onClick={() => toggleTour(s)}
+                      className={`p-1.5 rounded-xl transition-colors border text-xs
+                        ${s.canSelfCheckin
+                          ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                          : 'text-white/20 hover:text-amber-400 hover:bg-amber-500/10 border-white/10'}`}
+                      title={s.canSelfCheckin ? 'On tour — click to disable self-scan' : 'Enable self-scan for touring staff'}
+                    >
+                      🧳
+                    </button>
+                    <button
                       onClick={() => toggleGender(s)}
                       className={`p-1.5 rounded-xl transition-colors border text-xs font-bold
                         ${s.gender === 'female'
