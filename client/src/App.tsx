@@ -86,9 +86,10 @@ function AppRoutes() {
         <Route path="/stock"           element={<Stock />} />
         <Route path="/badges"          element={<Badges />} />
         <Route path="/calendar"        element={<Calendar />} />
-        <Route path="/settings"        element={<Settings />} />
+        <Route path="/settings"          element={<Settings />} />
+        <Route path="/attendance-portal" element={<AttendancePortal />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to={user?.role === 'attendance_manager' ? '/attendance-portal' : '/dashboard'} replace />} />
     </Routes>
   );
 }
