@@ -12,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<User>;
   register: (name: string, phone: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (u: User) => void;
