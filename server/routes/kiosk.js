@@ -119,8 +119,9 @@ router.post('/checkin', async (req, res) => {
     const today = todayStr();
     const cfg   = req.attendanceCfg;
 
-    // Late calculation
-    const [shiftH, shiftM] = cfg.shiftStart.split(':').map(Number);
+    // Late calculation — use per-staff shiftOverride if set, else global config
+    const effectiveShift = member.shiftOverride || cfg;
+    const [shiftH, shiftM] = effectiveShift.shiftStart.split(':').map(Number);
     const deadline = new Date(now);
     deadline.setHours(shiftH, shiftM + (cfg.lateGraceMins || 0), 0, 0);
     const isLate     = now > deadline;
