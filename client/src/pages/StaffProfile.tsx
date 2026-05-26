@@ -54,6 +54,35 @@ export default function StaffProfile() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Load attendance data for this staff when attendance tab is active or month changes
+  useEffect(() => {
+    if (!id || activeTab !== 'attendance') return;
+    const [yr, mo] = attMonth.split('-').map(Number);
+    const from = `${attMonth}-01`;
+    const lastDay = new Date(yr, mo, 0).getDate();
+    const to = `${attMonth}-${String(lastDay).padStart(2, '0')}`;
+    Promise.all([
+      attendanceAPI.staffHistory(id, from, to).catch(() => []),
+      attendanceAPI.monthly(attMonth).catch(() => null),
+    ]).then(([records, monthly]) => {
+      setAttRecords(records as typeof attRecords);
+      // Pull this staff's row from monthly summary
+      if (monthly?.staff) {
+        const row = monthly.staff.find((s: { staffId: string }) => s.staffId === id);
+        if (row) {
+          setAttData(row.dailyMap || {});
+          setAttSummary({
+            presentDays:   row.presentDays,
+            lateDays:      row.lateDays,
+            totalHours:    row.totalHours,
+            overtimeHours: row.overtimeHours,
+            undertimeHours: row.undertimeHours,
+          });
+        }
+      }
+    });
+  }, [id, activeTab, attMonth]);
+
   if (loading) return (
     <div className="space-y-4">
       <div className="card h-36 shimmer" /><div className="card h-48 shimmer" />
