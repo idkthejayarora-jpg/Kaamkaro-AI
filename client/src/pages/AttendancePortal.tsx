@@ -1802,15 +1802,13 @@ function SettingsTab() {
             {showPin ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
-        <a
-          href="/kiosk"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => { sessionStorage.setItem('kk_kiosk_autounlock', '1'); window.open('/kiosk', '_blank'); }}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dark-50 text-white/50 hover:text-white hover:border-white/20 text-sm transition-colors"
         >
           <MonitorSmartphone size={14} />
           Open Kiosk in New Tab
-        </a>
+        </button>
       </div>
 
       {/* Payroll Defaults info card */}
