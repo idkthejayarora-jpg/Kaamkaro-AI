@@ -159,10 +159,12 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     return () => clearInterval(t);
   }, []);
 
-  // ── Load models + camera ────────────────────────────────────────────────────
+  // ── Load models + camera — runs ONCE on mount ──────────────────────────────
+  // CRITICAL: deps must be [] (empty). Including kioskState would cause cleanup
+  // to run every time kioskState changes — killing the stream after first init.
+  // pin is captured via closure and never changes during component lifetime.
 
   useEffect(() => {
-    if (kioskState !== 'loading') return;
     let cancelled = false;
 
     async function init() {
@@ -184,9 +186,11 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
 
         streamRef.current = stream;
+        // videoRef is always in DOM now (rendered unconditionally), so srcObject
+        // assignment reliably works here
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+          videoRef.current.play().catch(() => {/* autoplay policy — ignore */});
         }
 
         // Load staff descriptors
@@ -194,19 +198,24 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         if (!cancelled) setKioskState('idle');
       } catch (err) {
         if (!cancelled) {
-          setModelStatus('Camera access denied — please allow camera permissions');
+          setModelStatus('Camera access denied — check browser permissions');
           console.error('[KioskView init]', err);
         }
       }
     }
 
     init();
+
+    // Cleanup ONLY on unmount — never on kioskState change
     return () => {
       cancelled = true;
       streamRef.current?.getTracks().forEach(t => t.stop());
-      if (detectRef.current) clearInterval(detectRef.current);
+      streamRef.current = null;
+      if (detectRef.current)   clearInterval(detectRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
     };
-  }, [kioskState, pin]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← empty deps is intentional and correct here
 
   // Refresh today status
   const refreshToday = useCallback(async () => {
