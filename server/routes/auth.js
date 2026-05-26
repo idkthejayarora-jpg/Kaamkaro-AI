@@ -70,6 +70,12 @@ router.post('/login', async (req, res) => {
       user = staff.find(s => s.phone === phone);
     }
 
+    // Then check attendance managers
+    if (!user) {
+      const managers = await readDB('attendance_managers');
+      user = managers.find(m => m.phone === phone);
+    }
+
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
