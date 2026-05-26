@@ -333,4 +333,101 @@ router.get('/staff/:id', authMiddleware, attendanceManagerOrAdmin, async (req, r
   }
 });
 
+// ── GET /api/attendance/analytics ────────────────────────────────────────────
+// Query: ?days=30
+// Returns daily trend (present/late/absent per day) + totalStaff count.
+router.get('/analytics', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const days = Math.max(1, Math.min(365, parseInt(req.query.days) || 30));
+    const [staff, attendance] = await Promise.all([
+      readDB('staff'),
+      readDB('attendance'),
+    ]);
+
+    const activeStaff = staff.filter(s => s.active !== false);
+    const totalStaff  = activeStaff.length;
+
+    const dailyTrend = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+
+      const dayRecs = attendance.filter(r => r.date === dateStr);
+      const present = dayRecs.length;
+      const late    = dayRecs.filter(r => r.isLate).length;
+      const absent  = Math.max(0, totalStaff - present);
+
+      dailyTrend.push({ date: dateStr, present, late, absent });
+    }
+
+    res.json({ dailyTrend, totalStaff });
+  } catch (err) {
+    console.error('[Attendance analytics]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/attendance/manual ───────────────────────────────────────────────
+// Body: { staffId, date, loginAt, logoutAt } — loginAt/logoutAt are HH:MM strings
+router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const { staffId, date, loginAt, logoutAt } = req.body;
+    if (!staffId || !date) {
+      return res.status(400).json({ error: 'staffId and date are required' });
+    }
+
+    const [staffList, records] = await Promise.all([
+      readDB('staff'),
+      readDB('attendance'),
+    ]);
+
+    const staffMember = staffList.find(s => s.id === staffId);
+    if (!staffMember) return res.status(404).json({ error: 'Staff not found' });
+
+    const loginISO  = loginAt  ? `${date}T${loginAt}:00`  : null;
+    const logoutISO = logoutAt ? `${date}T${logoutAt}:00` : null;
+
+    let hoursWorked = 0;
+    if (loginISO && logoutISO) {
+      const diff = new Date(logoutISO).getTime() - new Date(loginISO).getTime();
+      hoursWorked = Math.round(diff / 36000) / 100; // hours, 2dp
+    }
+
+    const { v4: uuidv4 } = require('uuid');
+    let record = records.find(r => r.staffId === staffId && r.date === date);
+
+    if (record) {
+      record.loginAt        = loginISO;
+      record.logoutAt       = logoutISO;
+      record.hoursWorked    = hoursWorked;
+      record.sessions       = [{ loginAt: loginISO, logoutAt: logoutISO }];
+      record.manualOverride = true;
+      record.overriddenBy   = req.user.name;
+    } else {
+      record = {
+        id:             uuidv4(),
+        staffId,
+        staffName:      staffMember.name,
+        date,
+        loginAt:        loginISO,
+        logoutAt:       logoutISO,
+        hoursWorked,
+        sessions:       [{ loginAt: loginISO, logoutAt: logoutISO }],
+        manualOverride: true,
+        overriddenBy:   req.user.name,
+        isLate:         false,
+        lateMinutes:    0,
+      };
+      records.push(record);
+    }
+
+    await writeDB('attendance', records);
+    res.json(record);
+  } catch (err) {
+    console.error('[Attendance manual]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
