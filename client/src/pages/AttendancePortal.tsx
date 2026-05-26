@@ -1206,7 +1206,7 @@ function PayrollTab() {
 
                     {/* Inline salary editor */}
                     {editingId === s.staffId && (
-                      <tr key={`${s.staffId}-edit`} className="bg-dark-500">
+                      <tr className="bg-dark-500">
                         <td colSpan={9} className="px-4 py-4">
                           <div className="space-y-3">
                             <p className="text-white/50 text-xs font-semibold uppercase tracking-wider">Edit Salary Config — {s.staffName}</p>
