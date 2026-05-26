@@ -1880,7 +1880,7 @@ export default function AttendancePortal() {
           </button>
 
           <button
-            onClick={() => { sessionStorage.setItem('kk_kiosk_autounlock', '1'); window.open('/kiosk', '_blank'); }}
+            onClick={() => setShowKiosk(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors whitespace-nowrap"
           >
             <MonitorSmartphone size={13} />
