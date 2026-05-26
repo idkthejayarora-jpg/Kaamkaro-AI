@@ -1,14 +1,14 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne } = require('../utils/db');
-const { authMiddleware, adminOnly } = require('../middleware/auth');
+const { authMiddleware, attendanceManagerOrAdmin } = require('../middleware/auth');
 const { broadcast } = require('../utils/sse');
 
 const router = express.Router();
 router.use(authMiddleware);
 
-// POST /api/broadcast — admin sends a message to all connected staff
-router.post('/', adminOnly, async (req, res) => {
+// POST /api/broadcast — admin or attendance_manager sends a message to all connected staff
+router.post('/', attendanceManagerOrAdmin, async (req, res) => {
   try {
     const { message, title } = req.body;
     if (!message?.trim()) return res.status(400).json({ error: 'Message required' });
@@ -30,7 +30,7 @@ router.post('/', adminOnly, async (req, res) => {
   }
 });
 
-// GET /api/broadcast — recent broadcasts (admin: all, staff: all visible)
+// GET /api/broadcast — recent broadcasts (all authenticated users)
 router.get('/', async (req, res) => {
   try {
     const list = await readDB('broadcasts');
