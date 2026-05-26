@@ -361,6 +361,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   }, [pin]);
 
   const cancelEnroll = useCallback(() => {
+    hasUnknownRef.current = false;
     setHasUnknown(false);
     unknownDescRef.current = null;
     setEnrollMsg('');
