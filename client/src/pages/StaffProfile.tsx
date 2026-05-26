@@ -264,11 +264,12 @@ export default function StaffProfile() {
       {/* ── Tab switcher ── */}
       <TabBar
         tabs={[
-          { id: 'activity',  label: `Activity (${interactions.length})`  },
-          { id: 'customers', label: `Customers (${customers.length})` },
+          { id: 'activity',   label: `Activity (${interactions.length})`  },
+          { id: 'customers',  label: `Customers (${customers.length})` },
+          { id: 'attendance', label: 'Attendance' },
         ]}
         active={activeTab}
-        onChange={id => setActiveTab(id as 'activity' | 'customers')}
+        onChange={tabId => setActiveTab(tabId as 'activity' | 'customers' | 'attendance')}
         variant="pill-gold"
       />
 
