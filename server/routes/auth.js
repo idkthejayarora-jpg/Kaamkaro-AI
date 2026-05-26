@@ -271,9 +271,7 @@ router.post('/managers', authMiddleware, adminOnly, async (req, res) => {
 
     const allManagers = await readDB('attendance_managers').catch(() => []);
     allManagers.push(manager);
-    const { readDB: _, writeDB: __ } = require('../utils/db'); // already required
-    const { writeDB: wdb } = require('../utils/db');
-    await wdb('attendance_managers', allManagers);
+    await writeDB('attendance_managers', allManagers);
 
     const { password: _pw, ...safeManager } = manager;
     console.log(`[Auth] Admin ${req.user.name} created attendance manager: ${manager.name} (${manager.phone})`);
