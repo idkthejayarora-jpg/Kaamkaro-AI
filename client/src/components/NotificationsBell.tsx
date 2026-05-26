@@ -289,10 +289,12 @@ export default function NotificationsBell() {
     if (!loaded) { buildNotifications(); setLoaded(true); }
   }, []);
 
+  const isManager = user?.role === 'attendance_manager';
+
   useSSE(isAdmin ? {
     'customer:created':    () => buildNotifications(),
     'interaction:created': () => buildNotifications(),
-  } : {
+  } : isManager ? {} : {
     'admin:broadcast': () => buildNotifications(),
     'task:created':    () => buildNotifications(),
     'task:updated':    () => buildNotifications(),
