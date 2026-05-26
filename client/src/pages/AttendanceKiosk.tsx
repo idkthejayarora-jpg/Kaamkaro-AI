@@ -308,12 +308,20 @@ export default function AttendanceKiosk() {
         }
       }
 
-      // Match against descriptors using FaceMatcher (more accurate with multi-descriptor)
+      // Match against descriptors using FaceMatcher
       const matcher = faceMatcherRef.current;
-      if (!matcher) return;
+
+      if (!matcher) {
+        // No enrolled faces yet — every face is "unknown", store for enrollment
+        unknownDescRef.current = det.descriptor;
+        setUnknownDesc(det.descriptor);
+        return;
+      }
 
       const bestMatch = matcher.findBestMatch(det.descriptor);
       if (bestMatch.label !== 'unknown') {
+        unknownDescRef.current = null;
+        setUnknownDesc(null);
         const matchedStaff = descriptors.find(s => s.id === bestMatch.label);
         if (!matchedStaff) return;
 
@@ -324,6 +332,10 @@ export default function AttendanceKiosk() {
         const todayRec = todayStatus.find(r => r.staffId === matchedStaff.id);
         const isCheckin = !todayRec || todayRec.status === 'out';
         triggerMatch(matchedStaff, isCheckin);
+      } else {
+        // Unknown face — store descriptor for potential enrollment
+        unknownDescRef.current = det.descriptor;
+        setUnknownDesc(det.descriptor);
       }
     }, 500);
 
