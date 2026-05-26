@@ -134,6 +134,16 @@ export default function AttendanceKiosk() {
   const [lateMinutes,  setLateMinutes]  = useState(0);
   const [errorMsg,     setErrorMsg]     = useState('');
 
+  // Enrollment state
+  const [unknownDesc,    setUnknownDesc]    = useState<Float32Array | null>(null);
+  const [enrollStaffList, setEnrollStaffList] = useState<StaffBasic[]>([]);
+  const [enrollMode,     setEnrollMode]     = useState<'select' | 'create'>('select');
+  const [enrollStaffId,  setEnrollStaffId]  = useState('');
+  const [enrollNewName,  setEnrollNewName]  = useState('');
+  const [enrollNewPhone, setEnrollNewPhone] = useState('');
+  const [enrollBusy,     setEnrollBusy]     = useState(false);
+  const [enrollMsg,      setEnrollMsg]      = useState('');
+
   const videoRef      = useRef<HTMLVideoElement>(null);
   const canvasRef     = useRef<HTMLCanvasElement>(null);
   const streamRef     = useRef<MediaStream | null>(null);
@@ -142,6 +152,7 @@ export default function AttendanceKiosk() {
   const countdownRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const confirmedRef  = useRef(false);
   const faceMatcherRef = useRef<faceapi.FaceMatcher | null>(null);
+  const unknownDescRef = useRef<Float32Array | null>(null); // latest unknown frame descriptor
 
   // Rebuild FaceMatcher whenever descriptors change
   useEffect(() => {
