@@ -17,6 +17,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (u: User) => void;
   isAdmin: boolean;
+  isAttendanceManager: boolean;
   // Account switcher
   isSwitched: boolean;
   originalAdmin: AdminSession | null;
