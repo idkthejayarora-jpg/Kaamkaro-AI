@@ -5,16 +5,14 @@
  * V2: Leaves tab, per-staff shift override, broadcast modal, improved face enrollment
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Clock, Calendar, Users, Settings, MonitorSmartphone, RefreshCw,
   CheckCircle2, AlertTriangle, XCircle, ChevronLeft, ChevronRight,
-  Camera, Trash2, Eye, EyeOff, Save, LogOut, CalendarOff, Megaphone,
+  Camera, Trash2, Eye, EyeOff, Save, CalendarOff, Megaphone,
   Send, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import * as faceapi from '@vladmandic/face-api';
 import { attendanceAPI, staffAPI, leavesAPI, broadcastAPI } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
