@@ -2002,34 +2002,35 @@ export default function AttendancePortal() {
         document.body
       )}
       {/* Page header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-white font-bold text-xl">Attendance</h1>
-          <p className="text-white/30 text-sm mt-0.5">Track staff hours, leaves and face recognition</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-white font-bold text-xl leading-tight">Attendance</h1>
+          <p className="text-white/30 text-xs sm:text-sm mt-0.5 hidden sm:block">Track staff hours, leaves and face recognition</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
             onClick={() => setBroadcastOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors"
             title="Send broadcast to all staff"
           >
             <Megaphone size={13} />
-            Broadcast
+            <span className="hidden sm:inline">Broadcast</span>
           </button>
 
           <button
             onClick={() => setShowKiosk(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors"
+            title="Open Kiosk"
           >
             <MonitorSmartphone size={13} />
-            Open Kiosk
+            <span className="hidden sm:inline">Kiosk</span>
           </button>
         </div>
       </div>
 
-      {/* Tab row */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+      {/* Tab row — icons only on mobile, icon+label on sm+ */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
         {TABS.map(t => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -2037,14 +2038,15 @@ export default function AttendancePortal() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+              title={t.label}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${
                 active
                   ? 'bg-gold/15 border border-gold/30 text-gold'
                   : 'text-white/40 hover:text-white hover:bg-dark-200 border border-transparent'
               }`}
             >
-              <Icon size={12} />
-              {t.label}
+              <Icon size={13} />
+              <span className="hidden sm:inline">{t.label}</span>
             </button>
           );
         })}
