@@ -215,47 +215,93 @@ router.get('/monthly', authMiddleware, attendanceManagerOrAdmin, async (req, res
     const lastDay  = new Date(yr, mo, 0).getDate();
     const toDate   = `${monthStr}-${String(lastDay).padStart(2, '0')}`;
 
-    const [staff, attendance] = await Promise.all([readDB('staff'), readDB('attendance')]);
-    const monthRecs = attendance.filter(r => r.date >= fromDate && r.date <= toDate);
+    const [staff, attendance, allLeaves] = await Promise.all([
+      readDB('staff'),
+      readDB('attendance'),
+      readDB('leaves').catch(() => []),
+    ]);
+    const monthRecs   = attendance.filter(r => r.date >= fromDate && r.date <= toDate);
+    const monthLeaves = allLeaves.filter(l => l.date >= fromDate && l.date <= toDate);
+
+    // Helper: compute shift duration in hours from a shiftOverride or config
+    function shiftDurationHours(override) {
+      const [sh, sm] = override.shiftStart.split(':').map(Number);
+      const [eh, em] = override.shiftEnd.split(':').map(Number);
+      return ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    }
 
     // Build result per staff member
     const result = staff
       .filter(s => s.active !== false)
       .map(s => {
-        const recs = monthRecs.filter(r => r.staffId === s.id);
+        const recs   = monthRecs.filter(r => r.staffId === s.id);
+        const leaves = monthLeaves.filter(l => l.staffId === s.id);
 
-        // dailyMap: { 'DD': 'present' | 'late' | 'absent' }
+        // Per-staff effective expected hours
+        const staffExpected = s.shiftOverride ? shiftDurationHours(s.shiftOverride) : expected;
+
+        // dailyMap: { 'DD': 'present' | 'late' | 'absent' | 'leave' | 'sick' | 'half_day' }
         const dailyMap = {};
         let totalHours  = 0;
         let presentDays = 0;
         let lateDays    = 0;
+        let leaveDays   = 0;
+        let halfDays    = 0;
+        let sickDays    = 0;
+        let expectedTotal = 0; // accumulate only for days that aren't full leaves
 
         for (let d = 1; d <= lastDay; d++) {
           const dd      = String(d).padStart(2, '0');
           const dateStr = `${monthStr}-${dd}`;
           const rec     = recs.find(r => r.date === dateStr);
+          const leave   = leaves.find(l => l.date === dateStr);
+
           if (rec) {
             presentDays++;
-            totalHours += rec.hoursWorked || 0;
+            totalHours    += rec.hoursWorked || 0;
+            expectedTotal += staffExpected;
             if (rec.isLate) { lateDays++; dailyMap[dd] = 'late'; }
             else             { dailyMap[dd] = 'present'; }
+          } else if (leave) {
+            // Leave day — map type to cell label, adjust expected hours
+            if (leave.type === 'sick') {
+              sickDays++;
+              dailyMap[dd] = 'sick';
+              // Sick day: no undertime — don't add to expectedTotal
+            } else if (leave.type === 'full_day' || leave.type === 'emergency') {
+              leaveDays++;
+              dailyMap[dd] = 'leave';
+              // Full leave: no undertime
+            } else if (leave.type === 'half_day_am' || leave.type === 'half_day_pm') {
+              halfDays++;
+              dailyMap[dd] = 'half_day';
+              // Half day: expect only half the shift
+              expectedTotal += staffExpected / 2;
+            }
           } else {
             // Only mark absent for past/today, not future
-            if (dateStr <= todayStr()) dailyMap[dd] = 'absent';
+            if (dateStr <= todayStr()) {
+              dailyMap[dd]   = 'absent';
+              expectedTotal += staffExpected;
+            }
           }
         }
 
-        const overtimeHours  = Math.max(0, Math.round((totalHours - expected * presentDays) * 100) / 100);
-        const undertimeHours = Math.max(0, Math.round((expected * presentDays - totalHours) * 100) / 100);
+        const overtimeHours  = Math.max(0, Math.round((totalHours - expectedTotal) * 100) / 100);
+        const undertimeHours = Math.max(0, Math.round((expectedTotal - totalHours) * 100) / 100);
 
         return {
           staffId:       s.id,
           staffName:     s.name,
           avatar:        s.avatar || s.name[0].toUpperCase(),
           faceEnrolled:  !!(s.faceDescriptors?.length),
+          shiftOverride: s.shiftOverride || null,
           totalDays:     lastDay,
           presentDays,
           lateDays,
+          leaveDays,
+          halfDays,
+          sickDays,
           absentDays:    Math.max(0, presentDays - lateDays),
           totalHours:    Math.round(totalHours * 100) / 100,
           overtimeHours,
