@@ -806,11 +806,28 @@ function StaffDashboard() {
   const [bcastModal, setBcastModal]     = useState(false);
   const [bcastModalIdx, setBcastModalIdx] = useState(0);
   const [loading, setLoading]       = useState(true);
+  // Self-checkin (on-tour) state
+  const [selfStaff, setSelfStaff]   = useState<(Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][] }) | null>(null);
+  const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
+  const [showSelfScan, setShowSelfScan] = useState(false);
 
   const dismissBcastModal = () => {
     markBcastRead(user!.id, unreadQueue.map(b => b.id));
     setBcastModal(false); setUnreadQueue([]);
   };
+
+  const loadSelfCheckin = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const [staffRec, todayRecs] = await Promise.all([
+        staffAPI.get(user.id),
+        attendanceAPI.today().catch(() => [] as { staffId: string; status: string }[]),
+      ]);
+      setSelfStaff(staffRec);
+      const myRec = (todayRecs as { staffId: string; status: string }[]).find(r => r.staffId === user.id);
+      setSelfStatus((myRec?.status as 'in' | 'out' | 'absent') || 'absent');
+    } catch { /**/ }
+  }, [user]);
 
   const load = useCallback(async () => {
     const [c, t, p, b] = await Promise.all([
@@ -824,7 +841,8 @@ function StaffDashboard() {
     const unread = bList.filter(br => !readSet.has(br.id));
     if (unread.length > 0) { setUnreadQueue(unread); setBcastModalIdx(0); setBcastModal(true); playNotifBeep(); }
     setLoading(false);
-  }, [user]);
+    loadSelfCheckin();
+  }, [user, loadSelfCheckin]);
 
   useEffect(() => { load(); }, [load]);
 
