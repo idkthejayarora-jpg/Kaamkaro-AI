@@ -46,6 +46,7 @@ interface StaffMember {
   id: string; name: string; avatar: string; active: boolean;
   role?: string;
   phone?: string;
+  gender?: 'male' | 'female';
   faceDescriptors?: number[][];
   shiftOverride?: { shiftStart: string; shiftEnd: string } | null;
 }
