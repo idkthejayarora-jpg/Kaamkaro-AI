@@ -123,15 +123,20 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const [enrollBusy,      setEnrollBusy]      = useState(false);
   const [enrollMsg,       setEnrollMsg]       = useState('');
 
-  const videoRef       = useRef<HTMLVideoElement>(null);
-  const canvasRef      = useRef<HTMLCanvasElement>(null);
-  const streamRef      = useRef<MediaStream | null>(null);
-  const detectRef      = useRef<ReturnType<typeof setInterval> | null>(null);
-  const cooldownRef    = useRef<Record<string, number>>({});
-  const countdownRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-  const confirmedRef   = useRef(false);
-  const faceMatcherRef = useRef<faceapi.FaceMatcher | null>(null);
-  const unknownDescRef = useRef<Float32Array | null>(null);
+  const videoRef        = useRef<HTMLVideoElement>(null);
+  const canvasRef       = useRef<HTMLCanvasElement>(null);
+  const streamRef       = useRef<MediaStream | null>(null);
+  const detectRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cooldownRef     = useRef<Record<string, number>>({});
+  const countdownRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const confirmedRef    = useRef(false);
+  const faceMatcherRef  = useRef<faceapi.FaceMatcher | null>(null);
+  const unknownDescRef  = useRef<Float32Array | null>(null);
+  // Refs that mirror state — lets the detection interval read current values
+  // without being listed as a dependency (prevents interval restart on every tick)
+  const descriptorsRef  = useRef<StaffDescriptor[]>([]);
+  const todayStatusRef  = useRef<TodayRecord[]>([]);
+  const hasUnknownRef   = useRef(false);
 
   // Rebuild FaceMatcher when descriptors change
   useEffect(() => {
