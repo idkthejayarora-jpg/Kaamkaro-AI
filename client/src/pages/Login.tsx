@@ -34,8 +34,12 @@ export default function Login() {
     if (!phone.trim() || !password.trim()) { setError('Please enter your credentials.'); return; }
     setLoading(true);
     try {
-      await login(phone.trim(), password);
-      navigate('/dashboard', { replace: true });
+      const loggedInUser = await login(phone.trim(), password);
+      if (loggedInUser.role === 'attendance_manager') {
+        navigate('/attendance-portal', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       setError(msg || 'Invalid credentials. Please try again.');
