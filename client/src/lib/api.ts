@@ -334,6 +334,14 @@ export const attendanceAPI = {
   updateConfig: (d: Record<string, unknown>) => api.patch('/attendance/config', d).then(r => r.data),
 };
 
+export const leavesAPI = {
+  list: (staffId?: string, month?: string) =>
+    api.get('/leaves', { params: { ...(staffId ? { staffId } : {}), ...(month ? { month } : {}) } }).then(r => r.data),
+  mark: (data: { staffId: string; date: string; type: string; reason?: string }) =>
+    api.post('/leaves', data).then(r => r.data),
+  cancel: (id: string) => api.delete(`/leaves/${id}`).then(r => r.data),
+};
+
 export const kioskAPI = {
   descriptors: (pin: string) =>
     api.get('/kiosk/descriptors', { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
