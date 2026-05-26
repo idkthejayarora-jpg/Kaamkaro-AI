@@ -38,6 +38,12 @@ const adminNav = [
   { to: '/audit',           icon: Shield,          label: 'Audit Log' },
 ];
 
+const attendanceManagerNav = [
+  { to: '/attendance-portal', icon: CalendarClock,  label: 'Attendance' },
+  { to: '/chat',              icon: MessageSquare,  label: 'Chat' },
+  { to: '/settings',         icon: Settings,       label: 'Settings' },
+];
+
 const staffNav = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/customers',   icon: UserCheck,       label: 'My Customers' },
