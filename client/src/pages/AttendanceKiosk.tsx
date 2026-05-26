@@ -280,7 +280,7 @@ export default function AttendanceKiosk() {
   }, []);
 
   useEffect(() => {
-    if (kioskState !== 'idle' || !descriptors.length) return;
+    if (kioskState !== 'idle') return; // pause detection during match/enroll/etc
     if (detectRef.current) clearInterval(detectRef.current);
 
     detectRef.current = setInterval(async () => {
