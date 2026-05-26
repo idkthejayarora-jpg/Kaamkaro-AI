@@ -138,8 +138,9 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const todayStatusRef  = useRef<TodayRecord[]>([]);
   const hasUnknownRef   = useRef(false);
 
-  // Rebuild FaceMatcher when descriptors change
+  // Rebuild FaceMatcher when descriptors change + keep ref in sync
   useEffect(() => {
+    descriptorsRef.current = descriptors;
     if (!descriptors.length) { faceMatcherRef.current = null; return; }
     try {
       const labeled = descriptors.map(s =>
@@ -148,6 +149,9 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       faceMatcherRef.current = new faceapi.FaceMatcher(labeled, MATCH_THRESHOLD);
     } catch { faceMatcherRef.current = null; }
   }, [descriptors]);
+
+  // Keep today-status ref in sync
+  useEffect(() => { todayStatusRef.current = todayStatus; }, [todayStatus]);
 
   // Clock
   useEffect(() => {
