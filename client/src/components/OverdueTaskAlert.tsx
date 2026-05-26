@@ -53,8 +53,8 @@ export default function OverdueTaskAlert() {
   }, []);
 
   useEffect(() => {
-    // Only fire for staff (not admin), once per session
-    if (isAdmin || !user || sessionStorage.getItem(SESSION_KEY)) return;
+    // Only fire for regular staff — not admin or attendance_manager (no tasks context)
+    if (isAdmin || !user || user.role === 'attendance_manager' || sessionStorage.getItem(SESSION_KEY)) return;
 
     const today = new Date().toISOString().split('T')[0];
 
