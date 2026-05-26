@@ -1724,7 +1724,7 @@ function LeavesTab() {
 
 // ── Tab: Settings ──────────────────────────────────────────────────────────────
 
-function SettingsTab() {
+function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
   const [cfg,     setCfg]     = useState<AttendanceCfg | null>(null);
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
