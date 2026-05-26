@@ -189,9 +189,16 @@ router.post('/checkout', async (req, res) => {
     record.hoursWorked = calcHours(sessions);
     record.sessions    = sessions;
 
-    // Overtime / undertime (recalculated on checkout)
+    // Overtime / undertime — use per-staff shift duration if override is set
     const cfg = req.attendanceCfg;
-    const expected = cfg.expectedHours || 9;
+    const staffList = await readDB('staff');
+    const staffMember = staffList.find(s => s.id === staffId);
+    let expected = cfg.expectedHours || 9;
+    if (staffMember?.shiftOverride) {
+      const [sh, sm] = staffMember.shiftOverride.shiftStart.split(':').map(Number);
+      const [eh, em] = staffMember.shiftOverride.shiftEnd.split(':').map(Number);
+      expected = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    }
     record.overtimeHours  = Math.max(0, Math.round((record.hoursWorked - expected) * 100) / 100);
     record.undertimeHours = Math.max(0, Math.round((expected - record.hoursWorked) * 100) / 100);
 
