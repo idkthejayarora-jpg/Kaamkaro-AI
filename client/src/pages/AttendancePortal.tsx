@@ -4,7 +4,7 @@
  * Tabs: Today | Analytics | Monthly | Payroll | Staff | Leaves | Settings
  * V3: Analytics tab, Payroll tab, Manual override entry
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Clock, Calendar, Users, Settings, MonitorSmartphone, RefreshCw,
   CheckCircle2, AlertTriangle, XCircle, ChevronLeft, ChevronRight,
