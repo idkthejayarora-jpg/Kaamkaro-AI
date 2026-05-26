@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
-const { authMiddleware, adminOnly } = require('../middleware/auth');
+const { authMiddleware, adminOnly, attendanceManagerOrAdmin } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
 const { broadcast } = require('../utils/sse');
 
