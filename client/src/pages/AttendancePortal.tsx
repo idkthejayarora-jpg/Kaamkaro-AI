@@ -1852,9 +1852,16 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 export default function AttendancePortal() {
   const [tab, setTab] = useState<Tab>('today');
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [showKiosk, setShowKiosk] = useState(false);
 
   return (
     <div className="space-y-5">
+      {/* Inline kiosk overlay — no new tab */}
+      {showKiosk && (
+        <div className="fixed inset-0 z-50">
+          <KioskView pin="__auto__" onClose={() => setShowKiosk(false)} />
+        </div>
+      )}
       {/* Page header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
