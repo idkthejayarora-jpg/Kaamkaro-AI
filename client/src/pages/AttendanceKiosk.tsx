@@ -742,6 +742,8 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
           </div>
         </div>
       </div>
+      </> /* end kioskState !== 'loading' */
+      )}
 
       {/* Scan line CSS */}
       <style>{`
