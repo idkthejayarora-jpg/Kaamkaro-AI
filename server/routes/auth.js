@@ -314,8 +314,7 @@ router.patch('/managers/:id/reset-password', authMiddleware, adminOnly, async (r
     if (idx === -1) return res.status(404).json({ error: 'Manager not found' });
 
     managers[idx].password = await bcrypt.hash(newPassword, 10);
-    const { writeDB: wdb } = require('../utils/db');
-    await wdb('attendance_managers', managers);
+    await writeDB('attendance_managers', managers);
 
     res.json({ message: 'Password updated', plainPassword: newPassword });
   } catch (err) {
