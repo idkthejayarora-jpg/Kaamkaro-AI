@@ -235,6 +235,8 @@ function SelfScanModal({
 export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showSelfScan, setShowSelfScan] = useState(false);
   const [staff, setStaff]             = useState<Staff | null>(null);
   const [customers, setCustomers]     = useState<Customer[]>([]);
   const [performance, setPerformance] = useState<Performance[]>([]);
