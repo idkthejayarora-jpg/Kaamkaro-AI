@@ -470,289 +470,373 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       )}
 
       {/* ── Everything below only shown after loading ── */}
-      {kioskState !== 'loading' && (
-        <>
-      {/* Scan line — idle only */}
-      {kioskState === 'idle' && (
-        <div className="absolute left-0 right-0 h-px bg-gold/25 pointer-events-none"
-          style={{ animation: 'scanLine 3s ease-in-out infinite' }} />
-      )}
+      {kioskState !== 'loading' && (<>
 
-      {/* Idle camera hint */}
-      {kioskState === 'idle' && !hasUnknown && (
-        <div className="absolute bottom-28 md:bottom-8 left-0 right-0 md:right-72 text-center pointer-events-none">
-          <p className="text-white/30 text-sm font-medium drop-shadow-lg">Look at the camera to check in / check out</p>
-        </div>
-      )}
+        {/* Scan line — idle only */}
+        {kioskState === 'idle' && (
+          <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-gold/40 to-transparent pointer-events-none"
+            style={{ animation: 'scanLine 3s ease-in-out infinite' }} />
+        )}
 
-      {/* ── Header bar ── */}
-      <div className="absolute top-0 left-0 right-0 md:right-72 flex items-center justify-between px-4 py-3
-        bg-black/50 backdrop-blur-sm border-b border-white/5 z-20">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gold/15 border border-gold/25 flex items-center justify-center">
-            <span className="text-gold font-black text-sm">K</span>
-          </div>
-          <span className="text-white/70 text-sm font-semibold hidden sm:block">Attendance</span>
-        </div>
-        <div className="text-center">
-          <p className="text-white font-bold text-base sm:text-lg leading-tight">{time}</p>
-          <p className="text-white/30 text-[10px] sm:text-xs">{todayLong()}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-white/40 text-xs">{inCount}/{allCount} in</span>
-          {onClose ? (
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors ml-1"
-              title="Close kiosk"
-            >
-              <X size={15} />
-            </button>
-          ) : (
-            <button
-              onClick={() => { sessionStorage.removeItem('kiosk_pin'); window.location.reload(); }}
-              className="p-1.5 rounded-lg hover:bg-dark-200 hover:text-white text-white/30 transition-colors ml-1 text-[10px]"
-              title="Lock"
-            >🔒</button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Side panel (desktop right) / Bottom sheet (mobile) ── */}
-      <div className={`
-        absolute left-0 right-0 bottom-0 z-30
-        md:top-0 md:left-auto md:right-0 md:w-72 md:bottom-0
-        bg-dark-400/95 md:bg-dark-400 backdrop-blur-xl md:backdrop-blur-none
-        border-t border-white/5 md:border-t-0 md:border-l md:border-white/5
-        transition-all duration-300 ease-out
-        ${panelExpanded ? 'max-h-[60vh] md:max-h-none' : 'max-h-24 md:max-h-none'}
-        overflow-y-auto md:overflow-y-auto md:flex md:flex-col md:pt-14
-      `}>
-
-        {/* Panel content */}
-        <div className="flex flex-col items-center justify-center p-4 md:p-6 md:flex-1">
-
-          {/* ── Idle / Error ── */}
-          {(kioskState === 'idle' || kioskState === 'error') && (
-            <div className="w-full">
-              {hasUnknown ? (
-                // Unknown face — offer enrollment
-                <div className="flex items-center gap-3 md:flex-col md:gap-4 md:text-center">
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl md:text-3xl">🔍</span>
-                  </div>
-                  <div className="flex-1 md:flex-none">
-                    <p className="text-amber-400 font-semibold text-sm">Unknown Face</p>
-                    <p className="text-white/30 text-xs">Not enrolled yet</p>
-                  </div>
-                  <button
-                    onClick={openEnroll}
-                    className="flex-shrink-0 md:w-full px-4 py-2 md:py-2.5 rounded-xl bg-gold/15 border border-gold/30 text-gold font-semibold text-xs md:text-sm hover:bg-gold/25 transition-all active:scale-95"
-                  >
-                    + Enroll
-                  </button>
-                </div>
-              ) : (
-                // Waiting — compact on mobile
-                <div className="flex items-center justify-between md:flex-col md:justify-center md:gap-4 md:text-center">
-                  <div className="flex items-center gap-2 md:flex-col md:gap-0">
-                    <span className="text-2xl md:text-4xl md:mb-2">👤</span>
-                    <p className="text-white/20 text-xs md:text-sm">Waiting for face…</p>
-                  </div>
-                  {/* Today dots — visible in compact state on mobile */}
-                  <div className="flex gap-1.5 flex-wrap justify-end md:hidden max-w-[140px]">
-                    {todayStatus.slice(0, 8).map(r => (
-                      <div
-                        key={r.staffId}
-                        title={`${r.staffName} — ${r.status}`}
-                        className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold"
-                        style={{
-                          background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.05)',
-                          border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                          color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
-                        }}
-                      >
-                        {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {errorMsg && <p className="text-red-400 text-xs text-center mt-2">{errorMsg}</p>}
+        {/* Idle hint — center of camera area */}
+        {kioskState === 'idle' && !hasUnknown && (
+          <div className="absolute bottom-[30%] md:bottom-10 inset-x-0 md:right-80 flex flex-col items-center gap-2 pointer-events-none">
+            <div className="w-16 h-16 rounded-2xl border-2 border-white/10 flex items-center justify-center">
+              <span className="text-3xl opacity-30">👤</span>
             </div>
-          )}
+            <p className="text-white/25 text-xs font-medium tracking-wide">Face the camera to clock in / out</p>
+          </div>
+        )}
 
-          {/* ── Matched / Processing ── */}
-          {(kioskState === 'matched' || kioskState === 'processing') && matched && (
-            <div className="w-full space-y-3 text-center">
-              <div className="flex items-center gap-3 md:flex-col md:gap-4">
-                <div className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-dark-300 border border-dark-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white/60 font-black text-xl md:text-2xl">
+        {/* ── Header bar ── */}
+        <div className="absolute top-0 inset-x-0 md:right-80 flex items-center justify-between px-4 py-3
+          bg-gradient-to-b from-black/70 to-transparent z-20 pointer-events-none">
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <div className="w-7 h-7 rounded-lg bg-gold/20 border border-gold/30 flex items-center justify-center">
+              <span className="text-gold font-black text-sm">K</span>
+            </div>
+            <span className="text-white/60 text-sm font-semibold hidden sm:block tracking-wide">Kaamkaro</span>
+          </div>
+          <div className="text-center">
+            <p className="text-white font-bold text-lg leading-tight drop-shadow">{time}</p>
+            <p className="text-white/35 text-[10px]">{todayLong()}</p>
+          </div>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <span className="text-white/35 text-xs bg-black/30 px-2 py-0.5 rounded-full">
+              {inCount}/{allCount} in
+            </span>
+            {onClose ? (
+              <button onClick={onClose}
+                className="p-1.5 rounded-lg bg-black/40 hover:bg-black/60 text-white/50 hover:text-white transition-colors"
+                title="Close kiosk">
+                <X size={14} />
+              </button>
+            ) : (
+              <button
+                onClick={() => { sessionStorage.removeItem('kiosk_pin'); window.location.reload(); }}
+                className="p-1.5 rounded-lg bg-black/40 hover:bg-black/60 text-white/40 hover:text-white transition-colors text-[11px]"
+                title="Lock">🔒</button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right sidebar (desktop) ── */}
+        <div className={`
+          hidden md:flex md:flex-col
+          absolute top-0 right-0 bottom-0 w-80
+          bg-black/80 backdrop-blur-2xl border-l border-white/8
+          z-20
+        `}>
+          {/* Sidebar header spacer */}
+          <div className="h-14 flex-shrink-0" />
+
+          {/* Status panel — flex-1, vertically centered */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 overflow-y-auto">
+
+            {/* Idle / Error */}
+            {(kioskState === 'idle' || kioskState === 'error') && (
+              <div className="w-full space-y-4">
+                {hasUnknown ? (
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center">
+                      <span className="text-3xl">🔍</span>
+                    </div>
+                    <div>
+                      <p className="text-amber-400 font-semibold text-sm">Unknown Face</p>
+                      <p className="text-white/30 text-xs mt-0.5">Not enrolled yet</p>
+                    </div>
+                    <button onClick={openEnroll}
+                      className="w-full py-2.5 rounded-xl bg-gold/15 border border-gold/30 text-gold font-semibold text-sm hover:bg-gold/25 transition active:scale-95">
+                      + Enroll Face
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center space-y-2">
+                    <div className="w-16 h-16 mx-auto rounded-2xl border-2 border-white/8 flex items-center justify-center">
+                      <span className="text-3xl opacity-25">👤</span>
+                    </div>
+                    <p className="text-white/20 text-sm">Waiting for face…</p>
+                    {errorMsg && <p className="text-red-400 text-xs">{errorMsg}</p>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Matched / Processing */}
+            {(kioskState === 'matched' || kioskState === 'processing') && matched && (
+              <div className="w-full text-center space-y-4">
+                <div className="w-20 h-20 mx-auto rounded-2xl bg-dark-300/80 border border-white/10 flex items-center justify-center">
+                  <span className="text-white/70 font-black text-2xl">
                     {matched.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                   </span>
                 </div>
-                <div className="flex-1 text-left md:text-center">
-                  <p className="text-white font-bold text-base md:text-xl">{matched.name}</p>
-                  <p className="text-white/40 text-xs md:text-sm">
+                <div>
+                  <p className="text-white font-bold text-xl">{matched.name}</p>
+                  <p className="text-white/40 text-sm mt-0.5">
                     {actionType === 'checkin' ? '→ Checking In' : '← Checking Out'}
                   </p>
-                  <p className="text-white/30 text-[10px] md:text-xs">{now12h()}</p>
+                  <p className="text-white/25 text-xs mt-0.5">{now12h()}</p>
                 </div>
                 {kioskState === 'matched' && (
-                  <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0 md:mx-auto">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                      <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
-                      <circle cx="32" cy="32" r="28" fill="none"
-                        stroke={actionType === 'checkin' ? '#4ade80' : '#60a5fa'}
-                        strokeWidth="4" strokeLinecap="round"
-                        strokeDasharray="175.9"
-                        strokeDashoffset={`${175.9 * (1 - countdown / CONFIRM_SECS)}`}
-                        style={{ transition: 'stroke-dashoffset 1s linear' }}
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xl md:text-2xl">{countdown}</span>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-16 h-16">
+                      <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                        <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                        <circle cx="32" cy="32" r="28" fill="none"
+                          stroke={actionType === 'checkin' ? '#4ade80' : '#60a5fa'}
+                          strokeWidth="5" strokeLinecap="round"
+                          strokeDasharray="175.9"
+                          strokeDashoffset={`${175.9 * (1 - countdown / CONFIRM_SECS)}`}
+                          style={{ transition: 'stroke-dashoffset 1s linear' }}
+                        />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-white font-black text-2xl">{countdown}</span>
+                    </div>
+                    <button onClick={cancelMatch} className="text-white/20 text-xs hover:text-white/50 transition-colors">
+                      Cancel
+                    </button>
                   </div>
                 )}
                 {kioskState === 'processing' && (
-                  <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <div className="w-8 h-8 mx-auto border-2 border-gold border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
-              {kioskState === 'matched' && (
-                <button onClick={cancelMatch} className="text-white/25 text-xs hover:text-white/50 transition-colors">
-                  Cancel
-                </button>
-              )}
-            </div>
-          )}
+            )}
 
-          {/* ── Success ── */}
-          {kioskState === 'success' && matched && (
-            <div className="w-full space-y-3 text-center">
-              <div className="flex items-center gap-3 md:flex-col md:gap-4">
-                <div className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl md:text-4xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
+            {/* Success */}
+            {kioskState === 'success' && matched && (
+              <div className="w-full text-center space-y-4">
+                <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center
+                  ${actionType === 'checkin' ? 'bg-green-500/15 border border-green-500/30' : 'bg-blue-500/15 border border-blue-500/30'}`}>
+                  <span className="text-4xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
                 </div>
-                <div className="flex-1 text-left md:text-center">
-                  <p className="text-white font-bold text-base md:text-xl">{matched.name}</p>
-                  <p className="text-green-400 font-semibold text-sm">{successMsg}</p>
+                <div>
+                  <p className="text-white font-bold text-xl">{matched.name}</p>
+                  <p className="text-green-400 font-semibold text-sm mt-1">{successMsg}</p>
                   {isLate && lateMinutes > 0 && (
-                    <p className="text-amber-400 text-xs mt-0.5">⚠ {lateMinutes} mins late</p>
+                    <p className="text-amber-400 text-xs mt-1">⚠ {lateMinutes} mins late</p>
                   )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ── Enrolling ── */}
-          {kioskState === 'enrolling' && (
-            <div className="w-full space-y-3">
-              <div className="flex items-center gap-3 md:flex-col md:text-center mb-1">
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gold/10 border border-gold/25 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">🆔</span>
-                </div>
-                <div>
+            {/* Enrolling */}
+            {kioskState === 'enrolling' && (
+              <div className="w-full space-y-3">
+                <div className="text-center mb-2">
                   <p className="text-white font-semibold text-sm">Enroll Face</p>
                   <p className="text-white/30 text-xs">Link this face to a staff member</p>
                 </div>
-              </div>
 
-              {/* Mode toggle */}
-              <div className="flex rounded-xl overflow-hidden border border-dark-50">
-                <button
-                  onClick={() => setEnrollMode('select')}
-                  className={`flex-1 py-2 text-xs font-semibold transition-colors
-                    ${enrollMode === 'select' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
-                >
-                  Select Staff
-                </button>
-                <button
-                  onClick={() => setEnrollMode('create')}
-                  className={`flex-1 py-2 text-xs font-semibold transition-colors border-l border-dark-50
-                    ${enrollMode === 'create' ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}
-                >
-                  New Staff
-                </button>
-              </div>
-
-              {enrollMode === 'select' ? (
-                <Select
-                  value={enrollStaffId}
-                  onChange={e => setEnrollStaffId(e.target.value)}
-                  className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-sm"
-                >
-                  <option value="">— Select staff member —</option>
-                  {enrollStaffList.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                <div className="flex rounded-xl overflow-hidden border border-white/8">
+                  {(['select', 'create'] as const).map(m => (
+                    <button key={m} onClick={() => setEnrollMode(m)}
+                      className={`flex-1 py-2 text-xs font-semibold transition-colors
+                        ${m === 'create' ? 'border-l border-white/8' : ''}
+                        ${enrollMode === m ? 'bg-gold/20 text-gold' : 'text-white/30 hover:text-white/60'}`}>
+                      {m === 'select' ? 'Select Staff' : 'New Staff'}
+                    </button>
                   ))}
-                </Select>
-              ) : (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Full name *"
-                    value={enrollNewName}
-                    onChange={e => setEnrollNewName(e.target.value)}
-                    className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Phone (optional)"
-                    value={enrollNewPhone}
-                    onChange={e => setEnrollNewPhone(e.target.value)}
-                    className="w-full bg-dark-200 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40"
-                  />
                 </div>
-              )}
 
-              {enrollMsg && (
-                <p className={`text-xs text-center ${enrollMsg.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}`}>
-                  {enrollMsg}
-                </p>
-              )}
+                {enrollMode === 'select' ? (
+                  <Select value={enrollStaffId} onChange={e => setEnrollStaffId(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white">
+                    <option value="">— Pick a staff member —</option>
+                    {enrollStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </Select>
+                ) : (
+                  <div className="space-y-2">
+                    <input placeholder="Full name *" value={enrollNewName}
+                      onChange={e => setEnrollNewName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40" />
+                    <input placeholder="Phone (optional)" value={enrollNewPhone}
+                      onChange={e => setEnrollNewPhone(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40" />
+                  </div>
+                )}
 
-              <div className="flex gap-2">
-                <button
-                  onClick={handleEnrollLink}
-                  disabled={enrollBusy}
-                  className="flex-1 py-2.5 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40"
-                >
-                  {enrollBusy ? 'Saving…' : 'Link Face'}
-                </button>
-                <button
-                  onClick={cancelEnroll}
-                  disabled={enrollBusy}
-                  className="px-3 py-2.5 rounded-xl border border-dark-50 text-white/40 hover:text-white text-sm transition"
-                >
-                  Cancel
-                </button>
+                {enrollMsg && (
+                  <p className={`text-xs text-center ${enrollMsg.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}`}>
+                    {enrollMsg}
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <button onClick={handleEnrollLink} disabled={enrollBusy}
+                    className="flex-1 py-2.5 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40">
+                    {enrollBusy ? 'Saving…' : 'Link Face'}
+                  </button>
+                  <button onClick={cancelEnroll} disabled={enrollBusy}
+                    className="px-3 py-2.5 rounded-xl border border-white/10 text-white/40 hover:text-white text-sm transition">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Today roster */}
+          <div className="border-t border-white/8 p-4 flex-shrink-0">
+            <p className="text-white/20 text-[10px] uppercase tracking-widest mb-2.5">
+              Today · {inCount} in
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+              {todayStatus.map(r => (
+                <div key={r.staffId} title={`${r.staffName} — ${r.status}`}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                  style={{
+                    background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.04)',
+                    border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                    color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
+                  }}>
+                  {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bottom sheet (mobile only) ── */}
+        <div className={`
+          md:hidden absolute inset-x-0 bottom-0 z-20
+          bg-black/85 backdrop-blur-2xl border-t border-white/8
+          transition-all duration-300 ease-out
+          ${panelExpanded ? 'max-h-[55vh]' : 'max-h-20'}
+          overflow-y-auto
+        `}>
+          {/* Compact idle row */}
+          {(kioskState === 'idle' || kioskState === 'error') && !hasUnknown && (
+            <div className="flex items-center justify-between px-4 py-3">
+              <p className="text-white/20 text-sm">Waiting for face…</p>
+              <div className="flex gap-1.5 flex-wrap max-w-[160px] justify-end">
+                {todayStatus.slice(0, 10).map(r => (
+                  <div key={r.staffId} title={`${r.staffName} — ${r.status}`}
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold"
+                    style={{
+                      background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.04)',
+                      border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                      color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
+                    }}>
+                    {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </div>
+                ))}
               </div>
             </div>
           )}
-        </div>
 
-        {/* Today dots — desktop only sidebar section */}
-        <div className="hidden md:block border-t border-white/5 p-4 flex-shrink-0">
-          <p className="text-white/25 text-[10px] uppercase tracking-wider mb-2">Today</p>
-          <div className="flex flex-wrap gap-2">
-            {todayStatus.map(r => (
-              <div
-                key={r.staffId}
-                title={`${r.staffName} — ${r.status}`}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-                style={{
-                  background: r.status === 'in' ? 'rgba(74,222,128,0.15)' : r.status === 'out' ? 'rgba(96,165,250,0.10)' : 'rgba(255,255,255,0.05)',
-                  border: r.status === 'in' ? '1px solid rgba(74,222,128,0.3)' : r.status === 'out' ? '1px solid rgba(96,165,250,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                  color: r.status === 'in' ? '#4ade80' : r.status === 'out' ? '#60a5fa' : 'rgba(255,255,255,0.2)',
-                }}
-              >
-                {r.staffName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+          {/* Unknown face row on mobile */}
+          {(kioskState === 'idle' || kioskState === 'error') && hasUnknown && (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg">🔍</span>
               </div>
-            ))}
-          </div>
+              <div className="flex-1">
+                <p className="text-amber-400 font-semibold text-sm">Unknown Face</p>
+                <p className="text-white/30 text-xs">Not enrolled</p>
+              </div>
+              <button onClick={openEnroll}
+                className="px-4 py-2 rounded-xl bg-gold/15 border border-gold/30 text-gold font-semibold text-xs hover:bg-gold/25 transition active:scale-95">
+                Enroll
+              </button>
+            </div>
+          )}
+
+          {/* Matched on mobile */}
+          {(kioskState === 'matched' || kioskState === 'processing') && matched && (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-12 h-12 rounded-xl bg-dark-300/80 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-white/60 font-black text-base">
+                  {matched.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-bold text-base">{matched.name}</p>
+                <p className="text-white/40 text-xs">{actionType === 'checkin' ? '→ Checking In' : '← Checking Out'}</p>
+              </div>
+              {kioskState === 'matched' ? (
+                <div className="relative w-12 h-12 flex-shrink-0">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                    <circle cx="32" cy="32" r="28" fill="none"
+                      stroke={actionType === 'checkin' ? '#4ade80' : '#60a5fa'}
+                      strokeWidth="5" strokeLinecap="round" strokeDasharray="175.9"
+                      strokeDashoffset={`${175.9 * (1 - countdown / CONFIRM_SECS)}`}
+                      style={{ transition: 'stroke-dashoffset 1s linear' }} />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-white font-black text-xl">{countdown}</span>
+                </div>
+              ) : (
+                <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              )}
+            </div>
+          )}
+
+          {/* Success on mobile */}
+          {kioskState === 'success' && matched && (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
+                ${actionType === 'checkin' ? 'bg-green-500/15 border border-green-500/30' : 'bg-blue-500/15 border border-blue-500/30'}`}>
+                <span className="text-2xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
+              </div>
+              <div>
+                <p className="text-white font-bold">{matched.name}</p>
+                <p className="text-green-400 text-sm font-medium">{successMsg}</p>
+                {isLate && lateMinutes > 0 && <p className="text-amber-400 text-xs">⚠ {lateMinutes} mins late</p>}
+              </div>
+            </div>
+          )}
+
+          {/* Enrolling on mobile — full panel */}
+          {kioskState === 'enrolling' && (
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🆔</span>
+                <div>
+                  <p className="text-white font-semibold text-sm">Enroll Face</p>
+                  <p className="text-white/30 text-xs">Link to a staff member</p>
+                </div>
+                <button onClick={cancelEnroll} className="ml-auto text-white/30 hover:text-white">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex rounded-xl overflow-hidden border border-white/8">
+                {(['select', 'create'] as const).map(m => (
+                  <button key={m} onClick={() => setEnrollMode(m)}
+                    className={`flex-1 py-2 text-xs font-semibold transition-colors
+                      ${m === 'create' ? 'border-l border-white/8' : ''}
+                      ${enrollMode === m ? 'bg-gold/20 text-gold' : 'text-white/30'}`}>
+                    {m === 'select' ? 'Select Staff' : 'New Staff'}
+                  </button>
+                ))}
+              </div>
+              {enrollMode === 'select' ? (
+                <Select value={enrollStaffId} onChange={e => setEnrollStaffId(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white">
+                  <option value="">— Pick a staff member —</option>
+                  {enrollStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </Select>
+              ) : (
+                <div className="space-y-2">
+                  <input placeholder="Full name *" value={enrollNewName}
+                    onChange={e => setEnrollNewName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40" />
+                  <input placeholder="Phone (optional)" value={enrollNewPhone}
+                    onChange={e => setEnrollNewPhone(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40" />
+                </div>
+              )}
+              {enrollMsg && (
+                <p className={`text-xs text-center ${enrollMsg.startsWith('✓') ? 'text-green-400' : 'text-amber-400'}`}>{enrollMsg}</p>
+              )}
+              <button onClick={handleEnrollLink} disabled={enrollBusy}
+                className="w-full py-3 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40">
+                {enrollBusy ? 'Saving…' : 'Link Face'}
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-      </> /* end kioskState !== 'loading' */
-      )}
+      </>)}
 
       {/* Scan line CSS */}
       <style>{`
