@@ -1138,8 +1138,8 @@ function PayrollTab() {
               </thead>
               <tbody className="divide-y divide-dark-50/30">
                 {summary.staff.map(s => (
-                  <>
-                    <tr key={s.staffId} className="bg-dark-400 hover:bg-dark-300 transition-colors">
+                  <React.Fragment key={s.staffId}>
+                    <tr className="bg-dark-400 hover:bg-dark-300 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Avatar name={s.staffName} size={28} />
