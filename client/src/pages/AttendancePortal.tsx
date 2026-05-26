@@ -535,7 +535,7 @@ function ManualEntryModal({ staffList, onClose, onSaved }: {
             <label className="text-white/40 text-xs mb-1 block">Staff *</label>
             <Select
               value={staffId}
-              onChange={v => setStaffId(v)}
+              onChange={e => setStaffId(e.target.value)}
               className="w-full"
             >
               <option value="">Select staff…</option>
