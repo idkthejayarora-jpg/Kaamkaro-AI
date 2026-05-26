@@ -564,6 +564,75 @@ export default function StaffProfile() {
       {/* ── Attendance tab ── */}
       {activeTab === 'attendance' && (
         <div className="space-y-4">
+
+          {/* Self-scan card — only if this is the staff's own profile and canSelfCheckin is enabled */}
+          {user?.id === staff.id && (staff as Staff & { canSelfCheckin?: boolean }).canSelfCheckin && (() => {
+            const faceDesc = (staff as Staff & { faceDescriptors?: number[][] }).faceDescriptors || [];
+            // Derive today's status from attRecords
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayRec = attRecords.find(r => r.date === todayStr);
+            const currentStatus: 'in' | 'out' | 'absent' = !todayRec ? 'absent'
+              : todayRec.logoutAt ? 'out' : 'in';
+
+            return faceDesc.length > 0 ? (
+              <div className="bg-dark-400 border border-dark-50 rounded-2xl p-4 flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg
+                  ${currentStatus === 'in' ? 'bg-red-500/15 border border-red-500/20' : 'bg-green-500/15 border border-green-500/20'}`}>
+                  {currentStatus === 'in' ? '🔴' : '🟢'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold text-sm">
+                    {currentStatus === 'in' ? 'You\'re clocked in' : 'You\'re clocked out'}
+                  </p>
+                  <p className="text-white/30 text-xs mt-0.5">
+                    {currentStatus === 'in' ? 'Tap to record your check-out' : 'Tap to record your check-in'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSelfScan(true)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-colors
+                    ${currentStatus === 'in'
+                      ? 'bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25'
+                      : 'bg-green-500/15 border border-green-500/25 text-green-400 hover:bg-green-500/25'}`}
+                >
+                  {currentStatus === 'in' ? 'Clock Out' : 'Clock In'}
+                </button>
+                {showSelfScan && (
+                  <SelfScanModal
+                    faceDescriptors={faceDesc}
+                    currentStatus={currentStatus}
+                    onClose={() => setShowSelfScan(false)}
+                    onDone={() => {
+                      setShowSelfScan(false);
+                      // Refresh attendance data
+                      const [yr, mo] = attMonth.split('-').map(Number);
+                      const from = `${attMonth}-01`;
+                      const lastDay = new Date(yr, mo, 0).getDate();
+                      const to = `${attMonth}-${String(lastDay).padStart(2, '0')}`;
+                      Promise.all([
+                        attendanceAPI.staffHistory(id!, from, to).catch(() => []),
+                        attendanceAPI.monthly(attMonth).catch(() => null),
+                      ]).then(([records, monthly]) => {
+                        setAttRecords(records as typeof attRecords);
+                        if (monthly?.staff) {
+                          const row = monthly.staff.find((s: { staffId: string }) => s.staffId === id);
+                          if (row) {
+                            setAttData(row.dailyMap || {});
+                            setAttSummary({ presentDays: row.presentDays, lateDays: row.lateDays, totalHours: row.totalHours, overtimeHours: row.overtimeHours, undertimeHours: row.undertimeHours });
+                          }
+                        }
+                      });
+                    }}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="bg-amber-500/8 border border-amber-500/20 rounded-2xl px-4 py-3 text-sm text-amber-400/80">
+                🧳 On Tour mode is enabled — ask your manager to enroll your face at the office kiosk to enable self-scan.
+              </div>
+            );
+          })()}
+
           {/* Month selector */}
           <div className="flex items-center gap-3">
             <button
