@@ -132,6 +132,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const confirmedRef    = useRef(false);
   const faceMatcherRef  = useRef<faceapi.FaceMatcher | null>(null);
   const unknownDescRef  = useRef<Float32Array | null>(null);
+  const modelsLoadedRef = useRef(false); // gates detection — models load after camera
   // Refs that mirror state — lets the detection interval read current values
   // without being listed as a dependency (prevents interval restart on every tick)
   const descriptorsRef  = useRef<StaffDescriptor[]>([]);
