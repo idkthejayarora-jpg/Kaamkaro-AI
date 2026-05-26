@@ -520,3 +520,8 @@ html.light .glass {
 html.light .gradient-sep {
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.10), transparent);
 }
+
+
+/* ── Hide scrollbar (keep scroll functionality) ──────────────────────────────*/
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
