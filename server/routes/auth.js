@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, updateOne, insertOne } = require('../utils/db');
 const { authMiddleware, adminOnly, JWT_SECRET } = require('../middleware/auth');
+const bcrypt2 = bcrypt; // alias for clarity
 
 const router = express.Router();
 
