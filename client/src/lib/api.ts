@@ -322,4 +322,24 @@ export const tagDefsAPI = {
   delete: (id: string)                => api.delete(`/tag-defs/${id}`).then(r => r.data),
 };
 
+export const attendanceAPI = {
+  today:        () => api.get('/attendance/today').then(r => r.data),
+  monthly:      (month: string) => api.get(`/attendance/monthly?month=${month}`).then(r => r.data),
+  staffHistory: (id: string, from?: string, to?: string) =>
+    api.get(`/attendance/staff/${id}`, { params: { from, to } }).then(r => r.data),
+  config:       () => api.get('/attendance/config').then(r => r.data),
+  updateConfig: (d: Record<string, unknown>) => api.patch('/attendance/config', d).then(r => r.data),
+};
+
+export const kioskAPI = {
+  descriptors: (pin: string) =>
+    api.get('/kiosk/descriptors', { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+  checkin: (pin: string, staffId: string) =>
+    api.post('/kiosk/checkin', { staffId }, { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+  checkout: (pin: string, staffId: string) =>
+    api.post('/kiosk/checkout', { staffId }, { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+  today: (pin: string) =>
+    api.get('/kiosk/today', { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
+};
+
 export default api;
