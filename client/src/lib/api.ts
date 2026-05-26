@@ -345,6 +345,8 @@ export const attendanceAPI = {
   analytics:    (days = 30) => api.get('/attendance/analytics', { params: { days } }).then(r => r.data),
   manual:       (data: { staffId: string; date: string; loginAt?: string; logoutAt?: string }) =>
     api.post('/attendance/manual', data).then(r => r.data),
+  selfCheckin:  () => api.post('/attendance/self-checkin').then(r => r.data),
+  selfCheckout: () => api.post('/attendance/self-checkout').then(r => r.data),
 };
 
 export const payrollAPI = {
