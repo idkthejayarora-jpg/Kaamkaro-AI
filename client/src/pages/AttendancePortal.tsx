@@ -1414,6 +1414,16 @@ function StaffTab() {
     finally { setSavingShift(null); }
   };
 
+  const toggleManagerRole = async (s: StaffMember) => {
+    const isManager = s.role === 'attendance_manager';
+    setTogglingRole(s.id);
+    try {
+      await staffAPI.update(s.id, { role: isManager ? 'staff' : 'attendance_manager' });
+      load();
+    } catch {}
+    finally { setTogglingRole(null); }
+  };
+
   return (
     <div className="space-y-4">
       <input
