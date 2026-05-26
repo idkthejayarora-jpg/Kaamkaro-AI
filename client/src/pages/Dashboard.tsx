@@ -301,6 +301,32 @@ function AdminDashboard() {
         </div>
       </div>
 
+      {/* ── ATTENDANCE TODAY CARD ────────────────────────────────────────── */}
+      {todayAtt && (
+        <button
+          onClick={() => navigate('/attendance-portal')}
+          className="rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up hover:bg-dark-200 transition-colors text-left p-4 sm:p-5"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-2">🕐 Today's Attendance</p>
+              <div className="flex items-end gap-3">
+                <span className="text-3xl font-black text-white">{todayAtt.inCount}/{todayAtt.total}</span>
+                <span className="text-white/40 text-sm mb-1">in office</span>
+              </div>
+              <div className="flex items-center gap-3 mt-1.5 text-xs">
+                {todayAtt.late > 0 && <span className="text-amber-400">⚠ {todayAtt.late} late</span>}
+                {todayAtt.absent > 0 && <span className="text-red-400/70">{todayAtt.absent} absent</span>}
+                {todayAtt.late === 0 && todayAtt.absent === 0 && <span className="text-green-400">All on time</span>}
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center flex-shrink-0">
+              <ChevronRight size={16} className="text-gold/60" />
+            </div>
+          </div>
+        </button>
+      )}
+
       {/* ── BENTO: Merit chart (2/3) + Right panel (1/3) ─────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
