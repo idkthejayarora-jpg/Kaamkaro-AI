@@ -432,4 +432,118 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
   }
 });
 
+// ── POST /api/attendance/self-checkin ─────────────────────────────────────────
+// JWT auth only — no PIN. Staff on tour check themselves in after face verification.
+// Guard: staff record must have canSelfCheckin: true.
+router.post('/self-checkin', authMiddleware, async (req, res) => {
+  try {
+    const staffId = req.user.id;
+    const cfg     = await getAttendanceConfig();
+    const staffList = await readDB('staff');
+    const member  = staffList.find(s => s.id === staffId);
+    if (!member) return res.status(404).json({ error: 'Staff not found' });
+    if (!member.canSelfCheckin) return res.status(403).json({ error: 'Self check-in not enabled for your account' });
+
+    const now   = new Date();
+    const today = todayStr();
+
+    // Shift priority: personal override → gender-based shift → default
+    const genderShift = (member.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+    const effectiveShift = member.shiftOverride || genderShift || cfg;
+    const [shiftH, shiftM] = effectiveShift.shiftStart.split(':').map(Number);
+    const deadline = new Date(now);
+    deadline.setHours(shiftH, shiftM + (cfg.lateGraceMins || 0), 0, 0);
+    const isLate      = now > deadline;
+    const lateMinutes = isLate ? Math.max(0, Math.round((now - deadline) / 60000)) : 0;
+
+    const records = await readDB('attendance');
+    let record = records.find(r => r.staffId === staffId && r.date === today);
+
+    if (!record) {
+      record = {
+        id: require('uuid').v4(),
+        staffId,
+        staffName:   member.name,
+        date:        today,
+        loginAt:     now.toISOString(),
+        logoutAt:    null,
+        hoursWorked: 0,
+        isLate,
+        lateMinutes,
+        selfCheckin: true,
+        sessions:    [{ loginAt: now.toISOString(), logoutAt: null }],
+      };
+      records.push(record);
+    } else {
+      const alreadyOpen = record.sessions?.some(s => !s.logoutAt);
+      if (alreadyOpen) return res.json({ ...record, alreadyIn: true });
+      record.sessions = record.sessions || [];
+      record.sessions.push({ loginAt: now.toISOString(), logoutAt: null });
+    }
+
+    await writeDB('attendance', records);
+
+    // Sync availability
+    const idx = staffList.findIndex(s => s.id === staffId);
+    if (idx !== -1) { staffList[idx].availability = 'available'; await writeDB('staff', staffList); }
+
+    res.json(record);
+  } catch (err) {
+    console.error('[Self checkin]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── POST /api/attendance/self-checkout ────────────────────────────────────────
+router.post('/self-checkout', authMiddleware, async (req, res) => {
+  try {
+    const staffId = req.user.id;
+    const cfg     = await getAttendanceConfig();
+    const staffList = await readDB('staff');
+    const member  = staffList.find(s => s.id === staffId);
+    if (!member) return res.status(404).json({ error: 'Staff not found' });
+    if (!member.canSelfCheckin) return res.status(403).json({ error: 'Self check-in not enabled for your account' });
+
+    const now   = new Date();
+    const today = todayStr();
+    const records = await readDB('attendance');
+    const record  = records.find(r => r.staffId === staffId && r.date === today);
+    if (!record) return res.status(404).json({ error: 'No check-in found for today' });
+
+    const sessions = record.sessions || [];
+    const open = [...sessions].reverse().find(s => !s.logoutAt);
+    if (!open) return res.json({ ...record, alreadyOut: true });
+
+    open.logoutAt = now.toISOString();
+    open.hours    = Math.round((now - new Date(open.loginAt)) / 36000) / 100;
+
+    record.logoutAt    = now.toISOString();
+    record.hoursWorked = calcHours(sessions);
+    record.sessions    = sessions;
+
+    // Expected hours — same priority as self-checkin
+    const genderShift = (member.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+    const effectiveShift = member.shiftOverride || genderShift;
+    let expected = cfg.expectedHours || 9;
+    if (effectiveShift) {
+      const [sh, sm] = effectiveShift.shiftStart.split(':').map(Number);
+      const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
+      expected = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    }
+    record.overtimeHours  = Math.max(0, Math.round((record.hoursWorked - expected) * 100) / 100);
+    record.undertimeHours = Math.max(0, Math.round((expected - record.hoursWorked) * 100) / 100);
+
+    await writeDB('attendance', records);
+
+    // Sync availability
+    const idx = staffList.findIndex(s => s.id === staffId);
+    if (idx !== -1) { staffList[idx].availability = 'out_of_office'; await writeDB('staff', staffList); }
+
+    res.json(record);
+  } catch (err) {
+    console.error('[Self checkout]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
