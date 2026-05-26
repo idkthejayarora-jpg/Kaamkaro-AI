@@ -1616,7 +1616,7 @@ function LeavesTab() {
             <Select
               value={selStaff}
               onChange={e => setSelStaff(e.target.value)}
-              className="w-full"
+              className="w-full bg-dark-300 border border-dark-50 rounded-xl px-3 py-2 text-white text-sm"
             >
               <option value="">Select staff…</option>
               {staffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
