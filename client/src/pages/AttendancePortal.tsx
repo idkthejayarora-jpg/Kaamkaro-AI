@@ -1419,7 +1419,7 @@ function StaffTab() {
 
   const toggleTour = async (s: StaffMember) => {
     try {
-      await staffAPI.update(s.id, { canSelfCheckin: !s.canSelfCheckin });
+      await staffAPI.setTour(s.id, !s.canSelfCheckin);
       load();
     } catch {}
   };
@@ -1427,7 +1427,7 @@ function StaffTab() {
   const toggleGender = async (s: StaffMember) => {
     const next = s.gender === 'female' ? 'male' : 'female';
     try {
-      await staffAPI.update(s.id, { gender: next });
+      await staffAPI.setGender(s.id, next);
       load();
     } catch {}
   };
