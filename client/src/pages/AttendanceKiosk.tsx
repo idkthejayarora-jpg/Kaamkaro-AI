@@ -138,6 +138,21 @@ export default function AttendanceKiosk() {
   const cooldownRef   = useRef<Record<string, number>>({});
   const countdownRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const confirmedRef  = useRef(false);
+  const faceMatcherRef = useRef<faceapi.FaceMatcher | null>(null);
+
+  // Rebuild FaceMatcher whenever descriptors change
+  useEffect(() => {
+    if (!descriptors.length) { faceMatcherRef.current = null; return; }
+    try {
+      const labeled = descriptors.map(s =>
+        new faceapi.LabeledFaceDescriptors(
+          s.id,
+          s.faceDescriptors.map(d => new Float32Array(d)),
+        )
+      );
+      faceMatcherRef.current = new faceapi.FaceMatcher(labeled, MATCH_THRESHOLD);
+    } catch { faceMatcherRef.current = null; }
+  }, [descriptors]);
 
   // Clock
   useEffect(() => {
