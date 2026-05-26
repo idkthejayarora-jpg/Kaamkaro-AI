@@ -59,6 +59,7 @@ app.use('/api/chat',         require('./routes/chat'));
 app.use('/api/merits',       require('./routes/merits'));
 app.use('/api/attendance',   require('./routes/attendance'));
 app.use('/api/kiosk',        require('./routes/kiosk'));
+app.use('/api/leaves',       require('./routes/leaves'));
 app.use('/api/insights',     require('./routes/insights'));
 app.use('/api/pdf',          require('./routes/pdf'));
 app.use('/api/teams',        require('./routes/teams'));
