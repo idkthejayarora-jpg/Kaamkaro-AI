@@ -1805,11 +1805,11 @@ function SettingsTab() {
           </button>
         </div>
         <button
-          onClick={() => { sessionStorage.setItem('kk_kiosk_autounlock', '1'); window.open('/kiosk', '_blank'); }}
+          onClick={onOpenKiosk}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dark-50 text-white/50 hover:text-white hover:border-white/20 text-sm transition-colors"
         >
           <MonitorSmartphone size={14} />
-          Open Kiosk in New Tab
+          Open Kiosk
         </button>
       </div>
 
