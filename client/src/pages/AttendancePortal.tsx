@@ -1499,6 +1499,16 @@ function StaffTab() {
                       </button>
                     ) : null}
                     <button
+                      onClick={() => toggleGender(s)}
+                      className={`p-1.5 rounded-xl transition-colors border text-xs font-bold
+                        ${s.gender === 'female'
+                          ? 'text-pink-400 bg-pink-500/10 border-pink-500/20'
+                          : 'text-white/20 hover:text-pink-400 hover:bg-pink-500/10 border-white/10'}`}
+                      title={s.gender === 'female' ? 'Female — click to set male' : 'Set as female (women\'s shift)'}
+                    >
+                      ♀
+                    </button>
+                    <button
                       onClick={() => toggleManagerRole(s)}
                       disabled={togglingRole === s.id}
                       className={`p-1.5 rounded-xl transition-colors text-xs font-bold disabled:opacity-40
