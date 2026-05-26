@@ -229,6 +229,12 @@ router.post('/checkout', async (req, res) => {
     record.undertimeHours = Math.max(0, Math.round((expected - record.hoursWorked) * 100) / 100);
 
     await writeDB('attendance', records);
+
+    // Sync availability — checked out = out of office
+    const staffList = await readDB('staff');
+    const sidx = staffList.findIndex(s => s.id === staffId);
+    if (sidx !== -1) { staffList[sidx].availability = 'out_of_office'; await writeDB('staff', staffList); }
+
     res.json(record);
   } catch (err) {
     console.error('[Kiosk checkout]', err);
