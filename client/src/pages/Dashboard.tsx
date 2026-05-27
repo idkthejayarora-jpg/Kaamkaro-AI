@@ -927,10 +927,12 @@ function StaffDashboard() {
       {selfStaff && !selfStaff.faceDescriptors?.length && (
         <>
           {showSelfEnroll && (
-            <SelfEnrollModal
-              onClose={() => setShowSelfEnroll(false)}
-              onDone={() => { loadSelfCheckin(); setShowSelfEnroll(false); }}
-            />
+            <Portal>
+              <SelfEnrollModal
+                onClose={() => setShowSelfEnroll(false)}
+                onDone={() => { loadSelfCheckin(); setShowSelfEnroll(false); }}
+              />
+            </Portal>
           )}
           <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 overflow-hidden">
             <div className="h-[2px] bg-gradient-to-r from-amber-500/70 to-transparent" />
