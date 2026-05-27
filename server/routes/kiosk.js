@@ -8,7 +8,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { readDB, writeDB } = require('../utils/db');
+const { readDB, writeDB, withLock } = require('../utils/db');
 const { JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
