@@ -1994,7 +1994,7 @@ export default function AttendancePortal() {
   const [showKiosk, setShowKiosk] = useState(false);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 relative">
       {/* Kiosk overlay — rendered at document.body via portal so it covers
           the nav sidebar (which has z-50 + CSS transform stacking context) */}
       {showKiosk && createPortal(
