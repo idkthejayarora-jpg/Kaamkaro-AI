@@ -169,8 +169,10 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     if (!effectiveShift) return null;
     const [sh, sm] = effectiveShift.shiftStart.split(':').map(Number);
     const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
+    if ([sh, sm, eh, em].some(n => Number.isNaN(n))) return null;
     const startMins = sh * 60 + sm;
     const endMins   = eh * 60 + em;
+    if (endMins <= startMins) return null;          // malformed / overnight — fall back to plain clock
     if (istNowMins <= startMins) return 0;
     if (istNowMins >= endMins)   return 100;
     return ((istNowMins - startMins) / (endMins - startMins)) * 100;
