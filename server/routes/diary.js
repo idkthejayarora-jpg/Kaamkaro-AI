@@ -963,8 +963,10 @@ function extractNamesFromText(text) {
     while ((m = pattern.exec(text)) !== null) {
       const candidate = m[1].trim();
       const parts = candidate.toLowerCase().split(/\s+/);
-      // Reject if any part is a stop word or too short
-      if (!parts.every(p => p.length >= 3 && !STOP_WORDS.has(p))) continue;
+      // Reject if any part is a stop word or too short — BUT exempt location-suffix words
+      // so "Kamla Nagar ko..." correctly yields "Kamla Nagar" (nagar is a STOP_WORD but
+      // also a valid INDIAN_LOCATION suffix in customer names).
+      if (!parts.every(p => p.length >= 3 && (!STOP_WORDS.has(p) || INDIAN_LOCATIONS.has(p)))) continue;
       // Reject purely-location captures ("delhi ne" → "Delhi" is not a person name)
       if (parts.every(p => INDIAN_LOCATIONS.has(p))) continue;
       addName(candidate);
