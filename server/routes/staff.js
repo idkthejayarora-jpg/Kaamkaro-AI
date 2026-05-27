@@ -34,6 +34,22 @@ router.get('/face-check', attendanceManagerOrAdmin, async (req, res) => {
   }
 });
 
+// PATCH /api/staff/me/face — staff self-enrolls their own face (no manager needed)
+router.patch('/me/face', async (req, res) => {
+  try {
+    const { descriptors } = req.body;
+    if (!Array.isArray(descriptors) || descriptors.length === 0)
+      return res.status(400).json({ error: 'descriptors array required' });
+    const updated = await updateOne('staff', req.user.id, { faceDescriptors: descriptors });
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    const { password: _, ...safe } = updated;
+    res.json({ message: 'Face enrolled', staff: safe });
+  } catch (err) {
+    console.error('[Self face enroll]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/staff/:id
 router.get('/:id', async (req, res) => {
   try {
