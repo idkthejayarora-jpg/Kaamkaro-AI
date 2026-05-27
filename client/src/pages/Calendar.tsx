@@ -416,7 +416,7 @@ export default function Calendar() {
     setLoadingMonth(true);
     calendarAPI.month(year, month, filterStaff || undefined)
       .then((d: MonthData) => setMonthData(d))
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoadingMonth(false));
   }, [year, month, filterStaff]);
 
