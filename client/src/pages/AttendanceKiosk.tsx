@@ -209,7 +209,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         ]);
         if (!cancelled) modelsLoadedRef.current = true;
       } catch (err) {
-        console.error('[Kiosk] model load failed:', err);
+        if (import.meta.env.DEV) console.error('[Kiosk] model load failed:', err);
         // Camera still works; face detection won't run but manual enroll can
       }
     }
