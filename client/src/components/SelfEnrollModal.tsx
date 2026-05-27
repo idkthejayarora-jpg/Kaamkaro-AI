@@ -177,7 +177,7 @@ export function SelfEnrollModal({
             </div>
             <p className="text-white font-semibold text-sm">Enroll Your Face</p>
           </div>
-          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close" className="text-white/30 hover:text-white transition-colors">
             <X size={16} />
           </button>
         </div>
