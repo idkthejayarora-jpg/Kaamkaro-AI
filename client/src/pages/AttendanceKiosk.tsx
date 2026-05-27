@@ -180,7 +180,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       } catch (err) {
         if (cancelled) return;
         setModelStatus('Camera denied — allow access in browser settings and reload');
-        console.error('[Kiosk] getUserMedia failed:', err);
+        if (import.meta.env.DEV) console.error('[Kiosk] getUserMedia failed:', err);
         return; // stay on loading screen with the error message
       }
       if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
