@@ -152,6 +152,22 @@ async function seed() {
       console.log(`  Created empty collection: ${col}`);
     }
   }
+
+  // ── One-shot migration: backfill missing createdAt on diary entries ────────
+  // Fraud detection skips entries without createdAt — backfill from date or updatedAt.
+  try {
+    const diary = await readDB('diary');
+    const toFix = diary.filter(d => !d.createdAt);
+    if (toFix.length > 0) {
+      toFix.forEach(d => {
+        d.createdAt = d.updatedAt || (d.date ? `${d.date}T09:00:00.000Z` : new Date().toISOString());
+      });
+      await writeDB('diary', diary);
+      console.log(`  Backfilled createdAt on ${toFix.length} diary entries`);
+    }
+  } catch (e) {
+    console.error('[Migration] diary createdAt backfill failed (non-fatal):', e.message);
+  }
 }
 
 // ── Global unhandled error catchers — prevent server crashes ──────────────────
