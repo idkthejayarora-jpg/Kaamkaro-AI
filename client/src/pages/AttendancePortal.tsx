@@ -1858,7 +1858,10 @@ function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
   return (
     <div className="space-y-5 max-w-lg">
       <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 space-y-4">
-        <p className="text-white font-semibold">Default Shift Hours</p>
+        <div>
+          <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">Configuration</p>
+          <p className="text-white font-bold text-base mt-0.5">Default Shift Hours</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-white/40 text-xs mb-1 block">Shift Start</label>
