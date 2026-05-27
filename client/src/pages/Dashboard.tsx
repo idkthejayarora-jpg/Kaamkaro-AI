@@ -812,7 +812,6 @@ function StaffDashboard() {
   const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
   const [showSelfScan, setShowSelfScan]     = useState(false);
   const [showSelfEnroll, setShowSelfEnroll] = useState(false);
-  const [attConfig, setAttConfig]   = useState<{ shiftStart: string; shiftEnd: string; womenShift?: { shiftStart: string; shiftEnd: string } } | null>(null);
 
   const dismissBcastModal = () => {
     markBcastRead(user!.id, unreadQueue.map(b => b.id));
