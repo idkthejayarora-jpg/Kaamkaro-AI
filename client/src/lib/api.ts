@@ -388,4 +388,8 @@ export const kioskAPI = {
     api.post('/kiosk/quick-staff', { name, phone }, { headers: { 'X-Kiosk-Pin': pin } }).then(r => r.data),
 };
 
+export const adminAPI = {
+  orphans: () => api.get('/admin/orphans').then(r => r.data),
+};
+
 export default api;
