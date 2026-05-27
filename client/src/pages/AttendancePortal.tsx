@@ -1133,9 +1133,10 @@ function PayrollTab() {
 
       {/* Total payroll banner */}
       {summary && (
-        <div className="bg-gold/8 border border-gold/20 rounded-2xl p-5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-gold/15 to-gold/5 border border-gold/25 rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-gold/5">
           <div>
-            <p className="text-white/50 text-sm">Total Payroll</p>
+            <p className="text-gold/50 text-[10px] uppercase tracking-[0.18em] font-bold">This Month</p>
+            <p className="text-white/70 text-sm mt-0.5">Total Payroll</p>
             <p className="text-gold text-3xl font-black mt-1">{inr(summary.totalPayroll)}</p>
           </div>
           <div className="text-right">
