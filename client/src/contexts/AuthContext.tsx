@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // Cancel any in-flight switchToStaff — prevents stale setUser after logout
+    switchActiveRef.current = false;
     // If we're currently switched, just switch back to admin rather than fully logging out
     const savedAdminToken = localStorage.getItem(ADMIN_TOKEN_KEY);
     const savedAdminUser  = localStorage.getItem(ADMIN_USER_KEY);
