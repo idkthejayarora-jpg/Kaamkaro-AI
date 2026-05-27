@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kj-jewellery",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/Users/jaigopalarora/kj-jewellery/server.js"],
+      "port": 3000
+    }
+  ]
+}
