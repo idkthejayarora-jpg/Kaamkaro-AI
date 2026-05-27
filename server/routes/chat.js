@@ -39,6 +39,11 @@ router.post('/conversations', async (req, res) => {
 
     const allMembers = [...new Set([req.user.id, ...members])];
 
+    // Prevent self-loop conversations (all deduped members resolve to just the sender)
+    if (allMembers.length < 2) {
+      return res.status(400).json({ error: 'A conversation requires at least 2 distinct members' });
+    }
+
     if (type === 'direct') {
       if (allMembers.length !== 2) return res.status(400).json({ error: 'Direct chat needs exactly 2 members' });
       // Return existing direct conversation if one already exists
