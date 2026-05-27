@@ -144,7 +144,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const currentUser  = user;
     if (!currentToken || !currentUser) return;
 
+    switchActiveRef.current = true;
     const data = await authAPI.switchToStaff(staffId); // { token, user }
+
+    // Bail out if logout was called while the request was in-flight
+    if (!switchActiveRef.current) return;
 
     // Stash current admin session
     const adminSession: AdminSession = {
@@ -160,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(data.token);
     setUser(data.user);
     setOriginalAdmin(adminSession);
+    switchActiveRef.current = false;
   }, [user, originalAdmin]);
 
   const switchBack = useCallback(() => {
