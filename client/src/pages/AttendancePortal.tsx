@@ -852,8 +852,10 @@ function AnalyticsTab() {
 
       {/* Staff Performance */}
       {staffPerfData.length > 0 && (
-        <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5">
-          <p className="text-white font-semibold mb-4">Staff Hours This Month</p>
+        <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 shadow-lg shadow-black/20 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-gold/20 via-transparent to-transparent" />
+          <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Performance</p>
+          <p className="text-white font-black text-lg mt-0.5 mb-4">Staff Hours This Month</p>
           <ResponsiveContainer width="100%" height={Math.max(180, staffPerfData.length * 36)}>
             <BarChart data={staffPerfData} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" horizontal={false} />
