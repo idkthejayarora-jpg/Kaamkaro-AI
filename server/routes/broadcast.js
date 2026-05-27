@@ -12,6 +12,7 @@ router.post('/', attendanceManagerOrAdmin, async (req, res) => {
   try {
     const { message, title } = req.body;
     if (!message?.trim()) return res.status(400).json({ error: 'Message required' });
+    if (message.length > 5000) return res.status(413).json({ error: 'Message too long (max 5000 characters)' });
 
     const msg = {
       id:      uuidv4(),
