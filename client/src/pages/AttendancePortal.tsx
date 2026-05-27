@@ -870,11 +870,15 @@ function AnalyticsTab() {
 
       {/* Late Arrivals */}
       {lateData.length > 0 && (
-        <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5">
-          <p className="text-white font-semibold mb-4 flex items-center gap-2">
+        <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 shadow-lg shadow-black/20 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-amber-500/20 via-transparent to-transparent" />
+          <div className="flex items-center gap-2 mb-4">
             <UserX size={14} className="text-amber-400" />
-            Late Arrivals This Month
-          </p>
+            <div>
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Punctuality</p>
+              <p className="text-white font-black text-lg mt-0.5">Late Arrivals This Month</p>
+            </div>
+          </div>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={lateData} margin={{ top: 0, right: 8, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
