@@ -408,7 +408,7 @@ export default function Calendar() {
   // Load staff for admin filter
   useEffect(() => {
     if (!isAdmin) return;
-    staffAPI.list().then(setStaffList).catch(console.error);
+    staffAPI.list().then(setStaffList).catch(() => {});
   }, [isAdmin]);
 
   // Load month data
