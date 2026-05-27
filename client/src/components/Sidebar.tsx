@@ -344,22 +344,60 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
         </div>
 
-        {/* Live clock */}
-        <div className={`mx-3 mb-1 mt-1 rounded-xl px-3 py-2 border ${withinWork ? 'bg-green-500/5 border-green-500/15' : 'bg-dark-300 border-dark-50'}`}>
-          <p className={`text-lg font-mono font-semibold tracking-tight leading-none ${withinWork ? 'text-green-400' : 'text-white/40'}`}>
-            {clockTime}
-          </p>
-          <div className="flex items-center justify-between mt-0.5">
-            <p className="text-white/25 text-[10px]">{clockDate}</p>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${withinWork ? 'bg-green-500/10 text-green-400' : 'bg-dark-400 text-white/20'}`}>
-              {withinWork ? 'Working hours' : 'Off hours'}
-            </span>
-          </div>
-          {effectiveShift && (
-            <p className="text-white/20 text-[9px] mt-1 tabular-nums">
-              {fmtShiftTime(effectiveShift.shiftStart)} – {fmtShiftTime(effectiveShift.shiftEnd)}
-            </p>
+        {/* Live clock — shift progress pill */}
+        <div className="mx-3 mb-1 mt-1 relative overflow-hidden rounded-xl border border-dark-50 bg-dark-300">
+
+          {/* Fill layer — grows left→right as shift progresses */}
+          {shiftProgress !== null && shiftProgress > 0 && (
+            <div
+              className="absolute inset-y-0 left-0 transition-[width] duration-1000 ease-linear pointer-events-none"
+              style={{
+                width: `${shiftProgress}%`,
+                background: withinWork
+                  ? 'linear-gradient(90deg, rgba(74,222,128,0.10) 0%, rgba(74,222,128,0.06) 100%)'
+                  : 'linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+              }}
+            />
           )}
+
+          {/* Leading-edge line — the "needle" at the current time position */}
+          {shiftProgress !== null && shiftProgress > 0 && shiftProgress < 100 && (
+            <div
+              className="absolute inset-y-0 w-px transition-[left] duration-1000 ease-linear pointer-events-none"
+              style={{
+                left: `${shiftProgress}%`,
+                background: withinWork ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.12)',
+                boxShadow: withinWork ? '0 0 4px rgba(74,222,128,0.4)' : 'none',
+              }}
+            />
+          )}
+
+          {/* Content */}
+          <div className="relative z-10 px-3 py-2.5">
+            <p className={`text-lg font-mono font-semibold tracking-tight leading-none ${withinWork ? 'text-green-400' : 'text-white/40'}`}>
+              {clockTime}
+            </p>
+            <div className="flex items-center justify-between mt-0.5">
+              <p className="text-white/25 text-[10px]">{clockDate}</p>
+              {shiftProgress !== null ? (
+                <span className={`text-[9px] font-semibold tabular-nums ${withinWork ? 'text-green-400/60' : 'text-white/20'}`}>
+                  {withinWork
+                    ? `${Math.round(shiftProgress)}%`
+                    : shiftProgress === 0 ? 'Not started' : 'Shift over'}
+                </span>
+              ) : (
+                <span className={`text-[9px] font-medium ${withinWork ? 'text-green-400/60' : 'text-white/20'}`}>
+                  {withinWork ? 'Working' : 'Off hours'}
+                </span>
+              )}
+            </div>
+            {effectiveShift && (
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-white/18 text-[9px] tabular-nums">{fmtShiftTime(effectiveShift.shiftStart)}</span>
+                <span className="text-white/18 text-[9px] tabular-nums">{fmtShiftTime(effectiveShift.shiftEnd)}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Navigation */}
