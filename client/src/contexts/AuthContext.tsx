@@ -33,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   // Stashed real-admin session (non-null when currently switched to a staff account)
   const [originalAdmin, setOriginalAdmin] = useState<AdminSession | null>(null);
+  // Guard ref: set to false on logout so any in-flight switchToStaff won't write stale state
+  const switchActiveRef = React.useRef(false);
 
   const updateUser = useCallback((u: User) => {
     setUser(u);
