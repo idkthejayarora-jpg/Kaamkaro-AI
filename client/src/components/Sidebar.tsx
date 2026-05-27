@@ -180,6 +180,21 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     ? shiftProgress > 0 && shiftProgress < 100
     : istHour >= 9;
 
+  // Arc color — rose/pink for women's shift, gold/amber for default
+  const isWomenShift = staffRec?.gender === 'female' && !!attCfg?.womenShift && !staffRec?.shiftOverride;
+  const arcColor     = isWomenShift ? '#f472b6' : '#f59e0b';
+
+  // Quadratic bezier control points for the sunrise arc (viewBox 220 × 44)
+  const arcP0 = { x: 10,  y: 40 };   // start (left  — shift start)
+  const arcP1 = { x: 110, y: 5  };   // control (apex — midday peak)
+  const arcP2 = { x: 210, y: 40 };   // end   (right — shift end)
+  const arcPath = `M ${arcP0.x} ${arcP0.y} Q ${arcP1.x} ${arcP1.y} ${arcP2.x} ${arcP2.y}`;
+
+  // Dot position along the bezier for current progress
+  const arcT    = Math.max(0, Math.min(1, (shiftProgress ?? 0) / 100));
+  const dotX    = (1 - arcT) ** 2 * arcP0.x + 2 * arcT * (1 - arcT) * arcP1.x + arcT ** 2 * arcP2.x;
+  const dotY    = (1 - arcT) ** 2 * arcP0.y + 2 * arcT * (1 - arcT) * arcP1.y + arcT ** 2 * arcP2.y;
+
   // Keep navItems in sync if user switches role (e.g. re-login)
   useEffect(() => {
     setNavItems(loadOrder(defaultNav, role, userId));
