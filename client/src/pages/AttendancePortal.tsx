@@ -966,12 +966,12 @@ function MonthlyTab() {
         <>
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: 'Total Hours',    val: `${data.staff.reduce((s,r) => s + r.totalHours, 0).toFixed(0)}h`,    color: 'text-white' },
-              { label: 'Overtime',       val: `${data.staff.reduce((s,r) => s + r.overtimeHours, 0).toFixed(1)}h`, color: 'text-green-400' },
-              { label: 'Undertime',      val: `${data.staff.reduce((s,r) => s + r.undertimeHours, 0).toFixed(1)}h`, color: 'text-red-400' },
-              { label: 'Late Incidents', val: data.staff.reduce((s,r) => s + r.lateDays, 0),                        color: 'text-amber-400' },
+              { label: 'Total Hours',    val: `${data.staff.reduce((s,r) => s + r.totalHours, 0).toFixed(0)}h`,     color: 'text-white',       grad: 'from-gold/8' },
+              { label: 'Overtime',       val: `${data.staff.reduce((s,r) => s + r.overtimeHours, 0).toFixed(1)}h`,  color: 'text-green-400',   grad: 'from-green-500/12' },
+              { label: 'Undertime',      val: `${data.staff.reduce((s,r) => s + r.undertimeHours, 0).toFixed(1)}h`, color: 'text-red-400',     grad: 'from-red-500/12' },
+              { label: 'Late Incidents', val: data.staff.reduce((s,r) => s + r.lateDays, 0),                         color: 'text-amber-400',   grad: 'from-amber-500/12' },
             ].map(t => (
-              <div key={t.label} className="bg-dark-400 border border-dark-50 rounded-2xl px-4 py-3 text-center">
+              <div key={t.label} className={`bg-gradient-to-br ${t.grad} to-dark-400 border border-dark-50 rounded-2xl px-4 py-3 text-center`}>
                 <p className={`text-xl font-black ${t.color}`}>{t.val}</p>
                 <p className="text-white/30 text-xs mt-0.5">{t.label}</p>
               </div>
