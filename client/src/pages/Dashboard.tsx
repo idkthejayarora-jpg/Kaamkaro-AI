@@ -93,6 +93,7 @@ function AdminDashboard() {
   const [aReason, setAReason]       = useState(''); const [savingAward, setSavingAward] = useState(false);
   const [expandedBanner, setExpandedBanner] = useState<'customers' | 'tasks' | null>(null);
   const [todayAtt, setTodayAtt]     = useState<{ inCount: number; total: number; late: number; absent: number } | null>(null);
+  const [orphanData, setOrphanData] = useState<{ totalOrphans: number; orphans: Record<string, { id: string; label: string; missingRef: string; missingId: string }[]> } | null>(null);
   const navigate = useNavigate();
   const { isLight } = useTheme();
   // Adaptive chart palette — flips with theme
