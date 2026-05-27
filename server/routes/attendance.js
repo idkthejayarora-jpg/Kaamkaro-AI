@@ -379,9 +379,9 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
       return res.status(400).json({ error: 'staffId and date are required' });
     }
 
-    const [staffList, records, cfg] = await Promise.all([
+    // Reads outside lock — these don't mutate
+    const [staffList, cfg] = await Promise.all([
       readDB('staff'),
-      readDB('attendance'),
       getAttendanceConfig(),
     ]);
 
@@ -411,36 +411,43 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
     }
 
     const { v4: uuidv4 } = require('uuid');
-    let record = records.find(r => r.staffId === staffId && r.date === date);
 
-    if (record) {
-      record.loginAt        = loginISO;
-      record.logoutAt       = logoutISO;
-      record.hoursWorked    = hoursWorked;
-      record.sessions       = [{ loginAt: loginISO, logoutAt: logoutISO }];
-      record.manualOverride = true;
-      record.overriddenBy   = req.user.name;
-      record.isLate         = isLate;
-      record.lateMinutes    = lateMinutes;
-    } else {
-      record = {
-        id:             uuidv4(),
-        staffId,
-        staffName:      staffMember.name,
-        date,
-        loginAt:        loginISO,
-        logoutAt:       logoutISO,
-        hoursWorked,
-        sessions:       [{ loginAt: loginISO, logoutAt: logoutISO }],
-        manualOverride: true,
-        overriddenBy:   req.user.name,
-        isLate,
-        lateMinutes,
-      };
-      records.push(record);
-    }
+    // Serialised read-modify-write on attendance
+    const record = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      let rec = records.find(r => r.staffId === staffId && r.date === date);
 
-    await writeDB('attendance', records);
+      if (rec) {
+        rec.loginAt        = loginISO;
+        rec.logoutAt       = logoutISO;
+        rec.hoursWorked    = hoursWorked;
+        rec.sessions       = [{ loginAt: loginISO, logoutAt: logoutISO }];
+        rec.manualOverride = true;
+        rec.overriddenBy   = req.user.name;
+        rec.isLate         = isLate;
+        rec.lateMinutes    = lateMinutes;
+      } else {
+        rec = {
+          id:             uuidv4(),
+          staffId,
+          staffName:      staffMember.name,
+          date,
+          loginAt:        loginISO,
+          logoutAt:       logoutISO,
+          hoursWorked,
+          sessions:       [{ loginAt: loginISO, logoutAt: logoutISO }],
+          manualOverride: true,
+          overriddenBy:   req.user.name,
+          isLate,
+          lateMinutes,
+        };
+        records.push(rec);
+      }
+
+      await writeDB('attendance', records);
+      return rec;
+    });
+
     res.json(record);
   } catch (err) {
     console.error('[Attendance manual]', err);
