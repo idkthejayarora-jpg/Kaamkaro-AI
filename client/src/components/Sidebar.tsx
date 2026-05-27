@@ -160,16 +160,24 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
   };
 
-  // IST minutes for shift boundary check (avoids timezone drift from getHours())
+  // IST fractional minutes (includes seconds) — gives the progress bar per-second granularity
   const istNowDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
-  const istNowMins = istNowDate.getHours() * 60 + istNowDate.getMinutes();
+  const istNowMins = istNowDate.getHours() * 60 + istNowDate.getMinutes() + istNowDate.getSeconds() / 60;
 
-  const withinWork = effectiveShift
-    ? (() => {
-        const [sh, sm] = effectiveShift.shiftStart.split(':').map(Number);
-        const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
-        return istNowMins >= sh * 60 + sm && istNowMins <= eh * 60 + em;
-      })()
+  // shiftProgress: 0–100 (null when no shift config available)
+  const shiftProgress = (() => {
+    if (!effectiveShift) return null;
+    const [sh, sm] = effectiveShift.shiftStart.split(':').map(Number);
+    const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
+    const startMins = sh * 60 + sm;
+    const endMins   = eh * 60 + em;
+    if (istNowMins <= startMins) return 0;
+    if (istNowMins >= endMins)   return 100;
+    return ((istNowMins - startMins) / (endMins - startMins)) * 100;
+  })();
+
+  const withinWork = shiftProgress !== null
+    ? shiftProgress > 0 && shiftProgress < 100
     : istHour >= 9;
 
   // Keep navItems in sync if user switches role (e.g. re-login)
