@@ -10,7 +10,7 @@ import {
   CheckCircle, Clock, ChevronRight,
   MessageSquare, Target, Zap, Trophy, AlertCircle,
   Award, Plus, X, Star, TrendingDown, Flame, Mic,
-  ShieldAlert, ScanFace,
+  ShieldAlert, ScanFace, Link2,
 } from 'lucide-react';
 import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI, attendanceAPI, adminAPI } from '../lib/api';
 import Portal from '../components/Portal';
