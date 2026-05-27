@@ -1039,23 +1039,48 @@ export default function AntiFraud() {
                 <button
                   onClick={async () => {
                     const pending = generalEntries.filter(e => (reanalyzeState[e.id] || 'idle') === 'idle');
+                    let ok = 0, fail = 0;
+                    setBulkToast(null);
                     for (const entry of pending) {
                       setReanalyzeState(prev => ({ ...prev, [entry.id]: 'processing' }));
                       try {
                         await diaryAPI.reanalyze(entry.id);
                         setReanalyzeState(prev => ({ ...prev, [entry.id]: 'done' }));
-                      } catch {
+                        ok++;
+                      } catch (err: unknown) {
+                        // Back off on rate-limit; mark idle so user can retry
+                        const status = (err as { response?: { status?: number } })?.response?.status;
+                        if (status === 429) {
+                          await new Promise(r => setTimeout(r, 2000));
+                        }
                         setReanalyzeState(prev => ({ ...prev, [entry.id]: 'idle' }));
+                        fail++;
                       }
-                      // Small gap between each to avoid hammering the server
                       await new Promise(r => setTimeout(r, 300));
                     }
+                    setBulkToast({ ok, fail });
+                    setTimeout(() => setBulkToast(null), 5000);
                   }}
                   className="w-full py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-sm font-semibold hover:bg-amber-500/12 transition-colors flex items-center justify-center gap-2"
                 >
                   <RefreshCw size={13} />
                   Reanalyze All ({generalEntries.filter(e => (reanalyzeState[e.id] || 'idle') === 'idle').length})
                 </button>
+              )}
+
+              {/* Bulk reanalyze result toast */}
+              {bulkToast && (
+                <div className={`rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-2 ${
+                  bulkToast.fail === 0
+                    ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                    : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                }`}>
+                  {bulkToast.fail === 0
+                    ? <CheckCircle2 size={12} />
+                    : <AlertTriangle size={12} />}
+                  {bulkToast.ok} reanalyzed
+                  {bulkToast.fail > 0 && `, ${bulkToast.fail} failed — tap individual entries to retry`}
+                </div>
               )}
             </>
           )}
