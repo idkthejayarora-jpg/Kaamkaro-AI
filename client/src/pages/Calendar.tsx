@@ -231,7 +231,7 @@ function DayPanel({ date, staffId, onClose }: { date: string; staffId: string; o
     setLoading(true);
     setData(null);
     calendarAPI.day(date, staffId || undefined)
-      .then(setData).catch(console.error).finally(() => setLoading(false));
+      .then(setData).catch(() => {}).finally(() => setLoading(false));
   }, [date, staffId]);
 
   const counts: Record<CatKey, number> = {
