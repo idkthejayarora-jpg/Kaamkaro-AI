@@ -24,6 +24,34 @@ function queueWrite(collection, fn) {
   return next;
 }
 
+// ── Transactional lock — serialise read-modify-write blocks ───────────────────
+// queueWrite() only serialises the WRITE call. If route code does
+// `const data = await readDB(c); data.push(x); await writeDB(c, data)`, two
+// concurrent requests can both read the SAME state and clobber each other when
+// writing. withLock() wraps the entire block so only one runs per collection.
+//
+// Usage:
+//   await withLock('attendance', async () => {
+//     const records = await readDB('attendance');
+//     records.push(newRecord);
+//     await writeDB('attendance', records);
+//   });
+const txnLocks = new Map(); // collection → Promise of last transaction
+
+async function withLock(collection, fn) {
+  const prev = txnLocks.get(collection) || Promise.resolve();
+  let result, error;
+  const myTurn = prev.then(async () => {
+    try { result = await fn(); }
+    catch (e) { error = e; }
+  });
+  // Chain head must never reject so subsequent callers always proceed
+  txnLocks.set(collection, myTurn.catch(() => {}));
+  await myTurn;
+  if (error) throw error;
+  return result;
+}
+
 // Backup only makes sense on local macOS — skip on Railway/Linux containers
 const IS_LOCAL_MAC = os.platform() === 'darwin' && !process.env.RAILWAY_ENVIRONMENT;
 const BACKUP_DIR = IS_LOCAL_MAC
