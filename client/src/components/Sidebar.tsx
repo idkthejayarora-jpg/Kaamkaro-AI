@@ -347,6 +347,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               {withinWork ? 'Working hours' : 'Off hours'}
             </span>
           </div>
+          {effectiveShift && (
+            <p className="text-white/20 text-[9px] mt-1 tabular-nums">
+              {fmtShiftTime(effectiveShift.shiftStart)} – {fmtShiftTime(effectiveShift.shiftEnd)}
+            </p>
+          )}
         </div>
 
         {/* Navigation */}
