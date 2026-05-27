@@ -799,8 +799,11 @@ function extractNamesFromText(text) {
       parts = parts.slice(0, -1);
     }
     if (parts.length === 0) return;
-    // Reject if any alphabetic word is a stop word (skip this check for numeric tokens like "1001")
-    if (parts.some(p => /^[a-z]+$/.test(p) && STOP_WORDS.has(p))) return;
+    // Reject if any alphabetic word is a stop word — BUT exempt tokens that are also valid
+    // Indian locations (e.g. "nagar", "vihar") because they legitimately appear at the end
+    // of customer names like "Kamla Nagar", "Lajpat Vihar".  Pure-location captures are
+    // filtered separately by the "parts.every(p => INDIAN_LOCATIONS.has(p))" guard in Pass 3.
+    if (parts.some(p => /^[a-z]+$/.test(p) && STOP_WORDS.has(p) && !INDIAN_LOCATIONS.has(p))) return;
     const name = titleCase(parts.join(' '));
     // Key: use raw lowercase parts (not normalizeName) so "1001 Canada" and "1002 Canada"
     // don't collapse to the same key (normalizeName strips digits → both become "canada")
