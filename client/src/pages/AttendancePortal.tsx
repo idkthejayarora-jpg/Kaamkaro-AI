@@ -806,22 +806,28 @@ function AnalyticsTab() {
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Attendance Rate',    val: `${avgAttendanceRate.toFixed(1)}%`,   color: 'text-green-400',  icon: '✓' },
-          { label: 'Avg Hours/Day',      val: fmtHM(avgHoursPerDay),                color: 'text-gold',       icon: '⏱' },
-          { label: 'Total OT This Month', val: `${totalOT.toFixed(1)}h`,            color: 'text-emerald-400', icon: '📈' },
-          { label: 'Absent Incidents',   val: Math.max(0, totalAbsent).toString(),   color: 'text-red-400',    icon: '✗' },
+          { label: 'Attendance Rate',     val: `${avgAttendanceRate.toFixed(1)}%`,  color: 'text-green-400',   icon: '✓', grad: 'from-green-500/12' },
+          { label: 'Avg Hours/Day',       val: fmtHM(avgHoursPerDay),               color: 'text-gold',        icon: '⏱', grad: 'from-gold/10' },
+          { label: 'Total OT This Month', val: `${totalOT.toFixed(1)}h`,            color: 'text-emerald-400', icon: '📈', grad: 'from-emerald-500/12' },
+          { label: 'Absent Incidents',    val: Math.max(0, totalAbsent).toString(),  color: 'text-red-400',     icon: '✗', grad: 'from-red-500/12' },
         ].map(k => (
-          <div key={k.label} className="bg-dark-400 border border-dark-50 rounded-2xl px-4 py-4 text-center">
+          <div key={k.label} className={`bg-gradient-to-br ${k.grad} to-dark-400 border border-dark-50 rounded-2xl px-4 py-4 text-center`}>
             <p className="text-white/30 text-lg mb-1">{k.icon}</p>
-            <p className={`text-xl font-black ${k.color}`}>{k.val}</p>
+            <p className={`text-2xl font-black ${k.color}`}>{k.val}</p>
             <p className="text-white/30 text-xs mt-1">{k.label}</p>
           </div>
         ))}
       </div>
 
       {/* Attendance Trend */}
-      <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5">
-        <p className="text-white font-semibold mb-4">Attendance Trend — Last 30 Days</p>
+      <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 shadow-lg shadow-black/20 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-gold/20 via-transparent to-transparent" />
+        <div className="flex items-center gap-3 mb-4">
+          <div>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Trends</p>
+            <p className="text-white font-black text-lg mt-0.5">Last 30 Days</p>
+          </div>
+        </div>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={trendChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
             <defs>
