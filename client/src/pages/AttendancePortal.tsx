@@ -1900,8 +1900,9 @@ function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
       <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white font-semibold flex items-center gap-2">
-              <span className="text-base">👩</span> Women's Shift
+            <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">Gender Hours</p>
+            <p className="text-white font-bold text-base mt-0.5 flex items-center gap-2">
+              <span>👩</span> Women's Shift
             </p>
             <p className="text-white/30 text-xs mt-0.5">Separate hours for female staff. Set gender on each staff member in the Staff tab.</p>
           </div>
