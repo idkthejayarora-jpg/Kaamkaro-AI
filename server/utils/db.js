@@ -112,29 +112,37 @@ async function findById(collection, id) {
   return data.find(item => item.id === id) || null;
 }
 
+// All of these wrap their read-modify-write block in withLock so concurrent
+// callers can't clobber each other's mutations.
 async function insertOne(collection, doc) {
-  const data = await readDB(collection);
-  data.push(doc);
-  await writeDB(collection, data);
-  return doc;
+  return withLock(collection, async () => {
+    const data = await readDB(collection);
+    data.push(doc);
+    await writeDB(collection, data);
+    return doc;
+  });
 }
 
 async function updateOne(collection, id, updates) {
-  const data = await readDB(collection);
-  const idx = data.findIndex(item => item.id === id);
-  if (idx === -1) return null;
-  data[idx] = { ...data[idx], ...updates, updatedAt: new Date().toISOString() };
-  await writeDB(collection, data);
-  return data[idx];
+  return withLock(collection, async () => {
+    const data = await readDB(collection);
+    const idx = data.findIndex(item => item.id === id);
+    if (idx === -1) return null;
+    data[idx] = { ...data[idx], ...updates, updatedAt: new Date().toISOString() };
+    await writeDB(collection, data);
+    return data[idx];
+  });
 }
 
 async function deleteOne(collection, id) {
-  const data = await readDB(collection);
-  const idx = data.findIndex(item => item.id === id);
-  if (idx === -1) return false;
-  data.splice(idx, 1);
-  await writeDB(collection, data);
-  return true;
+  return withLock(collection, async () => {
+    const data = await readDB(collection);
+    const idx = data.findIndex(item => item.id === id);
+    if (idx === -1) return false;
+    data.splice(idx, 1);
+    await writeDB(collection, data);
+    return true;
+  });
 }
 
 module.exports = { readDB, writeDB, findById, insertOne, updateOne, deleteOne, withLock };
