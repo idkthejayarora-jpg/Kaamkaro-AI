@@ -688,7 +688,12 @@ function TodayTab() {
       ) : (
         <div className="space-y-2">
           {records.map(r => (
-            <div key={r.staffId} className="bg-dark-400 border border-dark-50 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <div key={r.staffId} className={`bg-dark-400 border border-dark-50 rounded-2xl px-4 py-3 flex items-center gap-3 border-l-[3px] ${
+              r.status === 'in'  ? 'border-l-green-500/70' :
+              r.status === 'out' ? 'border-l-blue-500/50'  :
+              r.isLate           ? 'border-l-amber-500/70' :
+                                   'border-l-dark-50'
+            }`}>
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${r.status === 'in' ? 'bg-green-400' : r.status === 'out' ? 'bg-blue-400' : 'bg-dark-100'}`} />
               <Avatar name={r.staffName} size={36} />
               <div className="flex-1 min-w-0">
