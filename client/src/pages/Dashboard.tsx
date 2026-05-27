@@ -12,7 +12,7 @@ import {
   Award, Plus, X, Star, TrendingDown, Flame, Mic,
   ShieldAlert, ScanFace,
 } from 'lucide-react';
-import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI, attendanceAPI } from '../lib/api';
+import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI, attendanceAPI, adminAPI } from '../lib/api';
 import Portal from '../components/Portal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
