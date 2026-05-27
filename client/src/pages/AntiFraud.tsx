@@ -901,6 +901,159 @@ export default function AntiFraud() {
         </>
       )}
 
+      {/* ── Unmatched Entries tab ───────────────────────────────────────────── */}
+      {tab === 'unmatched' && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold text-sm">Unmatched Diary Entries</p>
+              <p className="text-white/30 text-xs mt-0.5">
+                Entries where Kamal couldn't identify any customer — hit Reanalyze to retry matching
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setGeneralLoading(true);
+                fraudAPI.generalEntries()
+                  .then((r: { entries: GeneralEntry[] }) => setGeneralEntries(r.entries || []))
+                  .catch(() => {})
+                  .finally(() => setGeneralLoading(false));
+              }}
+              className="p-2 rounded-xl hover:bg-dark-200 text-white/30 hover:text-white transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={15} className={generalLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+
+          {generalLoading && (
+            <div className="space-y-2">
+              {[1,2,3].map(i => <div key={i} className="card h-20 shimmer" />)}
+            </div>
+          )}
+
+          {!generalLoading && generalEntries.length === 0 && (
+            <div className="card text-center py-14">
+              <CheckCircle2 size={28} className="text-green-400/40 mx-auto mb-2" />
+              <p className="text-white/40 text-sm font-medium">No unmatched entries</p>
+              <p className="text-white/20 text-xs mt-1">Every diary entry has a resolved customer</p>
+            </div>
+          )}
+
+          {!generalLoading && generalEntries.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 px-1">
+                <MessageSquareDashed size={13} className="text-amber-400" />
+                <span className="text-white/40 text-xs font-semibold uppercase tracking-wider">
+                  {generalEntries.length} unmatched entr{generalEntries.length !== 1 ? 'ies' : 'y'}
+                </span>
+                <span className="text-white/20 text-[10px] ml-auto">Reanalyze runs fresh NLP on each entry</span>
+              </div>
+
+              <div className="space-y-2">
+                {generalEntries.map(entry => {
+                  const state = reanalyzeState[entry.id] || 'idle';
+                  return (
+                    <div key={entry.id}
+                      className={`rounded-2xl border overflow-hidden transition-all ${
+                        state === 'done' ? 'border-green-500/25 opacity-60' : 'border-dark-50'
+                      }`}
+                    >
+                      {/* Amber top accent */}
+                      <div className="h-[2px] bg-gradient-to-r from-amber-500/50 to-transparent" />
+
+                      <div className="bg-dark-300 px-4 py-3 flex items-start gap-3">
+                        {/* Icon */}
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <MessageSquareDashed size={14} className="text-amber-400" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-white/70 text-xs font-semibold">{entry.staffName}</span>
+                            <span className="text-white/20 text-[10px]">·</span>
+                            <span className="text-white/25 text-[10px]">
+                              {new Date(entry.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                            {state === 'done' && (
+                              <span className="text-[10px] bg-green-500/15 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded-full">
+                                ✓ Reanalyzed
+                              </span>
+                            )}
+                            {state === 'processing' && (
+                              <span className="text-[10px] bg-gold/10 text-gold border border-gold/20 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                <Loader2 size={8} className="animate-spin" /> Processing…
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-white/50 text-xs leading-relaxed line-clamp-2">
+                            {entry.content}
+                          </p>
+                        </div>
+
+                        {/* Reanalyze button */}
+                        <button
+                          disabled={state !== 'idle'}
+                          onClick={async () => {
+                            setReanalyzeState(prev => ({ ...prev, [entry.id]: 'processing' }));
+                            try {
+                              await diaryAPI.reanalyze(entry.id);
+                              setReanalyzeState(prev => ({ ...prev, [entry.id]: 'done' }));
+                            } catch {
+                              setReanalyzeState(prev => ({ ...prev, [entry.id]: 'idle' }));
+                            }
+                          }}
+                          className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border transition-all ${
+                            state === 'done'
+                              ? 'bg-green-500/10 border-green-500/20 text-green-400 cursor-default'
+                              : state === 'processing'
+                              ? 'bg-gold/10 border-gold/20 text-gold cursor-not-allowed opacity-60'
+                              : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20 active:scale-95'
+                          }`}
+                        >
+                          {state === 'done'
+                            ? <><Check size={11} /> Done</>
+                            : state === 'processing'
+                            ? <><Loader2 size={11} className="animate-spin" /> Running</>
+                            : <><RefreshCw size={11} /> Reanalyze</>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Reanalyze all button */}
+              {generalEntries.some(e => (reanalyzeState[e.id] || 'idle') === 'idle') && (
+                <button
+                  onClick={async () => {
+                    const pending = generalEntries.filter(e => (reanalyzeState[e.id] || 'idle') === 'idle');
+                    for (const entry of pending) {
+                      setReanalyzeState(prev => ({ ...prev, [entry.id]: 'processing' }));
+                      try {
+                        await diaryAPI.reanalyze(entry.id);
+                        setReanalyzeState(prev => ({ ...prev, [entry.id]: 'done' }));
+                      } catch {
+                        setReanalyzeState(prev => ({ ...prev, [entry.id]: 'idle' }));
+                      }
+                      // Small gap between each to avoid hammering the server
+                      await new Promise(r => setTimeout(r, 300));
+                    }
+                  }}
+                  className="w-full py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400 text-sm font-semibold hover:bg-amber-500/12 transition-colors flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={13} />
+                  Reanalyze All ({generalEntries.filter(e => (reanalyzeState[e.id] || 'idle') === 'idle').length})
+                </button>
+              )}
+            </>
+          )}
+        </>
+      )}
+
       </AnimatedTabPanel>
     </div>
   );
