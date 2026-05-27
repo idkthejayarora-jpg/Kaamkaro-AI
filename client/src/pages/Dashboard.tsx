@@ -913,6 +913,36 @@ function StaffDashboard() {
         );
       })()}
 
+      {/* ── ENROLL FACE — for any staff with no face data ────────────────── */}
+      {selfStaff && !selfStaff.faceDescriptors?.length && (
+        <>
+          {showSelfEnroll && (
+            <SelfEnrollModal
+              onClose={() => setShowSelfEnroll(false)}
+              onDone={() => { loadSelfCheckin(); setShowSelfEnroll(false); }}
+            />
+          )}
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 overflow-hidden">
+            <div className="h-[2px] bg-gradient-to-r from-amber-500/70 to-transparent" />
+            <div className="p-4 sm:p-5 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/12 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <ScanFace size={26} className="text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-base leading-tight">Enroll Your Face</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">Required for kiosk check-in — 5-photo setup takes 30 seconds</p>
+              </div>
+              <button
+                onClick={() => setShowSelfEnroll(true)}
+                className="flex-shrink-0 px-4 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-sm hover:bg-amber-500/25 active:scale-95 transition-all"
+              >
+                Set Up
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── MARK ATTENDANCE — only for on-tour staff ──────────────────────── */}
       {selfStaff?.canSelfCheckin && (() => {
         const faceDesc = selfStaff.faceDescriptors || [];
