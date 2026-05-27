@@ -359,60 +359,111 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
         </div>
 
-        {/* Live clock — shift progress pill */}
-        <div className="mx-3 mb-1 mt-1 relative overflow-hidden rounded-xl border border-dark-50 bg-dark-300">
+        {/* Live clock — sunrise / sunset arc */}
+        <div className="mx-3 mb-1 mt-1 rounded-xl border border-dark-50 bg-dark-300 px-3 py-2.5">
+          {effectiveShift ? (
+            <>
+              {/* ── Arc SVG ── */}
+              <svg
+                viewBox="0 0 220 44"
+                width="100%"
+                height="44"
+                style={{ display: 'block', overflow: 'visible' }}
+              >
+                {/* Background arc — faint full path */}
+                <path
+                  d={arcPath}
+                  stroke={`${arcColor}18`}
+                  strokeWidth="1.5"
+                  fill="none"
+                  strokeLinecap="round"
+                />
 
-          {/* Fill layer — grows left→right as shift progresses */}
-          {shiftProgress !== null && shiftProgress > 0 && (
-            <div
-              className="absolute inset-y-0 left-0 transition-[width] duration-1000 ease-linear pointer-events-none"
-              style={{
-                width: `${shiftProgress}%`,
-                background: withinWork
-                  ? 'linear-gradient(90deg, rgba(74,222,128,0.10) 0%, rgba(74,222,128,0.06) 100%)'
-                  : 'linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
-              }}
-            />
-          )}
+                {/* Filled progress arc — grows from left as shift advances */}
+                {shiftProgress !== null && shiftProgress > 0 && (
+                  <path
+                    d={arcPath}
+                    stroke={arcColor}
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    pathLength="100"
+                    strokeDasharray="100"
+                    strokeDashoffset={100 - shiftProgress}
+                    opacity={withinWork ? 0.65 : 0.35}
+                    style={{ transition: 'stroke-dashoffset 1s linear' }}
+                  />
+                )}
 
-          {/* Leading-edge line — the "needle" at the current time position */}
-          {shiftProgress !== null && shiftProgress > 0 && shiftProgress < 100 && (
-            <div
-              className="absolute inset-y-0 w-px transition-[left] duration-1000 ease-linear pointer-events-none"
-              style={{
-                left: `${shiftProgress}%`,
-                background: withinWork ? 'rgba(74,222,128,0.55)' : 'rgba(255,255,255,0.12)',
-                boxShadow: withinWork ? '0 0 4px rgba(74,222,128,0.4)' : 'none',
-              }}
-            />
-          )}
+                {/* Start marker */}
+                <circle cx={arcP0.x} cy={arcP0.y} r="2" fill={`${arcColor}55`} />
+                {/* End marker */}
+                <circle cx={arcP2.x} cy={arcP2.y} r="2" fill={`${arcColor}22`} />
 
-          {/* Content */}
-          <div className="relative z-10 px-3 py-2.5">
-            <p className={`text-lg font-mono font-semibold tracking-tight leading-none ${withinWork ? 'text-green-400' : 'text-white/40'}`}>
-              {clockTime}
-            </p>
-            <div className="flex items-center justify-between mt-0.5">
-              <p className="text-white/25 text-[10px]">{clockDate}</p>
-              {shiftProgress !== null ? (
-                <span className={`text-[9px] font-semibold tabular-nums ${withinWork ? 'text-green-400/60' : 'text-white/20'}`}>
+                {/* Sun dot — moves along the arc every second */}
+                {shiftProgress !== null && (
+                  <g
+                    style={{
+                      transform: `translate(${dotX}px, ${dotY}px)`,
+                      transition: 'transform 1s linear',
+                    }}
+                  >
+                    {/* Outer glow halos */}
+                    <circle r="9"   fill={arcColor} opacity="0.06" />
+                    <circle r="6"   fill={arcColor} opacity="0.12" />
+                    <circle r="3.5" fill={arcColor} opacity={withinWork ? 0.75 : 0.3} />
+                    {/* Inner highlight */}
+                    <circle r="1.5" fill="white"    opacity={withinWork ? 0.55 : 0.1} />
+                  </g>
+                )}
+              </svg>
+
+              {/* Shift start / end labels */}
+              <div className="flex items-center justify-between -mt-0.5">
+                <span
+                  className="text-[9px] tabular-nums font-medium"
+                  style={{ color: `${arcColor}70` }}
+                >
+                  {fmtShiftTime(effectiveShift.shiftStart)}
+                </span>
+                <span
+                  className="text-[9px] tabular-nums font-medium"
+                  style={{ color: `${arcColor}38` }}
+                >
+                  {fmtShiftTime(effectiveShift.shiftEnd)}
+                </span>
+              </div>
+
+              {/* Clock time + progress % */}
+              <div className="flex items-baseline justify-between mt-2">
+                <p className="text-[15px] font-mono font-bold tracking-tight leading-none text-white/85">
+                  {clockTime}
+                </p>
+                <span
+                  className="text-[9px] font-semibold tabular-nums"
+                  style={{ color: `${arcColor}80` }}
+                >
                   {withinWork
-                    ? `${Math.round(shiftProgress)}%`
+                    ? `${Math.round(shiftProgress!)}%`
                     : shiftProgress === 0 ? 'Not started' : 'Shift over'}
                 </span>
-              ) : (
-                <span className={`text-[9px] font-medium ${withinWork ? 'text-green-400/60' : 'text-white/20'}`}>
+              </div>
+              <p className="text-white/20 text-[9px] mt-0.5">{clockDate}</p>
+            </>
+          ) : (
+            /* No shift config (admin / attendance_manager) — plain clock */
+            <>
+              <p className={`text-lg font-mono font-semibold tracking-tight leading-none ${withinWork ? 'text-white/70' : 'text-white/40'}`}>
+                {clockTime}
+              </p>
+              <div className="flex items-center justify-between mt-0.5">
+                <p className="text-white/25 text-[10px]">{clockDate}</p>
+                <span className={`text-[9px] font-medium ${withinWork ? 'text-white/40' : 'text-white/20'}`}>
                   {withinWork ? 'Working' : 'Off hours'}
                 </span>
-              )}
-            </div>
-            {effectiveShift && (
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-white/18 text-[9px] tabular-nums">{fmtShiftTime(effectiveShift.shiftStart)}</span>
-                <span className="text-white/18 text-[9px] tabular-nums">{fmtShiftTime(effectiveShift.shiftEnd)}</span>
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         {/* Navigation */}
