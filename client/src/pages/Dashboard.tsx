@@ -426,6 +426,28 @@ function AdminDashboard() {
             </button>
           )}
 
+          {/* Orphan references mini card */}
+          {orphanData && orphanData.totalOrphans > 0 && (
+            <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/8 to-dark-300 p-4 sm:p-5 animate-fade-in-up stagger-3">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
+                  <Link2 size={15} className="text-purple-400" />
+                </div>
+                <span className="text-4xl font-black text-purple-300 leading-none">{orphanData.totalOrphans}</span>
+              </div>
+              <p className="text-sm font-bold text-purple-300">Orphan References</p>
+              <div className="mt-2 space-y-1">
+                {Object.entries(orphanData.orphans).filter(([, items]) => items.length > 0).map(([key, items]) => (
+                  <p key={key} className="text-purple-400/50 text-[10px] flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-purple-400/40 inline-block" />
+                    {items.length} in {key}
+                  </p>
+                ))}
+              </div>
+              <p className="text-purple-400/35 text-[10px] mt-2">Deleted staff / customer refs</p>
+            </div>
+          )}
+
           {/* Overdue tasks mini */}
           {overdueTasks.length > 0 && (
             <button onClick={() => navigate('/tasks')}
