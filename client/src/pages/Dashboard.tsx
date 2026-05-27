@@ -1076,6 +1076,55 @@ function StaffDashboard() {
         </div>
       </div>
 
+      {/* ── SHIFT HOURS ───────────────────────────────────────────────────── */}
+      {effectiveShift && (() => {
+        const now = new Date();
+        const [sh, sm] = effectiveShift.shiftStart.split(':').map(Number);
+        const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
+        const startMins = sh * 60 + sm;
+        const endMins   = eh * 60 + em;
+        const nowMins   = now.getHours() * 60 + now.getMinutes();
+        const inShift   = nowMins >= startMins && nowMins <= endMins;
+        const progress  = Math.min(100, Math.max(0, ((nowMins - startMins) / (endMins - startMins)) * 100));
+        const isWomen   = selfStaff?.gender === 'female' && attConfig?.womenShift && !selfStaff.shiftOverride;
+        return (
+          <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden px-5 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock size={12} className="text-white/40" />
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">
+                  {isWomen ? "Women's Shift" : selfStaff?.shiftOverride ? 'Custom Shift' : 'Your Shift'}
+                </p>
+              </div>
+              {inShift
+                ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/12 text-green-400 border border-green-500/20">● Active</span>
+                : nowMins < startMins
+                ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/6 text-white/30 border border-white/10">Not started</span>
+                : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/6 text-white/30 border border-white/10">Ended</span>
+              }
+            </div>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-white font-black text-xl">{fmtShiftTime(effectiveShift.shiftStart)}</p>
+              <div className="flex-1 mx-4 h-[1px] bg-dark-100 relative">
+                {inShift && (
+                  <div className="absolute -top-[3px] w-2 h-2 rounded-full bg-gold border-2 border-dark-300 transition-all"
+                    style={{ left: `${progress}%`, transform: 'translateX(-50%)' }} />
+                )}
+              </div>
+              <p className="text-white font-black text-xl">{fmtShiftTime(effectiveShift.shiftEnd)}</p>
+            </div>
+            {/* Progress bar */}
+            <div className="h-1 rounded-full bg-dark-100 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-gold/60 to-gold transition-all duration-500"
+                style={{ width: `${progress}%` }} />
+            </div>
+            {inShift && (
+              <p className="text-white/25 text-[10px] mt-1.5 text-right">{Math.round(progress)}% through shift</p>
+            )}
+          </div>
+        );
+      })()}
+
       {/* ── DIARY CTA ─────────────────────────────────────────────────────── */}
       <button onClick={() => navigate('/diary')}
         className="w-full relative overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-r from-gold/8 via-gold/4 to-transparent p-5 flex items-center gap-4 hover:border-gold/35 hover:from-gold/14 transition-all group active:scale-[0.99]">
