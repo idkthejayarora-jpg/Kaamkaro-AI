@@ -33,6 +33,11 @@ interface FraudRecord {
   week: string; issuedAt: string;
 }
 
+interface GeneralEntry {
+  id: string; content: string; staffId: string; staffName: string;
+  date: string; createdAt: string; status: string;
+}
+
 // ── Config ─────────────────────────────────────────────────────────────────────
 const TYPE_META: Record<string, { label: string; icon: LucideIcon }> = {
   // Task checks
