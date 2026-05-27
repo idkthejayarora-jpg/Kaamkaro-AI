@@ -304,7 +304,7 @@ router.get('/monthly', authMiddleware, attendanceManagerOrAdmin, async (req, res
           leaveDays,
           halfDays,
           sickDays,
-          absentDays:    Math.max(0, presentDays - lateDays),
+          absentDays:    Object.values(dailyMap).filter(v => v === 'absent').length,
           totalHours:    Math.round(totalHours * 100) / 100,
           overtimeHours,
           undertimeHours,
