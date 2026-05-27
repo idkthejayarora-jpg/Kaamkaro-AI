@@ -85,7 +85,7 @@ function ConfirmModal({
     <Portal>
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4 bg-black/60 backdrop-blur-sm"
       onClick={!loading ? onCancel : undefined} role="dialog" aria-modal="true" aria-label="Issue fine confirmation">
-      <div className="card w-full max-w-sm space-y-4 shadow-2xl rounded-t-2xl sm:rounded-2xl">
+      <div className="card w-full max-w-sm space-y-4 shadow-2xl rounded-t-2xl sm:rounded-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-red-500/10 flex-shrink-0">
             <Gavel size={18} className="text-red-400" />
