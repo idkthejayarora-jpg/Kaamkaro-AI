@@ -867,8 +867,12 @@ function extractNamesFromText(text) {
     for (let k = i - 1; k >= 0 && i - k <= 4; k--) {
       const w = tokens[k];
       const isNumeric = /^\d+$/.test(w);
+      // Allow 2-char consonant-only tokens — these are business initials like "CJ", "AD", "HG".
+      // Pure vowel/Hindi-postposition 2-char tokens ("ko", "ki", "ne", "se") contain vowels
+      // so they are excluded by this test and still break the scan.
+      const isConsonantInitial = w.length === 2 && /^[bcdfghjklmnpqrstvwxyz]{2}$/.test(w);
       if (FILLER.has(w)) break;
-      if (!isNumeric && (STOP_WORDS.has(w) || w.length < 3)) break;
+      if (!isNumeric && !isConsonantInitial && (STOP_WORDS.has(w) || w.length < 3)) break;
       nameTokens.unshift(w);
     }
 
