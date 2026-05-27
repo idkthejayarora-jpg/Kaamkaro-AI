@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, History, User, Clipboard, Users, type LucideIcon,
   TextSearch, Trash2, ExternalLink, Sparkles, Check,
 } from 'lucide-react';
-import { fraudAPI } from '../lib/api';
+import { fraudAPI, diaryAPI } from '../lib/api';
 import Portal from '../components/Portal';
 import { useNavigate } from 'react-router-dom';
 
