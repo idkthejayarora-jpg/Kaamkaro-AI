@@ -28,7 +28,7 @@ api.interceptors.response.use(
         : 'Network error — check your internet connection and try again.';
       // Use a non-blocking alert so UI is not frozen; can be swapped for a toast lib later
       if (typeof window !== 'undefined') {
-        console.warn('[API]', msg, err.message);
+        if (import.meta.env.DEV) console.warn('[API]', msg, err.message);
         // Only show alert for user-initiated requests (not background polls)
         // Gate on navigator.onLine so we don't double-alert on offline events
         if (!navigator.onLine) {
