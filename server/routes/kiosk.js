@@ -199,42 +199,48 @@ router.post('/checkin', async (req, res) => {
     const isLate     = now > deadline;
     const lateMinutes = isLate ? Math.max(0, Math.round((now - deadline) / 60000)) : 0;
 
-    const records = await readDB('attendance');
-    let record = records.find(r => r.staffId === staffId && r.date === today);
+    // Serialised: read+mutate+write the attendance file atomically per collection
+    const result = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      let record = records.find(r => r.staffId === staffId && r.date === today);
 
-    if (!record) {
-      record = {
-        id:          uuidv4(),
-        staffId,
-        staffName:   member.name,
-        date:        today,
-        loginAt:     now.toISOString(),
-        logoutAt:    null,
-        hoursWorked: 0,
-        isLate,
-        lateMinutes,
-        sessions:    [{ loginAt: now.toISOString(), logoutAt: null }],
-      };
-      records.push(record);
-    } else {
-      // Re-entering (came back after stepping out)
-      record.sessions = record.sessions || [];
-      const alreadyOpen = record.sessions.some(s => !s.logoutAt);
-      if (alreadyOpen) {
-        return res.json({ ...record, alreadyIn: true });
+      if (!record) {
+        record = {
+          id:          uuidv4(),
+          staffId,
+          staffName:   member.name,
+          date:        today,
+          loginAt:     now.toISOString(),
+          logoutAt:    null,
+          hoursWorked: 0,
+          isLate,
+          lateMinutes,
+          sessions:    [{ loginAt: now.toISOString(), logoutAt: null }],
+        };
+        records.push(record);
+      } else {
+        // Re-entering (came back after stepping out)
+        record.sessions = record.sessions || [];
+        const alreadyOpen = record.sessions.some(s => !s.logoutAt);
+        if (alreadyOpen) return { record, alreadyIn: true };
+        record.sessions.push({ loginAt: now.toISOString(), logoutAt: null });
+        // Keep original isLate from first login
       }
-      record.sessions.push({ loginAt: now.toISOString(), logoutAt: null });
-      // Keep original isLate from first login
-    }
 
-    await writeDB('attendance', records);
+      await writeDB('attendance', records);
+      return { record, alreadyIn: false };
+    });
 
-    // Sync availability — checked in = available
-    const staffList = await readDB('staff');
-    const idx = staffList.findIndex(s => s.id === staffId);
-    if (idx !== -1) { staffList[idx].availability = 'available'; await writeDB('staff', staffList); }
+    if (result.alreadyIn) return res.json({ ...result.record, alreadyIn: true });
 
-    res.json(record);
+    // Sync availability — checked in = available (locked on staff collection)
+    await withLock('staff', async () => {
+      const staffList = await readDB('staff');
+      const idx = staffList.findIndex(s => s.id === staffId);
+      if (idx !== -1) { staffList[idx].availability = 'available'; await writeDB('staff', staffList); }
+    });
+
+    res.json(result.record);
   } catch (err) {
     console.error('[Kiosk checkin]', err);
     res.status(500).json({ error: 'Server error' });
