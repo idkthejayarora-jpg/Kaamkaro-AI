@@ -636,13 +636,13 @@ function TodayTab() {
       {/* Summary tiles */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: 'Present',      val: present, color: 'text-green-400',   bg: 'bg-green-500/8' },
-          { label: 'Currently In', val: inNow,   color: 'text-emerald-400', bg: 'bg-emerald-500/8' },
-          { label: 'Late',         val: late,    color: 'text-amber-400',   bg: 'bg-amber-500/8' },
-          { label: 'Absent',       val: absent,  color: 'text-red-400',     bg: 'bg-red-500/8' },
+          { label: 'Present',      val: present, color: 'text-green-400',   bg: 'bg-gradient-to-br from-green-500/14 to-dark-400',   border: 'border-green-500/20' },
+          { label: 'Currently In', val: inNow,   color: 'text-emerald-400', bg: 'bg-gradient-to-br from-emerald-500/14 to-dark-400', border: 'border-emerald-500/20' },
+          { label: 'Late',         val: late,    color: 'text-amber-400',   bg: 'bg-gradient-to-br from-amber-500/14 to-dark-400',   border: 'border-amber-500/20' },
+          { label: 'Absent',       val: absent,  color: 'text-red-400',     bg: 'bg-gradient-to-br from-red-500/14 to-dark-400',     border: 'border-red-500/20' },
         ].map(t => (
-          <div key={t.label} className={`${t.bg} rounded-2xl border border-dark-50 px-4 py-3 text-center`}>
-            <p className={`text-2xl font-black ${t.color}`}>{t.val}</p>
+          <div key={t.label} className={`${t.bg} rounded-2xl border ${t.border} px-4 py-3 text-center`}>
+            <p className={`text-3xl font-black ${t.color}`}>{t.val}</p>
             <p className="text-white/40 text-xs mt-0.5">{t.label}</p>
           </div>
         ))}
