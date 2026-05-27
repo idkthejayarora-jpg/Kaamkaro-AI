@@ -137,4 +137,4 @@ async function deleteOne(collection, id) {
   return true;
 }
 
-module.exports = { readDB, writeDB, findById, insertOne, updateOne, deleteOne };
+module.exports = { readDB, writeDB, findById, insertOne, updateOne, deleteOne, withLock };
