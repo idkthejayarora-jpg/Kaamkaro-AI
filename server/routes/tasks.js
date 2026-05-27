@@ -175,6 +175,18 @@ router.patch('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Working-hours gate (matches POST) — only when a staff member is rescheduling.
+    // Read-only updates (e.g. notes) and admin overrides bypass this.
+    if (req.user.role === 'staff' && (req.body.dueDate || req.body.dueTime)) {
+      const istHour = parseInt(
+        new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false }),
+        10
+      );
+      if (istHour < 10) {
+        return res.status(403).json({ error: 'Tasks can only be rescheduled during working hours (10:00 AM – 11:59 PM IST).' });
+      }
+    }
+
     const updates = { ...req.body };
 
     // ── Reschedule penalty: -0.5 pts ONLY when task was already overdue ──────
