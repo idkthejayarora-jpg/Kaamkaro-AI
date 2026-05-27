@@ -131,7 +131,46 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const clockTime = now.toLocaleTimeString('en-IN', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const clockDate = now.toLocaleDateString('en-IN', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' });
   const istHour   = parseInt(now.toLocaleString('en-US', { timeZone: tz, hour: 'numeric', hour12: false }), 10);
-  const withinWork = istHour >= 10;
+
+  // Shift-aware clock for staff role
+  const [attCfg,   setAttCfg]   = useState<{ shiftStart: string; shiftEnd: string; womenShift?: { shiftStart: string; shiftEnd: string } } | null>(null);
+  const [staffRec, setStaffRec] = useState<{ gender?: string; shiftOverride?: { shiftStart: string; shiftEnd: string } } | null>(null);
+  useEffect(() => {
+    if (user?.role !== 'staff') return;
+    Promise.all([
+      attendanceAPI.config().catch(() => null),
+      staffAPI.get(user.id).catch(() => null),
+    ]).then(([cfg, rec]) => {
+      setAttCfg(cfg as typeof attCfg);
+      setStaffRec(rec as typeof staffRec);
+    });
+  }, [user?.id, user?.role]);
+
+  const effectiveShift = (() => {
+    if (!attCfg || user?.role !== 'staff') return null;
+    if (staffRec?.shiftOverride) return staffRec.shiftOverride;
+    if (staffRec?.gender === 'female' && attCfg.womenShift) return attCfg.womenShift;
+    return { shiftStart: attCfg.shiftStart, shiftEnd: attCfg.shiftEnd };
+  })();
+
+  const fmtShiftTime = (hhmm: string) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+
+  // IST minutes for shift boundary check (avoids timezone drift from getHours())
+  const istNowDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+  const istNowMins = istNowDate.getHours() * 60 + istNowDate.getMinutes();
+
+  const withinWork = effectiveShift
+    ? (() => {
+        const [sh, sm] = effectiveShift.shiftStart.split(':').map(Number);
+        const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
+        return istNowMins >= sh * 60 + sm && istNowMins <= eh * 60 + em;
+      })()
+    : istHour >= 9;
 
   // Keep navItems in sync if user switches role (e.g. re-login)
   useEffect(() => {
