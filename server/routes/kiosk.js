@@ -37,9 +37,57 @@ function calcHours(sessions = []) {
   return Math.round(mins * 100) / 100 / 60;
 }
 
+// ── PIN brute-force protection ────────────────────────────────────────────────
+// In-memory per-IP counter. Resets on server restart (acceptable for kiosk use).
+// 3 wrong PINs in 5 min → 10 min lockout.
+const PIN_MAX_FAILS    = 3;
+const PIN_WINDOW_MS    = 5 * 60 * 1000;
+const PIN_LOCKOUT_MS   = 10 * 60 * 1000;
+const pinFailureMap    = new Map(); // ip → { fails: number, firstFailAt: ms, lockedUntil: ms }
+
+function pinClientIp(req) {
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
+}
+
+function recordPinFailure(ip) {
+  const now = Date.now();
+  const rec = pinFailureMap.get(ip) || { fails: 0, firstFailAt: now, lockedUntil: 0 };
+  // Reset window if first failure aged out
+  if (now - rec.firstFailAt > PIN_WINDOW_MS) {
+    rec.fails       = 0;
+    rec.firstFailAt = now;
+  }
+  rec.fails += 1;
+  if (rec.fails >= PIN_MAX_FAILS) {
+    rec.lockedUntil = now + PIN_LOCKOUT_MS;
+  }
+  pinFailureMap.set(ip, rec);
+}
+
+function pinLockoutSecondsRemaining(ip) {
+  const rec = pinFailureMap.get(ip);
+  if (!rec || !rec.lockedUntil) return 0;
+  const remaining = rec.lockedUntil - Date.now();
+  if (remaining <= 0) {
+    // Lockout expired — clear the slate
+    pinFailureMap.delete(ip);
+    return 0;
+  }
+  return Math.ceil(remaining / 1000);
+}
+
 // ── PIN middleware ─────────────────────────────────────────────────────────────
 async function kioskPinMiddleware(req, res, next) {
   try {
+    const ip = pinClientIp(req);
+    const lockSecs = pinLockoutSecondsRemaining(ip);
+    if (lockSecs > 0) {
+      return res.status(429).json({
+        error: `Too many wrong PINs. Try again in ${Math.ceil(lockSecs / 60)} min.`,
+        lockedFor: lockSecs,
+      });
+    }
+
     const sentPin = req.headers['x-kiosk-pin'];
     if (!sentPin) return res.status(401).json({ error: 'Kiosk PIN required' });
 
@@ -56,13 +104,17 @@ async function kioskPinMiddleware(req, res, next) {
           }
         } catch { /* invalid JWT — fall through to PIN check */ }
       }
+      recordPinFailure(ip);
       return res.status(401).json({ error: 'Invalid kiosk PIN' });
     }
 
     const cfg = await getAttendanceConfig();
     if (sentPin !== String(cfg.kioskPin)) {
+      recordPinFailure(ip);
       return res.status(401).json({ error: 'Invalid kiosk PIN' });
     }
+    // Successful auth — clear any prior failures for this IP
+    pinFailureMap.delete(ip);
     req.attendanceCfg = cfg;
     next();
   } catch (err) {
