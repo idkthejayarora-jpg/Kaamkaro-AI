@@ -68,10 +68,13 @@ export function SelfEnrollModal({
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
       } catch {
+        // Stop the camera — we won't be needing it
+        stream.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
         if (!cancelled) { setStatus('Failed to load models — check connection'); setPhase('error'); setError('Model load failed'); }
         return;
       }
-      if (cancelled) return;
+      if (cancelled) { stream.getTracks().forEach(t => t.stop()); streamRef.current = null; return; }
 
       if (!cancelled) { setPhase('ready'); setStatus('Position your face in the frame'); }
 
