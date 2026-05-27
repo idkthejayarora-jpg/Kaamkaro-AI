@@ -809,7 +809,8 @@ function StaffDashboard() {
   // Self-checkin (on-tour) state
   const [selfStaff, setSelfStaff]   = useState<(Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][] }) | null>(null);
   const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
-  const [showSelfScan, setShowSelfScan] = useState(false);
+  const [showSelfScan, setShowSelfScan]     = useState(false);
+  const [showSelfEnroll, setShowSelfEnroll] = useState(false);
 
   const dismissBcastModal = () => {
     markBcastRead(user!.id, unreadQueue.map(b => b.id));
