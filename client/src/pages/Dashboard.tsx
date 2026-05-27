@@ -963,12 +963,14 @@ function StaffDashboard() {
         return (
           <>
             {showSelfScan && hasFace && (
-              <SelfScanModal
-                faceDescriptors={faceDesc}
-                currentStatus={selfStatus}
-                onClose={() => setShowSelfScan(false)}
-                onDone={() => { loadSelfCheckin(); setShowSelfScan(false); }}
-              />
+              <Portal>
+                <SelfScanModal
+                  faceDescriptors={faceDesc}
+                  currentStatus={selfStatus}
+                  onClose={() => setShowSelfScan(false)}
+                  onDone={() => { loadSelfCheckin(); setShowSelfScan(false); }}
+                />
+              </Portal>
             )}
             <div className={`rounded-2xl border overflow-hidden relative ${isCheckedIn ? 'border-green-500/25 bg-green-500/5' : 'border-amber-500/25 bg-amber-500/5'}`}>
               {/* Top accent stripe */}
