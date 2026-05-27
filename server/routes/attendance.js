@@ -122,7 +122,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // ── GET /api/attendance/config ────────────────────────────────────────────────
-router.get('/config', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
+router.get('/config', authMiddleware, async (req, res) => {
   try {
     const cfg = await getAttendanceConfig();
     res.json(cfg);
