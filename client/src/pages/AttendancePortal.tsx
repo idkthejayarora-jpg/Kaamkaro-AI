@@ -667,7 +667,7 @@ function TodayTab() {
 
       {/* Late alerts */}
       {late > 0 && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
+        <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-amber-500/4 p-4 space-y-2">
           <p className="text-amber-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
             <AlertTriangle size={12} /> Late Arrivals
           </p>
