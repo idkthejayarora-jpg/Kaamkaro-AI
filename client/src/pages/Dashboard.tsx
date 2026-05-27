@@ -808,10 +808,11 @@ function StaffDashboard() {
   const [bcastModalIdx, setBcastModalIdx] = useState(0);
   const [loading, setLoading]       = useState(true);
   // Self-checkin (on-tour) state
-  const [selfStaff, setSelfStaff]   = useState<(Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][] }) | null>(null);
+  const [selfStaff, setSelfStaff]   = useState<(Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][]; gender?: string; shiftOverride?: { shiftStart: string; shiftEnd: string } | null }) | null>(null);
   const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
   const [showSelfScan, setShowSelfScan]     = useState(false);
   const [showSelfEnroll, setShowSelfEnroll] = useState(false);
+  const [attConfig, setAttConfig]   = useState<{ shiftStart: string; shiftEnd: string; womenShift?: { shiftStart: string; shiftEnd: string } } | null>(null);
 
   const dismissBcastModal = () => {
     markBcastRead(user!.id, unreadQueue.map(b => b.id));
