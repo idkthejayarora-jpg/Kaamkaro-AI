@@ -579,19 +579,27 @@ export default function AntiFraud() {
       {/* Tabs */}
       <TabBar
         tabs={[
-          { id: 'live',      label: 'Staff Alerts',   icon: AlertTriangle, count: liveCount      },
-          { id: 'history',   label: 'Action History', icon: History,       count: records.length },
-          { id: 'odd-names', label: 'Odd Names',      icon: TextSearch,    count: suspNames.length || undefined },
+          { id: 'live',      label: 'Staff Alerts',   icon: AlertTriangle,      count: liveCount      },
+          { id: 'history',   label: 'Action History', icon: History,            count: records.length },
+          { id: 'odd-names', label: 'Odd Names',      icon: TextSearch,         count: suspNames.length || undefined },
+          { id: 'unmatched', label: 'Unmatched',      icon: MessageSquareDashed, count: generalEntries.length || undefined },
         ]}
         active={tab}
         onChange={id => {
-          setTab(id as 'live' | 'history' | 'odd-names');
+          setTab(id as 'live' | 'history' | 'odd-names' | 'unmatched');
           if (id === 'odd-names' && suspNames.length === 0) {
             setSuspNamesLoading(true);
             fraudAPI.suspiciousNames()
               .then((r: { customers: SuspiciousCustomer[] }) => setSuspNames(r.customers || []))
               .catch(() => {})
               .finally(() => setSuspNamesLoading(false));
+          }
+          if (id === 'unmatched' && generalEntries.length === 0) {
+            setGeneralLoading(true);
+            fraudAPI.generalEntries()
+              .then((r: { entries: GeneralEntry[] }) => setGeneralEntries(r.entries || []))
+              .catch(() => {})
+              .finally(() => setGeneralLoading(false));
           }
         }}
         variant="pill-dark"
