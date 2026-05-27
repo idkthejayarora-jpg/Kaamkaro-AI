@@ -91,6 +91,8 @@ export const staffAPI = {
     api.patch(`/staff/${id}/shift`, shift === null ? { shiftOverride: null } : { shiftStart: shift.shiftStart, shiftEnd: shift.shiftEnd }).then(r => r.data),
   setTour: (id: string, canSelfCheckin: boolean) =>
     api.patch(`/staff/${id}/tour`, { canSelfCheckin }).then(r => r.data),
+  enrollSelfFace: (descriptors: number[][]) =>
+    api.patch('/staff/me/face', { descriptors }).then(r => r.data),
   setGender: (id: string, gender: 'male' | 'female') =>
     api.patch(`/staff/${id}/gender`, { gender }).then(r => r.data),
   faceCheck: () => api.get('/staff/face-check').then(r => r.data),
