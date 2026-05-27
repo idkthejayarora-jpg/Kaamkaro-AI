@@ -379,9 +379,10 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
       return res.status(400).json({ error: 'staffId and date are required' });
     }
 
-    const [staffList, records] = await Promise.all([
+    const [staffList, records, cfg] = await Promise.all([
       readDB('staff'),
       readDB('attendance'),
+      getAttendanceConfig(),
     ]);
 
     const staffMember = staffList.find(s => s.id === staffId);
@@ -396,6 +397,19 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
       hoursWorked = Math.round(diff / 36000) / 100; // hours, 2dp
     }
 
+    // Compute isLate against the staff's effective shift (mirrors kiosk.js)
+    let isLate = false, lateMinutes = 0;
+    if (loginISO) {
+      const genderShift    = (staffMember.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+      const effectiveShift = staffMember.shiftOverride || genderShift || cfg;
+      const [shiftH, shiftM] = effectiveShift.shiftStart.split(':').map(Number);
+      const loginDt  = new Date(loginISO);
+      const deadline = new Date(loginDt);
+      deadline.setHours(shiftH, shiftM + (cfg.lateGraceMins || 0), 0, 0);
+      isLate      = loginDt > deadline;
+      lateMinutes = isLate ? Math.max(0, Math.round((loginDt - deadline) / 60000)) : 0;
+    }
+
     const { v4: uuidv4 } = require('uuid');
     let record = records.find(r => r.staffId === staffId && r.date === date);
 
@@ -406,6 +420,8 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
       record.sessions       = [{ loginAt: loginISO, logoutAt: logoutISO }];
       record.manualOverride = true;
       record.overriddenBy   = req.user.name;
+      record.isLate         = isLate;
+      record.lateMinutes    = lateMinutes;
     } else {
       record = {
         id:             uuidv4(),
@@ -418,8 +434,8 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
         sessions:       [{ loginAt: loginISO, logoutAt: logoutISO }],
         manualOverride: true,
         overriddenBy:   req.user.name,
-        isLate:         false,
-        lateMinutes:    0,
+        isLate,
+        lateMinutes,
       };
       records.push(record);
     }
