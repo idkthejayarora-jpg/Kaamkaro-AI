@@ -19,6 +19,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useSSE } from '../hooks/useSSE';
 import type { Staff, Customer, Performance, DashboardSummary, Task, MeritSummary, MeritGoal, Interaction } from '../types';
 import { SelfScanModal } from '../components/SelfScanModal';
+import { SelfEnrollModal } from '../components/SelfEnrollModal';
 
 function playNotifBeep() {
   try {
