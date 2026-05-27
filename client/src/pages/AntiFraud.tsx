@@ -444,6 +444,7 @@ export default function AntiFraud() {
   const [generalEntries,     setGeneralEntries]     = useState<GeneralEntry[]>([]);
   const [generalLoading,     setGeneralLoading]     = useState(false);
   const [reanalyzeState,     setReanalyzeState]     = useState<Record<string, 'idle' | 'processing' | 'done'>>({});
+  const [bulkToast,          setBulkToast]          = useState<{ ok: number; fail: number } | null>(null);
   const [fineModal,   setFineModal]   = useState<FraudAlert | null>(null);
   const [fineLoading, setFineLoading] = useState(false);
   const [expandedStaff, setExpandedStaff] = useState<Set<string>>(new Set());
