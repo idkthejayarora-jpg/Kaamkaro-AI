@@ -836,13 +836,14 @@ function StaffDashboard() {
   const load = useCallback(async () => {
     // Fetch all data — including staff record + today's attendance — in one go
     // so the face-enroll / mark-attendance card appears at the same time as the rest of the page
-    const [c, t, p, b, staffRec, todayRecs] = await Promise.all([
+    const [c, t, p, b, staffRec, todayRecs, cfg] = await Promise.all([
       customersAPI.list(),
       tasksAPI.list({ completed: false }),
       staffAPI.getPerformance(user!.id),
       broadcastAPI.list().catch(() => []),
       staffAPI.get(user!.id).catch(() => null),
       attendanceAPI.today().catch(() => [] as { staffId: string; status: string }[]),
+      attendanceAPI.config().catch(() => null),
     ]);
     setCustomers(c); setTasks(t);
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
@@ -850,10 +851,11 @@ function StaffDashboard() {
     const readSet = getBcastReadSet(user!.id);
     const unread = bList.filter(br => !readSet.has(br.id));
     if (unread.length > 0) { setUnreadQueue(unread); setBcastModalIdx(0); setBcastModal(true); playNotifBeep(); }
-    // Set self-checkin state together with everything else — no layout shift
-    setSelfStaff(staffRec as (Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][] }) | null);
+    // Set self-checkin + attendance config together — no layout shift
+    setSelfStaff(staffRec as (Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][]; gender?: string; shiftOverride?: { shiftStart: string; shiftEnd: string } | null }) | null);
     const myRec = (todayRecs as { staffId: string; status: string }[]).find(r => r.staffId === user!.id);
     setSelfStatus((myRec?.status as 'in' | 'out' | 'absent') || 'absent');
+    setAttConfig(cfg as { shiftStart: string; shiftEnd: string; womenShift?: { shiftStart: string; shiftEnd: string } } | null);
     setLoading(false);
   }, [user]);
 
