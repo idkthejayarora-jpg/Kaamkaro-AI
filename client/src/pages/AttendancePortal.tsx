@@ -2004,8 +2004,12 @@ export default function AttendancePortal() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-white font-bold text-xl leading-tight">Attendance</h1>
-          <p className="text-white/30 text-xs sm:text-sm mt-0.5 hidden sm:block">Track staff hours, leaves and face recognition</p>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-[2px] w-8 bg-gradient-to-r from-gold to-transparent rounded-full" />
+            <p className="text-gold/60 text-[10px] uppercase tracking-[0.22em] font-bold">Manager Portal</p>
+          </div>
+          <h1 className="text-white font-black text-2xl leading-tight">Attendance</h1>
+          <p className="text-white/30 text-xs mt-0.5 hidden sm:block">Track staff hours, leaves and face recognition</p>
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
