@@ -10,7 +10,8 @@
  *
  * By portalling into document.body we bypass all CSS transforms entirely.
  */
-import { createPortal, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface ModalProps {
