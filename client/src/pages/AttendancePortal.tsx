@@ -2043,9 +2043,9 @@ export default function AttendancePortal() {
               key={t.id}
               onClick={() => setTab(t.id)}
               title={t.label}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                 active
-                  ? 'bg-gold/15 border border-gold/30 text-gold'
+                  ? 'bg-gradient-to-b from-gold/22 to-gold/8 border border-gold/35 text-gold shadow-sm shadow-gold/10'
                   : 'text-white/40 hover:text-white hover:bg-dark-200 border border-transparent'
               }`}
             >
