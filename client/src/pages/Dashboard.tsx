@@ -877,22 +877,6 @@ function StaffDashboard() {
   const weekProgress = Math.min((weekContacts / weekTarget) * 100, 100);
   const ringCirc = 87.96; // 2 * π * 14
 
-  // Effective shift: personal override → gender shift → default
-  const effectiveShift = (() => {
-    if (!attConfig) return null;
-    if (selfStaff?.shiftOverride) return selfStaff.shiftOverride;
-    if (selfStaff?.gender === 'female' && attConfig.womenShift) return attConfig.womenShift;
-    return { shiftStart: attConfig.shiftStart, shiftEnd: attConfig.shiftEnd };
-  })();
-
-  // Format "09:30" → "9:30 AM"
-  const fmtShiftTime = (hhmm: string) => {
-    const [h, m] = hhmm.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-  };
-
   const sortedCustomers = [...customers].sort((a, b) => {
     const da = a.lastContact ? Date.now() - new Date(a.lastContact).getTime() : Infinity;
     const db = b.lastContact ? Date.now() - new Date(b.lastContact).getTime() : Infinity;
