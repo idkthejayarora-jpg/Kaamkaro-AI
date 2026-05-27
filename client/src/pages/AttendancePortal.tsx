@@ -1951,7 +1951,10 @@ function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
       </div>
 
       <div className="bg-dark-400 border border-dark-50 rounded-2xl p-5 space-y-3">
-        <p className="text-white font-semibold">Kiosk PIN</p>
+        <div>
+          <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">Security</p>
+          <p className="text-white font-bold text-base mt-0.5">Kiosk PIN</p>
+        </div>
         <p className="text-white/30 text-xs">PIN required to unlock the tablet kiosk. Share only with trusted staff.</p>
         <div className="relative">
           <input
