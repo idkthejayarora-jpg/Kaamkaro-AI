@@ -818,6 +818,7 @@ function StaffDashboard() {
     setBcastModal(false); setUnreadQueue([]);
   };
 
+  // loadSelfCheckin is used by onDone callbacks from modals (re-fetch after action)
   const loadSelfCheckin = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -832,9 +833,15 @@ function StaffDashboard() {
   }, [user]);
 
   const load = useCallback(async () => {
-    const [c, t, p, b] = await Promise.all([
-      customersAPI.list(), tasksAPI.list({ completed: false }),
-      staffAPI.getPerformance(user!.id), broadcastAPI.list().catch(() => []),
+    // Fetch all data — including staff record + today's attendance — in one go
+    // so the face-enroll / mark-attendance card appears at the same time as the rest of the page
+    const [c, t, p, b, staffRec, todayRecs] = await Promise.all([
+      customersAPI.list(),
+      tasksAPI.list({ completed: false }),
+      staffAPI.getPerformance(user!.id),
+      broadcastAPI.list().catch(() => []),
+      staffAPI.get(user!.id).catch(() => null),
+      attendanceAPI.today().catch(() => [] as { staffId: string; status: string }[]),
     ]);
     setCustomers(c); setTasks(t);
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
@@ -842,9 +849,12 @@ function StaffDashboard() {
     const readSet = getBcastReadSet(user!.id);
     const unread = bList.filter(br => !readSet.has(br.id));
     if (unread.length > 0) { setUnreadQueue(unread); setBcastModalIdx(0); setBcastModal(true); playNotifBeep(); }
+    // Set self-checkin state together with everything else — no layout shift
+    setSelfStaff(staffRec as (Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][] }) | null);
+    const myRec = (todayRecs as { staffId: string; status: string }[]).find(r => r.staffId === user!.id);
+    setSelfStatus((myRec?.status as 'in' | 'out' | 'absent') || 'absent');
     setLoading(false);
-    loadSelfCheckin();
-  }, [user, loadSelfCheckin]);
+  }, [user]);
 
   useEffect(() => { load(); }, [load]);
 
