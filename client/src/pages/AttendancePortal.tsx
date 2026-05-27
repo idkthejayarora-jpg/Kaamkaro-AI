@@ -1477,7 +1477,11 @@ function StaffTab() {
             const isExpanded = expandedId === s.id;
             const editVal = shiftEdits[s.id] ?? { shiftStart: s.shiftOverride?.shiftStart ?? '09:30', shiftEnd: s.shiftOverride?.shiftEnd ?? '18:30' };
             return (
-              <div key={s.id} className="bg-dark-400 border border-dark-50 rounded-2xl overflow-hidden">
+              <div key={s.id} className={`bg-dark-400 border border-dark-50 rounded-2xl overflow-hidden border-l-[3px] ${
+                s.faceDescriptors?.length && s.canSelfCheckin ? 'border-l-amber-500/70' :
+                s.faceDescriptors?.length                     ? 'border-l-green-500/50' :
+                                                                'border-l-red-500/30'
+              }`}>
                 <div className="px-4 py-3 flex items-center gap-3">
                   <Avatar name={s.name} size={40} />
                   <div className="flex-1 min-w-0">
