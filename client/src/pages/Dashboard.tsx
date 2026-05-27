@@ -117,6 +117,9 @@ function AdminDashboard() {
       setAllInteractions(ints as Interaction[]);
       setFraudAlerts((fraud as { alerts: FraudAlert[] }).alerts || []);
       // Attendance today card
+      adminAPI.orphans().then((data: { totalOrphans: number; orphans: Record<string, { id: string; label: string; missingRef: string; missingId: string }[]> }) => {
+        setOrphanData(data);
+      }).catch(() => {});
       attendanceAPI.today().then((recs: { status: string; isLate: boolean }[]) => {
         setTodayAtt({
           inCount: recs.filter((r: { status: string }) => r.status === 'in').length,
