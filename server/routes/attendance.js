@@ -6,7 +6,7 @@
  */
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const { readDB, writeDB, updateOne } = require('../utils/db');
+const { readDB, writeDB, updateOne, withLock } = require('../utils/db');
 const { authMiddleware, attendanceManagerOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
