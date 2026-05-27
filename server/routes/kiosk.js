@@ -257,44 +257,56 @@ router.post('/checkout', async (req, res) => {
 
     const now   = new Date();
     const today = todayStr();
-    const records = await readDB('attendance');
-    const record = records.find(r => r.staffId === staffId && r.date === today);
 
-    if (!record) return res.status(404).json({ error: 'No check-in found for today' });
-
-    const sessions = record.sessions || [];
-    const open = [...sessions].reverse().find(s => !s.logoutAt);
-    if (!open) return res.json({ ...record, alreadyOut: true });
-
-    open.logoutAt = now.toISOString();
-    open.hours    = Math.round((now - new Date(open.loginAt)) / 36000) / 100; // hrs, 2dp
-
-    record.logoutAt    = now.toISOString();
-    record.hoursWorked = calcHours(sessions);
-    record.sessions    = sessions;
-
-    // Overtime / undertime — priority: shiftOverride → gender shift → default
+    // Staff list read outside lock — used for shift lookup only (no mutation)
     const cfg = req.attendanceCfg;
-    const staffList = await readDB('staff');
-    const staffMember = staffList.find(s => s.id === staffId);
-    let expected = cfg.expectedHours || 9;
-    const genderShiftOut = (staffMember?.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
-    const effectiveShiftOut = staffMember?.shiftOverride || genderShiftOut;
-    if (effectiveShiftOut) {
-      const [sh, sm] = effectiveShiftOut.shiftStart.split(':').map(Number);
-      const [eh, em] = effectiveShiftOut.shiftEnd.split(':').map(Number);
-      expected = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-    }
-    record.overtimeHours  = Math.max(0, Math.round((record.hoursWorked - expected) * 100) / 100);
-    record.undertimeHours = Math.max(0, Math.round((expected - record.hoursWorked) * 100) / 100);
+    const staffListSnapshot = await readDB('staff');
+    const staffMember = staffListSnapshot.find(s => s.id === staffId);
 
-    await writeDB('attendance', records);
+    // Serialised: read+mutate+write attendance atomically
+    const result = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      const record = records.find(r => r.staffId === staffId && r.date === today);
+      if (!record) return { error: 'no_record' };
 
-    // Sync availability — checked out = out of office (reuse staffList already loaded above)
-    const sidx = staffList.findIndex(s => s.id === staffId);
-    if (sidx !== -1) { staffList[sidx].availability = 'out_of_office'; await writeDB('staff', staffList); }
+      const sessions = record.sessions || [];
+      const open = [...sessions].reverse().find(s => !s.logoutAt);
+      if (!open) return { record, alreadyOut: true };
 
-    res.json(record);
+      open.logoutAt = now.toISOString();
+      open.hours    = Math.round((now - new Date(open.loginAt)) / 36000) / 100; // hrs, 2dp
+
+      record.logoutAt    = now.toISOString();
+      record.hoursWorked = calcHours(sessions);
+      record.sessions    = sessions;
+
+      // Overtime / undertime — priority: shiftOverride → gender shift → default
+      let expected = cfg.expectedHours || 9;
+      const genderShiftOut = (staffMember?.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+      const effectiveShiftOut = staffMember?.shiftOverride || genderShiftOut;
+      if (effectiveShiftOut) {
+        const [sh, sm] = effectiveShiftOut.shiftStart.split(':').map(Number);
+        const [eh, em] = effectiveShiftOut.shiftEnd.split(':').map(Number);
+        expected = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+      }
+      record.overtimeHours  = Math.max(0, Math.round((record.hoursWorked - expected) * 100) / 100);
+      record.undertimeHours = Math.max(0, Math.round((expected - record.hoursWorked) * 100) / 100);
+
+      await writeDB('attendance', records);
+      return { record, alreadyOut: false };
+    });
+
+    if (result.error === 'no_record') return res.status(404).json({ error: 'No check-in found for today' });
+    if (result.alreadyOut) return res.json({ ...result.record, alreadyOut: true });
+
+    // Sync availability — checked out = out of office (locked on staff)
+    await withLock('staff', async () => {
+      const staffList = await readDB('staff');
+      const sidx = staffList.findIndex(s => s.id === staffId);
+      if (sidx !== -1) { staffList[sidx].availability = 'out_of_office'; await writeDB('staff', staffList); }
+    });
+
+    res.json(result.record);
   } catch (err) {
     console.error('[Kiosk checkout]', err);
     res.status(500).json({ error: 'Server error' });
