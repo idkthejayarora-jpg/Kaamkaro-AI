@@ -75,6 +75,12 @@ function ConfirmModal({
   onConfirm: (notes: string) => void; onCancel: () => void; loading: boolean;
 }) {
   const [notes, setNotes] = useState('');
+  // Escape to cancel
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && !loading) onCancel(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onCancel, loading]);
   return (
     <Portal>
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4 bg-black/60 backdrop-blur-sm">
