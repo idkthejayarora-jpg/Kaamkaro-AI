@@ -468,6 +468,44 @@ router.post('/dismiss', adminOnly, async (req, res) => {
   }
 });
 
+// ── GET /api/fraud/general-entries ────────────────────────────────────────────
+// Returns diary entries that resolved to "General" (no customer matched).
+// Used by the Anti-Fraud "Unmatched Entries" tab so admins can inspect and
+// trigger re-analysis after customers are added or the NLP is improved.
+router.get('/general-entries', adminOnly, async (req, res) => {
+  try {
+    const [diary, staff] = await Promise.all([
+      readDB('diary').catch(() => []),
+      readDB('staff').catch(() => []),
+    ]);
+    const staffMap = Object.fromEntries(staff.map(s => [s.id, s.name]));
+
+    const generalEntries = diary
+      .filter(d => {
+        // Only include fully-processed entries where every resolved interaction is General
+        if (d.status !== 'done') return false;
+        if (!Array.isArray(d.aiEntries) || d.aiEntries.length === 0) return false;
+        return d.aiEntries.every(e => !e.customerId && (e.customerName === 'General' || !e.customerName));
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 200)
+      .map(d => ({
+        id:         d.id,
+        content:    d.content,
+        staffId:    d.staffId,
+        staffName:  staffMap[d.staffId] || d.staffName || d.staffId,
+        date:       d.date || (d.createdAt || '').split('T')[0],
+        createdAt:  d.createdAt,
+        status:     d.status,
+      }));
+
+    res.json({ entries: generalEntries, total: generalEntries.length });
+  } catch (err) {
+    console.error('[Fraud] general-entries error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── GET /api/fraud/records ────────────────────────────────────────────────────
 router.get('/records', adminOnly, async (req, res) => {
   try {
