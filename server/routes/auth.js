@@ -333,12 +333,15 @@ router.post('/managers', authMiddleware, adminOnly, async (req, res) => {
 // DELETE /api/auth/managers/:id — remove a manager
 router.delete('/managers/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const managers = await readDB('attendance_managers').catch(() => []);
-    const idx = managers.findIndex(m => m.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ error: 'Manager not found' });
-
-    const [removed] = managers.splice(idx, 1);
-    await writeDB('attendance_managers', managers);
+    const removed = await withLock('attendance_managers', async () => {
+      const managers = await readDB('attendance_managers').catch(() => []);
+      const idx = managers.findIndex(m => m.id === req.params.id);
+      if (idx === -1) return null;
+      const [r] = managers.splice(idx, 1);
+      await writeDB('attendance_managers', managers);
+      return r;
+    });
+    if (!removed) return res.status(404).json({ error: 'Manager not found' });
 
     console.log(`[Auth] Admin ${req.user.name} removed attendance manager: ${removed.name}`);
     res.json({ message: 'Manager removed' });
