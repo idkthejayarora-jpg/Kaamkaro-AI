@@ -107,6 +107,62 @@ async function backupCollection(collection, data) {
   }
 }
 
+// ── Daily snapshot backup ─────────────────────────────────────────────────────
+// Unlike backupCollection() (Mac-Desktop only), this writes a full timestamped
+// snapshot of EVERY collection into DATA_DIR/backups — so it survives on the
+// Railway persistent volume. Each run creates a dated folder; old folders are
+// pruned to a rolling retention window.
+const SNAPSHOT_DIR = path.join(DATA_DIR, 'backups');
+const SNAPSHOT_RETENTION_DAYS = 30;
+
+async function snapshotAllCollections(label) {
+  await fs.ensureDir(SNAPSHOT_DIR);
+
+  // Build a folder name from IST date/time (app convention: Asia/Kolkata)
+  const stamp = new Date().toLocaleString('sv-SE', {
+    timeZone: 'Asia/Kolkata',
+  }).replace(' ', '_').replace(/:/g, '-'); // e.g. 2026-05-29_00-00-00
+  const folderName = label ? `${stamp}_${label}` : stamp;
+  const destDir = path.join(SNAPSHOT_DIR, folderName);
+  await fs.ensureDir(destDir);
+
+  // Copy every *.json collection file living directly in DATA_DIR
+  const entries = await fs.readdir(DATA_DIR);
+  let count = 0;
+  for (const file of entries) {
+    if (!file.endsWith('.json')) continue;
+    const src = path.join(DATA_DIR, file);
+    try {
+      const stat = await fs.stat(src);
+      if (!stat.isFile()) continue;
+      await fs.copy(src, path.join(destDir, file));
+      count++;
+    } catch (err) {
+      console.error(`[Backup] Failed to copy ${file}:`, err.message);
+    }
+  }
+
+  // Prune snapshot folders older than the retention window
+  try {
+    const cutoff = Date.now() - SNAPSHOT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    const folders = await fs.readdir(SNAPSHOT_DIR);
+    for (const f of folders) {
+      const full = path.join(SNAPSHOT_DIR, f);
+      try {
+        const st = await fs.stat(full);
+        if (st.isDirectory() && st.mtimeMs < cutoff) {
+          await fs.remove(full);
+        }
+      } catch { /* ignore */ }
+    }
+  } catch (err) {
+    console.error('[Backup] Prune failed:', err.message);
+  }
+
+  console.log(`💾 Daily backup → ${folderName} (${count} collections)`);
+  return { folder: folderName, count };
+}
+
 async function findById(collection, id) {
   const data = await readDB(collection);
   return data.find(item => item.id === id) || null;
