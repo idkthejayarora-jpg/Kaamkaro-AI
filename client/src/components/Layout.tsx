@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Sidebar, { MobileMenuButton } from './Sidebar';
 import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
+import AnimatedBackground from './AnimatedBackground';
 import { useSSE } from '../hooks/useSSE';
 import { useAuth } from '../contexts/AuthContext';
 import { X, Radio, CheckCheck, Eye, RefreshCw, Award } from 'lucide-react';
