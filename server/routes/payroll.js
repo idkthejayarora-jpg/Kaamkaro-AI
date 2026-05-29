@@ -5,7 +5,7 @@
  * GET  /api/payroll/summary?month=YYYY-MM
  */
 const express = require('express');
-const { readDB, writeDB } = require('../utils/db');
+const { readDB, writeDB, withLock } = require('../utils/db');
 const { authMiddleware, attendanceManagerOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
