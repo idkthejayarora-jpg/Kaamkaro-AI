@@ -110,35 +110,39 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   const staffConcern = latestNeg >= 2 && latestIxs.length >= 2;
 
   // ── Priority score ────────────────────────────────────────────────────────
-  // Baseline: 20. Jewelry business cadence — 2-3 weeks between contacts is normal.
-  // Recalibrated so genuine red flags actually reach "urgent" instead of
-  // piling up in medium/high. Thresholds: urgent ≥70, high ≥50, medium ≥34.
-  let score = 20;
+  // Contact RECENCY is the spine of the score — it's the one signal that's
+  // always present, and a follow-up queue is fundamentally "who's been ignored
+  // longest". Low baseline so healthy, recently-touched accounts fall to "low";
+  // recency drives a WIDE spread; behaviour/stage modulate on top.
+  // Thresholds: urgent ≥70, high ≥50, medium ≥28, low <28.
+  let score = 8;
 
-  // Time since last contact — calibrated for jewelry B2B (biweekly contact is normal)
-  if      (lastContactDays === null)   score += 28; // never contacted at all
-  else if (lastContactDays > 45)       score += 26; // severely neglected
-  else if (lastContactDays > 30)       score += 18; // overdue
-  else if (lastContactDays > 21)       score += 11; // getting stale
-  else if (lastContactDays > 14)       score += 6;  // mild nudge
-  else if (lastContactDays > 7)        score += 2;  // recent enough
-  else if (lastContactDays <= 1)       score -= 12; // freshly contacted
+  // Time since last contact — the dominant axis (wide range → natural spread)
+  if      (lastContactDays === null)   score += 46; // never contacted at all
+  else if (lastContactDays > 60)       score += 50; // abandoned
+  else if (lastContactDays > 45)       score += 42; // severely neglected
+  else if (lastContactDays > 30)       score += 34; // overdue
+  else if (lastContactDays > 21)       score += 24; // getting stale
+  else if (lastContactDays > 14)       score += 15; // due a nudge
+  else if (lastContactDays > 7)        score += 7;  // approaching cadence
+  else if (lastContactDays > 3)        score += 2;  // recent
+  else                                 score -= 4;  // freshly contacted
 
   // Responsiveness (measured from interaction history)
-  if      (responsiveness === 'ghosting') score += 20;
-  else if (responsiveness === 'ignoring') score += 12;
-  else if (responsiveness === 'slow')     score += 4;
+  if      (responsiveness === 'ghosting') score += 16;
+  else if (responsiveness === 'ignoring') score += 9;
+  else if (responsiveness === 'slow')     score += 3;
 
   // Sentiment trend from recent diary/interaction data
-  if      (sentimentTrend === 'declining')  score += 10;
-  else if (sentimentTrend === 'improving')  score -= 6;
+  if      (sentimentTrend === 'declining')  score += 9;
+  else if (sentimentTrend === 'improving')  score -= 8;
 
   // Hard signals
-  if (hasPaymentDelay) score += 12;
-  if (staffConcern)    score += 8;
+  if (hasPaymentDelay) score += 11;
+  if (staffConcern)    score += 7;
 
-  // Pipeline stage — active deals at risk matter most
-  const stageBonus = { lead: 2, contacted: 1, interested: 6, negotiating: 9, closed: -30, churned: -12 };
+  // Pipeline stage — active deals at risk matter most; dead deals sink
+  const stageBonus = { lead: 0, contacted: 2, interested: 7, negotiating: 11, closed: -45, churned: -25 };
   score += stageBonus[customer.status] || 0;
 
   // Negative sentiment ratio (max +8)
