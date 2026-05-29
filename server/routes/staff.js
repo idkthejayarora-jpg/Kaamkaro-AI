@@ -204,20 +204,38 @@ router.patch('/:id/shift', attendanceManagerOrAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/staff/:id/face — save face descriptors (admin or attendance_manager)
-// Body: { descriptors: number[][] }  (array of 128-D float arrays)
+// PATCH /api/staff/:id/face — save face descriptors + optional photo (admin or attendance_manager)
+// Body: { descriptors: number[][], facePhoto?: string (base64 JPEG data-URL) }
 router.patch('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
   try {
-    const { descriptors } = req.body;
+    const { descriptors, facePhoto } = req.body;
     if (!Array.isArray(descriptors) || descriptors.length === 0) {
       return res.status(400).json({ error: 'descriptors array required' });
     }
-    const updated = await updateOne('staff', req.params.id, { faceDescriptors: descriptors });
+    const photoPath = await saveFacePhoto(req.params.id, facePhoto).catch(() => null);
+    const updates = { faceDescriptors: descriptors };
+    if (photoPath) { updates.facePhoto = photoPath; updates.facePhotoAt = new Date().toISOString(); }
+    const updated = await updateOne('staff', req.params.id, updates);
     if (!updated) return res.status(404).json({ error: 'Staff not found' });
     const { password: _, ...safe } = updated;
     res.json({ message: 'Face enrolled', staff: safe });
   } catch (err) {
     console.error('[Face enroll]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/staff/:id/face-photo — serve the stored face photo (no auth — used in img src)
+router.get('/:id/face-photo', async (req, res) => {
+  try {
+    const photoPath = path.join(FACE_PHOTO_DIR, `${req.params.id}.jpg`);
+    if (await fs.pathExists(photoPath)) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.sendFile(photoPath);
+    }
+    res.status(404).json({ error: 'No face photo' });
+  } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
