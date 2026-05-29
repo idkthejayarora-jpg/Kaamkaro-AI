@@ -7,6 +7,35 @@ const { authMiddleware, adminOnly, JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
 
+// ── Login brute-force protection ──────────────────────────────────────────────
+// In-memory per (ip + phone): 5 fails / 15 min → 30 min lockout. Resets on restart.
+const LOGIN_MAX_FAILS  = 5;
+const LOGIN_WINDOW_MS  = 15 * 60 * 1000;
+const LOGIN_LOCKOUT_MS = 30 * 60 * 1000;
+const loginFailureMap  = new Map(); // key → { fails, firstFailAt, lockedUntil }
+
+function loginClientIp(req) {
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
+}
+function loginKey(req, phone) {
+  return `${loginClientIp(req)}:${(phone || '').trim().toLowerCase()}`;
+}
+function recordLoginFailure(key) {
+  const now = Date.now();
+  const rec = loginFailureMap.get(key) || { fails: 0, firstFailAt: now, lockedUntil: 0 };
+  if (now - rec.firstFailAt > LOGIN_WINDOW_MS) { rec.fails = 0; rec.firstFailAt = now; }
+  rec.fails += 1;
+  if (rec.fails >= LOGIN_MAX_FAILS) rec.lockedUntil = now + LOGIN_LOCKOUT_MS;
+  loginFailureMap.set(key, rec);
+}
+function loginLockoutSecondsRemaining(key) {
+  const rec = loginFailureMap.get(key);
+  if (!rec || !rec.lockedUntil) return 0;
+  const remaining = rec.lockedUntil - Date.now();
+  if (remaining <= 0) { loginFailureMap.delete(key); return 0; }
+  return Math.ceil(remaining / 1000);
+}
+
 // POST /api/auth/register  — self-signup for new staff
 router.post('/register', async (req, res) => {
   try {
