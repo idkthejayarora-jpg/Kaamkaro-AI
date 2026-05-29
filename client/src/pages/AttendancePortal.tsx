@@ -272,6 +272,19 @@ function FaceEnrollModal({ staff, onClose, onEnrolled }: {
       setCaptures([...collected]);
     }
 
+    // Capture a 160×160 JPEG thumbnail from the live video frame
+    if (videoRef.current) {
+      try {
+        const snap = document.createElement('canvas');
+        snap.width = 160; snap.height = 160;
+        const ctx = snap.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(videoRef.current, 0, 0, 160, 160);
+          setCapturedPhoto(snap.toDataURL('image/jpeg', 0.82));
+        }
+      } catch { /* non-fatal */ }
+    }
+
     setStatus('✓ Captured! Check for duplicates, then Save.');
     setCapturing(false);
   }, [modelReady]);
