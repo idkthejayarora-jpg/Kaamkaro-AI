@@ -189,6 +189,27 @@ function AdminDashboard() {
   return (
     <div className="space-y-4">
 
+      {/* ── METRIC STRIP — Total Staff · Active Customers · Alerts ─────────── */}
+      <div className="rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+        <div className="grid grid-cols-3 divide-x divide-dark-100">
+          {[
+            { label: 'Total Staff',      value: summary?.totalStaff ?? staff.length,           sub: 'Active members', accent: false, alert: false, path: '/staff' },
+            { label: 'Active Customers', value: summary?.activeCustomers ?? customers.length,  sub: 'In pipeline',    accent: true,  alert: false, path: '/customers' },
+            { label: 'Alerts',           value: totalRedAlerts + fraudAlerts.length,           sub: (totalRedAlerts + fraudAlerts.length) > 0 ? 'Need attention' : 'All clear', accent: false, alert: (totalRedAlerts + fraudAlerts.length) > 0, path: '/followup' },
+          ].map(({ label, value, sub, accent, alert, path }) => (
+            <button key={label} onClick={() => navigate(path)}
+              className="p-3 sm:p-6 text-left hover:bg-white/[0.04] transition-colors group relative overflow-hidden">
+              <div className={`absolute top-0 left-0 right-0 h-[2px] ${alert ? 'bg-red-500' : accent ? 'bg-gold' : 'bg-white/10'}`} />
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-1.5 sm:mb-3">{label}</p>
+              <p className={`text-3xl sm:text-5xl font-black leading-none transition-colors ${alert ? 'text-red-300' : 'text-white group-hover:text-gold'}`}>{value}</p>
+              <p className={`text-[10px] sm:text-xs mt-1.5 sm:mt-2 flex items-center gap-1 ${alert ? 'text-red-400/60' : 'text-white/35'}`}>
+                {sub} <ChevronRight size={10} className="opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── ALERT BANNERS ─────────────────────────────────────────────────── */}
       {(summary?.overdueCount ?? 0) > 0 && (
         <div className="rounded-2xl overflow-hidden border border-red-500/20 bg-red-500/6 animate-fade-in-up">
@@ -204,21 +225,17 @@ function AdminDashboard() {
           {expandedBanner === 'customers' && (
             <div className="border-t border-red-500/10">
               <div className="max-h-60 overflow-y-auto">
-                {staleCustomers.slice(0, 20).map(c => {
-                  const lastTwo = allInteractions.filter(i => i.customerId === c.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 2);
-                  return (
-                    <div key={c.id} className="px-5 py-3 border-b border-red-500/8 last:border-0 hover:bg-red-500/5 cursor-pointer" onClick={() => navigate('/customers')}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                          <span className="text-red-300 text-xs font-black">{c.name[0]}</span>
-                        </div>
-                        <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate">{c.name}</p><p className="text-red-400/55 text-[10px]">{c.assignedStaffName}</p></div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>{c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d`}</span>
+                {staleCustomers.slice(0, 20).map(c => (
+                  <div key={c.id} className="px-5 py-3 border-b border-red-500/8 last:border-0 hover:bg-red-500/5 cursor-pointer" onClick={() => navigate('/customers')}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-red-300 text-xs font-black">{c.name[0]}</span>
                       </div>
-                      {lastTwo.length > 0 && <div className="mt-1.5 ml-11 space-y-0.5">{lastTwo.map(i => <p key={i.id} className="text-[10px] text-white/40 truncate">{i.notes || `${i.type} logged`}</p>)}</div>}
+                      <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate">{c.name}</p><p className="text-red-400/55 text-[10px]">{c.assignedStaffName}</p></div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>{c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d`}</span>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
               <div className="flex items-center justify-between px-5 py-2.5 border-t border-red-500/10">
                 <span className="text-red-400/40 text-[10px]">{staleCustomers.length} total</span>
@@ -262,112 +279,15 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ── METRIC STRIP ──────────────────────────────────────────────────── */}
-      <div className="rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-        <div className="grid grid-cols-3 divide-x divide-dark-100">
-          {[
-            { label: 'Total Staff',       value: summary?.totalStaff ?? 0,       sub: 'Active members',   accent: false, path: '/staff' },
-            { label: 'Active Customers',  value: summary?.activeCustomers ?? 0,   sub: 'In pipeline',      accent: true,  path: '/customers' },
-            { label: 'Red Alerts',        value: totalRedAlerts,                   sub: totalRedAlerts > 0 ? 'Need attention' : 'All clear', alert: totalRedAlerts > 0, path: '/followup' },
-          ].map(({ label, value, sub, accent, alert, path }) => (
-            <button key={label} onClick={() => navigate(path)}
-              className="p-3 sm:p-6 text-left hover:bg-white/[0.04] transition-colors group relative overflow-hidden">
-              {/* Tiny top accent line */}
-              <div className={`absolute top-0 left-0 right-0 h-[2px] ${alert ? 'bg-red-500' : accent ? 'bg-gold' : 'bg-white/10'}`} />
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-1.5 sm:mb-3">{label}</p>
-              <p className={`text-3xl sm:text-5xl font-black leading-none transition-colors ${alert ? 'text-red-300' : 'text-white group-hover:text-gold'}`}>{value}</p>
-              <p className={`text-[10px] sm:text-xs mt-1.5 sm:mt-2 flex items-center gap-1 ${alert ? 'text-red-400/60' : 'text-white/35'}`}>
-                {sub} <ChevronRight size={10} className="opacity-60 group-hover:translate-x-0.5 transition-transform" />
-              </p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── ATTENDANCE TODAY CARD ────────────────────────────────────────── */}
-      {todayAtt && (
-        <button
-          onClick={() => navigate('/attendance-portal')}
-          className="rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up hover:bg-dark-200 transition-colors text-left p-4 sm:p-5"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-2">🕐 Today's Attendance</p>
-              <div className="flex items-end gap-3">
-                <span className="text-3xl font-black text-white">{todayAtt.inCount}/{todayAtt.total}</span>
-                <span className="text-white/40 text-sm mb-1">in office</span>
-              </div>
-              <div className="flex items-center gap-3 mt-1.5 text-xs">
-                {todayAtt.late > 0 && <span className="text-amber-400">⚠ {todayAtt.late} late</span>}
-                {todayAtt.absent > 0 && <span className="text-red-400/70">{todayAtt.absent} absent</span>}
-                {todayAtt.late === 0 && todayAtt.absent === 0 && <span className="text-green-400">All on time</span>}
-              </div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center flex-shrink-0">
-              <ChevronRight size={16} className="text-gold/60" />
-            </div>
-          </div>
-        </button>
-      )}
-
-      {/* ── BENTO: Merit chart (2/3) + Right panel (1/3) ─────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-
-        {/* Merit chart card — 2/3 */}
-        {meritChartData.length > 0 && (
-          <div className="lg:col-span-2 rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up stagger-1">
-            {/* Gold accent top bar */}
-            <div className="h-[3px] bg-gradient-to-r from-gold via-gold/60 to-transparent" />
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-5">
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Leaderboard</p>
-                  <p className="text-2xl font-black text-white mt-0.5 flex items-center gap-2">
-                    Merit Points <Trophy size={18} className="text-gold" />
-                  </p>
-                </div>
-                <button onClick={() => setAwardModal(true)}
-                  className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-2 rounded-xl hover:bg-gold/18 transition-colors font-semibold">
-                  <Award size={12} /> Award
-                </button>
-              </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={meritChartData} barGap={4} barCategoryGap="28%">
-                  <CartesianGrid vertical={false} stroke={CHART_GRID} />
-                  <XAxis dataKey="name" tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(212,175,55,0.04)' }} />
-                  <Bar dataKey="allTime" name="All-time" radius={[6, 6, 0, 0]}>
-                    {meritChartData.map((e, i) => <Cell key={i} fill={e.allTime >= 0 ? GOLD : '#f87171'} fillOpacity={0.9} />)}
-                  </Bar>
-                  <Bar dataKey="thisWeek" name="This week" radius={[6, 6, 0, 0]}>
-                    {meritChartData.map((e, i) => <Cell key={i} fill={e.thisWeek >= 0 ? '#a78bfa' : '#fb923c'} fillOpacity={0.75} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="flex items-center gap-5 mt-3 justify-end">
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/40 text-[10px] font-semibold">All-time</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-purple-400/70" /><span className="text-white/40 text-[10px] font-semibold">This week</span></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Right panel — 1/3: Red Alert mini + Overdue tasks mini */}
-        <div className="flex flex-col gap-4">
-
-          {/* Red Alert mini card */}
-          <div
-            onClick={() => navigate('/followup')}
-            className={`rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all hover:scale-[1.02] animate-fade-in-up stagger-2 ${
-              totalRedAlerts > 0
-                ? 'bg-gradient-to-br from-red-500/8 to-dark-300 border-red-500/25 hover:border-red-500/40'
-                : 'bg-dark-300 border-dark-100 hover:border-dark-50'
-            }`}
-          >
+      {/* Red-alert + Fraud compact row */}
+      {(totalRedAlerts > 0 || fraudAlerts.length > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div onClick={() => navigate('/followup')}
+            className={`rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all hover:scale-[1.01] animate-fade-in-up ${
+              totalRedAlerts > 0 ? 'bg-gradient-to-br from-red-500/8 to-dark-300 border-red-500/25 hover:border-red-500/40' : 'bg-dark-300 border-dark-100'
+            }`}>
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${totalRedAlerts > 0 ? 'bg-red-500/20 border border-red-500/30' : 'bg-dark-200 border border-dark-100'}`}
-                style={totalRedAlerts > 0 ? { boxShadow: '0 0 20px rgba(248,113,113,0.2)' } : undefined}>
+              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${totalRedAlerts > 0 ? 'bg-red-500/20 border border-red-500/30' : 'bg-dark-200 border border-dark-100'}`}>
                 <AlertTriangle size={15} className={totalRedAlerts > 0 ? 'text-red-400' : 'text-white/30'} />
               </div>
               <span className={`text-4xl font-black leading-none ${totalRedAlerts > 0 ? 'text-red-300' : 'text-white/20'}`}>{totalRedAlerts}</span>
@@ -385,10 +305,9 @@ function AdminDashboard() {
             )}
           </div>
 
-          {/* Fraud mini card */}
           {fraudAlerts.length > 0 && (
             <button onClick={() => setFraudExpanded(e => !e)}
-              className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/8 to-dark-300 p-4 sm:p-5 text-left hover:border-orange-500/35 transition-all animate-fade-in-up stagger-3">
+              className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/8 to-dark-300 p-4 sm:p-5 text-left hover:border-orange-500/35 transition-all animate-fade-in-up">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-9 h-9 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
                   <ShieldAlert size={15} className="text-orange-400" />
@@ -402,158 +321,6 @@ function AdminDashboard() {
               <p className="text-orange-400/35 text-[10px] mt-2 flex items-center gap-1">Tap to expand <ChevronRight size={9} /></p>
             </button>
           )}
-
-          {/* Orphan references mini card */}
-          {orphanData && orphanData.totalOrphans > 0 && (
-            <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/8 to-dark-300 p-4 sm:p-5 animate-fade-in-up stagger-3">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
-                  <Link2 size={15} className="text-purple-400" />
-                </div>
-                <span className="text-4xl font-black text-purple-300 leading-none">{orphanData.totalOrphans}</span>
-              </div>
-              <p className="text-sm font-bold text-purple-300">Orphan References</p>
-              <div className="mt-2 space-y-1">
-                {Object.entries(orphanData.orphans).filter(([, items]) => items.length > 0).map(([key, items]) => (
-                  <p key={key} className="text-purple-400/50 text-[10px] flex items-center gap-1">
-                    <span className="w-1 h-1 rounded-full bg-purple-400/40 inline-block" />
-                    {items.length} in {key}
-                  </p>
-                ))}
-              </div>
-              <p className="text-purple-400/35 text-[10px] mt-2">Deleted staff / customer refs</p>
-            </div>
-          )}
-
-          {/* Overdue tasks mini */}
-          {overdueTasks.length > 0 && (
-            <button onClick={() => navigate('/tasks')}
-              className="rounded-2xl border border-dark-100 bg-dark-300 p-4 sm:p-5 text-left hover:border-gold/20 transition-all animate-fade-in-up stagger-4 group">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-2xl bg-dark-200 border border-dark-100 flex items-center justify-center">
-                  <Clock size={15} className="text-amber-400" />
-                </div>
-                <span className="text-4xl font-black text-amber-300 leading-none">{overdueTasks.length}</span>
-              </div>
-              <p className="text-sm font-bold text-white">Overdue Tasks</p>
-              <p className="text-white/40 text-[10px] mt-1.5 truncate">
-                {overdueTasks[0]?.title}
-                {overdueTasks.length > 1 ? ` + ${overdueTasks.length - 1} more` : ''}
-              </p>
-              <p className="text-white/35 text-[10px] mt-2 flex items-center gap-1 group-hover:text-gold/40 transition-colors">View tasks <ChevronRight size={9} /></p>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── TODAY'S ATTENDANCE CHART (admin only) ─────────────────────────── */}
-      {todayAttFull.length > 0 && (
-        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-          <div className="h-[3px] bg-gradient-to-r from-green-500/80 via-green-500/30 to-transparent" />
-          <div className="p-5">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Live</p>
-                <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">
-                  Today's Attendance
-                  <UserCheck size={16} className="text-green-400" />
-                </p>
-                <p className="text-white/30 text-xs mt-0.5">
-                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-              </div>
-              <button onClick={() => navigate('/attendance-portal')}
-                className="text-xs text-white/30 hover:text-gold transition-colors flex items-center gap-1">
-                Full view <ChevronRight size={12} />
-              </button>
-            </div>
-
-            {/* 4 summary pills */}
-            <div className="grid grid-cols-4 gap-2 mb-5">
-              {([
-                { label: 'In',     value: todayAtt?.inCount ?? 0,                                             color: 'text-green-400',  bg: 'bg-green-500/10 border-green-500/20' },
-                { label: 'Late',   value: todayAtt?.late ?? 0,                                                color: 'text-amber-400',  bg: 'bg-amber-500/10 border-amber-500/20' },
-                { label: 'Out',    value: todayAttFull.filter(r => r.status === 'out').length,                 color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20' },
-                { label: 'Absent', value: todayAtt?.absent ?? 0,                                              color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20' },
-              ] as const).map(({ label, value, color, bg }) => (
-                <div key={label} className={`rounded-xl border p-2.5 text-center ${bg}`}>
-                  <p className={`text-xl font-black leading-none ${color}`}>{value}</p>
-                  <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Per-staff horizontal bar chart (hours worked) */}
-            <div className="space-y-1.5">
-              {todayAttFull.map(r => {
-                const maxHrs = 10;
-                const pct    = Math.min((r.hoursWorked / maxHrs) * 100, 100);
-                const barCol = r.leaveToday     ? '#6366f1'
-                             : r.status === 'absent' ? '#ef4444'
-                             : r.isLate          ? '#f59e0b'
-                             : r.hoursWorked > 0 ? '#10b981'
-                             : '#6366f1'; // checked in but 0h = still in
-                const statusLabel = r.leaveToday
-                  ? `Leave (${r.leaveToday.type})`
-                  : r.status === 'absent' ? 'Absent'
-                  : r.isLate ? `Late`
-                  : r.status === 'in' ? 'In'
-                  : `${r.hoursWorked.toFixed(1)}h`;
-
-                return (
-                  <div key={r.staffId}
-                       className="flex items-center gap-2 group cursor-pointer"
-                       onClick={() => navigate(`/staff/${r.staffId}`)}>
-                    {/* Avatar */}
-                    <div className="w-6 h-6 rounded-full bg-dark-200 border border-dark-100 flex-shrink-0
-                                    flex items-center justify-center text-[9px] font-black text-white/60
-                                    group-hover:border-gold/30 transition-colors">
-                      {r.avatar}
-                    </div>
-                    {/* Name */}
-                    <span className="text-white/50 text-[11px] w-16 flex-shrink-0 truncate
-                                     group-hover:text-white/80 transition-colors">
-                      {r.staffName.split(' ')[0]}
-                    </span>
-                    {/* Bar */}
-                    <div className="flex-1 h-4 bg-dark-200 rounded-full overflow-hidden relative">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: r.status === 'absent' && !r.leaveToday ? '4px' : `${Math.max(pct, 2)}%`,
-                          background: barCol,
-                          opacity: 0.8,
-                          minWidth: r.status === 'absent' ? 0 : 4,
-                        }}
-                      />
-                    </div>
-                    {/* Label */}
-                    <span className="text-[10px] font-semibold w-14 text-right flex-shrink-0"
-                          style={{ color: barCol }}>
-                      {statusLabel}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-dark-100">
-              {([
-                { label: 'On Time', color: '#10b981' },
-                { label: 'Late',    color: '#f59e0b' },
-                { label: 'Absent',  color: '#ef4444' },
-                { label: 'Leave',   color: '#6366f1' },
-              ] as const).map(({ label, color }) => (
-                <span key={label} className="flex items-center gap-1.5 text-[10px] text-white/30">
-                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: color, opacity: 0.8 }} />
-                  {label}
-                </span>
-              ))}
-              <span className="text-[10px] text-white/20 ml-auto">Bar = hours worked (max 10h)</span>
-            </div>
-          </div>
         </div>
       )}
 
@@ -593,316 +360,273 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ── RED ALERT ZONE DETAIL (if any) ────────────────────────────────── */}
-      {totalRedAlerts > 0 && (
-        <div className="rounded-2xl border border-red-500/15 bg-dark-300 overflow-hidden animate-fade-in-up">
-          <div className="h-[2px] bg-gradient-to-r from-red-500 via-red-500/40 to-transparent" />
+      {/* ── TODAY'S ATTENDANCE ────────────────────────────────────────────── */}
+      {todayAttFull.length > 0 && (
+        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+          <div className="h-[3px] bg-gradient-to-r from-green-500/80 via-green-500/30 to-transparent" />
           <div className="p-5">
-            <p className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-bold mb-4">Alert Breakdown</p>
-            <div className="space-y-4">
-              {inactiveStaff.length > 0 && (
-                <div>
-                  <p className="text-white/30 text-[11px] font-semibold mb-2 flex items-center gap-1.5 uppercase tracking-wider">
-                    <Clock size={10} className="text-red-400" /> Inactive 7+ days
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {inactiveStaff.map(s => (
-                      <button key={s.id} onClick={() => navigate(`/staff/${s.id}`)}
-                        className="inline-flex items-center gap-2 bg-red-500/8 border border-red-500/18 text-red-300 text-xs px-3 py-1.5 rounded-full hover:bg-red-500/15 transition-all">
-                        <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[9px] font-black">{s.avatar}</span>
-                        {s.name.split(' ')[0]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {negativeStaff.length > 0 && (
-                <div>
-                  <p className="text-white/30 text-[11px] font-semibold mb-2 flex items-center gap-1.5 uppercase tracking-wider">
-                    <TrendingDown size={10} className="text-red-400" /> Negative merit balance
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {negativeStaff.map(m => (
-                      <span key={m.staffId} className="inline-flex items-center gap-2 bg-red-500/8 border border-red-500/18 text-red-300 text-xs px-3 py-1.5 rounded-full">
-                        <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[9px] font-black">{m.avatar}</span>
-                        {m.name.split(' ')[0]} <span className="text-red-400/60 font-bold">{m.total}pts</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {overdueHeavy.length > 0 && (
-                <div>
-                  <p className="text-white/30 text-[11px] font-semibold mb-2 flex items-center gap-1.5 uppercase tracking-wider">
-                    <AlertCircle size={10} className="text-red-400" /> 3+ overdue tasks
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {overdueHeavy.map(s => (
-                      <button key={s.id} onClick={() => navigate('/tasks')}
-                        className="inline-flex items-center gap-2 bg-red-500/8 border border-red-500/18 text-red-300 text-xs px-3 py-1.5 rounded-full hover:bg-red-500/15 transition-all">
-                        <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center text-[9px] font-black">{s.avatar}</span>
-                        {s.name.split(' ')[0]} <span className="text-red-400/60 font-bold">{s.overdueCount}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── CHARTS ROW — Task rate + Contact breakdown ─────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-        {/* Task rate — 3/5 */}
-        <div className="lg:col-span-3 rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-          <div className="h-[2px] bg-gradient-to-r from-blue-500/70 via-blue-500/30 to-transparent" />
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Performance</p>
-                <p className="text-xl font-black text-white mt-0.5">Task Rate & Conversions</p>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Live</p>
+                <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">
+                  Today's Attendance
+                  <UserCheck size={16} className="text-green-400" />
+                </p>
+                <p className="text-white/30 text-xs mt-0.5">
+                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
               </div>
+              <button onClick={() => navigate('/attendance-portal')}
+                className="text-xs text-white/30 hover:text-gold transition-colors flex items-center gap-1">
+                Full view <ChevronRight size={12} />
+              </button>
             </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={taskRateData} barGap={4} barCategoryGap="30%">
-                <CartesianGrid vertical={false} stroke={CHART_GRID} />
-                <XAxis dataKey="name" tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-                <Bar dataKey="taskRate" name="Task %" fill="#60a5fa" fillOpacity={0.85} radius={[5, 5, 0, 0]} />
-                <Bar dataKey="conversions" name="Conversions" fill={GOLD} fillOpacity={0.9} radius={[5, 5, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="flex items-center gap-5 mt-2 justify-end">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-400/80" /><span className="text-white/40 text-[10px] font-semibold">Task Rate %</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ background: GOLD }} /><span className="text-white/40 text-[10px] font-semibold">Conversions</span></div>
-            </div>
-          </div>
-        </div>
 
-        {/* Weekly contacts — 2/5 */}
-        <div className="lg:col-span-2 rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-          <div className="h-[2px] bg-gradient-to-r from-gold/70 via-gold/25 to-transparent" />
-          <div className="p-5">
-            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Activity</p>
-            <p className="text-xl font-black text-white mt-0.5 mb-4">Weekly Contacts</p>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={weeklyData} barSize={22}>
-                <CartesianGrid vertical={false} stroke={CHART_GRID} />
-                <XAxis dataKey="week" tick={{ fill: CHART_TICK, fontSize: 10, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: CHART_TICK, fontSize: 10, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(212,175,55,0.05)' }} />
-                <Bar dataKey="contacts" name="Contacts" radius={[6, 6, 0, 0]}>
-                  {weeklyData.map((_, i) => <Cell key={i} fill={i === weeklyData.length - 1 ? GOLD : CHART_GRID} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* ── CONTACT BREAKDOWN ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-        <div className="p-5">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Communication</p>
-              <p className="text-xl font-black text-white mt-0.5">Contact Breakdown</p>
-            </div>
-            <div className="flex items-center gap-4">
-              {[['Calls','#60a5fa'],['Messages','#c084fc'],['Meetings',GOLD],['Emails','#34d399']].map(([l,c]) => (
-                <div key={l} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-sm" style={{ background: c }} />
-                  <span className="text-white/40 text-[10px] font-semibold">{l}</span>
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {([
+                { label: 'In',     value: todayAtt?.inCount ?? 0,                               color: 'text-green-400',  bg: 'bg-green-500/10 border-green-500/20' },
+                { label: 'Late',   value: todayAtt?.late ?? 0,                                  color: 'text-amber-400',  bg: 'bg-amber-500/10 border-amber-500/20' },
+                { label: 'Out',    value: todayAttFull.filter(r => r.status === 'out').length,  color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20' },
+                { label: 'Absent', value: todayAtt?.absent ?? 0,                                color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20' },
+              ] as const).map(({ label, value, color, bg }) => (
+                <div key={label} className={`rounded-xl border p-2.5 text-center ${bg}`}>
+                  <p className={`text-xl font-black leading-none ${color}`}>{value}</p>
+                  <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{label}</p>
                 </div>
               ))}
             </div>
-          </div>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={weeklyData} barSize={14} barGap={2}>
-              <CartesianGrid vertical={false} stroke={CHART_GRID} />
-              <XAxis dataKey="week" tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: CHART_TICK, fontSize: 11, fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontWeight: 600 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-              <Bar dataKey="calls"    stackId="a" fill="#60a5fa" name="Calls"    radius={[0,0,0,0]} />
-              <Bar dataKey="messages" stackId="a" fill="#c084fc" name="Messages" radius={[0,0,0,0]} />
-              <Bar dataKey="meetings" stackId="a" fill={GOLD}    name="Meetings" radius={[0,0,0,0]} />
-              <Bar dataKey="emails"   stackId="a" fill="#34d399" name="Emails"   radius={[4,4,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
-      {/* ── TEAM PERFORMANCE TABLE ────────────────────────────────────────── */}
-      {staffPerfData.length > 0 && (
-        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-          <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-dark-100/60">
-            <div>
-              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Rankings</p>
-              <p className="text-xl font-black text-white mt-0.5">Team Performance</p>
-            </div>
-            <button onClick={() => navigate('/staff')} className="text-white/40 text-xs hover:text-gold flex items-center gap-1 transition-colors font-semibold">
-              Manage <ChevronRight size={12} />
-            </button>
-          </div>
-          <div className="divide-y divide-dark-100/40">
-            {staffPerfData.sort((a, b) => (meritSummary.find(m => m.staffId === b.id)?.total ?? 0) - (meritSummary.find(m => m.staffId === a.id)?.total ?? 0)).map((s, i) => {
-              const ms = meritSummary.find(m => m.staffId === s.id);
-              const maxInt = Math.max(...staffPerfData.map(x => x.interactions), 1);
-              const rankColors = ['text-gold', 'text-white/50', 'text-amber-700/80'];
-              const rankBg = ['bg-gold/15 border-gold/30', 'bg-dark-100 border-dark-50', 'bg-dark-100 border-dark-50'];
-              return (
-                <div key={s.id} onClick={() => navigate(`/staff/${s.id}`)}
-                  className="flex items-center gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-white/[0.04] cursor-pointer transition-colors group">
-                  {/* Rank */}
-                  <div className={`w-7 h-7 rounded-full border flex items-center justify-center flex-shrink-0 ${rankBg[i] || 'bg-dark-100 border-dark-50'}`}>
-                    <span className={`text-xs font-black ${rankColors[i] || 'text-white/25'}`}>#{i + 1}</span>
-                  </div>
-                  {/* Avatar */}
-                  <div className="w-9 h-9 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-gold text-xs font-black">{s.avatar}</span>
-                  </div>
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-semibold group-hover:text-gold transition-colors">{s.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 max-w-[120px] h-1.5 bg-dark-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500/70 rounded-full" style={{ width: `${Math.min(100, Math.round((s.interactions / maxInt) * 100))}%` }} />
-                      </div>
-                      <span className="text-white/40 text-[10px]">{s.interactions} interactions</span>
+            <div className="space-y-1.5">
+              {todayAttFull.map(r => {
+                const maxHrs = 10;
+                const pct    = Math.min((r.hoursWorked / maxHrs) * 100, 100);
+                const barCol = r.leaveToday     ? '#6366f1'
+                             : r.status === 'absent' ? '#ef4444'
+                             : r.isLate          ? '#f59e0b'
+                             : r.hoursWorked > 0 ? '#10b981'
+                             : '#6366f1';
+                const statusLabel = r.leaveToday
+                  ? `Leave (${r.leaveToday.type})`
+                  : r.status === 'absent' ? 'Absent'
+                  : r.isLate ? `Late`
+                  : r.status === 'in' ? 'In'
+                  : `${r.hoursWorked.toFixed(1)}h`;
+                return (
+                  <div key={r.staffId}
+                       className="flex items-center gap-2 group cursor-pointer"
+                       onClick={() => navigate(`/staff/${r.staffId}`)}>
+                    <div className="w-6 h-6 rounded-full bg-dark-200 border border-dark-100 flex-shrink-0
+                                    flex items-center justify-center text-[9px] font-black text-white/60
+                                    group-hover:border-gold/30 transition-colors">
+                      {r.avatar}
                     </div>
+                    <span className="text-white/50 text-[11px] w-16 flex-shrink-0 truncate
+                                     group-hover:text-white/80 transition-colors">
+                      {r.staffName.split(' ')[0]}
+                    </span>
+                    <div className="flex-1 h-4 bg-dark-200 rounded-full overflow-hidden relative">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: r.status === 'absent' && !r.leaveToday ? '4px' : `${Math.max(pct, 2)}%`,
+                          background: barCol,
+                          opacity: 0.8,
+                          minWidth: r.status === 'absent' ? 0 : 4,
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-semibold w-14 text-right flex-shrink-0"
+                          style={{ color: barCol }}>
+                      {statusLabel}
+                    </span>
                   </div>
-                  {/* Merit */}
-                  <div className="text-right flex-shrink-0">
-                    <p className={`text-lg font-black leading-none ${(ms?.total ?? 0) >= 0 ? 'text-gold' : 'text-red-400'}`}>
-                      {(ms?.total ?? 0) >= 0 ? '+' : ''}{ms?.total ?? 0}
-                    </p>
-                    <p className="text-white/40 text-[10px] mt-0.5">pts</p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-dark-100">
+              {([
+                { label: 'On Time', color: '#10b981' },
+                { label: 'Late',    color: '#f59e0b' },
+                { label: 'Absent',  color: '#ef4444' },
+                { label: 'Leave',   color: '#6366f1' },
+              ] as const).map(({ label, color }) => (
+                <span key={label} className="flex items-center gap-1.5 text-[10px] text-white/30">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: color, opacity: 0.8 }} />
+                  {label}
+                </span>
+              ))}
+              <span className="text-[10px] text-white/20 ml-auto">Bar = hours worked (max 10h)</span>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── MERIT GOALS ───────────────────────────────────────────────────── */}
+      {/* ── TASK RATE & CONVERSION (pie) ──────────────────────────────────── */}
       <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-dark-100/60">
-          <div>
-            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Targets</p>
-            <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">Merit Goals <Star size={16} className="text-gold" /></p>
+        <div className="h-[2px] bg-gradient-to-r from-blue-500/70 via-blue-500/30 to-transparent" />
+        <div className="p-5">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Performance</p>
+              <p className="text-xl font-black text-white mt-0.5">Task Rate & Conversion</p>
+            </div>
           </div>
-          <button onClick={() => setGoalModal(true)}
-            className="flex items-center gap-1.5 text-xs bg-gold/10 border border-gold/20 text-gold px-3 py-2 rounded-xl hover:bg-gold/18 transition-colors font-semibold">
-            <Plus size={12} /> Set Goal
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Task completion donut */}
+            <div className="flex items-center gap-4">
+              <div className="relative w-[120px] h-[120px] flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={taskPie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={38} outerRadius={56} paddingAngle={2} stroke="none">
+                      {taskPie.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                    <Tooltip content={<ChartTip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-black text-white leading-none">{taskCompletionRate}%</span>
+                  <span className="text-white/35 text-[9px] uppercase tracking-wide mt-0.5">Done</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-white/45 text-[10px] uppercase tracking-wider font-bold">Task Completion</p>
+                <p className="text-xs text-white/60 flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#10b981' }} />{completedTasks} completed</p>
+                <p className="text-xs text-white/60 flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: isLight ? '#e5e5ea' : '#3a3a3e' }} />{Math.max(totalTasks - completedTasks, 0)} pending</p>
+              </div>
+            </div>
+            {/* Conversion donut */}
+            <div className="flex items-center gap-4 sm:border-l sm:border-dark-100 sm:pl-4">
+              <div className="relative w-[120px] h-[120px] flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={convPie.length ? convPie : [{ name: 'none', value: 1, color: isLight ? '#e5e5ea' : '#2a2a2e' }]} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={38} outerRadius={56} paddingAngle={2} stroke="none">
+                      {(convPie.length ? convPie : [{ color: isLight ? '#e5e5ea' : '#2a2a2e' }]).map((d, i) => <Cell key={i} fill={(d as { color: string }).color} />)}
+                    </Pie>
+                    <Tooltip content={<ChartTip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-black text-white leading-none">{convRate}%</span>
+                  <span className="text-white/35 text-[9px] uppercase tracking-wide mt-0.5">Closed</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-0.5">Pipeline</p>
+                {convPie.length ? convPie.map(d => (
+                  <p key={d.name} className="text-[11px] text-white/60 flex items-center gap-1.5 capitalize"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: d.color }} />{d.value} {d.name}</p>
+                )) : <p className="text-white/30 text-xs">No customers yet</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── SALES INSIGHTS ────────────────────────────────────────────────── */}
+      {sales && (
+        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+          <div className="h-[2px] bg-gradient-to-r from-gold/70 via-gold/25 to-transparent" />
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Intelligence</p>
+                <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">Sales Insights <Sparkles size={15} className="text-gold" /></p>
+              </div>
+              <button onClick={() => navigate('/sales-insights')} className="text-xs text-white/30 hover:text-gold transition-colors flex items-center gap-1">
+                Open <ChevronRight size={12} />
+              </button>
+            </div>
+            {sales.summary && <p className="text-white/55 text-xs leading-relaxed mb-4">{sales.summary}</p>}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {([
+                { label: 'Conv. Rate', value: `${sales.overallStats?.convRate ?? 0}%`, color: 'text-green-400' },
+                { label: 'Won Leads',  value: sales.overallStats?.wonLeads ?? 0,        color: 'text-gold' },
+                { label: 'Diary Logs', value: sales.overallStats?.totalEntries ?? 0,    color: 'text-blue-400' },
+              ] as const).map(({ label, value, color }) => (
+                <div key={label} className="rounded-xl border border-dark-100 bg-dark-200 p-2.5 text-center">
+                  <p className={`text-xl font-black leading-none ${color}`}>{value}</p>
+                  <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+            {(sales.trends?.length ?? 0) > 0 && (() => {
+              const maxC = Math.max(...sales.trends.map(t => t.count), 1);
+              return (
+                <div className="space-y-1.5">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-1">Most Discussed Products</p>
+                  {sales.trends.slice(0, 5).map(t => (
+                    <div key={t.item} className="flex items-center gap-2">
+                      <span className="text-white/55 text-[11px] w-24 flex-shrink-0 truncate capitalize">{t.item}</span>
+                      <div className="flex-1 h-3.5 bg-dark-200 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max((t.count / maxC) * 100, 4)}%`, background: GOLD, opacity: 0.85 }} />
+                      </div>
+                      <span className="text-gold text-[10px] font-bold w-6 text-right flex-shrink-0">{t.count}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {(sales.restockAlerts?.length ?? 0) > 0 && (
+              <div className="mt-4 pt-3 border-t border-dark-100 flex items-center gap-2 flex-wrap">
+                <Package size={12} className="text-amber-400" />
+                <span className="text-amber-400/70 text-[10px] font-semibold">Restock signals:</span>
+                {sales.restockAlerts.slice(0, 4).map((r, i) => (
+                  <span key={i} className="text-[10px] bg-amber-500/12 text-amber-300 px-2 py-0.5 rounded-full capitalize">{r.item}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── FOLLOW-UP QUEUE SUMMARY ───────────────────────────────────────── */}
+      <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100/60">
+          <div>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Priority</p>
+            <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">Follow-up Queue <Target size={15} className="text-gold" /></p>
+          </div>
+          <button onClick={() => navigate('/followup')} className="text-white/40 text-xs hover:text-gold flex items-center gap-1 transition-colors font-semibold">
+            View all <ChevronRight size={12} />
           </button>
         </div>
-        {meritGoals.length === 0 ? (
+        {topQueue.length === 0 ? (
           <div className="flex flex-col items-center py-10 gap-2">
-            <div className="w-12 h-12 rounded-2xl bg-gold/6 border border-gold/12 flex items-center justify-center">
-              <Target size={20} className="text-gold/30" />
-            </div>
-            <p className="text-white/40 text-sm mt-1">No goals set yet</p>
+            <CheckCircle size={28} className="text-white/10" />
+            <p className="text-white/40 text-sm">Queue is clear — nothing pending</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-dark-100/40">
-            {meritGoals.map(g => {
-              const ms = meritSummary.find(m => m.staffId === g.staffId);
-              const current = g.period === 'weekly' ? (ms?.weekPts ?? 0) : (ms?.monthPts ?? 0);
-              const progress = Math.min(Math.max(Math.round((current / g.targetPoints) * 100), 0), 100);
-              const done = progress >= 100;
-              return (
-                <div key={g.id} className="p-5 flex items-center gap-4">
-                  {/* Circular ring */}
-                  <div className="relative w-14 h-14 flex-shrink-0">
-                    <svg viewBox="0 0 36 36" className="w-14 h-14 -rotate-90">
-                      <circle cx="18" cy="18" r="14" fill="none" stroke={isLight ? '#e5e5ea' : '#1e1e1e'} strokeWidth="3" />
-                      <circle cx="18" cy="18" r="14" fill="none"
-                        stroke={done ? '#4ade80' : GOLD}
-                        strokeWidth="3" strokeLinecap="round"
-                        strokeDasharray={`${(progress / 100) * 87.96} 87.96`}
-                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={`text-[11px] font-black ${done ? 'text-green-400' : 'text-gold'}`}>{progress}%</span>
+          <>
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-dark-100/40">
+              {urgentCount > 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/15 text-red-300">{urgentCount} urgent</span>}
+              {highCount > 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300">{highCount} high</span>}
+              <span className="text-white/30 text-[10px] ml-auto">{queue.length} customers tracked</span>
+            </div>
+            <div className="divide-y divide-dark-100/40">
+              {topQueue.map(q => {
+                const pr = PRIORITY[q.priority] || PRIORITY.low;
+                return (
+                  <div key={q.customerId} onClick={() => navigate('/followup')}
+                    className="flex items-center gap-3 px-5 py-3.5 cursor-pointer transition-colors hover:bg-white/[0.04]">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: pr.dot }} />
+                    <div className="w-9 h-9 rounded-xl bg-dark-200 border border-dark-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white/45 text-xs font-black">{q.customerName[0]}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">{q.customerName}</p>
+                      <p className="text-white/30 text-[10px] truncate">{q.assignedStaffName} · <span className="capitalize">{q.status}</span></p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${pr.chip}`}>{q.priority}</span>
+                      <p className="text-white/30 text-[10px] mt-1">{q.lastContactDays >= 9999 ? 'Never' : `${q.lastContactDays}d ago`}</p>
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-white text-sm font-bold">{g.staffName.split(' ')[0]}</p>
-                      <span className="text-[10px] text-white/40 capitalize bg-dark-100 px-2 py-0.5 rounded-full">{g.period}</span>
-                    </div>
-                    <p className="text-white/40 text-xs">{current} / {g.targetPoints} pts</p>
-                    {g.reward && <p className="text-gold/40 text-[10px] mt-0.5 truncate">🎁 {g.reward}</p>}
-                  </div>
-                  <button onClick={() => handleDeleteGoal(g.id)} className="text-white/12 hover:text-red-400 transition-colors flex-shrink-0"><X size={14} /></button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
-
-      {/* ── MODALS ────────────────────────────────────────────────────────── */}
-      {goalModal && (
-        <Portal>
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-dark-300 border border-dark-100 rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-slide-up sm:animate-fade-in-up">
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-white font-black text-lg">Set Merit Goal</p>
-              <button onClick={() => setGoalModal(false)} className="text-white/40 hover:text-white transition-colors"><X size={18} /></button>
-            </div>
-            <div className="space-y-4">
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Staff Member</label>
-                <Select value={gStaffId} onChange={e => setGStaffId(e.target.value)} className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
-                  <option value="">Select staff...</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select></div>
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Target Points</label>
-                <input type="number" value={gTarget} onChange={e => setGTarget(e.target.value)} placeholder="e.g. 50" className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" /></div>
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Period</label>
-                <div className="flex gap-2">{(['weekly', 'monthly'] as const).map(p => (
-                  <button key={p} onClick={() => setGPeriod(p)} className={`flex-1 py-2 rounded-xl text-sm capitalize font-semibold transition-all ${gPeriod === p ? 'bg-gold text-black' : 'bg-dark-200 border border-dark-100 text-white/40 hover:text-white'}`}>{p}</button>
-                ))}</div></div>
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Reward (optional)</label>
-                <input type="text" value={gReward} onChange={e => setGReward(e.target.value)} placeholder="e.g. Bonus ₹500, day off..." className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" /></div>
-              <button onClick={handleSaveGoal} disabled={!gStaffId || !gTarget || savingGoal} className="w-full bg-gold text-black font-black py-3 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-all active:scale-95">
-                {savingGoal ? 'Saving...' : 'Save Goal'}
-              </button>
-            </div>
-          </div>
-        </div>
-        </Portal>
-      )}
-
-      {awardModal && (
-        <Portal>
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-dark-300 border border-dark-100 rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-slide-up sm:animate-fade-in-up">
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-white font-black text-lg">Award / Deduct Points</p>
-              <button onClick={() => setAwardModal(false)} className="text-white/40 hover:text-white transition-colors"><X size={18} /></button>
-            </div>
-            <div className="space-y-4">
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Staff Member</label>
-                <Select value={aStaffId} onChange={e => setAStaffId(e.target.value)} className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50">
-                  <option value="">Select staff...</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select></div>
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Points (negative to deduct)</label>
-                <input type="number" value={aPoints} onChange={e => setAPoints(e.target.value)} placeholder="e.g. 10 or -5" className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" /></div>
-              <div><label className="text-white/35 text-xs mb-1.5 block font-medium">Reason</label>
-                <input type="text" value={aReason} onChange={e => setAReason(e.target.value)} placeholder="e.g. Excellent client handling" className="w-full bg-dark-200 border border-dark-100 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/50 placeholder:text-white/20" /></div>
-              <button onClick={handleAward} disabled={!aStaffId || !aPoints || !aReason || savingAward} className="w-full bg-gold text-black font-black py-3 rounded-xl text-sm disabled:opacity-40 hover:bg-gold/90 transition-all active:scale-95">
-                {savingAward ? 'Saving...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-        </Portal>
-      )}
     </div>
   );
 }
