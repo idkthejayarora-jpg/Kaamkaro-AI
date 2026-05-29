@@ -116,13 +116,18 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) {
+      recordLoginFailure(key);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
+      recordLoginFailure(key);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Success — clear any accumulated failures for this key
+    loginFailureMap.delete(key);
 
     const token = jwt.sign(
       { id: user.id, phone: user.phone, role: user.role, name: user.name },
