@@ -162,21 +162,30 @@ html.light .card:not(:focus-within):hover {
   transform: translateY(-1px);
 }
 
-/* Inputs */
+/* Inputs — light frosted glass */
 html.light .input {
-  background-color: #ffffff !important;
-  border-color: rgba(0,0,0,0.12) !important;
+  background: rgb(var(--color-dark-200) / 0.7) !important;
+  border-color: rgba(0,0,0,0.10) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset !important;
   color: #1C1C1E !important;
 }
 html.light .input:focus {
   border-color: var(--accent-dark, #8B6914) !important;
-  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12) !important;
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.14),
+              0 1px 0 rgba(255,255,255,0.6) inset !important;
 }
 
-/* Buttons */
+/* Buttons — light glass */
 html.light .btn-primary       { color: #ffffff !important; }
-html.light .btn-secondary     { border-color: rgba(0,0,0,0.15) !important; }
-html.light .btn-secondary:hover { background: rgba(0,0,0,0.05) !important; }
+html.light .btn-secondary {
+  border-color: rgba(0,0,0,0.10) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.35)) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 1px 3px rgba(0,0,0,0.05) !important;
+}
+html.light .btn-secondary:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.5)) !important;
+  border-color: rgba(0,0,0,0.14) !important;
+}
 html.light .btn-ghost         { color: rgba(28,28,30,0.68) !important; }
 html.light .btn-ghost:hover   { color: rgba(28,28,30,0.90) !important; background: rgba(0,0,0,0.05) !important; }
 
