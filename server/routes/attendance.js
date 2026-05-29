@@ -564,20 +564,6 @@ router.post('/self-checkout', authMiddleware, async (req, res) => {
 
     const now   = new Date();
     const today = todayStr();
-    const records = await readDB('attendance');
-    const record  = records.find(r => r.staffId === staffId && r.date === today);
-    if (!record) return res.status(404).json({ error: 'No check-in found for today' });
-
-    const sessions = record.sessions || [];
-    const open = [...sessions].reverse().find(s => !s.logoutAt);
-    if (!open) return res.json({ ...record, alreadyOut: true });
-
-    open.logoutAt = now.toISOString();
-    open.hours    = Math.round((now - new Date(open.loginAt)) / 36000) / 100;
-
-    record.logoutAt    = now.toISOString();
-    record.hoursWorked = calcHours(sessions);
-    record.sessions    = sessions;
 
     // Expected hours — same priority as self-checkin
     const genderShift = (member.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
@@ -588,16 +574,40 @@ router.post('/self-checkout', authMiddleware, async (req, res) => {
       const [eh, em] = effectiveShift.shiftEnd.split(':').map(Number);
       expected = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
     }
-    record.overtimeHours  = Math.max(0, Math.round((record.hoursWorked - expected) * 100) / 100);
-    record.undertimeHours = Math.max(0, Math.round((expected - record.hoursWorked) * 100) / 100);
 
-    await writeDB('attendance', records);
+    const result = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      const rec  = records.find(r => r.staffId === staffId && r.date === today);
+      if (!rec) return { notFound: true };
 
-    // Sync availability
-    const idx = staffList.findIndex(s => s.id === staffId);
-    if (idx !== -1) { staffList[idx].availability = 'out_of_office'; await writeDB('staff', staffList); }
+      const sessions = rec.sessions || [];
+      const open = [...sessions].reverse().find(s => !s.logoutAt);
+      if (!open) return { record: rec, alreadyOut: true };
 
-    res.json(record);
+      open.logoutAt = now.toISOString();
+      open.hours    = Math.round((now - new Date(open.loginAt)) / 36000) / 100;
+
+      rec.logoutAt    = now.toISOString();
+      rec.hoursWorked = calcHours(sessions);
+      rec.sessions    = sessions;
+      rec.overtimeHours  = Math.max(0, Math.round((rec.hoursWorked - expected) * 100) / 100);
+      rec.undertimeHours = Math.max(0, Math.round((expected - rec.hoursWorked) * 100) / 100);
+
+      await writeDB('attendance', records);
+      return { record: rec };
+    });
+
+    if (result.notFound)   return res.status(404).json({ error: 'No check-in found for today' });
+    if (result.alreadyOut) return res.json({ ...result.record, alreadyOut: true });
+
+    // Sync availability — serialised on staff
+    await withLock('staff', async () => {
+      const list = await readDB('staff');
+      const idx = list.findIndex(s => s.id === staffId);
+      if (idx !== -1) { list[idx].availability = 'out_of_office'; await writeDB('staff', list); }
+    });
+
+    res.json(result.record);
   } catch (err) {
     console.error('[Self checkout]', err);
     res.status(500).json({ error: 'Server error' });
