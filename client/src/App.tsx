@@ -102,6 +102,7 @@ export default function App() {
         <AuthProvider>
           <AppRoutes />
           <OverdueTaskAlert />
+          <RippleEffect />
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
