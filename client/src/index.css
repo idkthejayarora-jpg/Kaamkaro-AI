@@ -250,6 +250,9 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
     min-height: 100svh;
     /* Smooth dark ↔ light theme switch */
     transition: background-color 0.28s ease, color 0.2s ease;
+    /* Kill the native grey tap flash on mobile — the JS ripple replaces it.
+       Without this the OS highlight fights/overlaps the ripple on touch. */
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Default border color — all elements get a clean separator, no colour tint */
