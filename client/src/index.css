@@ -525,3 +525,127 @@ html.light .gradient-sep {
 /* ── Hide scrollbar (keep scroll functionality) ──────────────────────────────*/
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   AMBIENT ANIMATED BACKGROUND  (AnimatedBackground.tsx)
+   Theme-accent-coded, GPU-only (transform/opacity), pointer-events-none.
+   Sits at z-index -1 behind transparent app surfaces; cards stay opaque on top.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.kk-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;            /* isolate paint/layout — never reflows the app */
+}
+
+/* ── Aurora gradient wash ─────────────────────────────────────────────────── */
+.kk-bg-aurora {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(45% 45% at 18% 22%, rgb(var(--accent-rgb)       / 0.16), transparent 70%),
+    radial-gradient(40% 40% at 82% 18%, rgb(var(--accent-rgb-light) / 0.10), transparent 70%),
+    radial-gradient(50% 50% at 75% 85%, rgb(var(--accent-rgb)       / 0.13), transparent 72%),
+    radial-gradient(35% 35% at 25% 80%, rgb(var(--accent-rgb-dark)  / 0.10), transparent 70%);
+  will-change: transform, opacity;
+  animation: kkAuroraShift 26s ease-in-out infinite alternate;
+}
+@keyframes kkAuroraShift {
+  0%   { transform: translate3d(0, 0, 0) scale(1);            opacity: 0.9;  }
+  50%  { transform: translate3d(2%, -1.5%, 0) scale(1.08);    opacity: 1;    }
+  100% { transform: translate3d(-2%, 1.5%, 0) scale(1.03);    opacity: 0.82; }
+}
+
+/* ── Floating blurred orbs ────────────────────────────────────────────────── */
+.kk-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.kk-orb-1 {
+  width: 42vmax; height: 42vmax; top: -14vmax; left: -10vmax;
+  background: radial-gradient(circle, rgb(var(--accent-rgb)       / 0.30), transparent 65%);
+  animation: kkOrbFloat1 30s ease-in-out infinite;
+}
+.kk-orb-2 {
+  width: 34vmax; height: 34vmax; bottom: -12vmax; right: -8vmax;
+  background: radial-gradient(circle, rgb(var(--accent-rgb-light) / 0.22), transparent 65%);
+  animation: kkOrbFloat2 38s ease-in-out infinite;
+}
+.kk-orb-3 {
+  width: 26vmax; height: 26vmax; top: 40%; right: 12%;
+  background: radial-gradient(circle, rgb(var(--accent-rgb-dark)  / 0.18), transparent 65%);
+  animation: kkOrbFloat3 34s ease-in-out infinite;
+}
+.kk-orb-4 {
+  width: 30vmax; height: 30vmax; bottom: 8%; left: 18%;
+  background: radial-gradient(circle, rgb(var(--accent-rgb)       / 0.16), transparent 65%);
+  animation: kkOrbFloat1 44s ease-in-out infinite reverse;
+}
+@keyframes kkOrbFloat1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(6vmax, 4vmax, 0) scale(1.12); }
+  66%      { transform: translate3d(-3vmax, 7vmax, 0) scale(0.95); }
+}
+@keyframes kkOrbFloat2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(-7vmax, -5vmax, 0) scale(1.15); }
+}
+@keyframes kkOrbFloat3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  40%      { transform: translate3d(-5vmax, 3vmax, 0) scale(1.1); }
+  75%      { transform: translate3d(4vmax, -4vmax, 0) scale(0.9); }
+}
+
+/* ── Rising particle dots ─────────────────────────────────────────────────── */
+.kk-dots { position: absolute; inset: 0; }
+.kk-dot {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 50%;
+  background: rgb(var(--accent-rgb) / 0.9);
+  box-shadow: 0 0 6px rgb(var(--accent-rgb) / 0.6);
+  will-change: transform, opacity;
+  animation-name: kkDotRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes kkDotRise {
+  0%   { transform: translate3d(0, 0, 0);                          opacity: 0; }
+  10%  { opacity: var(--dot-opacity, 0.4); }
+  90%  { opacity: var(--dot-opacity, 0.4); }
+  100% { transform: translate3d(var(--drift, 0px), -102vh, 0);     opacity: 0; }
+}
+
+/* ── Faint dot-grid texture, vignette-masked at the edges ─────────────────── */
+.kk-bg-grid {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgb(var(--accent-rgb) / 0.06) 1px, transparent 1px);
+  background-size: 38px 38px;
+  opacity: 0.6;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 38%, #000 30%, transparent 80%);
+          mask-image: radial-gradient(ellipse 80% 70% at 50% 38%, #000 30%, transparent 80%);
+}
+
+/* ── Light mode — soften so it never muddies white surfaces ───────────────── */
+html.light .kk-orb       { opacity: 0.32; filter: blur(72px); }
+html.light .kk-bg-aurora { opacity: 0.55; }
+html.light .kk-bg-grid   { opacity: 0.4; }
+html.light .kk-dot       { box-shadow: none; }
+
+/* ── Mobile — cheaper blur, fewer layers ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .kk-orb       { filter: blur(44px); }
+  .kk-orb-extra { display: none; }
+  .kk-bg-grid   { background-size: 30px 30px; }
+}
+
+/* ── Accessibility — freeze all ambient motion ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .kk-bg-aurora, .kk-orb { animation: none !important; }
+  .kk-dot { display: none; }
+}
