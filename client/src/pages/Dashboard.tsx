@@ -90,27 +90,18 @@ const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: { va
 // ── ─────────────────────────────────────────────────────────────────────────
 function AdminDashboard() {
   const [staff, setStaff]           = useState<Staff[]>([]);
-  const [performance, setPerf]      = useState<Performance[]>([]);
   const [summary, setSummary]       = useState<DashboardSummary | null>(null);
   const [meritSummary, setMeritSum] = useState<MeritSummary[]>([]);
-  const [meritGoals, setMeritGoals] = useState<MeritGoal[]>([]);
   const [allTasks, setAllTasks]     = useState<Task[]>([]);
   const [loading, setLoading]       = useState(true);
-  const [customers, setCustomers]               = useState<Customer[]>([]);
-  const [allInteractions, setAllInteractions]   = useState<Interaction[]>([]);
-  const [fraudAlerts, setFraudAlerts]           = useState<FraudAlert[]>([]);
-  const [fraudExpanded, setFraudExpanded]       = useState(false);
-  const [goalModal, setGoalModal]   = useState(false);
-  const [gStaffId, setGStaffId]     = useState(''); const [gTarget, setGTarget] = useState('');
-  const [gPeriod, setGPeriod]       = useState<'weekly' | 'monthly'>('monthly');
-  const [gReward, setGReward]       = useState(''); const [savingGoal, setSavingGoal] = useState(false);
-  const [awardModal, setAwardModal] = useState(false);
-  const [aStaffId, setAStaffId]     = useState(''); const [aPoints, setAPoints] = useState('');
-  const [aReason, setAReason]       = useState(''); const [savingAward, setSavingAward] = useState(false);
+  const [customers, setCustomers]   = useState<Customer[]>([]);
+  const [fraudAlerts, setFraudAlerts]     = useState<FraudAlert[]>([]);
+  const [fraudExpanded, setFraudExpanded] = useState(false);
   const [expandedBanner, setExpandedBanner] = useState<'customers' | 'tasks' | null>(null);
   const [todayAtt, setTodayAtt]     = useState<{ inCount: number; total: number; late: number; absent: number } | null>(null);
   const [todayAttFull, setTodayAttFull] = useState<{ staffId: string; staffName: string; avatar: string; status: 'in'|'out'|'absent'; isLate: boolean; hoursWorked: number; leaveToday: { type: string } | null }[]>([]);
-  const [orphanData, setOrphanData] = useState<{ totalOrphans: number; orphans: Record<string, { id: string; label: string; missingRef: string; missingId: string }[]> } | null>(null);
+  const [sales, setSales] = useState<SalesData | null>(null);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
   const navigate = useNavigate();
   const { isLight } = useTheme();
   // Adaptive chart palette — flips with theme
