@@ -340,10 +340,19 @@ export default function StaffProfile() {
                 color={scoreColor} trackColor="rgba(255,255,255,0.05)"
                 delay={500}
               >
-                <div className="w-[68px] h-[68px] rounded-2xl bg-gradient-to-br from-gold/25 to-gold/5
-                                border border-gold/25 flex items-center justify-center">
-                  <span className="text-gold text-3xl font-black leading-none">{staff.avatar}</span>
-                </div>
+                {facePhotoUrl ? (
+                  <img
+                    src={facePhotoUrl}
+                    alt={staff.name}
+                    className="w-[68px] h-[68px] rounded-2xl object-cover border border-gold/25"
+                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className="w-[68px] h-[68px] rounded-2xl bg-gradient-to-br from-gold/25 to-gold/5
+                                  border border-gold/25 flex items-center justify-center">
+                    <span className="text-gold text-3xl font-black leading-none">{staff.avatar}</span>
+                  </div>
+                )}
               </RadialRing>
 
               {/* Online pulse dot */}
