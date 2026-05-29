@@ -49,13 +49,6 @@ router.post('/', async (req, res) => {
     const member = staff.find(s => s.id === staffId);
     if (!member) return res.status(404).json({ error: 'Staff not found' });
 
-    // Check for duplicate leave on same date
-    const leaves = await readDB('leaves');
-    const existing = leaves.find(l => l.staffId === staffId && l.date === date);
-    if (existing) {
-      return res.status(409).json({ error: `Leave already marked for ${member.name} on ${date}` });
-    }
-
     const record = {
       id:           uuidv4(),
       staffId,
@@ -69,8 +62,16 @@ router.post('/', async (req, res) => {
       createdAt:    new Date().toISOString(),
     };
 
-    leaves.push(record);
-    await writeDB('leaves', leaves);
+    // Atomic duplicate-check + insert — prevents two concurrent posts both passing the check
+    const dup = await withLock('leaves', async () => {
+      const leaves = await readDB('leaves');
+      if (leaves.find(l => l.staffId === staffId && l.date === date)) return true;
+      leaves.push(record);
+      await writeDB('leaves', leaves);
+      return false;
+    });
+    if (dup) return res.status(409).json({ error: `Leave already marked for ${member.name} on ${date}` });
+
     res.status(201).json(record);
   } catch (err) {
     console.error('[Leaves POST]', err);
