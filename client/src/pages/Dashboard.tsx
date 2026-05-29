@@ -466,6 +466,7 @@ function AdminDashboard() {
               <span className="text-[10px] text-white/20 ml-auto">Bar = hours worked (max 10h)</span>
             </div>
           </div>
+          )}
         </div>
       )}
 
