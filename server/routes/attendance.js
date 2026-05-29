@@ -98,24 +98,28 @@ router.post('/logout', authMiddleware, async (req, res) => {
   try {
     const now     = new Date();
     const today   = todayStr();
-    const records = await readDB('attendance');
 
-    const record = records.find(r => r.staffId === req.user.id && r.date === today);
+    const record = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      const rec = records.find(r => r.staffId === req.user.id && r.date === today);
+      if (!rec) return null;
+
+      const sessions = rec.sessions || [];
+      const open = [...sessions].reverse().find(s => !s.logoutAt);
+      if (open) {
+        open.logoutAt = now.toISOString();
+        open.hours = Math.round((now - new Date(open.loginAt)) / 36000) / 100;
+      }
+
+      rec.logoutAt    = now.toISOString();
+      rec.hoursWorked = calcHours(sessions);
+      rec.sessions    = sessions;
+
+      await writeDB('attendance', records);
+      return rec;
+    });
+
     if (!record) return res.json({ message: 'No open session found for today' });
-
-    const sessions = record.sessions || [];
-    const open = [...sessions].reverse().find(s => !s.logoutAt);
-    if (open) {
-      open.logoutAt = now.toISOString();
-      open.hours = Math.round(
-        (now - new Date(open.loginAt)) / 36000) / 100;
-    }
-
-    record.logoutAt    = now.toISOString();
-    record.hoursWorked = calcHours(sessions);
-    record.sessions    = sessions;
-
-    await writeDB('attendance', records);
     res.json(record);
   } catch (err) {
     console.error('[Attendance logout]', err);
