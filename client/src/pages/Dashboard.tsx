@@ -361,22 +361,28 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* ── TODAY'S ATTENDANCE ────────────────────────────────────────────── */}
+      {/* ── TODAY'S ATTENDANCE (compact pill, expandable) ─────────────────── */}
       {todayAttFull.length > 0 && (
         <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
-          <div className="h-[3px] bg-gradient-to-r from-green-500/80 via-green-500/30 to-transparent" />
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Live</p>
-                <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">
-                  Today's Attendance
-                  <UserCheck size={16} className="text-green-400" />
-                </p>
-                <p className="text-white/30 text-xs mt-0.5">
-                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-              </div>
+          <button onClick={() => setAttExpanded(e => !e)}
+            className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-white/[0.04] transition-colors">
+            <div className="w-8 h-8 rounded-xl bg-green-500/12 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+              <UserCheck size={15} className="text-green-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-bold leading-tight">Today's Attendance</p>
+              <p className="text-white/30 text-[10px]">{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/12 text-green-300">{todayAtt?.inCount ?? 0} in</span>
+              {(todayAtt?.late ?? 0) > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-300">{todayAtt?.late} late</span>}
+              {(todayAtt?.absent ?? 0) > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/12 text-red-300">{todayAtt?.absent} absent</span>}
+            </div>
+            <ChevronRight size={14} className={`text-white/40 transition-transform duration-200 flex-shrink-0 ${attExpanded ? 'rotate-90' : ''}`} />
+          </button>
+          {attExpanded && (
+          <div className="border-t border-dark-100 p-5">
+            <div className="flex items-center justify-end mb-4">
               <button onClick={() => navigate('/attendance-portal')}
                 className="text-xs text-white/30 hover:text-gold transition-colors flex items-center gap-1">
                 Full view <ChevronRight size={12} />
