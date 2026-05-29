@@ -121,12 +121,13 @@ function AdminDashboard() {
       adminAPI.orphans().then((data: { totalOrphans: number; orphans: Record<string, { id: string; label: string; missingRef: string; missingId: string }[]> }) => {
         setOrphanData(data);
       }).catch(() => {});
-      attendanceAPI.today().then((recs: { status: string; isLate: boolean }[]) => {
+      attendanceAPI.today().then((recs: typeof todayAttFull) => {
+        setTodayAttFull(recs);
         setTodayAtt({
-          inCount: recs.filter((r: { status: string }) => r.status === 'in').length,
+          inCount: recs.filter(r => r.status === 'in').length,
           total:   recs.length,
-          late:    recs.filter((r: { isLate: boolean }) => r.isLate).length,
-          absent:  recs.filter((r: { status: string }) => r.status === 'absent').length,
+          late:    recs.filter(r => r.isLate).length,
+          absent:  recs.filter(r => r.status === 'absent').length,
         });
       }).catch(() => {});
       if (s.length > 0) {
