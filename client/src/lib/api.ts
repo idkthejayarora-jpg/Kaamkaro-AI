@@ -85,15 +85,17 @@ export const staffAPI = {
     api.patch(`/staff/${id}/availability`, { availability }).then(r => r.data),
   getPerformance: (id: string) => api.get(`/staff/${id}/performance`).then(r => r.data),
   getAllPerformance: () => api.get('/staff/performance/all').then(r => r.data),
-  enrollFace: (id: string, descriptors: number[][]) =>
-    api.patch(`/staff/${id}/face`, { descriptors }).then(r => r.data),
+  enrollFace: (id: string, descriptors: number[][], facePhoto?: string) =>
+    api.patch(`/staff/${id}/face`, { descriptors, facePhoto }).then(r => r.data),
   clearFace: (id: string) => api.delete(`/staff/${id}/face`).then(r => r.data),
+  facePhotoUrl: (id: string, ts?: string) =>
+    `/api/staff/${id}/face-photo${ts ? `?t=${ts}` : ''}`,
   setShift: (id: string, shift: { shiftStart: string; shiftEnd: string } | null) =>
     api.patch(`/staff/${id}/shift`, shift === null ? { shiftOverride: null } : { shiftStart: shift.shiftStart, shiftEnd: shift.shiftEnd }).then(r => r.data),
   setTour: (id: string, canSelfCheckin: boolean) =>
     api.patch(`/staff/${id}/tour`, { canSelfCheckin }).then(r => r.data),
-  enrollSelfFace: (descriptors: number[][]) =>
-    api.patch('/staff/me/face', { descriptors }).then(r => r.data),
+  enrollSelfFace: (descriptors: number[][], facePhoto?: string) =>
+    api.patch('/staff/me/face', { descriptors, facePhoto }).then(r => r.data),
   setGender: (id: string, gender: 'male' | 'female') =>
     api.patch(`/staff/${id}/gender`, { gender }).then(r => r.data),
   faceCheck: () => api.get('/staff/face-check').then(r => r.data),
