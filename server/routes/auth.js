@@ -358,12 +358,16 @@ router.patch('/managers/:id/reset-password', authMiddleware, adminOnly, async (r
     if (!newPassword || newPassword.length < 4)
       return res.status(400).json({ error: 'Password must be at least 4 characters' });
 
-    const managers = await readDB('attendance_managers').catch(() => []);
-    const idx = managers.findIndex(m => m.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ error: 'Manager not found' });
-
-    managers[idx].password = await bcrypt.hash(newPassword, 10);
-    await writeDB('attendance_managers', managers);
+    const hashed = await bcrypt.hash(newPassword, 10);
+    const ok = await withLock('attendance_managers', async () => {
+      const managers = await readDB('attendance_managers').catch(() => []);
+      const idx = managers.findIndex(m => m.id === req.params.id);
+      if (idx === -1) return false;
+      managers[idx].password = hashed;
+      await writeDB('attendance_managers', managers);
+      return true;
+    });
+    if (!ok) return res.status(404).json({ error: 'Manager not found' });
 
     res.json({ message: 'Password updated', plainPassword: newPassword });
   } catch (err) {
