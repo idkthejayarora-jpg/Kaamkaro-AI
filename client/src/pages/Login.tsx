@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Phone, Lock, AlertCircle, User, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
