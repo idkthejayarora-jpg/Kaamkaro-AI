@@ -1,10 +1,29 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const fs   = require('fs-extra');
+const path = require('path');
 const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware, adminOnly, attendanceManagerOrAdmin } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
 const { broadcast } = require('../utils/sse');
+
+// Persistent data dir — matches db.js so face photos survive Railway restarts
+const DATA_DIR = process.env.DATA_PATH
+  ? path.resolve(process.env.DATA_PATH)
+  : path.join(__dirname, '../data');
+const FACE_PHOTO_DIR = path.join(DATA_DIR, 'faces');
+
+// Save a base64 JPEG data-URL to disk; returns the relative URL path or null
+async function saveFacePhoto(staffId, dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string') return null;
+  if (!dataUrl.startsWith('data:image')) return null;
+  const m = dataUrl.match(/^data:image\/\w+;base64,(.+)$/s);
+  if (!m) return null;
+  await fs.ensureDir(FACE_PHOTO_DIR);
+  await fs.writeFile(path.join(FACE_PHOTO_DIR, `${staffId}.jpg`), Buffer.from(m[1], 'base64'));
+  return `/api/staff/${staffId}/face-photo`;
+}
 
 const router = express.Router();
 router.use(authMiddleware);
