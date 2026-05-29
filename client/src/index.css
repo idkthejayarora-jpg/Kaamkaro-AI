@@ -269,23 +269,43 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
 /* ── Components ───────────────────────────────────────────────────────────────*/
 @layer components {
 
-  /* Cards — Apple style: flat with subtle separator border */
+  /* Cards — Liquid Glass: translucent frosted surface, specular edge, depth.
+     Ambient background shows through via backdrop-filter for refraction. */
   .card {
-    @apply bg-dark-300 rounded-2xl p-5;
-    border: 1px solid rgba(255,255,255,0.06);
+    @apply rounded-2xl p-5;
+    position: relative;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012) 38%, transparent),
+      rgb(var(--color-dark-300) / 0.58);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.09);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 0 0 0.5px rgba(255,255,255,0.04),
+      0 10px 34px rgba(0,0,0,0.30);
     transition: border-color 0.2s ease, box-shadow 0.25s ease,
                 transform 0.2s ease, background-color 0.25s ease;
     will-change: transform;
   }
   .card:hover {
-    border-color: rgba(255,255,255,0.11);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.14) inset,
+      0 0 0 0.5px rgba(255,255,255,0.05),
+      0 14px 44px rgba(0,0,0,0.36),
+      0 0 28px rgb(var(--accent-rgb) / 0.06);
   }
   /* Only lift cards that don't contain focused inputs — prevents jarring jump on interactive cards */
   .card:not(:focus-within):hover {
     transform: translateY(-1px);
   }
   .card:active { transform: translateY(0); }
+
+  /* Perf/compat fallback: solidify when backdrop-filter unsupported */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card { background: rgb(var(--color-dark-300) / 0.96); }
+  }
 
   /* Buttons */
   .btn-primary {
