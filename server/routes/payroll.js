@@ -35,32 +35,37 @@ router.patch('/config/:staffId', authMiddleware, attendanceManagerOrAdmin, async
     const { staffId } = req.params;
     const { monthlySalary, overtimeMultiplier, latePenaltyPerMin, workingDaysOverride } = req.body;
 
-    const configs = await readDB('payroll_config').catch(() => []);
-    const idx = configs.findIndex(c => c.staffId === staffId);
+    // Atomic read-modify-write so concurrent config saves can't clobber each other
+    const saved = await withLock('payroll_config', async () => {
+      const configs = await readDB('payroll_config').catch(() => []);
+      const idx = configs.findIndex(c => c.staffId === staffId);
 
-    if (idx >= 0) {
-      configs[idx] = {
-        ...configs[idx],
-        ...(monthlySalary !== undefined     && { monthlySalary }),
-        ...(overtimeMultiplier !== undefined && { overtimeMultiplier }),
-        ...(latePenaltyPerMin !== undefined  && { latePenaltyPerMin }),
-        ...(workingDaysOverride !== undefined && { workingDaysOverride }),
-        updatedAt: new Date().toISOString(),
-      };
-    } else {
-      configs.push({
-        staffId,
-        monthlySalary:       monthlySalary       ?? 0,
-        overtimeMultiplier:  overtimeMultiplier   ?? 1.5,
-        latePenaltyPerMin:   latePenaltyPerMin    ?? 0,
-        workingDaysOverride: workingDaysOverride  ?? null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    }
+      if (idx >= 0) {
+        configs[idx] = {
+          ...configs[idx],
+          ...(monthlySalary !== undefined     && { monthlySalary }),
+          ...(overtimeMultiplier !== undefined && { overtimeMultiplier }),
+          ...(latePenaltyPerMin !== undefined  && { latePenaltyPerMin }),
+          ...(workingDaysOverride !== undefined && { workingDaysOverride }),
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        configs.push({
+          staffId,
+          monthlySalary:       monthlySalary       ?? 0,
+          overtimeMultiplier:  overtimeMultiplier   ?? 1.5,
+          latePenaltyPerMin:   latePenaltyPerMin    ?? 0,
+          workingDaysOverride: workingDaysOverride  ?? null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
 
-    await writeDB('payroll_config', configs);
-    res.json(configs.find(c => c.staffId === staffId));
+      await writeDB('payroll_config', configs);
+      return configs.find(c => c.staffId === staffId);
+    });
+
+    res.json(saved);
   } catch (err) {
     console.error('[Payroll config PATCH]', err);
     res.status(500).json({ error: 'Server error' });
