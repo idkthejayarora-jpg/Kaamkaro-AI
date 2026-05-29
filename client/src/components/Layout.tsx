@@ -99,7 +99,10 @@ export default function Layout() {
   // No auto-dismiss — broadcast stays until staff clicks "Mark as Read"
 
   return (
-    <div className="flex h-svh bg-dark-500 overflow-hidden">
+    <div className="flex h-svh overflow-hidden">
+      {/* Ambient theme-coded animated background — sits behind transparent surfaces */}
+      <AnimatedBackground />
+
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       {/* Main content */}
