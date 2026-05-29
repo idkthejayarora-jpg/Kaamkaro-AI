@@ -84,6 +84,7 @@ export const staffAPI = {
   setAvailability: (id: string, availability: string) =>
     api.patch(`/staff/${id}/availability`, { availability }).then(r => r.data),
   getPerformance: (id: string) => api.get(`/staff/${id}/performance`).then(r => r.data),
+  getAllPerformance: () => api.get('/staff/performance/all').then(r => r.data),
   enrollFace: (id: string, descriptors: number[][]) =>
     api.patch(`/staff/${id}/face`, { descriptors }).then(r => r.data),
   clearFace: (id: string) => api.delete(`/staff/${id}/face`).then(r => r.data),
