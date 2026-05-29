@@ -165,9 +165,9 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   if (activeStages && (responsiveness === 'ghosting' || hasPaymentDelay)) forcedUrgent = true;
 
   const priority =
-    forcedUrgent || priorityScore >= 72 ? 'urgent' :   // Compounding red flags — act now
-    priorityScore >= 54 ? 'high'   :                   // Needs attention this week
-    priorityScore >= 38 ? 'medium' :                   // On the radar
+    forcedUrgent || priorityScore >= 70 ? 'urgent' :   // Compounding red flags — act now
+    priorityScore >= 50 ? 'high'   :                   // Needs attention this week
+    priorityScore >= 28 ? 'medium' :                   // On the radar
                           'low';                       // All good, recently touched
 
   // ── Context snippet for AI (compact) ─────────────────────────────────────
