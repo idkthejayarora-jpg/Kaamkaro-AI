@@ -158,6 +158,22 @@ html.light .card:hover {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   html.light .card { background: rgb(var(--color-dark-300) / 0.97) !important; }
 }
+
+/* Glass panel — light modals/popovers */
+html.light .glass-panel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.1)),
+    rgb(var(--color-dark-300) / 0.72) !important;
+  border: 1px solid rgba(255,255,255,0.8) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 0 0 0.5px rgba(0,0,0,0.05),
+    0 24px 70px rgba(0,0,0,0.22) !important;
+  color: #1C1C1E;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html.light .glass-panel { background: rgb(var(--color-dark-300) / 0.98) !important; }
+}
 html.light .card:not(:focus-within):hover {
   transform: translateY(-1px);
 }
