@@ -313,9 +313,11 @@ router.post('/managers', authMiddleware, adminOnly, async (req, res) => {
       createdAt: new Date().toISOString(),
     };
 
-    const allManagers = await readDB('attendance_managers').catch(() => []);
-    allManagers.push(manager);
-    await writeDB('attendance_managers', allManagers);
+    await withLock('attendance_managers', async () => {
+      const allManagers = await readDB('attendance_managers').catch(() => []);
+      allManagers.push(manager);
+      await writeDB('attendance_managers', allManagers);
+    });
 
     const { password: _pw, ...safeManager } = manager;
     console.log(`[Auth] Admin ${req.user.name} created attendance manager: ${manager.name} (${manager.phone})`);
