@@ -38,30 +38,53 @@ async function getAttendanceConfig() {
 // Called from the frontend right after a successful auth login.
 router.post('/login', authMiddleware, async (req, res) => {
   try {
-    const now    = new Date().toISOString();
+    const nowDt  = new Date();
+    const now    = nowDt.toISOString();
     const today  = todayStr();
-    const records = await readDB('attendance');
 
-    let record = records.find(r => r.staffId === req.user.id && r.date === today);
-
-    if (!record) {
-      record = {
-        id: uuidv4(),
-        staffId:   req.user.id,
-        staffName: req.user.name,
-        date:      today,
-        loginAt:   now,
-        logoutAt:  null,
-        hoursWorked: 0,
-        sessions:  [{ loginAt: now, logoutAt: null }],
-      };
-      records.push(record);
-    } else {
-      record.sessions = record.sessions || [];
-      record.sessions.push({ loginAt: now, logoutAt: null });
+    // Compute late status against the staff's effective shift (mirrors kiosk/manual/self-checkin)
+    const [cfg, staffList] = await Promise.all([getAttendanceConfig(), readDB('staff')]);
+    const member = staffList.find(s => s.id === req.user.id);
+    let isLate = false, lateMinutes = 0;
+    if (member) {
+      const genderShift    = (member.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+      const effectiveShift = member.shiftOverride || genderShift || cfg;
+      const [shiftH, shiftM] = String(effectiveShift.shiftStart || '09:30').split(':').map(Number);
+      if (!Number.isNaN(shiftH) && !Number.isNaN(shiftM)) {
+        const deadline = new Date(nowDt);
+        deadline.setHours(shiftH, shiftM + (cfg.lateGraceMins || 0), 0, 0);
+        isLate      = nowDt > deadline;
+        lateMinutes = isLate ? Math.max(0, Math.round((nowDt - deadline) / 60000)) : 0;
+      }
     }
 
-    await writeDB('attendance', records);
+    const record = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      let rec = records.find(r => r.staffId === req.user.id && r.date === today);
+
+      if (!rec) {
+        rec = {
+          id: uuidv4(),
+          staffId:   req.user.id,
+          staffName: req.user.name,
+          date:      today,
+          loginAt:   now,
+          logoutAt:  null,
+          hoursWorked: 0,
+          isLate,
+          lateMinutes,
+          sessions:  [{ loginAt: now, logoutAt: null }],
+        };
+        records.push(rec);
+      } else {
+        rec.sessions = rec.sessions || [];
+        rec.sessions.push({ loginAt: now, logoutAt: null });
+      }
+
+      await writeDB('attendance', records);
+      return rec;
+    });
+
     res.json(record);
   } catch (err) {
     console.error('[Attendance login]', err);
