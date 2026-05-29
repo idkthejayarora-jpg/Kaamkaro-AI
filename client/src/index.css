@@ -309,30 +309,45 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
 
   /* Buttons */
   .btn-primary {
-    @apply bg-gold text-white font-semibold px-4 py-2 rounded-xl
+    @apply text-white font-semibold px-4 py-2 rounded-xl
            active:scale-95 transition-all duration-150
            disabled:opacity-35 disabled:cursor-not-allowed;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%),
+      var(--accent);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 0 0 0.5px rgb(var(--accent-rgb) / 0.4),
+      0 6px 18px rgb(var(--accent-rgb) / 0.28);
   }
   .btn-primary:hover:not(:disabled) {
-    box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset,
-                0 4px 16px rgb(var(--accent-rgb) / 0.35);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.3) inset,
+      0 0 0 0.5px rgb(var(--accent-rgb) / 0.5),
+      0 8px 24px rgb(var(--accent-rgb) / 0.42);
   }
   .btn-secondary {
     @apply font-medium px-4 py-2 rounded-xl
            active:scale-95 transition-all duration-150
            disabled:opacity-35 disabled:cursor-not-allowed;
-    border: 1px solid rgba(var(--color-dark-50), 0.6);
+    border: 1px solid rgba(255,255,255,0.12);
     color: var(--accent);
-    background: transparent;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset;
   }
-  .btn-secondary:hover { background: rgba(255,255,255,0.05); }
+  .btn-secondary:hover {
+    background: linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03));
+    border-color: rgba(255,255,255,0.18);
+  }
 
   .btn-ghost {
     @apply text-white/65 font-medium px-4 py-2 rounded-xl
            hover:text-white active:scale-95 transition-all duration-150;
   }
-  .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
   .btn-danger {
     @apply bg-red-500/10 text-red-400 font-medium px-4 py-2 rounded-xl
