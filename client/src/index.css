@@ -409,13 +409,18 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
   }
   .sidebar-link.active {
     color: var(--accent);
-    background: rgba(255,255,255,0.05);
+    background:
+      linear-gradient(90deg, rgb(var(--accent-rgb) / 0.10), rgba(255,255,255,0.04));
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
     font-weight: 600;
-    /* Left accent bar */
-    box-shadow: inset 3px 0 0 var(--accent);
+    /* Left accent bar + specular edge */
+    box-shadow: inset 3px 0 0 var(--accent),
+                inset 0 1px 0 rgba(255,255,255,0.06);
   }
   .sidebar-link.active:hover {
-    background: rgba(255,255,255,0.08);
+    background:
+      linear-gradient(90deg, rgb(var(--accent-rgb) / 0.14), rgba(255,255,255,0.06));
   }
 }
 
