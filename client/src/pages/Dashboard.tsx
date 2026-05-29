@@ -140,44 +140,6 @@ function AdminDashboard() {
   // ── derived data ────────────────────────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
 
-  const weeklyData = (() => {
-    const map: Record<string, { contacts: number; calls: number; messages: number; meetings: number; emails: number }> = {};
-    for (const ix of allInteractions) {
-      const d = new Date(ix.createdAt); const yr = d.getFullYear();
-      const wk = Math.ceil(((d.getTime() - new Date(yr, 0, 1).getTime()) / 86400000 + new Date(yr, 0, 1).getDay() + 1) / 7);
-      const key = `${yr}-W${String(wk).padStart(2, '0')}`;
-      if (!map[key]) map[key] = { contacts: 0, calls: 0, messages: 0, meetings: 0, emails: 0 };
-      map[key].contacts++;
-      if (ix.type === 'call') map[key].calls++;
-      else if (ix.type === 'message') map[key].messages++;
-      else if (ix.type === 'meeting') map[key].meetings++;
-      else if (ix.type === 'email') map[key].emails++;
-    }
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).slice(-7)
-      .map(([key, v]) => ({ week: `W${key.split('-W')[1]}`, ...v }));
-  })();
-
-  const staffInteractionCounts = allInteractions.reduce((acc, ix) => {
-    if (ix.staffId) acc[ix.staffId] = (acc[ix.staffId] || 0) + 1; return acc;
-  }, {} as Record<string, number>);
-
-  const staffPerfData = staff.map(s => {
-    const latest = performance.filter(p => p.staffId === s.id).sort((a, b) => b.week.localeCompare(a.week))[0];
-    return { id: s.id, name: s.name.split(' ')[0], avatar: s.avatar, interactions: staffInteractionCounts[s.id] || 0, contacts: latest?.customersContacted || 0 };
-  });
-
-  const meritChartData = meritSummary.map(m => ({ name: m.name.split(' ')[0], allTime: m.total, thisWeek: m.weekPts }));
-
-  const taskRateData = staff.map(s => {
-    const staffTasks = allTasks.filter(t => t.staffId === s.id);
-    const ms = meritSummary.find(m => m.staffId === s.id);
-    return {
-      name: s.name.split(' ')[0],
-      taskRate: staffTasks.length > 0 ? Math.round((staffTasks.filter(t => t.completed).length / staffTasks.length) * 100) : 0,
-      conversions: Math.max(0, Math.floor((ms?.breakdown.conversion || 0) / 5)),
-    };
-  });
-
   const overdueTasks = allTasks.filter(t => !t.completed && t.dueDate < today).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const cutoff7 = new Date(Date.now() - 7 * 86400000).toISOString();
   const staleCustomers = customers.filter(c => !c.lastContact || c.lastContact < cutoff7).map(c => {
@@ -190,15 +152,30 @@ function AdminDashboard() {
   const overdueHeavy = staff.map(s => ({ ...s, overdueCount: allTasks.filter(t => t.staffId === s.id && !t.completed && t.dueDate < today).length })).filter(s => s.overdueCount >= 3);
   const totalRedAlerts = inactiveStaff.length + negativeStaff.length + overdueHeavy.length;
 
-  // ── merit goal handlers ─────────────────────────────────────────────────────
-  const handleSaveGoal = async () => {
-    if (!gStaffId || !gTarget) return; setSavingGoal(true);
-    try { await meritsAPI.createGoal({ staffId: gStaffId, targetPoints: parseInt(gTarget), period: gPeriod, reward: gReward }); setMeritGoals(await meritsAPI.goals()); setGoalModal(false); setGStaffId(''); setGTarget(''); setGPeriod('monthly'); setGReward(''); } finally { setSavingGoal(false); }
-  };
-  const handleDeleteGoal = async (id: string) => { await meritsAPI.deleteGoal(id); setMeritGoals(prev => prev.filter(g => g.id !== id)); };
-  const handleAward = async () => {
-    if (!aStaffId || !aPoints || !aReason) return; setSavingAward(true);
-    try { await meritsAPI.award({ staffId: aStaffId, points: parseInt(aPoints), reason: aReason }); setMeritSum(await meritsAPI.summary()); setAwardModal(false); setAStaffId(''); setAPoints(''); setAReason(''); } finally { setSavingAward(false); }
+  // ── Task rate & conversion (pie) ────────────────────────────────────────────
+  const totalTasks     = allTasks.length;
+  const completedTasks = allTasks.filter(t => t.completed).length;
+  const taskCompletionRate = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const taskPie = [
+    { name: 'Completed', value: completedTasks,                           color: '#10b981' },
+    { name: 'Pending',   value: Math.max(totalTasks - completedTasks, 0), color: isLight ? '#e5e5ea' : '#2a2a2e' },
+  ];
+  const STAGE_ORDER = ['lead', 'contacted', 'interested', 'negotiating', 'closed', 'churned'] as const;
+  const convPie = STAGE_ORDER
+    .map(st => ({ name: st, value: customers.filter(c => c.status === st).length, color: PIPELINE_COLORS[st] }))
+    .filter(d => d.value > 0);
+  const closedCount = customers.filter(c => c.status === 'closed').length;
+  const convRate = customers.length ? Math.round((closedCount / customers.length) * 100) : 0;
+
+  // ── Follow-up queue summary ──────────────────────────────────────────────────
+  const urgentCount = queue.filter(q => q.priority === 'urgent').length;
+  const highCount   = queue.filter(q => q.priority === 'high').length;
+  const topQueue    = queue.slice(0, 6);
+  const PRIORITY: Record<string, { text: string; chip: string; dot: string }> = {
+    urgent: { text: 'text-red-300',    chip: 'bg-red-500/15 text-red-300',       dot: '#ef4444' },
+    high:   { text: 'text-orange-300', chip: 'bg-orange-500/15 text-orange-300', dot: '#f97316' },
+    medium: { text: 'text-amber-300',  chip: 'bg-amber-500/12 text-amber-300',   dot: '#f59e0b' },
+    low:    { text: 'text-white/40',   chip: 'bg-white/8 text-white/50',         dot: '#888' },
   };
 
   if (loading) return (
