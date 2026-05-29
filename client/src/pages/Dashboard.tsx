@@ -98,6 +98,7 @@ function AdminDashboard() {
   const [fraudAlerts, setFraudAlerts]     = useState<FraudAlert[]>([]);
   const [fraudExpanded, setFraudExpanded] = useState(false);
   const [expandedBanner, setExpandedBanner] = useState<'customers' | 'tasks' | null>(null);
+  const [attExpanded, setAttExpanded] = useState(false);
   const [todayAtt, setTodayAtt]     = useState<{ inCount: number; total: number; late: number; absent: number } | null>(null);
   const [todayAttFull, setTodayAttFull] = useState<{ staffId: string; staffName: string; avatar: string; status: 'in'|'out'|'absent'; isLate: boolean; hoursWorked: number; leaveToday: { type: string } | null }[]>([]);
   const [sales, setSales] = useState<SalesData | null>(null);
