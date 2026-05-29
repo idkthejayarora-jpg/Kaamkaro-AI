@@ -171,7 +171,15 @@ function AdminDashboard() {
   // ── Follow-up queue summary ──────────────────────────────────────────────────
   const urgentCount = queue.filter(q => q.priority === 'urgent').length;
   const highCount   = queue.filter(q => q.priority === 'high').length;
+  const mediumCount = queue.filter(q => q.priority === 'medium').length;
+  const lowCount    = queue.filter(q => q.priority === 'low').length;
   const topQueue    = queue.slice(0, 6);
+  const queueDist = [
+    { key: 'urgent', label: 'Urgent', value: urgentCount, color: '#ef4444' },
+    { key: 'high',   label: 'High',   value: highCount,   color: '#f97316' },
+    { key: 'medium', label: 'Medium', value: mediumCount, color: '#f59e0b' },
+    { key: 'low',    label: 'Low',    value: lowCount,    color: '#52525a' },
+  ].filter(d => d.value > 0);
   const PRIORITY: Record<string, { text: string; chip: string; dot: string }> = {
     urgent: { text: 'text-red-300',    chip: 'bg-red-500/15 text-red-300',       dot: '#ef4444' },
     high:   { text: 'text-orange-300', chip: 'bg-orange-500/15 text-orange-300', dot: '#f97316' },
