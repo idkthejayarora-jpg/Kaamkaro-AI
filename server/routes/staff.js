@@ -241,6 +241,17 @@ router.delete('/:id/face', attendanceManagerOrAdmin, async (req, res) => {
   }
 });
 
+// GET /api/staff/performance/all — all performance records in one read (avoids N+1)
+// Must be declared before /:id/performance so "performance" isn't treated as an :id.
+router.get('/performance/all', async (req, res) => {
+  try {
+    const perf = await readDB('performance');
+    res.json(perf.sort((a, b) => a.week.localeCompare(b.week)));
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/staff/:id/performance
 router.get('/:id/performance', async (req, res) => {
   try {
