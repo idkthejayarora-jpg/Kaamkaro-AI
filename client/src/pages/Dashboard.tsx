@@ -472,6 +472,117 @@ function AdminDashboard() {
         </div>
       </div>
 
+      {/* ── TODAY'S ATTENDANCE CHART (admin only) ─────────────────────────── */}
+      {todayAttFull.length > 0 && (
+        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+          <div className="h-[3px] bg-gradient-to-r from-green-500/80 via-green-500/30 to-transparent" />
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Live</p>
+                <p className="text-xl font-black text-white mt-0.5 flex items-center gap-2">
+                  Today's Attendance
+                  <UserCheck size={16} className="text-green-400" />
+                </p>
+                <p className="text-white/30 text-xs mt-0.5">
+                  {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+              </div>
+              <button onClick={() => navigate('/attendance-portal')}
+                className="text-xs text-white/30 hover:text-gold transition-colors flex items-center gap-1">
+                Full view <ChevronRight size={12} />
+              </button>
+            </div>
+
+            {/* 4 summary pills */}
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              {([
+                { label: 'In',     value: todayAtt?.inCount ?? 0,                                             color: 'text-green-400',  bg: 'bg-green-500/10 border-green-500/20' },
+                { label: 'Late',   value: todayAtt?.late ?? 0,                                                color: 'text-amber-400',  bg: 'bg-amber-500/10 border-amber-500/20' },
+                { label: 'Out',    value: todayAttFull.filter(r => r.status === 'out').length,                 color: 'text-blue-400',   bg: 'bg-blue-500/10 border-blue-500/20' },
+                { label: 'Absent', value: todayAtt?.absent ?? 0,                                              color: 'text-red-400',    bg: 'bg-red-500/10 border-red-500/20' },
+              ] as const).map(({ label, value, color, bg }) => (
+                <div key={label} className={`rounded-xl border p-2.5 text-center ${bg}`}>
+                  <p className={`text-xl font-black leading-none ${color}`}>{value}</p>
+                  <p className="text-white/30 text-[9px] uppercase tracking-wide mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Per-staff horizontal bar chart (hours worked) */}
+            <div className="space-y-1.5">
+              {todayAttFull.map(r => {
+                const maxHrs = 10;
+                const pct    = Math.min((r.hoursWorked / maxHrs) * 100, 100);
+                const barCol = r.leaveToday     ? '#6366f1'
+                             : r.status === 'absent' ? '#ef4444'
+                             : r.isLate          ? '#f59e0b'
+                             : r.hoursWorked > 0 ? '#10b981'
+                             : '#6366f1'; // checked in but 0h = still in
+                const statusLabel = r.leaveToday
+                  ? `Leave (${r.leaveToday.type})`
+                  : r.status === 'absent' ? 'Absent'
+                  : r.isLate ? `Late`
+                  : r.status === 'in' ? 'In'
+                  : `${r.hoursWorked.toFixed(1)}h`;
+
+                return (
+                  <div key={r.staffId}
+                       className="flex items-center gap-2 group cursor-pointer"
+                       onClick={() => navigate(`/staff/${r.staffId}`)}>
+                    {/* Avatar */}
+                    <div className="w-6 h-6 rounded-full bg-dark-200 border border-dark-100 flex-shrink-0
+                                    flex items-center justify-center text-[9px] font-black text-white/60
+                                    group-hover:border-gold/30 transition-colors">
+                      {r.avatar}
+                    </div>
+                    {/* Name */}
+                    <span className="text-white/50 text-[11px] w-16 flex-shrink-0 truncate
+                                     group-hover:text-white/80 transition-colors">
+                      {r.staffName.split(' ')[0]}
+                    </span>
+                    {/* Bar */}
+                    <div className="flex-1 h-4 bg-dark-200 rounded-full overflow-hidden relative">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: r.status === 'absent' && !r.leaveToday ? '4px' : `${Math.max(pct, 2)}%`,
+                          background: barCol,
+                          opacity: 0.8,
+                          minWidth: r.status === 'absent' ? 0 : 4,
+                        }}
+                      />
+                    </div>
+                    {/* Label */}
+                    <span className="text-[10px] font-semibold w-14 text-right flex-shrink-0"
+                          style={{ color: barCol }}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-dark-100">
+              {([
+                { label: 'On Time', color: '#10b981' },
+                { label: 'Late',    color: '#f59e0b' },
+                { label: 'Absent',  color: '#ef4444' },
+                { label: 'Leave',   color: '#6366f1' },
+              ] as const).map(({ label, color }) => (
+                <span key={label} className="flex items-center gap-1.5 text-[10px] text-white/30">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: color, opacity: 0.8 }} />
+                  {label}
+                </span>
+              ))}
+              <span className="text-[10px] text-white/20 ml-auto">Bar = hours worked (max 10h)</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── FRAUD EXPANDED ────────────────────────────────────────────────── */}
       {fraudExpanded && fraudAlerts.length > 0 && (
         <div className="rounded-2xl border border-orange-500/20 bg-dark-300 overflow-hidden animate-fade-in-up">
