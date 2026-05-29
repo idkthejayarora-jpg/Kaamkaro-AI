@@ -362,6 +362,25 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
     .glass-panel { background: rgb(var(--color-dark-300) / 0.98); }
   }
 
+  /* Glass nav shell — sidebar */
+  .kk-glass-nav {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.035), transparent 30%),
+      rgb(var(--color-dark-400) / 0.66);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+  }
+  /* Glass top bars — mobile + desktop headers */
+  .kk-glass-bar {
+    background: rgb(var(--color-dark-400) / 0.62);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .kk-glass-nav { background: rgb(var(--color-dark-400) / 0.97); }
+    .kk-glass-bar { background: rgb(var(--color-dark-400) / 0.97); }
+  }
+
   /* Buttons */
   .btn-primary {
     @apply text-white font-semibold px-4 py-2 rounded-xl
