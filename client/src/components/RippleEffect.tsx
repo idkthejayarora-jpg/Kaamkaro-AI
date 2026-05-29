@@ -101,6 +101,43 @@ export default function RippleEffect() {
       );
       anim.onfinish = () => overlay.remove();
       anim.oncancel = () => overlay.remove();
+
+      // ── Scroll-intent cancellation (mobile) ──────────────────────────────
+      // On touch, a pointerdown is often the START of a scroll. The overlay is
+      // position:fixed, so if the page scrolls it would freeze in the viewport
+      // while content moves underneath — a misplaced ripple. If the pointer
+      // moves past a small threshold (or the page scrolls) before release,
+      // treat it as a scroll and kill the ripple immediately.
+      const MOVE_TOLERANCE = 10; // px
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let cancelled = false;
+
+      const kill = () => {
+        if (cancelled) return;
+        cancelled = true;
+        cleanup();
+        anim.cancel(); // triggers oncancel → overlay.remove()
+      };
+
+      const onMove = (ev: PointerEvent) => {
+        if (Math.abs(ev.clientX - startX) > MOVE_TOLERANCE ||
+            Math.abs(ev.clientY - startY) > MOVE_TOLERANCE) {
+          kill();
+        }
+      };
+
+      const cleanup = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointercancel', kill);
+        window.removeEventListener('pointerup', cleanup);
+        window.removeEventListener('scroll', kill, true);
+      };
+
+      window.addEventListener('pointermove', onMove, { passive: true });
+      window.addEventListener('pointercancel', kill, { passive: true });
+      window.addEventListener('pointerup', cleanup, { passive: true });
+      window.addEventListener('scroll', kill, { passive: true, capture: true });
     }
 
     document.addEventListener('pointerdown', spawn, { passive: true });
