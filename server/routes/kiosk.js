@@ -329,11 +329,11 @@ router.get('/staff-list', async (req, res) => {
 });
 
 // ── POST /api/kiosk/enroll ─────────────────────────────────────────────────────
-// Link captured face descriptors to an existing staff member
-// Body: { staffId, descriptors: number[][] }
+// Link captured face descriptors (+ optional photo) to an existing staff member
+// Body: { staffId, descriptors: number[][], facePhoto?: string (base64 JPEG) }
 router.post('/enroll', async (req, res) => {
   try {
-    const { staffId, descriptors } = req.body;
+    const { staffId, descriptors, facePhoto } = req.body;
     if (!staffId || !Array.isArray(descriptors) || descriptors.length === 0)
       return res.status(400).json({ error: 'staffId and descriptors required' });
 
@@ -343,6 +343,28 @@ router.post('/enroll', async (req, res) => {
 
     staff[idx].faceDescriptors = descriptors;
     staff[idx].updatedAt = new Date().toISOString();
+
+    // Save face photo if provided
+    if (facePhoto && typeof facePhoto === 'string' && facePhoto.startsWith('data:image')) {
+      try {
+        const fsExtra = require('fs-extra');
+        const pathMod = require('path');
+        const DATA_DIR = process.env.DATA_PATH
+          ? pathMod.resolve(process.env.DATA_PATH)
+          : pathMod.join(__dirname, '../data');
+        const faceDir = pathMod.join(DATA_DIR, 'faces');
+        await fsExtra.ensureDir(faceDir);
+        const m = facePhoto.match(/^data:image\/\w+;base64,(.+)$/s);
+        if (m) {
+          await fsExtra.writeFile(pathMod.join(faceDir, `${staffId}.jpg`), Buffer.from(m[1], 'base64'));
+          staff[idx].facePhoto   = `/api/staff/${staffId}/face-photo`;
+          staff[idx].facePhotoAt = new Date().toISOString();
+        }
+      } catch (photoErr) {
+        console.error('[Kiosk enroll photo]', photoErr.message);
+      }
+    }
+
     await writeDB('staff', staff);
 
     const { password: _, faceDescriptors: __, ...safe } = staff[idx];
