@@ -172,13 +172,14 @@ function FaceEnrollModal({ staff, onClose, onEnrolled }: {
   const streamRef  = useRef<MediaStream | null>(null);
   const detectLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [modelReady,   setModelReady]   = useState(false);
-  const [capturing,    setCapturing]    = useState(false);
-  const [captures,     setCaptures]     = useState<Float32Array[]>([]);
-  const [status,       setStatus]       = useState('Loading face models…');
-  const [saving,       setSaving]       = useState(false);
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [dupWarning,   setDupWarning]   = useState<string | null>(null);
+  const [modelReady,    setModelReady]    = useState(false);
+  const [capturing,     setCapturing]     = useState(false);
+  const [captures,      setCaptures]      = useState<Float32Array[]>([]);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [status,        setStatus]        = useState('Loading face models…');
+  const [saving,        setSaving]        = useState(false);
+  const [faceDetected,  setFaceDetected]  = useState(false);
+  const [dupWarning,    setDupWarning]    = useState<string | null>(null);
   const TOTAL = 5;
 
   const startDetectLoop = useCallback(() => {
