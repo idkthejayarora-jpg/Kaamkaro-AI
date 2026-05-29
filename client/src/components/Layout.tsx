@@ -133,7 +133,7 @@ export default function Layout() {
         </header>
 
         {/* Desktop header — notifications only */}
-        <div className="hidden lg:flex items-center justify-end px-8 py-3 border-b border-dark-50/30 bg-dark-400 flex-shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+        <div className="hidden lg:flex items-center justify-end px-8 py-3 border-b border-dark-50/30 kk-glass-bar sticky top-0 z-30 flex-shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
           <NotificationsBell />
         </div>
 
