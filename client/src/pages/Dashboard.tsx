@@ -211,156 +211,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── ALERT BANNERS ─────────────────────────────────────────────────── */}
-      {(summary?.overdueCount ?? 0) > 0 && (
-        <div className="rounded-2xl overflow-hidden border border-red-500/20 bg-red-500/6 animate-fade-in-up">
-          <button className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-red-500/5 transition-colors" onClick={() => setExpandedBanner(expandedBanner === 'customers' ? null : 'customers')}>
-            <div className="w-1.5 h-6 rounded-full bg-red-500 flex-shrink-0 animate-glow-breathe" />
-            <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />
-            <p className="text-red-300 text-sm text-left flex-1 font-medium">
-              <span className="font-bold">{summary!.overdueCount} customers</span> haven't been contacted in 7+ days
-            </p>
-            <span className="text-[10px] font-bold bg-red-500/20 text-red-300 px-2.5 py-1 rounded-full">{summary!.overdueCount}</span>
-            <ChevronRight size={13} className={`text-red-400 transition-transform duration-200 ${expandedBanner === 'customers' ? 'rotate-90' : ''}`} />
-          </button>
-          {expandedBanner === 'customers' && (
-            <div className="border-t border-red-500/10">
-              <div className="max-h-60 overflow-y-auto">
-                {staleCustomers.slice(0, 20).map(c => (
-                  <div key={c.id} className="px-5 py-3 border-b border-red-500/8 last:border-0 hover:bg-red-500/5 cursor-pointer" onClick={() => navigate('/customers')}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                        <span className="text-red-300 text-xs font-black">{c.name[0]}</span>
-                      </div>
-                      <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate">{c.name}</p><p className="text-red-400/55 text-[10px]">{c.assignedStaffName}</p></div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>{c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d`}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-between px-5 py-2.5 border-t border-red-500/10">
-                <span className="text-red-400/40 text-[10px]">{staleCustomers.length} total</span>
-                <button className="text-red-300 text-xs font-semibold flex items-center gap-1 hover:text-red-200 transition-colors" onClick={() => navigate('/customers')}>View all <ChevronRight size={11} /></button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {(summary?.dueTasksCount ?? 0) > 0 && (
-        <div className="rounded-2xl overflow-hidden border border-amber-500/20 bg-amber-500/5 animate-fade-in-up">
-          <button className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-amber-500/5 transition-colors" onClick={() => setExpandedBanner(expandedBanner === 'tasks' ? null : 'tasks')}>
-            <div className="w-1.5 h-6 rounded-full bg-amber-500 flex-shrink-0 animate-glow-breathe" />
-            <Clock size={14} className="text-amber-400 flex-shrink-0" />
-            <p className="text-amber-300 text-sm text-left flex-1 font-medium"><span className="font-bold">{summary!.dueTasksCount} tasks</span> are due today or overdue</p>
-            <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full">{summary!.dueTasksCount}</span>
-            <ChevronRight size={13} className={`text-amber-400 transition-transform duration-200 ${expandedBanner === 'tasks' ? 'rotate-90' : ''}`} />
-          </button>
-          {expandedBanner === 'tasks' && (
-            <div className="border-t border-amber-500/10">
-              <div className="max-h-60 overflow-y-auto">
-                {overdueTasks.slice(0, 20).map(t => {
-                  const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
-                  const sm = staff.find(s => s.id === t.staffId);
-                  return (
-                    <div key={t.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-amber-500/8 last:border-0 hover:bg-amber-500/5 cursor-pointer" onClick={() => navigate('/tasks')}>
-                      <div className="w-7 h-7 rounded-xl bg-amber-500/12 flex items-center justify-center flex-shrink-0"><span className="text-amber-400 text-[10px] font-black">{sm?.avatar ?? '?'}</span></div>
-                      <div className="flex-1 min-w-0"><p className="text-white text-xs font-medium truncate">{t.title}</p><p className="text-amber-400/55 text-[10px]">{sm?.name?.split(' ')[0] ?? 'Unknown'}{t.customerName ? ` · ${t.customerName}` : ''}</p></div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 flex-shrink-0">{daysOverdue}d</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-center justify-between px-5 py-2.5 border-t border-amber-500/10">
-                <span className="text-amber-400/40 text-[10px]">{overdueTasks.length} total</span>
-                <button className="text-amber-300 text-xs font-semibold flex items-center gap-1 hover:text-amber-200 transition-colors" onClick={() => navigate('/tasks')}>View all <ChevronRight size={11} /></button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Red-alert + Fraud compact row */}
-      {(totalRedAlerts > 0 || fraudAlerts.length > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div onClick={() => navigate('/followup')}
-            className={`rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all hover:scale-[1.01] animate-fade-in-up ${
-              totalRedAlerts > 0 ? 'bg-gradient-to-br from-red-500/8 to-dark-300 border-red-500/25 hover:border-red-500/40' : 'bg-dark-300 border-dark-100'
-            }`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${totalRedAlerts > 0 ? 'bg-red-500/20 border border-red-500/30' : 'bg-dark-200 border border-dark-100'}`}>
-                <AlertTriangle size={15} className={totalRedAlerts > 0 ? 'text-red-400' : 'text-white/30'} />
-              </div>
-              <span className={`text-4xl font-black leading-none ${totalRedAlerts > 0 ? 'text-red-300' : 'text-white/20'}`}>{totalRedAlerts}</span>
-            </div>
-            <p className={`text-sm font-bold ${totalRedAlerts > 0 ? 'text-red-300' : 'text-white/30'}`}>Red Alerts</p>
-            {totalRedAlerts > 0 ? (
-              <div className="mt-3 space-y-1.5">
-                {inactiveStaff.length > 0 && <p className="text-red-400/55 text-[10px] flex items-center gap-1.5"><Clock size={9} /> {inactiveStaff.length} inactive 7+ days</p>}
-                {negativeStaff.length > 0 && <p className="text-red-400/55 text-[10px] flex items-center gap-1.5"><TrendingDown size={9} /> {negativeStaff.length} negative merit</p>}
-                {overdueHeavy.length > 0 && <p className="text-red-400/55 text-[10px] flex items-center gap-1.5"><AlertCircle size={9} /> {overdueHeavy.length} with 3+ overdue tasks</p>}
-                <p className="text-red-400/40 text-[10px] mt-2 flex items-center gap-1">Tap to review <ChevronRight size={9} /></p>
-              </div>
-            ) : (
-              <p className="text-white/35 text-xs mt-1">Everything looks good</p>
-            )}
-          </div>
-
-          {fraudAlerts.length > 0 && (
-            <button onClick={() => setFraudExpanded(e => !e)}
-              className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/8 to-dark-300 p-4 sm:p-5 text-left hover:border-orange-500/35 transition-all animate-fade-in-up">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
-                  <ShieldAlert size={15} className="text-orange-400" />
-                </div>
-                <span className="text-4xl font-black text-orange-300 leading-none">{fraudAlerts.length}</span>
-              </div>
-              <p className="text-sm font-bold text-orange-300">Fraud Flags</p>
-              <p className="text-orange-400/40 text-[10px] mt-1.5">
-                {fraudAlerts.filter(a => a.severity === 'high').length} high · {fraudAlerts.filter(a => a.severity === 'medium').length} medium
-              </p>
-              <p className="text-orange-400/35 text-[10px] mt-2 flex items-center gap-1">Tap to expand <ChevronRight size={9} /></p>
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ── FRAUD EXPANDED ────────────────────────────────────────────────── */}
-      {fraudExpanded && fraudAlerts.length > 0 && (
-        <div className="rounded-2xl border border-orange-500/20 bg-dark-300 overflow-hidden animate-fade-in-up">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100">
-            <div className="flex items-center gap-2.5">
-              <ShieldAlert size={16} className="text-orange-400" />
-              <p className="text-orange-300 font-bold text-sm">Anti-Fraud Alerts</p>
-              {fraudAlerts.some(a => a.severity === 'high') && <span className="text-[10px] font-bold bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{fraudAlerts.filter(a => a.severity === 'high').length} HIGH</span>}
-            </div>
-            <button onClick={() => setFraudExpanded(false)} className="text-white/40 hover:text-white transition-colors"><X size={16} /></button>
-          </div>
-          <div className="p-4 space-y-2.5">
-            {fraudAlerts.map(alert => {
-              const sevLeft = alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500';
-              const sevBadge = alert.severity === 'high' ? 'bg-red-500/20 text-red-300' : alert.severity === 'medium' ? 'bg-orange-500/20 text-orange-300' : 'bg-yellow-500/15 text-yellow-300';
-              return (
-                <div key={alert.id} className="flex gap-3 p-3.5 rounded-xl bg-dark-200 border border-dark-100 relative overflow-hidden">
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${sevLeft} rounded-l-xl`} />
-                  <div className="pl-2 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white text-xs font-semibold">{alert.title}</p>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${sevBadge}`}>{alert.severity}</span>
-                    </div>
-                    <p className="text-white/55 text-[11px] mt-1">{alert.detail}</p>
-                    <p className="text-white/40 text-[10px] mt-1.5">Staff: {alert.staffName}</p>
-                  </div>
-                  <button onClick={() => navigate(`/staff/${alert.staffId}`)} className="flex-shrink-0 w-8 h-8 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center hover:bg-gold/20 transition-colors">
-                    <span className="text-gold text-[10px] font-black">{staff.find(s => s.id === alert.staffId)?.avatar || alert.staffName[0]}</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* ── TODAY'S ATTENDANCE (compact pill, expandable) ─────────────────── */}
       {todayAttFull.length > 0 && (
         <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
@@ -635,6 +485,156 @@ function AdminDashboard() {
           </>
         )}
       </div>
+
+      {/* ── ALERTS & FLAGS (moved to bottom) ───────────────────────────── */}
+      {(summary?.overdueCount ?? 0) > 0 && (
+        <div className="rounded-2xl overflow-hidden border border-red-500/20 bg-red-500/6 animate-fade-in-up">
+          <button className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-red-500/5 transition-colors" onClick={() => setExpandedBanner(expandedBanner === 'customers' ? null : 'customers')}>
+            <div className="w-1.5 h-6 rounded-full bg-red-500 flex-shrink-0 animate-glow-breathe" />
+            <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />
+            <p className="text-red-300 text-sm text-left flex-1 font-medium">
+              <span className="font-bold">{summary!.overdueCount} customers</span> haven't been contacted in 7+ days
+            </p>
+            <span className="text-[10px] font-bold bg-red-500/20 text-red-300 px-2.5 py-1 rounded-full">{summary!.overdueCount}</span>
+            <ChevronRight size={13} className={`text-red-400 transition-transform duration-200 ${expandedBanner === 'customers' ? 'rotate-90' : ''}`} />
+          </button>
+          {expandedBanner === 'customers' && (
+            <div className="border-t border-red-500/10">
+              <div className="max-h-60 overflow-y-auto">
+                {staleCustomers.slice(0, 20).map(c => (
+                  <div key={c.id} className="px-5 py-3 border-b border-red-500/8 last:border-0 hover:bg-red-500/5 cursor-pointer" onClick={() => navigate('/customers')}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-red-300 text-xs font-black">{c.name[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate">{c.name}</p><p className="text-red-400/55 text-[10px]">{c.assignedStaffName}</p></div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.daysSilent >= 30 ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>{c.daysSilent >= 9999 ? 'Never' : `${c.daysSilent}d`}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between px-5 py-2.5 border-t border-red-500/10">
+                <span className="text-red-400/40 text-[10px]">{staleCustomers.length} total</span>
+                <button className="text-red-300 text-xs font-semibold flex items-center gap-1 hover:text-red-200 transition-colors" onClick={() => navigate('/customers')}>View all <ChevronRight size={11} /></button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(summary?.dueTasksCount ?? 0) > 0 && (
+        <div className="rounded-2xl overflow-hidden border border-amber-500/20 bg-amber-500/5 animate-fade-in-up">
+          <button className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-amber-500/5 transition-colors" onClick={() => setExpandedBanner(expandedBanner === 'tasks' ? null : 'tasks')}>
+            <div className="w-1.5 h-6 rounded-full bg-amber-500 flex-shrink-0 animate-glow-breathe" />
+            <Clock size={14} className="text-amber-400 flex-shrink-0" />
+            <p className="text-amber-300 text-sm text-left flex-1 font-medium"><span className="font-bold">{summary!.dueTasksCount} tasks</span> are due today or overdue</p>
+            <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-full">{summary!.dueTasksCount}</span>
+            <ChevronRight size={13} className={`text-amber-400 transition-transform duration-200 ${expandedBanner === 'tasks' ? 'rotate-90' : ''}`} />
+          </button>
+          {expandedBanner === 'tasks' && (
+            <div className="border-t border-amber-500/10">
+              <div className="max-h-60 overflow-y-auto">
+                {overdueTasks.slice(0, 20).map(t => {
+                  const daysOverdue = Math.ceil((Date.now() - new Date(t.dueDate).getTime()) / 86400000);
+                  const sm = staff.find(s => s.id === t.staffId);
+                  return (
+                    <div key={t.id} className="flex items-center gap-3 px-5 py-2.5 border-b border-amber-500/8 last:border-0 hover:bg-amber-500/5 cursor-pointer" onClick={() => navigate('/tasks')}>
+                      <div className="w-7 h-7 rounded-xl bg-amber-500/12 flex items-center justify-center flex-shrink-0"><span className="text-amber-400 text-[10px] font-black">{sm?.avatar ?? '?'}</span></div>
+                      <div className="flex-1 min-w-0"><p className="text-white text-xs font-medium truncate">{t.title}</p><p className="text-amber-400/55 text-[10px]">{sm?.name?.split(' ')[0] ?? 'Unknown'}{t.customerName ? ` · ${t.customerName}` : ''}</p></div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 flex-shrink-0">{daysOverdue}d</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between px-5 py-2.5 border-t border-amber-500/10">
+                <span className="text-amber-400/40 text-[10px]">{overdueTasks.length} total</span>
+                <button className="text-amber-300 text-xs font-semibold flex items-center gap-1 hover:text-amber-200 transition-colors" onClick={() => navigate('/tasks')}>View all <ChevronRight size={11} /></button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Red-alert + Fraud compact row */}
+      {(totalRedAlerts > 0 || fraudAlerts.length > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div onClick={() => navigate('/followup')}
+            className={`rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all hover:scale-[1.01] animate-fade-in-up ${
+              totalRedAlerts > 0 ? 'bg-gradient-to-br from-red-500/8 to-dark-300 border-red-500/25 hover:border-red-500/40' : 'bg-dark-300 border-dark-100'
+            }`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${totalRedAlerts > 0 ? 'bg-red-500/20 border border-red-500/30' : 'bg-dark-200 border border-dark-100'}`}>
+                <AlertTriangle size={15} className={totalRedAlerts > 0 ? 'text-red-400' : 'text-white/30'} />
+              </div>
+              <span className={`text-4xl font-black leading-none ${totalRedAlerts > 0 ? 'text-red-300' : 'text-white/20'}`}>{totalRedAlerts}</span>
+            </div>
+            <p className={`text-sm font-bold ${totalRedAlerts > 0 ? 'text-red-300' : 'text-white/30'}`}>Red Alerts</p>
+            {totalRedAlerts > 0 ? (
+              <div className="mt-3 space-y-1.5">
+                {inactiveStaff.length > 0 && <p className="text-red-400/55 text-[10px] flex items-center gap-1.5"><Clock size={9} /> {inactiveStaff.length} inactive 7+ days</p>}
+                {negativeStaff.length > 0 && <p className="text-red-400/55 text-[10px] flex items-center gap-1.5"><TrendingDown size={9} /> {negativeStaff.length} negative merit</p>}
+                {overdueHeavy.length > 0 && <p className="text-red-400/55 text-[10px] flex items-center gap-1.5"><AlertCircle size={9} /> {overdueHeavy.length} with 3+ overdue tasks</p>}
+                <p className="text-red-400/40 text-[10px] mt-2 flex items-center gap-1">Tap to review <ChevronRight size={9} /></p>
+              </div>
+            ) : (
+              <p className="text-white/35 text-xs mt-1">Everything looks good</p>
+            )}
+          </div>
+
+          {fraudAlerts.length > 0 && (
+            <button onClick={() => setFraudExpanded(e => !e)}
+              className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/8 to-dark-300 p-4 sm:p-5 text-left hover:border-orange-500/35 transition-all animate-fade-in-up">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
+                  <ShieldAlert size={15} className="text-orange-400" />
+                </div>
+                <span className="text-4xl font-black text-orange-300 leading-none">{fraudAlerts.length}</span>
+              </div>
+              <p className="text-sm font-bold text-orange-300">Fraud Flags</p>
+              <p className="text-orange-400/40 text-[10px] mt-1.5">
+                {fraudAlerts.filter(a => a.severity === 'high').length} high · {fraudAlerts.filter(a => a.severity === 'medium').length} medium
+              </p>
+              <p className="text-orange-400/35 text-[10px] mt-2 flex items-center gap-1">Tap to expand <ChevronRight size={9} /></p>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── FRAUD EXPANDED ────────────────────────────────────────────────── */}
+      {fraudExpanded && fraudAlerts.length > 0 && (
+        <div className="rounded-2xl border border-orange-500/20 bg-dark-300 overflow-hidden animate-fade-in-up">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-dark-100">
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert size={16} className="text-orange-400" />
+              <p className="text-orange-300 font-bold text-sm">Anti-Fraud Alerts</p>
+              {fraudAlerts.some(a => a.severity === 'high') && <span className="text-[10px] font-bold bg-red-500/20 text-red-300 rounded-full px-2 py-0.5">{fraudAlerts.filter(a => a.severity === 'high').length} HIGH</span>}
+            </div>
+            <button onClick={() => setFraudExpanded(false)} className="text-white/40 hover:text-white transition-colors"><X size={16} /></button>
+          </div>
+          <div className="p-4 space-y-2.5">
+            {fraudAlerts.map(alert => {
+              const sevLeft = alert.severity === 'high' ? 'bg-red-500' : alert.severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500';
+              const sevBadge = alert.severity === 'high' ? 'bg-red-500/20 text-red-300' : alert.severity === 'medium' ? 'bg-orange-500/20 text-orange-300' : 'bg-yellow-500/15 text-yellow-300';
+              return (
+                <div key={alert.id} className="flex gap-3 p-3.5 rounded-xl bg-dark-200 border border-dark-100 relative overflow-hidden">
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${sevLeft} rounded-l-xl`} />
+                  <div className="pl-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white text-xs font-semibold">{alert.title}</p>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${sevBadge}`}>{alert.severity}</span>
+                    </div>
+                    <p className="text-white/55 text-[11px] mt-1">{alert.detail}</p>
+                    <p className="text-white/40 text-[10px] mt-1.5">Staff: {alert.staffName}</p>
+                  </div>
+                  <button onClick={() => navigate(`/staff/${alert.staffId}`)} className="flex-shrink-0 w-8 h-8 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center hover:bg-gold/20 transition-colors">
+                    <span className="text-gold text-[10px] font-black">{staff.find(s => s.id === alert.staffId)?.avatar || alert.staffName[0]}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
