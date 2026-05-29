@@ -330,7 +330,7 @@ function FaceEnrollModal({ staff, onClose, onEnrolled }: {
   const doSave = async () => {
     setSaving(true);
     try {
-      await staffAPI.enrollFace(staff.id, captures.map(d => Array.from(d)));
+      await staffAPI.enrollFace(staff.id, captures.map(d => Array.from(d)), capturedPhoto ?? undefined);
       onEnrolled();
       onClose();
     } catch {
