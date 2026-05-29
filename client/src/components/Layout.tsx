@@ -109,7 +109,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile header — pt accounts for notch/Dynamic Island via safe-area-inset-top */}
         <header
-          className="lg:hidden flex items-center justify-between px-4 border-b border-dark-50 bg-dark-400 flex-shrink-0"
+          className="lg:hidden flex items-center justify-between px-4 border-b border-dark-50 kk-glass-bar sticky top-0 z-30 flex-shrink-0"
           style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))', paddingBottom: '0.75rem' }}
         >
           <MobileMenuButton onClick={() => setMobileOpen(true)} />
