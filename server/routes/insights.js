@@ -147,23 +147,23 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
   const priorityScore = Math.max(0, Math.min(100, score));
 
   // ── Hard urgency overrides ──────────────────────────────────────────────
-  // Unambiguous situations that MUST surface as urgent regardless of where the
-  // additive score lands — this is the "they clearly fit urgency" guarantee.
-  const activeStages   = customer.status === 'interested' || customer.status === 'negotiating';
-  const openStages     = activeStages || customer.status === 'lead' || customer.status === 'contacted';
-  const badResponse    = responsiveness === 'ghosting' || responsiveness === 'ignoring';
+  // Reserved for COMPOUNDING evidence only — neglect *and* a behavioural red
+  // flag, or a live deal visibly breaking down. A single soft signal (a stale
+  // lead, a 2-week-quiet deal) is NOT urgent on its own; the score handles it.
+  const activeStages = customer.status === 'interested' || customer.status === 'negotiating';
+  const badResponse  = responsiveness === 'ghosting' || responsiveness === 'ignoring';
+  const redFlag      = badResponse || hasPaymentDelay || sentimentTrend === 'declining' || staffConcern;
+  const severeNeglect = lastContactDays === null || lastContactDays > 45;
   let forcedUrgent = false;
-  // Never contacted while still an open, winnable deal
-  if (lastContactDays === null && openStages) forcedUrgent = true;
-  // Badly neglected (30d+) AND a real red flag attached
-  if (lastContactDays !== null && lastContactDays > 30 && (badResponse || hasPaymentDelay || sentimentTrend === 'declining')) forcedUrgent = true;
-  // An active deal (interested/negotiating) going cold or ghosting
-  if (activeStages && ((lastContactDays !== null && lastContactDays > 14) || badResponse || hasPaymentDelay)) forcedUrgent = true;
+  // Severely neglected winnable deal that ALSO shows a behavioural red flag
+  if (severeNeglect && activeStages && redFlag) forcedUrgent = true;
+  // A live deal actively breaking down: ghosting or a payment delay mid-negotiation
+  if (activeStages && (responsiveness === 'ghosting' || hasPaymentDelay)) forcedUrgent = true;
 
   const priority =
-    forcedUrgent || priorityScore >= 70 ? 'urgent' :   // Clear red flags — act now
-    priorityScore >= 50 ? 'high'   :                   // Needs attention this week
-    priorityScore >= 34 ? 'medium' :                   // On the radar
+    forcedUrgent || priorityScore >= 72 ? 'urgent' :   // Compounding red flags — act now
+    priorityScore >= 54 ? 'high'   :                   // Needs attention this week
+    priorityScore >= 38 ? 'medium' :                   // On the radar
                           'low';                       // All good, recently touched
 
   // ── Context snippet for AI (compact) ─────────────────────────────────────
