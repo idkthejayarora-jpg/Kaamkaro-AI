@@ -111,44 +111,60 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
 
   // ── Priority score ────────────────────────────────────────────────────────
   // Baseline: 20. Jewelry business cadence — 2-3 weeks between contacts is normal.
-  // Thresholds: urgent ≥72, high ≥50, medium ≥30, low <30.
+  // Recalibrated so genuine red flags actually reach "urgent" instead of
+  // piling up in medium/high. Thresholds: urgent ≥70, high ≥50, medium ≥34.
   let score = 20;
 
   // Time since last contact — calibrated for jewelry B2B (biweekly contact is normal)
-  if      (lastContactDays === null)   score += 22; // never contacted at all
-  else if (lastContactDays > 45)       score += 20; // severely neglected
-  else if (lastContactDays > 30)       score += 14; // overdue
-  else if (lastContactDays > 21)       score += 8;  // getting stale
-  else if (lastContactDays > 14)       score += 4;  // mild nudge
-  else if (lastContactDays > 7)        score += 1;  // recent enough
+  if      (lastContactDays === null)   score += 28; // never contacted at all
+  else if (lastContactDays > 45)       score += 26; // severely neglected
+  else if (lastContactDays > 30)       score += 18; // overdue
+  else if (lastContactDays > 21)       score += 11; // getting stale
+  else if (lastContactDays > 14)       score += 6;  // mild nudge
+  else if (lastContactDays > 7)        score += 2;  // recent enough
   else if (lastContactDays <= 1)       score -= 12; // freshly contacted
 
   // Responsiveness (measured from interaction history)
-  if      (responsiveness === 'ghosting') score += 15;
-  else if (responsiveness === 'ignoring') score += 9;
-  else if (responsiveness === 'slow')     score += 3;
+  if      (responsiveness === 'ghosting') score += 20;
+  else if (responsiveness === 'ignoring') score += 12;
+  else if (responsiveness === 'slow')     score += 4;
 
   // Sentiment trend from recent diary/interaction data
-  if      (sentimentTrend === 'declining')  score += 8;
+  if      (sentimentTrend === 'declining')  score += 10;
   else if (sentimentTrend === 'improving')  score -= 6;
 
   // Hard signals
-  if (hasPaymentDelay) score += 8;
-  if (staffConcern)    score += 6;
+  if (hasPaymentDelay) score += 12;
+  if (staffConcern)    score += 8;
 
-  // Pipeline stage — interested/negotiating get a moderate boost only
-  const stageBonus = { lead: 2, contacted: 1, interested: 5, negotiating: 7, closed: -30, churned: -12 };
+  // Pipeline stage — active deals at risk matter most
+  const stageBonus = { lead: 2, contacted: 1, interested: 6, negotiating: 9, closed: -30, churned: -12 };
   score += stageBonus[customer.status] || 0;
 
-  // Negative sentiment ratio (max +6)
-  score += Math.round((negCount / total) * 6);
+  // Negative sentiment ratio (max +8)
+  score += Math.round((negCount / total) * 8);
 
   const priorityScore = Math.max(0, Math.min(100, score));
+
+  // ── Hard urgency overrides ──────────────────────────────────────────────
+  // Unambiguous situations that MUST surface as urgent regardless of where the
+  // additive score lands — this is the "they clearly fit urgency" guarantee.
+  const activeStages   = customer.status === 'interested' || customer.status === 'negotiating';
+  const openStages     = activeStages || customer.status === 'lead' || customer.status === 'contacted';
+  const badResponse    = responsiveness === 'ghosting' || responsiveness === 'ignoring';
+  let forcedUrgent = false;
+  // Never contacted while still an open, winnable deal
+  if (lastContactDays === null && openStages) forcedUrgent = true;
+  // Badly neglected (30d+) AND a real red flag attached
+  if (lastContactDays !== null && lastContactDays > 30 && (badResponse || hasPaymentDelay || sentimentTrend === 'declining')) forcedUrgent = true;
+  // An active deal (interested/negotiating) going cold or ghosting
+  if (activeStages && ((lastContactDays !== null && lastContactDays > 14) || badResponse || hasPaymentDelay)) forcedUrgent = true;
+
   const priority =
-    priorityScore >= 78 ? 'urgent' :   // Multiple red flags stacking up
-    priorityScore >= 62 ? 'high'   :   // Needs attention this week
-    priorityScore >= 44 ? 'medium' :   // On the radar
-                          'low';       // All good, recently touched
+    forcedUrgent || priorityScore >= 70 ? 'urgent' :   // Clear red flags — act now
+    priorityScore >= 50 ? 'high'   :                   // Needs attention this week
+    priorityScore >= 34 ? 'medium' :                   // On the radar
+                          'low';                       // All good, recently touched
 
   // ── Context snippet for AI (compact) ─────────────────────────────────────
   const contextSnippet = [
