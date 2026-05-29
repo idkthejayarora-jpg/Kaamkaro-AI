@@ -110,24 +110,17 @@ function AdminDashboard() {
 
   const loadData = useCallback(async () => {
     try {
-      const [s, sum, ms, mg, tasks, cust, ints, fraud] = await Promise.all([
+      const [s, sum, ms, tasks, cust, fraud] = await Promise.all([
         staffAPI.list().catch(() => [] as Staff[]),
         aiAPI.dashboardSummary().catch(() => null),
         meritsAPI.summary().then(r => Array.isArray(r) ? r : []).catch(() => [] as MeritSummary[]),
-        meritsAPI.goals().then(r => Array.isArray(r) ? r : []).catch(() => [] as MeritGoal[]),
         tasksAPI.list().catch(() => [] as Task[]),
         customersAPI.list().catch(() => [] as Customer[]),
-        interactionsAPI.list({}).catch(() => [] as Interaction[]),
         fraudAPI.detect().catch(() => ({ alerts: [] })),
       ]);
-      setStaff(s); setSummary(sum); setMeritSum(ms); setMeritGoals(mg);
+      setStaff(s); setSummary(sum); setMeritSum(ms);
       setAllTasks(tasks); setCustomers(cust as Customer[]);
-      setAllInteractions(ints as Interaction[]);
       setFraudAlerts((fraud as { alerts: FraudAlert[] }).alerts || []);
-      // Attendance today card
-      adminAPI.orphans().then((data: { totalOrphans: number; orphans: Record<string, { id: string; label: string; missingRef: string; missingId: string }[]> }) => {
-        setOrphanData(data);
-      }).catch(() => {});
       attendanceAPI.today().then((recs: typeof todayAttFull) => {
         setTodayAttFull(recs);
         setTodayAtt({
@@ -137,11 +130,8 @@ function AdminDashboard() {
           absent:  recs.filter(r => r.status === 'absent').length,
         });
       }).catch(() => {});
-      if (s.length > 0) {
-        // Single batch read instead of one request per staff member (avoids N+1)
-        const allPerf = await staffAPI.getAllPerformance().catch(() => [] as Performance[]);
-        setPerf(Array.isArray(allPerf) ? allPerf : []);
-      }
+      aiAPI.salesInsights().then((d: SalesData) => setSales(d)).catch(() => {});
+      insightsAPI.queue().then((q: QueueItem[]) => setQueue(Array.isArray(q) ? q : [])).catch(() => {});
     } catch { /**/ } finally { setLoading(false); }
   }, []);
 
