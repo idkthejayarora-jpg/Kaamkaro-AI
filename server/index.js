@@ -186,6 +186,12 @@ process.on('uncaughtException', (err) => {
 function startServer() {
   app.listen(PORT, () => {
     console.log(`\n🚀 Kaamkaro AI → http://localhost:${PORT}`);
+    // Kick off the daily self-backup (00:00 IST → DATA_DIR/backups, 30-day retention)
+    try {
+      require('./utils/backupScheduler').startDailyBackup();
+    } catch (err) {
+      console.error('[Backup] Scheduler failed to start (non-fatal):', err.message);
+    }
     if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your-key-here') {
       console.log(`🤖 Kamal AI   → active (claude-sonnet-4-6)`);
     } else {
