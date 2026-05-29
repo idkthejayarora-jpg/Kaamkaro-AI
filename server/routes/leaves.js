@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const { readDB, writeDB, deleteOne } = require('../utils/db');
+const { readDB, writeDB, deleteOne, withLock } = require('../utils/db');
 const { authMiddleware, attendanceManagerOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
