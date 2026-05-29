@@ -38,6 +38,21 @@ interface FraudAlert {
   type: string; severity: 'high' | 'medium' | 'low';
   title: string; detail: string; evidence: string; detectedAt: string;
 }
+interface SalesData {
+  summary: string;
+  overallStats: {
+    convRate: number; wonLeads: number; activeLeads: number;
+    topProduct: string; topFinish: string; totalEntries: number;
+  };
+  trends: { item: string; count: number; direction?: string }[];
+  restockAlerts: { item: string }[];
+}
+interface QueueItem {
+  customerId: string; customerName: string; status: string;
+  assignedStaffName: string; assignedStaffAvatar: string;
+  lastContactDays: number; priorityScore: number;
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+}
 
 function getBcastReadSet(userId: string): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem(`kk_bcast_read_${userId}`) || '[]')); } catch { return new Set(); }
