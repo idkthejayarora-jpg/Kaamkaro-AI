@@ -89,6 +89,16 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Phone and password required' });
     }
 
+    // Brute-force lockout check
+    const key = loginKey(req, phone);
+    const lockSecs = loginLockoutSecondsRemaining(key);
+    if (lockSecs > 0) {
+      return res.status(429).json({
+        error: `Too many failed attempts. Try again in ${Math.ceil(lockSecs / 60)} min.`,
+        retryAfter: lockSecs,
+      });
+    }
+
     // Check admin first
     const users = await readDB('users');
     let user = users.find(u => u.phone === phone);
