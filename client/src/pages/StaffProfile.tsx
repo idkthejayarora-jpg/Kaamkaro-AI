@@ -188,6 +188,9 @@ export default function StaffProfile() {
   );
 
   /* ── Derived values ── */
+  const facePhotoUrl  = (staff as Staff & { facePhoto?: string; facePhotoAt?: string }).facePhoto
+    ? staffAPI.facePhotoUrl(staff.id, (staff as Staff & { facePhotoAt?: string }).facePhotoAt ?? '')
+    : null;
   const streak        = staff.streakData?.currentStreak  || 0;
   const longestStreak = staff.streakData?.longestStreak  || 0;
 
