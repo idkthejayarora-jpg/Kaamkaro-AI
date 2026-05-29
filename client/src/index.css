@@ -530,6 +530,99 @@ html.light .gradient-sep {
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ════════════════════════════════════════════════════════════════════════════
+   STAFF PROFILE — Animated ID Card  (StaffProfile.tsx)
+   Spinning conic-gradient border sweep + scan-line header + pulse dot.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Wrapper: 1.5 px gold border produced by padding + overflow:hidden */
+.kk-id-card-wrap {
+  position: relative;
+  padding: 1.5px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(201,168,76,0.10), 0 12px 48px rgba(0,0,0,0.55);
+}
+
+/* Spinning element that makes the border look animated */
+.kk-id-card-glow {
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 90deg,
+    rgba(201,168,76,0.90) 90deg 130deg,
+    rgba(201,168,76,0.30) 130deg 160deg,
+    transparent 160deg 270deg,
+    rgba(201,168,76,0.60) 270deg 310deg,
+    transparent 310deg 360deg
+  );
+  animation: kkIDCardSpin 4s linear infinite;
+  will-change: transform;
+}
+
+@keyframes kkIDCardSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Inner dark surface sitting above the glow on z:1 */
+.kk-id-card-inner {
+  position: relative;
+  z-index: 1;
+  background: rgb(var(--color-dark-300));
+  border-radius: 22.5px; /* wrap radius (24) - border (1.5) */
+  overflow: hidden;
+}
+
+/* Gold-tinted header stripe at the top of the card */
+.kk-id-header {
+  background: linear-gradient(90deg, rgba(201,168,76,0.07) 0%, rgba(201,168,76,0.02) 100%);
+  border-bottom: 1px solid rgba(201,168,76,0.12);
+  padding: 7px 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Subtle moving scan-line texture on the header */
+.kk-id-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    rgba(201,168,76,0.025) 3px,
+    rgba(201,168,76,0.025) 4px
+  );
+  pointer-events: none;
+  animation: kkScanMove 10s linear infinite;
+}
+
+@keyframes kkScanMove {
+  from { transform: translateY(0); }
+  to   { transform: translateY(40px); }
+}
+
+/* Pulsing status dot on the avatar */
+.kk-pulse-dot {
+  animation: kkPulseDot 2.4s ease-in-out infinite;
+}
+
+@keyframes kkPulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.55); }
+  60%       { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+}
+
+/* Freeze animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .kk-id-card-glow { animation: none; }
+  .kk-id-scanlines  { animation: none; }
+  .kk-pulse-dot     { animation: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    AMBIENT ANIMATED BACKGROUND  (AnimatedBackground.tsx)
    Theme-accent-coded, GPU-only (transform/opacity), pointer-events-none.
    Sits at z-index -1 behind transparent app surfaces; cards stay opaque on top.
