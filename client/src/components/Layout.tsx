@@ -159,7 +159,7 @@ export default function Layout() {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-dark-500">
+        <main className="flex-1 overflow-y-auto">
           {/* pb accounts for Kamal button + iOS home bar (safe-area-inset-bottom) */}
           <div
             key={location.pathname}
