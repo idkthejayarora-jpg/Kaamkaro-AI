@@ -129,8 +129,9 @@ function AdminDashboard() {
         });
       }).catch(() => {});
       if (s.length > 0) {
-        const allPerf = await Promise.all(s.map((st: Staff) => staffAPI.getPerformance(st.id).catch(() => [])));
-        setPerf(allPerf.flat());
+        // Single batch read instead of one request per staff member (avoids N+1)
+        const allPerf = await staffAPI.getAllPerformance().catch(() => [] as Performance[]);
+        setPerf(Array.isArray(allPerf) ? allPerf : []);
       }
     } catch { /**/ } finally { setLoading(false); }
   }, []);
