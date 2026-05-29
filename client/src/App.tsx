@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import OverdueTaskAlert from './components/OverdueTaskAlert';
+import RippleEffect from './components/RippleEffect';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Staff from './pages/Staff';
