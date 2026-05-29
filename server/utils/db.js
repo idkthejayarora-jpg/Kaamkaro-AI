@@ -201,4 +201,4 @@ async function deleteOne(collection, id) {
   });
 }
 
-module.exports = { readDB, writeDB, findById, insertOne, updateOne, deleteOne, withLock };
+module.exports = { readDB, writeDB, findById, insertOne, updateOne, deleteOne, withLock, snapshotAllCollections };
