@@ -463,10 +463,37 @@ function AdminDashboard() {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-dark-100/40">
-              {urgentCount > 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/15 text-red-300">{urgentCount} urgent</span>}
-              {highCount > 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300">{highCount} high</span>}
-              <span className="text-white/30 text-[10px] ml-auto">{queue.length} customers tracked</span>
+            {/* Priority distribution — stacked bar + legend */}
+            <div className="px-5 py-4 border-b border-dark-100/40 space-y-3">
+              <div className="flex items-end justify-between">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-red-300 leading-none">{urgentCount}</span>
+                  <span className="text-white/35 text-[11px] font-semibold mb-0.5">urgent</span>
+                </div>
+                <span className="text-white/30 text-[10px]">{queue.length} customers tracked</span>
+              </div>
+              <div className="flex h-3 w-full rounded-full overflow-hidden bg-dark-200">
+                {queueDist.map(d => (
+                  <div key={d.key}
+                    className="h-full transition-all duration-700 first:rounded-l-full last:rounded-r-full"
+                    style={{ width: `${(d.value / queue.length) * 100}%`, background: d.color, opacity: 0.9 }}
+                    title={`${d.label}: ${d.value}`} />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                {([
+                  { label: 'Urgent', value: urgentCount, color: '#ef4444' },
+                  { label: 'High',   value: highCount,   color: '#f97316' },
+                  { label: 'Medium', value: mediumCount, color: '#f59e0b' },
+                  { label: 'Low',    value: lowCount,    color: '#52525a' },
+                ]).map(d => (
+                  <span key={d.label} className="flex items-center gap-1.5 text-[11px]">
+                    <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: d.color, opacity: 0.9 }} />
+                    <span className="text-white/45">{d.label}</span>
+                    <span className="text-white/70 font-bold">{d.value}</span>
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="divide-y divide-dark-100/40">
               {topQueue.map(q => {
