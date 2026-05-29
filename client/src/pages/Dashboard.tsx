@@ -4,15 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
+  PieChart, Pie,
 } from 'recharts';
 import {
   TrendingUp, Users, UserCheck, AlertTriangle,
   CheckCircle, Clock, ChevronRight,
   MessageSquare, Target, Zap, Trophy, AlertCircle,
   Award, Plus, X, Star, TrendingDown, Flame, Mic,
-  ShieldAlert, ScanFace, Link2,
+  ShieldAlert, ScanFace, Link2, Sparkles, Package,
 } from 'lucide-react';
-import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI, attendanceAPI, adminAPI } from '../lib/api';
+import { staffAPI, customersAPI, aiAPI, tasksAPI, meritsAPI, broadcastAPI, interactionsAPI, fraudAPI, attendanceAPI, adminAPI, insightsAPI } from '../lib/api';
 import Portal from '../components/Portal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
