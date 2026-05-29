@@ -506,36 +506,44 @@ router.post('/self-checkin', authMiddleware, async (req, res) => {
     const isLate      = now > deadline;
     const lateMinutes = isLate ? Math.max(0, Math.round((now - deadline) / 60000)) : 0;
 
-    const records = await readDB('attendance');
-    let record = records.find(r => r.staffId === staffId && r.date === today);
+    const { record, alreadyIn } = await withLock('attendance', async () => {
+      const records = await readDB('attendance');
+      let rec = records.find(r => r.staffId === staffId && r.date === today);
 
-    if (!record) {
-      record = {
-        id: require('uuid').v4(),
-        staffId,
-        staffName:   member.name,
-        date:        today,
-        loginAt:     now.toISOString(),
-        logoutAt:    null,
-        hoursWorked: 0,
-        isLate,
-        lateMinutes,
-        selfCheckin: true,
-        sessions:    [{ loginAt: now.toISOString(), logoutAt: null }],
-      };
-      records.push(record);
-    } else {
-      const alreadyOpen = record.sessions?.some(s => !s.logoutAt);
-      if (alreadyOpen) return res.json({ ...record, alreadyIn: true });
-      record.sessions = record.sessions || [];
-      record.sessions.push({ loginAt: now.toISOString(), logoutAt: null });
-    }
+      if (!rec) {
+        rec = {
+          id: require('uuid').v4(),
+          staffId,
+          staffName:   member.name,
+          date:        today,
+          loginAt:     now.toISOString(),
+          logoutAt:    null,
+          hoursWorked: 0,
+          isLate,
+          lateMinutes,
+          selfCheckin: true,
+          sessions:    [{ loginAt: now.toISOString(), logoutAt: null }],
+        };
+        records.push(rec);
+      } else {
+        const alreadyOpen = rec.sessions?.some(s => !s.logoutAt);
+        if (alreadyOpen) return { record: rec, alreadyIn: true };
+        rec.sessions = rec.sessions || [];
+        rec.sessions.push({ loginAt: now.toISOString(), logoutAt: null });
+      }
 
-    await writeDB('attendance', records);
+      await writeDB('attendance', records);
+      return { record: rec, alreadyIn: false };
+    });
 
-    // Sync availability
-    const idx = staffList.findIndex(s => s.id === staffId);
-    if (idx !== -1) { staffList[idx].availability = 'available'; await writeDB('staff', staffList); }
+    if (alreadyIn) return res.json({ ...record, alreadyIn: true });
+
+    // Sync availability — serialised on staff to avoid clobbering concurrent staff writes
+    await withLock('staff', async () => {
+      const list = await readDB('staff');
+      const idx = list.findIndex(s => s.id === staffId);
+      if (idx !== -1) { list[idx].availability = 'available'; await writeDB('staff', list); }
+    });
 
     res.json(record);
   } catch (err) {
