@@ -104,25 +104,41 @@ export default function SalesInsights() {
 
   useEffect(() => { load(); }, []);
 
+  const todayDate = new Date().toISOString().split('T')[0];
+  const tomorrowDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
   const handleAssignTask = async (tip: OutreachTip, key: string) => {
     try {
       await tasksAPI.create({
         title: `Follow up with ${tip.leadName} re: ${tip.product}`,
         notes: tip.reason,
+        dueDate: tomorrowDate,
         ...(tip.assignedStaffId ? { assignedTo: tip.assignedStaffId } : {}),
         customerName: tip.leadName,
       });
       setTaskDone(prev => ({ ...prev, [key]: true }));
       setTimeout(() => setTaskDone(prev => ({ ...prev, [key]: false })), 3000);
-    } catch { /* ignore */ }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error
+        || (err as { message?: string })?.message || 'Failed to create task';
+      alert(msg);
+    }
   };
 
   const handleRestockTask = async (a: RestockAlert, key: string) => {
     try {
-      await tasksAPI.create({ title: `Restock: ${a.item}`, notes: a.reason });
+      await tasksAPI.create({
+        title: `Restock: ${a.item}`,
+        notes: a.reason,
+        dueDate: todayDate,
+      });
       setTaskDone(prev => ({ ...prev, [key]: true }));
       setTimeout(() => setTaskDone(prev => ({ ...prev, [key]: false })), 3000);
-    } catch { /* ignore */ }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error
+        || (err as { message?: string })?.message || 'Failed to create task';
+      alert(msg);
+    }
   };
 
   const genTime = data?.generatedAt
