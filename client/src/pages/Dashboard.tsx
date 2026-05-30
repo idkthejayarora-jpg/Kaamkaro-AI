@@ -731,6 +731,15 @@ function StaffDashboard() {
     ]);
     setCustomers(c); setTasks(t);
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
+    // New insight fetches (non-blocking, errors are soft-suppressed)
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    attendanceAPI.monthly(currentMonth).then((att: typeof monthAtt) => setMonthAtt(att)).catch(() => {});
+    meritsAPI.list({ limit: 8 }).then((feed: typeof meritFeed) => setMeritFeed(Array.isArray(feed) ? feed : [])).catch(() => {});
+    meritsAPI.summary().then((sArr: { id?: string; weekPts?: number }[]) => {
+      const me = Array.isArray(sArr) ? sArr.find(s => s.id === user!.id) : null;
+      setWeekMeritPts(me?.weekPts || 0);
+    }).catch(() => {});
+    insightsAPI.queue().then((q: typeof topCustomer[]) => setTopCustomer(Array.isArray(q) && q.length > 0 ? q[0] : null)).catch(() => {});
     const bList = b as BroadcastMsg[];
     const readSet = getBcastReadSet(user!.id);
     const unread = bList.filter(br => !readSet.has(br.id));
