@@ -981,6 +981,96 @@ function StaffDashboard() {
         </div>
       </div>
 
+      {/* ── MONTHLY ATTENDANCE HEATMAP ───────────────────────────────────── */}
+      {monthAtt && (
+        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+          <div className="h-[2px] bg-gradient-to-r from-green-500/70 via-green-500/20 to-transparent" />
+          <div className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">This Month</p>
+                <p className="text-lg font-black text-white mt-0.5">Attendance</p>
+              </div>
+              <button onClick={() => navigate('/attendance-portal')} className="text-white/30 text-[11px] hover:text-gold transition-colors flex items-center gap-1 font-semibold">
+                Full view <ChevronRight size={11} />
+              </button>
+            </div>
+            {/* Dot grid */}
+            <div className="flex flex-wrap gap-1 mb-4">
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const day = String(i + 1).padStart(2, '0');
+                const key = `${currentMonthStr}-${day}`;
+                const status = monthAtt.dailyMap?.[String(i + 1)] || (i + 1 > todayDay ? 'future' : 'absent');
+                const col = status === 'future' ? (isLight ? '#d1d5db' : '#2a2a2e') : (ATT_COLOR[status] || '#52525a');
+                return (
+                  <div key={key} title={`${day}: ${status}`}
+                    className="w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: col, opacity: status === 'future' ? 0.35 : 0.9 }}>
+                    <span className="text-[7px] font-black" style={{ color: status === 'future' ? 'transparent' : 'rgba(0,0,0,0.5)' }}>{i + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Pill row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: 'Present', value: monthAtt.presentDays, color: 'bg-green-500/12 text-green-300' },
+                { label: 'Late',    value: monthAtt.lateDays,    color: 'bg-amber-500/12 text-amber-300' },
+                { label: 'Absent',  value: monthAtt.absentDays,  color: 'bg-red-500/12 text-red-300' },
+                { label: 'Leave',   value: monthAtt.leaveDays,   color: 'bg-indigo-500/12 text-indigo-300' },
+              ].map(p => (
+                <span key={p.label} className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${p.color}`}>
+                  {p.value} {p.label}
+                </span>
+              ))}
+              <span className="text-white/30 text-[10px] ml-auto">{monthAtt.totalHours.toFixed(1)}h logged</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MERIT ACTIVITY FEED ───────────────────────────────────────────── */}
+      {meritFeed.length > 0 && (
+        <div className="rounded-2xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+          <div className="h-[2px] bg-gradient-to-r from-gold/70 via-gold/20 to-transparent" />
+          <div className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Points</p>
+                <p className="text-lg font-black text-white mt-0.5">Merit Activity</p>
+              </div>
+              <span className={`text-sm font-black px-3 py-1 rounded-full ${weekMeritPts >= 0 ? 'bg-green-500/12 text-green-300' : 'bg-red-500/12 text-red-300'}`}>
+                {weekMeritPts >= 0 ? '+' : ''}{weekMeritPts} this week
+              </span>
+            </div>
+            <div className="space-y-2.5 relative">
+              {/* Vertical connector line */}
+              <div className="absolute left-[9px] top-3 bottom-3 w-[2px] bg-dark-100 rounded-full" />
+              {meritFeed.slice(0, 7).map((m, i) => {
+                const col = MERIT_COLOR[m.category] || '#94a3b8';
+                const pos = m.points > 0;
+                return (
+                  <div key={i} className="flex items-start gap-3 relative">
+                    {/* Dot on the timeline */}
+                    <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border-2 relative z-10"
+                      style={{ background: col + '22', borderColor: col + '66' }}>
+                      <div className="w-2 h-2 rounded-full" style={{ background: col }} />
+                    </div>
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <p className="text-white/75 text-[11px] leading-snug">{m.reason}</p>
+                      <p className="text-white/30 text-[10px] mt-0.5">{relTime(m.createdAt)}</p>
+                    </div>
+                    <span className={`text-xs font-black flex-shrink-0 mt-0.5 ${pos ? 'text-green-400' : 'text-red-400'}`}>
+                      {pos ? '+' : ''}{m.points}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── DIARY CTA ─────────────────────────────────────────────────────── */}
       <button onClick={() => navigate('/diary')}
         className="w-full relative overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-r from-gold/8 via-gold/4 to-transparent p-5 flex items-center gap-4 hover:border-gold/35 hover:from-gold/14 transition-all group active:scale-[0.99]">
