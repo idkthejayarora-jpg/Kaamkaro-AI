@@ -1088,20 +1088,37 @@ function StaffDashboard() {
         <ChevronRight size={18} className="text-gold/30 group-hover:text-gold group-hover:translate-x-1 transition-all flex-shrink-0" />
       </button>
 
-      {/* ── QUICK STAT ROW ────────────────────────────────────────────────── */}
-      <div className="rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden">
-        <div className="grid grid-cols-3 divide-x divide-dark-100">
+      {/* ── THIS WEEK vs LAST WEEK ────────────────────────────────────────── */}
+      <div className="rounded-3xl bg-dark-300 border border-dark-100 overflow-hidden animate-fade-in-up">
+        <div className="px-4 sm:px-5 pt-4 pb-1 flex items-center justify-between">
+          <div>
+            <p className="text-white/40 text-[10px] uppercase tracking-[0.18em] font-bold">Trend</p>
+            <p className="text-sm font-black text-white mt-0.5">This Week vs Last</p>
+          </div>
+          {!prevPerf && <span className="text-white/25 text-[10px]">Need 2+ weeks of data</span>}
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-dark-100 mt-3">
           {[
-            { label: 'Customers', value: customers.length, color: 'text-white', alert: false },
-            { label: 'Overdue',   value: overdueTasks.length, color: overdueTasks.length > 0 ? 'text-red-300' : 'text-white', alert: overdueTasks.length > 0 },
-            { label: 'Response',  value: `${latestPerf?.responseRate || 0}%`, color: 'text-white', alert: false },
-          ].map(({ label, value, color, alert }) => (
-            <div key={label} className={`p-3 sm:p-5 text-center relative ${alert ? 'bg-red-500/5' : ''}`}>
-              {alert && <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500" />}
-              <p className={`text-2xl sm:text-3xl font-black leading-none ${color}`}>{value}</p>
-              <p className="text-white/40 text-[9px] sm:text-[10px] mt-1.5 sm:mt-2 uppercase tracking-widest font-bold">{label}</p>
-            </div>
-          ))}
+            { label: 'Contacted',   current: latestPerf?.customersContacted || 0, delta: wowContacts,  suffix: '' },
+            { label: 'Response',    current: latestPerf?.responseRate || 0,        delta: wowResponse,  suffix: '%' },
+            { label: 'Overdue',     current: overdueTasks.length,                  delta: null,         suffix: '', alert: overdueTasks.length > 0 },
+          ].map(({ label, current, delta, suffix, alert }) => {
+            const improved = delta !== null && delta > 0;
+            const declined = delta !== null && delta < 0;
+            return (
+              <div key={label} className={`p-3 sm:p-4 text-center relative ${alert ? 'bg-red-500/5' : ''}`}>
+                {alert && <div className="absolute top-0 left-0 right-0 h-[2px] bg-red-500" />}
+                <p className={`text-2xl sm:text-3xl font-black leading-none ${alert ? 'text-red-300' : 'text-white'}`}>{current}{suffix}</p>
+                <p className="text-white/40 text-[9px] sm:text-[10px] mt-1 uppercase tracking-widest font-bold">{label}</p>
+                {delta !== null && (
+                  <p className={`text-[10px] font-bold mt-1 flex items-center justify-center gap-0.5 ${improved ? 'text-green-400' : declined ? 'text-red-400' : 'text-white/25'}`}>
+                    {improved ? '↑' : declined ? '↓' : '→'}
+                    {delta !== 0 ? ` ${Math.abs(delta)}${suffix}` : ' same'}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
