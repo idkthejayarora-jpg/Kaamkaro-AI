@@ -1176,9 +1176,7 @@ function StaffDashboard() {
               return (
                 <div key={c.id} onClick={() => navigate('/customers')}
                   className={`flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors hover:bg-white/[0.04] ${isOverdue ? 'bg-red-500/3' : ''}`}>
-                  {/* Index dot */}
                   <span className="text-white/35 text-[11px] font-black w-4 flex-shrink-0 text-right">{i + 1}</span>
-                  {/* Avatar */}
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isOverdue ? 'bg-red-500/12 border border-red-500/18' : 'bg-dark-200 border border-dark-100'}`}>
                     <span className={`text-xs font-black ${isOverdue ? 'text-red-300' : 'text-white/45'}`}>{c.name[0]}</span>
                   </div>
@@ -1195,6 +1193,69 @@ function StaffDashboard() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* ── TOP PRIORITY CUSTOMER SPOTLIGHT ──────────────────────────────── */}
+      <div className="animate-fade-in-up">
+        {topCustomer ? (() => {
+          const days = topCustomer.lastContactDays;
+          const daysLabel = days === null ? 'Never contacted' : days === 0 ? 'Contacted today' : `${days} days silent`;
+          const daysColor = days === null || (days !== null && days > 21) ? 'text-red-300' : days > 14 ? 'text-amber-300' : 'text-white';
+          const stageColor = (PIPELINE_COLORS as Record<string, string>)[topCustomer.status] || '#888';
+          const respBadge = RESP_BADGE[topCustomer.patterns.responsiveness] || 'bg-white/8 text-white/40';
+          return (
+            <div className="rounded-2xl overflow-hidden border border-red-500/20 bg-gradient-to-br from-red-500/5 to-dark-300">
+              <div className="h-[2px] bg-gradient-to-r from-red-500/80 via-red-500/30 to-transparent" />
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-red-400/70 text-[10px] uppercase tracking-[0.18em] font-bold">Needs Your Call Now</p>
+                    <p className="text-lg font-black text-white mt-0.5">Top Priority Customer</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full capitalize ${respBadge}`}>
+                    {topCustomer.patterns.responsiveness}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/12 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-300 text-lg font-black">{topCustomer.customerName[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-black text-base truncate">{topCustomer.customerName}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: stageColor }} />
+                      <span className="text-white/35 text-[10px] capitalize">{topCustomer.status}</span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-2xl font-black leading-none ${daysColor}`}>{days === null ? '∞' : days}</p>
+                    <p className="text-white/30 text-[9px] mt-0.5">{days === null ? 'no contact' : 'days ago'}</p>
+                  </div>
+                </div>
+                {topCustomer.contextSnippet && (
+                  <p className="text-white/40 text-xs leading-relaxed mb-4 line-clamp-2 italic">
+                    "{topCustomer.contextSnippet.slice(0, 120)}"
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={() => navigate('/diary')}
+                    className="flex-1 py-2.5 rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 text-xs font-bold hover:bg-red-500/25 transition-colors">
+                    Log Contact
+                  </button>
+                  <button onClick={() => navigate(`/customers/${topCustomer.customerId}`)}
+                    className="flex-1 py-2.5 rounded-xl bg-dark-200 border border-dark-100 text-white/50 text-xs font-bold hover:text-white hover:border-dark-50 transition-colors">
+                    View Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })() : (
+          <div className="rounded-2xl bg-dark-300 border border-dark-100 p-5 flex items-center gap-3">
+            <CheckCircle size={22} className="text-green-400 flex-shrink-0" />
+            <p className="text-white/50 text-sm">All your customers are up to date 🎉</p>
           </div>
         )}
       </div>
