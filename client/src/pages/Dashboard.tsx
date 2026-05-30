@@ -772,6 +772,35 @@ function StaffDashboard() {
   const weekProgress = Math.min((weekContacts / weekTarget) * 100, 100);
   const ringCirc = 87.96; // 2 * π * 14
 
+  // Week-over-week deltas from performance history
+  const prevPerf = performance.length >= 2 ? performance[performance.length - 2] : null;
+  const wowContacts  = (latestPerf?.customersContacted || 0) - (prevPerf?.customersContacted || 0);
+  const wowResponse  = (latestPerf?.responseRate || 0) - (prevPerf?.responseRate || 0);
+  // Tasks completed this week vs last (from completedAt field on completed tasks - we don't fetch completed tasks here,
+  // so fall back to performance.entriesLogged if available, otherwise omit)
+  const wowEntries   = (latestPerf?.entriesLogged || 0) - (prevPerf?.entriesLogged || 0);
+
+  // Heatmap helpers
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  const todayDay = new Date().getDate();
+  const ATT_COLOR: Record<string, string> = { present: '#10b981', late: '#f59e0b', absent: '#ef4444', leave: '#6366f1', sick: '#6366f1', half_day: '#f59e0b' };
+
+  // Merit feed helpers
+  const MERIT_COLOR: Record<string, string> = { task: '#60a5fa', streak: GOLD, conversion: '#4ade80', overdue: '#f87171', manual: '#94a3b8' };
+  function relTime(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? 'Yesterday' : `${d}d ago`;
+  }
+
+  // Pipeline status colours reuse PIPELINE_COLORS from top scope
+  const RESP_BADGE: Record<string, string> = { ghosting: 'bg-red-500/15 text-red-300', ignoring: 'bg-orange-500/15 text-orange-300', slow: 'bg-amber-500/12 text-amber-300', responsive: 'bg-green-500/12 text-green-300' };
+
   const sortedCustomers = [...customers].sort((a, b) => {
     const da = a.lastContact ? Date.now() - new Date(a.lastContact).getTime() : Infinity;
     const db = b.lastContact ? Date.now() - new Date(b.lastContact).getTime() : Infinity;
