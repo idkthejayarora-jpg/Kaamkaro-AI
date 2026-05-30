@@ -688,6 +688,11 @@ function StaffDashboard() {
   const [bcastModal, setBcastModal]     = useState(false);
   const [bcastModalIdx, setBcastModalIdx] = useState(0);
   const [loading, setLoading]       = useState(true);
+  // New insight state
+  const [monthAtt, setMonthAtt]     = useState<{ dailyMap: Record<string, string>; presentDays: number; lateDays: number; absentDays: number; leaveDays: number; totalHours: number } | null>(null);
+  const [meritFeed, setMeritFeed]   = useState<{ points: number; reason: string; category: string; createdAt: string }[]>([]);
+  const [weekMeritPts, setWeekMeritPts] = useState(0);
+  const [topCustomer, setTopCustomer]   = useState<{ customerId: string; customerName: string; status: string; lastContactDays: number | null; contextSnippet: string; patterns: { responsiveness: string } } | null>(null);
   // Self-checkin (on-tour) state
   const [selfStaff, setSelfStaff]   = useState<(Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][]; gender?: string; shiftOverride?: { shiftStart: string; shiftEnd: string } | null }) | null>(null);
   const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
