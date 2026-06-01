@@ -315,8 +315,8 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
     background:
       linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012) 38%, transparent),
       rgb(var(--color-dark-300) / 0.58);
-    backdrop-filter: blur(22px) saturate(180%);
-    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(255,255,255,0.09);
     box-shadow:
       0 1px 0 rgba(255,255,255,0.10) inset,
@@ -324,7 +324,9 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
       0 10px 34px rgba(0,0,0,0.30);
     transition: border-color 0.2s ease, box-shadow 0.25s ease,
                 transform 0.2s ease, background-color 0.25s ease;
-    will-change: transform;
+    /* NOTE: no global `will-change` — applying it to every card forces a
+       permanent GPU layer per card (layer explosion → jank). Let the
+       compositor promote on hover only, via the transform transition. */
   }
   .card:hover {
     border-color: rgba(255,255,255,0.16);

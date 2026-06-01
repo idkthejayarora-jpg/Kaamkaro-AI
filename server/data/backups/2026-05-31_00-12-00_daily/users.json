@@ -1,0 +1,13 @@
+[
+  {
+    "id": "bf159526-fa44-457b-a97d-15a2474505aa",
+    "name": "Admin",
+    "phone": "admin",
+    "password": "$2a$10$HtrwELefxg8Kq86RfxJJJecRI2qPPYfZwgwFSdszRCxqHlvbpq/jC",
+    "role": "admin",
+    "email": "",
+    "joinDate": "2026-04-18T11:00:54.127Z",
+    "avatar": "A",
+    "createdAt": "2026-04-18T11:00:54.132Z"
+  }
+]
