@@ -874,31 +874,52 @@ function StaffDashboard() {
         </Portal>
       )}
 
-      {/* ── COMPACT ALERT STRIP (face enroll / attendance) ───────────────── */}
-      {(selfStaff && !selfStaff.faceDescriptors?.length) || selfStaff?.canSelfCheckin ? (
-        <div className="flex gap-2">
-          {selfStaff && !selfStaff.faceDescriptors?.length && (
-            <button onClick={() => setShowSelfEnroll(true)}
-              className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left">
-              <ScanFace size={14} className="text-amber-400 flex-shrink-0" />
-              <span className="text-amber-300 text-xs font-semibold">Enroll face</span>
+      {/* ── LEAVE MODAL ──────────────────────────────────────────────────── */}
+      {showLeave && (
+        <Suspense fallback={null}>
+          <LeaveModal
+            onClose={() => setShowLeave(false)}
+            onDone={() => { setShowLeave(false); setLeaveDone(true); setTimeout(() => setLeaveDone(false), 3500); }}
+          />
+        </Suspense>
+      )}
+
+      {/* ── COMPACT ACTION STRIP (face enroll / attendance / leave) ──────── */}
+      <div className="flex gap-2">
+        {selfStaff && !selfStaff.faceDescriptors?.length && (
+          <button onClick={() => setShowSelfEnroll(true)}
+            className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left">
+            <ScanFace size={14} className="text-amber-400 flex-shrink-0" />
+            <span className="text-amber-300 text-xs font-semibold">Enroll face</span>
+          </button>
+        )}
+        {selfStaff?.canSelfCheckin && (() => {
+          const isIn = selfStatus === 'in';
+          const hasFace = (selfStaff.faceDescriptors || []).length > 0;
+          return (
+            <button onClick={() => hasFace ? setShowSelfScan(true) : undefined}
+              className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-colors text-left ${isIn ? 'border-green-500/25 bg-green-500/5 hover:bg-green-500/10' : 'border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10'}`}>
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isIn ? 'bg-green-400' : 'bg-amber-400'}`} />
+              <span className={`text-xs font-semibold ${isIn ? 'text-green-300' : 'text-amber-300'}`}>
+                {isIn ? 'Checked in · Clock out?' : 'Clock in'}
+              </span>
             </button>
-          )}
-          {selfStaff?.canSelfCheckin && (() => {
-            const isIn = selfStatus === 'in';
-            const hasFace = (selfStaff.faceDescriptors || []).length > 0;
-            return (
-              <button onClick={() => hasFace ? setShowSelfScan(true) : undefined}
-                className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-colors text-left ${isIn ? 'border-green-500/25 bg-green-500/5 hover:bg-green-500/10' : 'border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10'}`}>
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isIn ? 'bg-green-400' : 'bg-amber-400'}`} />
-                <span className={`text-xs font-semibold ${isIn ? 'text-green-300' : 'text-amber-300'}`}>
-                  {isIn ? 'Checked in · Clock out?' : 'Clock in'}
-                </span>
-              </button>
-            );
-          })()}
+          );
+        })()}
+        <button onClick={() => setShowLeave(true)}
+          className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-indigo-500/25 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors text-left">
+          <CalendarDays size={14} className="text-indigo-300 flex-shrink-0" />
+          <span className="text-indigo-300 text-xs font-semibold">Mark Leave</span>
+        </button>
+      </div>
+
+      {/* Leave confirmation toast */}
+      {leaveDone && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-green-500/25 bg-green-500/8 animate-fade-in-up">
+          <CheckCircle size={15} className="text-green-400 flex-shrink-0" />
+          <span className="text-green-300 text-xs font-semibold">Leave marked. Your manager can see it.</span>
         </div>
-      ) : null}
+      )}
 
       {/* ── MIC HERO — biggest, first real thing ─────────────────────────── */}
       <button onClick={() => navigate('/diary')}
