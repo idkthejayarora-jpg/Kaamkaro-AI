@@ -9,9 +9,109 @@ const { authMiddleware, attendanceManagerOrAdmin } = require('../middleware/auth
 
 const router = express.Router();
 router.use(authMiddleware);
-router.use(attendanceManagerOrAdmin);
 
 const VALID_TYPES = ['full_day', 'half_day_am', 'half_day_pm', 'sick', 'emergency'];
+const VALID_REASONS = ['emergency', 'family', 'sick', 'travel', 'personal'];
+
+// IST "today" as YYYY-MM-DD (app convention: Asia/Kolkata)
+function istToday() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Kolkata' });
+}
+
+// ── STAFF SELF-SERVICE (auth only — declared BEFORE the admin gate) ────────────
+
+// GET /api/leaves/mine — a staff member's own leaves (optionally ?month=YYYY-MM)
+router.get('/mine', async (req, res) => {
+  try {
+    let leaves = await readDB('leaves');
+    leaves = leaves.filter(l => l.staffId === req.user.id);
+    if (req.query.month) leaves = leaves.filter(l => l.date.startsWith(req.query.month));
+    leaves.sort((a, b) => b.date.localeCompare(a.date));
+    res.json(leaves);
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/leaves/self — staff marks their OWN leave (auto-approved).
+// Body: { date, reasonCategory, reason?, type? }. staffId is forced to the
+// authenticated user — a staff member can never mark leave for someone else.
+router.post('/self', async (req, res) => {
+  try {
+    const { date, reasonCategory, reason, type } = req.body;
+    const leaveType = type || 'full_day';
+
+    if (!date || !reasonCategory) {
+      return res.status(400).json({ error: 'date and reasonCategory are required' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'date must be YYYY-MM-DD' });
+    }
+    if (date < istToday()) {
+      return res.status(400).json({ error: 'Cannot mark leave for a past date' });
+    }
+    if (!VALID_REASONS.includes(reasonCategory)) {
+      return res.status(400).json({ error: `reasonCategory must be one of: ${VALID_REASONS.join(', ')}` });
+    }
+    if (!VALID_TYPES.includes(leaveType)) {
+      return res.status(400).json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` });
+    }
+
+    const staff = await readDB('staff');
+    const member = staff.find(s => s.id === req.user.id);
+    if (!member) return res.status(404).json({ error: 'Staff not found' });
+
+    const record = {
+      id:             uuidv4(),
+      staffId:        req.user.id,
+      staffName:      member.name,
+      date,
+      type:           leaveType,
+      reasonCategory,
+      reason:         (reason || '').trim().slice(0, 1000),
+      markedBy:       member.name,
+      markedByRole:   'staff',
+      selfMarked:     true,
+      status:         'approved', // auto-approved per policy (double-confirmed in UI)
+      createdAt:      new Date().toISOString(),
+    };
+
+    const dup = await withLock('leaves', async () => {
+      const leaves = await readDB('leaves');
+      if (leaves.find(l => l.staffId === req.user.id && l.date === date)) return true;
+      leaves.push(record);
+      await writeDB('leaves', leaves);
+      return false;
+    });
+    if (dup) return res.status(409).json({ error: `You already have a leave marked for ${date}` });
+
+    res.status(201).json(record);
+  } catch (err) {
+    console.error('[Leaves self]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/leaves/mine/:id — staff cancels their OWN leave only
+router.delete('/mine/:id', async (req, res) => {
+  try {
+    const removed = await withLock('leaves', async () => {
+      const leaves = await readDB('leaves');
+      const idx = leaves.findIndex(l => l.id === req.params.id && l.staffId === req.user.id);
+      if (idx === -1) return false;
+      leaves.splice(idx, 1);
+      await writeDB('leaves', leaves);
+      return true;
+    });
+    if (!removed) return res.status(404).json({ error: 'Leave not found' });
+    res.json({ message: 'Leave cancelled' });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── ADMIN / ATTENDANCE-MANAGER ONLY (everything below this gate) ───────────────
+router.use(attendanceManagerOrAdmin);
 
 // ── GET /api/leaves ────────────────────────────────────────────────────────────
 // Query: ?staffId=  &month=YYYY-MM
