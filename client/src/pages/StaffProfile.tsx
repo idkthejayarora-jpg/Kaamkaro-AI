@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { TabBar, AnimatedTabPanel } from '../components/TabBar';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
