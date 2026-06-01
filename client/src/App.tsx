@@ -32,8 +32,17 @@ import Badges from './pages/Badges';
 import Calendar from './pages/Calendar';
 import Settings from './pages/Settings';
 import AntiFraud from './pages/AntiFraud';
-import AttendancePortal from './pages/AttendancePortal';
-import AttendanceKiosk from './pages/AttendanceKiosk';
+// Face-recognition pages pull in the heavy @vladmandic/face-api library.
+// Lazy-load them so face-api ships as its own on-demand chunk instead of
+// bloating the main bundle that every user downloads on first load.
+const AttendancePortal = lazy(() => import('./pages/AttendancePortal'));
+const AttendanceKiosk  = lazy(() => import('./pages/AttendanceKiosk'));
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center min-h-screen bg-dark-500">
+    <div className="w-10 h-10 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
