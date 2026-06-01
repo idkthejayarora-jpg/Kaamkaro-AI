@@ -951,7 +951,7 @@ function StaffDashboard() {
                 if (i < arr.length - 1) acc.push(<span key={`sep-${i}`} className="text-white/15 text-[10px]">·</span>);
                 return acc;
               }, [])}
-              <span className="text-white/25 text-[10px] ml-auto">{monthAtt.totalHours.toFixed(0)}h this month</span>
+              <span className="text-white/25 text-[10px] ml-auto">{(monthAtt.totalHours ?? 0).toFixed(0)}h this month</span>
             </div>
             <ChevronRight size={11} className="text-white/20 group-hover:text-white/40 transition-colors flex-shrink-0" />
           </button>
