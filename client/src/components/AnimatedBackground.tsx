@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 
 /**
  * Ambient animated background — theme-accent-coded, GPU-only, pointer-events-none.
