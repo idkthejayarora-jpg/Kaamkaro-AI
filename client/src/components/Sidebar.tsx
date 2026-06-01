@@ -326,12 +326,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           )}
 
           <button
-            onClick={() => (isAdmin || isSwitched) ? setShowSwitcher(true) : undefined}
-            className={`w-full p-3 rounded-xl bg-dark-300 border border-dark-50 text-left transition-all ${
-              (isAdmin || isSwitched)
-                ? 'hover:border-gold/30 hover:bg-dark-200 cursor-pointer active:scale-[0.99]'
-                : 'cursor-default'
-            }`}
+            onClick={() => {
+              if (isAdmin || isSwitched) setShowSwitcher(true);
+              else if (user?.id) navigate(`/staff/${user.id}`); // staff → own profile/stats
+            }}
+            className="w-full p-3 rounded-xl bg-dark-300 border border-dark-50 text-left transition-all hover:border-gold/30 hover:bg-dark-200 cursor-pointer active:scale-[0.99]"
           >
             <div className="flex items-center gap-3">
               <div className="relative flex-shrink-0">
