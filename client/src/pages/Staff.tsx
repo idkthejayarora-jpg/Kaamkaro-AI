@@ -92,7 +92,11 @@ function AddStaffModal({ customers, onClose, onCreated }: {
 }
 
 // ── Reset Password Modal ───────────────────────────────────────────────────────
-function ResetPasswordModal({ staff, onClose }: { staff: Staff; onClose: () => void }) {
+function ResetPasswordModal({ staff, onClose, onSaved }: { staff: Staff; onClose: () => void; onSaved?: () => void }) {
+  // Kiosk-created staff get a `kiosk_<timestamp>` placeholder phone — that's not
+  // a real login identifier, so don't prefill it; make the admin set a number.
+  const isPlaceholderPhone = /^kiosk_\d+$/.test(staff.phone || '');
+  const [phone, setPhone]       = useState(isPlaceholderPhone ? '' : (staff.phone || ''));
   const [newPassword, setNewPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
@@ -101,11 +105,15 @@ function ResetPasswordModal({ staff, onClose }: { staff: Staff; onClose: () => v
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) { setError('Min 6 characters'); return; }
+    const phoneTrim = phone.trim();
+    if (!phoneTrim) { setError('Login phone number is required'); return; }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
     setLoading(true); setError('');
     try {
-      await staffAPI.resetPassword(staff.id, newPassword);
+      // One call sets BOTH the login phone and the (hashed) password.
+      await staffAPI.update(staff.id, { phone: phoneTrim, password: newPassword });
       setDone(true);
+      onSaved?.();
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed');
     } finally { setLoading(false); }
@@ -117,7 +125,7 @@ function ResetPasswordModal({ staff, onClose }: { staff: Staff; onClose: () => v
       <div className="bg-dark-300 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up sm:animate-scale-in">
         <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
           <div>
-            <h2 className="text-white font-semibold text-sm">Reset Password</h2>
+            <h2 className="text-white font-semibold text-sm">Login Credentials</h2>
             <p className="text-white/30 text-xs mt-0.5">{staff.name}</p>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white"><X size={16} /></button>
@@ -128,13 +136,24 @@ function ResetPasswordModal({ staff, onClose }: { staff: Staff; onClose: () => v
               <div className="w-12 h-12 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center mx-auto mb-3">
                 <KeyRound size={20} className="text-green-400" />
               </div>
-              <p className="text-white font-medium">Password Reset!</p>
-              <p className="text-white/40 text-sm mt-1">New credentials shared with {staff.name}.</p>
+              <p className="text-white font-medium">Credentials Set!</p>
+              <p className="text-white/40 text-sm mt-1">{staff.name} can log in with <span className="text-white/70 font-semibold">{phone.trim()}</span>.</p>
               <button onClick={onClose} className="btn-primary mt-4 w-full">Done</button>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
               {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-3 text-sm">{error}</div>}
+              {isPlaceholderPhone && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded-xl px-4 py-2.5 text-xs">
+                  Created at the kiosk — no login phone yet. Set one below so they can sign in.
+                </div>
+              )}
+              <div>
+                <label className="label">Login Phone</label>
+                <input className="input" type="tel" placeholder="9876543210"
+                  value={phone} onChange={e => setPhone(e.target.value)} />
+                <p className="text-white/25 text-[10px] mt-1">The number they sign in with.</p>
+              </div>
               <div>
                 <label className="label">New Password</label>
                 <div className="relative">
@@ -148,7 +167,7 @@ function ResetPasswordModal({ staff, onClose }: { staff: Staff; onClose: () => v
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={onClose} className="btn-ghost flex-1">Cancel</button>
-                <button type="submit" disabled={loading} className="btn-primary flex-1">{loading ? 'Saving...' : 'Reset'}</button>
+                <button type="submit" disabled={loading} className="btn-primary flex-1">{loading ? 'Saving...' : 'Save'}</button>
               </div>
             </form>
           )}
