@@ -229,7 +229,8 @@ router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) 
 // ── GET /api/attendance/monthly ───────────────────────────────────────────────
 // Query: ?month=YYYY-MM (defaults to current month)
 // Returns per-staff summary with dailyMap, total hours, overtime, undertime, late count.
-router.get('/monthly', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
+// Staff get their OWN row only; admins/managers get the whole team.
+router.get('/monthly', authMiddleware, async (req, res) => {
   try {
     const cfg = await getAttendanceConfig();
     const expected = cfg.expectedHours || 9;
