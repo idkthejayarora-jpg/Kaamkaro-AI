@@ -852,7 +852,9 @@ function StaffDashboard() {
       {/* ── MODALS (face enroll / self-scan) ─────────────────────────────── */}
       {showSelfEnroll && selfStaff && !selfStaff.faceDescriptors?.length && (
         <Portal>
-          <SelfEnrollModal onClose={() => setShowSelfEnroll(false)} onDone={() => { loadSelfCheckin(); setShowSelfEnroll(false); }} />
+          <Suspense fallback={null}>
+            <SelfEnrollModal onClose={() => setShowSelfEnroll(false)} onDone={() => { loadSelfCheckin(); setShowSelfEnroll(false); }} />
+          </Suspense>
         </Portal>
       )}
       {showSelfScan && selfStaff?.canSelfCheckin && (selfStaff.faceDescriptors || []).length > 0 && (
