@@ -19,8 +19,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSSE } from '../hooks/useSSE';
 import type { Staff, Customer, Performance, DashboardSummary, Task, MeritSummary, MeritGoal, Interaction } from '../types';
-import { SelfScanModal } from '../components/SelfScanModal';
-import { SelfEnrollModal } from '../components/SelfEnrollModal';
+import { lazy, Suspense } from 'react';
+// Lazy — these modals import the heavy face-api lib; keep it out of the main bundle.
+const SelfScanModal   = lazy(() => import('../components/SelfScanModal').then(m => ({ default: m.SelfScanModal })));
+const SelfEnrollModal = lazy(() => import('../components/SelfEnrollModal').then(m => ({ default: m.SelfEnrollModal })));
 
 function playNotifBeep() {
   try {
