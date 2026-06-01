@@ -735,7 +735,13 @@ function StaffDashboard() {
     setPerf(p.sort((a: Performance, b: Performance) => a.week.localeCompare(b.week)));
     // New insight fetches (non-blocking, errors are soft-suppressed)
     const currentMonth = new Date().toISOString().slice(0, 7);
-    attendanceAPI.monthly(currentMonth).then((att: typeof monthAtt) => setMonthAtt(att)).catch(() => {});
+    // /monthly returns { month, expectedHours, staff: [ per-staff summary ] } —
+    // pull out THIS user's row, not the whole envelope. (Endpoint is admin/
+    // manager-gated, so for plain staff this 403s and the strip stays hidden.)
+    attendanceAPI.monthly(currentMonth).then((res: { staff?: (typeof monthAtt & { staffId: string })[] }) => {
+      const mine = Array.isArray(res?.staff) ? res.staff.find(s => s.staffId === user!.id) : null;
+      setMonthAtt(mine && typeof mine.totalHours === 'number' ? mine : null);
+    }).catch(() => {});
     meritsAPI.list({ limit: 8 }).then((feed: typeof meritFeed) => setMeritFeed(Array.isArray(feed) ? feed : [])).catch(() => {});
     meritsAPI.summary().then((sArr: { id?: string; weekPts?: number }[]) => {
       const me = Array.isArray(sArr) ? sArr.find(s => s.id === user!.id) : null;
