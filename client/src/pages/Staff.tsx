@@ -243,9 +243,12 @@ export default function StaffPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-white font-semibold">{s.name}</p>
                   <span className={`badge ${s.active ? 'badge-green' : 'badge-gray'} flex-shrink-0`}>{s.active ? 'Active' : 'Inactive'}</span>
+                  {/^kiosk_\d+$/.test(s.phone || '') && (
+                    <span className="badge badge-amber flex-shrink-0">Set login</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                  <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={10} />{s.phone}</span>
+                  <span className="text-white/30 text-xs flex items-center gap-1"><Phone size={10} />{/^kiosk_\d+$/.test(s.phone || '') ? 'No login phone' : s.phone}</span>
                   <span className="text-white/20 text-xs flex items-center gap-1"><Calendar size={10} />{new Date(s.joinDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</span>
                   {s.streakData?.currentStreak != null && s.streakData.currentStreak > 0 && (
                     <span className="text-gold/70 text-xs flex items-center gap-1">
