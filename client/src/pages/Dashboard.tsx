@@ -701,6 +701,8 @@ function StaffDashboard() {
   const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
   const [showSelfScan, setShowSelfScan]     = useState(false);
   const [showSelfEnroll, setShowSelfEnroll] = useState(false);
+  const [showLeave, setShowLeave]           = useState(false);
+  const [leaveDone, setLeaveDone]           = useState(false);
 
   const dismissBcastModal = () => {
     markBcastRead(user!.id, unreadQueue.map(b => b.id));
