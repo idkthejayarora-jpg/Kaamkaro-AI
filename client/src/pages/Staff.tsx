@@ -283,7 +283,7 @@ export default function StaffPage() {
       )}
 
       {showModal && <AddStaffModal customers={customers} onClose={() => setShowModal(false)} onCreated={s => { setStaff(p => [...p, s]); setShowModal(false); }} />}
-      {resetting && <ResetPasswordModal staff={resetting} onClose={() => setResetting(null)} />}
+      {resetting && <ResetPasswordModal staff={resetting} onClose={() => setResetting(null)} onSaved={load} />}
     </div>
   );
 }
