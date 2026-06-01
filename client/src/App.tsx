@@ -103,6 +103,7 @@ function AppRoutes() {
       </Route>
       <Route path="*" element={<Navigate to={user?.role === 'attendance_manager' ? '/attendance-portal' : '/dashboard'} replace />} />
     </Routes>
+    </Suspense>
   );
 }
 
