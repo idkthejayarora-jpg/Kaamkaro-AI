@@ -340,7 +340,13 @@ router.get('/monthly', authMiddleware, async (req, res) => {
         };
       });
 
-    res.json({ month: monthStr, expectedHours: expected, staff: result });
+    // Privacy: a plain staff member only ever sees their own summary row.
+    const role = req.user?.role;
+    const scoped = (role === 'admin' || role === 'attendance_manager')
+      ? result
+      : result.filter(r => r.staffId === req.user.id);
+
+    res.json({ month: monthStr, expectedHours: expected, staff: scoped });
   } catch (err) {
     console.error('[Attendance monthly]', err);
     res.status(500).json({ error: 'Server error' });
