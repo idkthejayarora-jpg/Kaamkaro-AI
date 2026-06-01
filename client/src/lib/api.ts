@@ -372,6 +372,12 @@ export const leavesAPI = {
   mark: (data: { staffId: string; date: string; type: string; reason?: string }) =>
     api.post('/leaves', data).then(r => r.data),
   cancel: (id: string) => api.delete(`/leaves/${id}`).then(r => r.data),
+  // Staff self-service
+  mine: (month?: string) =>
+    api.get('/leaves/mine', { params: month ? { month } : {} }).then(r => r.data),
+  markSelf: (data: { date: string; reasonCategory: string; reason?: string; type?: string }) =>
+    api.post('/leaves/self', data).then(r => r.data),
+  cancelMine: (id: string) => api.delete(`/leaves/mine/${id}`).then(r => r.data),
 };
 
 export const kioskAPI = {
