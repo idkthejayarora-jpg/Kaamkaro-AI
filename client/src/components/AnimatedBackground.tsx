@@ -30,6 +30,25 @@ export default function AnimatedBackground() {
     }));
   }, []);
 
+  // Pause ambient drift during scroll so backdrop-filter cards don't have to
+  // re-sample a moving background mid-scroll (the worst-case compositing cost).
+  // Listens in the capture phase so it catches scroll from any inner container.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const root = document.documentElement;
+    const onScroll = () => {
+      if (!root.classList.contains('kk-scrolling')) root.classList.add('kk-scrolling');
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => root.classList.remove('kk-scrolling'), 180);
+    };
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll, { capture: true } as EventListenerOptions);
+      if (timer) clearTimeout(timer);
+      root.classList.remove('kk-scrolling');
+    };
+  }, []);
+
   return (
     <div className="kk-bg" aria-hidden="true">
       <div className="kk-bg-aurora" />
