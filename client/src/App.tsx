@@ -64,6 +64,7 @@ function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNo
 function AppRoutes() {
   const { user } = useAuth();
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={user ? (user.role === 'attendance_manager' ? <Navigate to="/attendance-portal" replace /> : <Navigate to="/dashboard" replace />) : <Login />} />
