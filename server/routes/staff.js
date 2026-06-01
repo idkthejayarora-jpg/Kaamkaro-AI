@@ -119,6 +119,21 @@ router.patch('/:id', adminOnly, async (req, res) => {
   try {
     const { password, ...updates } = req.body;
     if (password) updates.password = await bcrypt.hash(password, 10);
+
+    // Phone is the LOGIN identifier — normalise it and guarantee uniqueness so
+    // the staff can actually log in (esp. kiosk-created records whose phone is a
+    // `kiosk_<timestamp>` placeholder until an admin sets a real number here).
+    if (updates.phone !== undefined) {
+      updates.phone = String(updates.phone).trim();
+      if (!updates.phone) return res.status(400).json({ error: 'Phone cannot be empty' });
+      const [users, staff, managers] = await Promise.all([
+        readDB('users'), readDB('staff'), readDB('attendance_managers').catch(() => []),
+      ]);
+      const clash = [...users, ...staff, ...managers]
+        .find(u => u.phone === updates.phone && u.id !== req.params.id);
+      if (clash) return res.status(409).json({ error: 'This phone number is already in use' });
+    }
+
     const updated = await updateOne('staff', req.params.id, updates);
     if (!updated) return res.status(404).json({ error: 'Not found' });
     await logAudit(req.user.id, req.user.name, 'update', 'staff', req.params.id, `Updated staff`);
