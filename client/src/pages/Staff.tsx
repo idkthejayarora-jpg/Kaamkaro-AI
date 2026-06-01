@@ -244,7 +244,7 @@ export default function StaffPage() {
                   <p className="text-white font-semibold">{s.name}</p>
                   <span className={`badge ${s.active ? 'badge-green' : 'badge-gray'} flex-shrink-0`}>{s.active ? 'Active' : 'Inactive'}</span>
                   {/^kiosk_\d+$/.test(s.phone || '') && (
-                    <span className="badge badge-amber flex-shrink-0">Set login</span>
+                    <span className="badge badge-gold flex-shrink-0">Set login</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3 mt-0.5 flex-wrap">
