@@ -351,9 +351,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 <p className="text-white text-sm font-medium truncate">{user?.name}</p>
                 <p className="text-white/30 text-xs capitalize">{user?.role}</p>
               </div>
-              {/* Switch icon for admins */}
-              {(isAdmin || isSwitched) && (
+              {/* Switch icon for admins · profile chevron for staff */}
+              {(isAdmin || isSwitched) ? (
                 <RefreshCw size={12} className="text-white/20 flex-shrink-0" />
+              ) : (
+                <ChevronRight size={13} className="text-white/25 flex-shrink-0" />
               )}
             </div>
           </button>
