@@ -913,16 +913,18 @@ export default function StaffProfile() {
                     {clockStatus === 'in' ? 'Clock Out' : 'Clock In'}
                   </button>
                   {showSelfScan && (
-                    <SelfScanModal
-                      faceDescriptors={faceDesc}
-                      currentStatus={clockStatus}
-                      onClose={() => setShowSelfScan(false)}
-                      onDone={() => {
-                        setShowSelfScan(false);
-                        // Re-trigger attendance fetch for current month
-                        setAttMonth(m => m); // identity update triggers the effect
-                      }}
-                    />
+                    <Suspense fallback={null}>
+                      <SelfScanModal
+                        faceDescriptors={faceDesc}
+                        currentStatus={clockStatus}
+                        onClose={() => setShowSelfScan(false)}
+                        onDone={() => {
+                          setShowSelfScan(false);
+                          // Re-trigger attendance fetch for current month
+                          setAttMonth(m => m); // identity update triggers the effect
+                        }}
+                      />
+                    </Suspense>
                   )}
                 </div>
               ) : (
