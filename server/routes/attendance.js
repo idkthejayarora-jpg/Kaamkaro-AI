@@ -348,8 +348,14 @@ router.get('/monthly', authMiddleware, attendanceManagerOrAdmin, async (req, res
 
 // ── GET /api/attendance/staff/:id ────────────────────────────────────────────
 // Individual staff attendance history. Query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
-router.get('/staff/:id', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
+router.get('/staff/:id', authMiddleware, async (req, res) => {
   try {
+    // Staff may read their OWN attendance; admins/managers may read anyone's.
+    const role = req.user?.role;
+    const isPrivileged = role === 'admin' || role === 'attendance_manager';
+    if (!isPrivileged && req.params.id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only view your own attendance' });
+    }
     let records = await readDB('attendance');
     records = records.filter(r => r.staffId === req.params.id);
     const { from, to } = req.query;
