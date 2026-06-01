@@ -859,7 +859,9 @@ function StaffDashboard() {
       )}
       {showSelfScan && selfStaff?.canSelfCheckin && (selfStaff.faceDescriptors || []).length > 0 && (
         <Portal>
-          <SelfScanModal faceDescriptors={selfStaff.faceDescriptors!} currentStatus={selfStatus} onClose={() => setShowSelfScan(false)} onDone={() => { loadSelfCheckin(); setShowSelfScan(false); }} />
+          <Suspense fallback={null}>
+            <SelfScanModal faceDescriptors={selfStaff.faceDescriptors!} currentStatus={selfStatus} onClose={() => setShowSelfScan(false)} onDone={() => { loadSelfCheckin(); setShowSelfScan(false); }} />
+          </Suspense>
         </Portal>
       )}
 
