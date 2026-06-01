@@ -66,12 +66,14 @@ async function ensureDirs() {
 async function readDB(collection) {
   const filePath = path.join(DATA_DIR, `${collection}.json`);
   try {
-    await fs.ensureFile(filePath);
+    // Read directly and treat a missing file as empty — avoids the extra
+    // stat+create syscall that fs.ensureFile did on every single read.
     const content = await fs.readFile(filePath, 'utf-8');
     if (!content.trim()) return [];
     return JSON.parse(content);
-  } catch {
-    return [];
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return []; // file not created yet
+    return []; // malformed/locked — fail soft as before
   }
 }
 
