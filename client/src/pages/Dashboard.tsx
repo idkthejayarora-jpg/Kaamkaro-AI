@@ -23,6 +23,7 @@ import { lazy, Suspense } from 'react';
 // Lazy — these modals import the heavy face-api lib; keep it out of the main bundle.
 const SelfScanModal   = lazy(() => import('../components/SelfScanModal').then(m => ({ default: m.SelfScanModal })));
 const SelfEnrollModal = lazy(() => import('../components/SelfEnrollModal').then(m => ({ default: m.SelfEnrollModal })));
+const LeaveModal      = lazy(() => import('../components/LeaveModal'));
 
 function playNotifBeep() {
   try {
