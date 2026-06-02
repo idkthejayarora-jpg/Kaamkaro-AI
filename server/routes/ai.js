@@ -8,48 +8,9 @@ const { logAudit } = require('../utils/audit');
 const router = express.Router();
 router.use(authMiddleware);
 
-let Anthropic;
-try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
-
-// Model preference order — first valid one wins at runtime
-const AI_MODELS = [
-  process.env.ANTHROPIC_MODEL,       // if env var set, try it first
-  'claude-3-5-haiku-20241022',       // stable, widely available
-  'claude-3-haiku-20240307',         // older fallback
-].filter(Boolean);
-
-// Once billing fails, skip all API calls for this process lifetime
-let _billingFailed = false;
-
-function isBillingErr(err) {
-  return err?.status === 400 && String(err?.message || err?.error?.error?.message || '').toLowerCase().includes('credit');
-}
-
-function getClient() {
-  if (_billingFailed) return null;
-  if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-}
-
-// Wrapper: try models in order, fallback on any model-related error
-async function aiCreate(client, params) {
-  let lastErr;
-  for (const model of AI_MODELS) {
-    try {
-      return await client.messages.create({ ...params, model });
-    } catch (err) {
-      if (isBillingErr(err)) { _billingFailed = true; throw err; }
-      const status = err?.status;
-      // 400/404/422 = bad model name or request — try next
-      if (status === 400 || status === 404 || status === 422) {
-        lastErr = err;
-        continue;
-      }
-      throw err; // auth error, rate limit, etc — bubble up immediately
-    }
-  }
-  throw lastErr;
-}
+// AI calls go through the shared provider-abstraction layer (utils/llm.js):
+// model-fallback chain + optional local (OpenAI-compatible) provider via env.
+const { getClient, aiCreate } = require('../utils/llm');
 
 // ── POST /api/ai/kamal — context-aware Kamal AI with Action Mode ────────────────
 router.post('/kamal', async (req, res) => {
