@@ -660,16 +660,13 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
 
             {/* Success */}
             {kioskState === 'success' && matched && (
-              <div className="w-full text-center space-y-4">
-                <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center
-                  ${actionType === 'checkin' ? 'bg-green-500/15 border border-green-500/30' : 'bg-blue-500/15 border border-blue-500/30'}`}>
-                  <span className="text-4xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
-                </div>
+              <div className="w-full text-center space-y-5">
+                <SuccessTick size={150} color={actionType === 'checkin' ? '#22c55e' : '#3b82f6'} />
                 <div>
-                  <p className="text-white font-bold text-xl">{matched.name}</p>
-                  <p className="text-green-400 font-semibold text-sm mt-1">{successMsg}</p>
+                  <p className="text-white font-black text-3xl">{matched.name}</p>
+                  <p className={`font-bold text-lg mt-1.5 ${actionType === 'checkin' ? 'text-green-400' : 'text-blue-400'}`}>{successMsg}</p>
                   {isLate && lateMinutes > 0 && (
-                    <p className="text-amber-400 text-xs mt-1">⚠ {lateMinutes} mins late</p>
+                    <p className="text-amber-400 text-sm mt-1.5">⚠ {lateMinutes} mins late</p>
                   )}
                 </div>
               </div>
