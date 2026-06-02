@@ -313,8 +313,7 @@ router.post('/parse-text', async (req, res) => {
     const ai = getAI();
     if (!ai) return res.status(503).json({ error: 'AI not configured — ask your admin to set the ANTHROPIC_API_KEY' });
 
-    const message = await ai.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+    const message = await aiCreate(ai, {
       max_tokens: 4096,
       messages: [{
         role: 'user',
