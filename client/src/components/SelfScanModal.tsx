@@ -77,7 +77,7 @@ export function SelfScanModal({
 
       try {
         const labeled = new faceapi.LabeledFaceDescriptors('self', faceDescriptors.map(d => new Float32Array(d)));
-        matcherRef.current = new faceapi.FaceMatcher([labeled], 0.5);
+        matcherRef.current = new faceapi.FaceMatcher([labeled], 0.45); // stricter — reduces impostor matches
       } catch { setStatus('Face data error'); return; }
 
       if (!cancelled) { setPhase('scanning'); setStatus('Look at the camera…'); }
