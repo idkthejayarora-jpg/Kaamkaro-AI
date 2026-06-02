@@ -38,8 +38,29 @@ type KioskState =
   | 'enrolling'; // unknown face — link or create staff
 
 const MATCH_THRESHOLD = 0.5;
+// Stricter, ambiguity-aware matching — stops the kiosk confusing two staff:
+const ACCEPT_DISTANCE = 0.45; // best match must be at least this close (face-api default is a loose 0.6)
+const MATCH_MARGIN    = 0.07; // …AND clearly beat the 2nd-best person by this much, else it's ambiguous → keep scanning
+const CONSEC_FRAMES   = 2;    // require the same person N frames in a row before confirming
 const COOLDOWN_MS     = 60_000;
 const CONFIRM_SECS    = 2;  // faster confirmation after match
+
+// Nearest + second-nearest staff for a probe descriptor (min distance across each
+// staff's enrolled photos). Returns both so callers can require a confidence margin.
+function bestStaffMatch(probe, descs) {
+  let best = { id: null, dist: Infinity };
+  let second = { id: null, dist: Infinity };
+  for (const s of descs) {
+    let min = Infinity;
+    for (const d of s.faceDescriptors) {
+      const dist = faceapi.euclideanDistance(probe, d);
+      if (dist < min) min = dist;
+    }
+    if (min < best.dist) { second = best; best = { id: s.id, dist: min }; }
+    else if (min < second.dist) { second = { id: s.id, dist: min }; }
+  }
+  return { best, second };
+}
 
 function now12h() {
   return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
