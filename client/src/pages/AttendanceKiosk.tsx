@@ -827,13 +827,10 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
           {/* Success on mobile */}
           {kioskState === 'success' && matched && (
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
-                ${actionType === 'checkin' ? 'bg-green-500/15 border border-green-500/30' : 'bg-blue-500/15 border border-blue-500/30'}`}>
-                <span className="text-2xl">{actionType === 'checkin' ? '✓' : '👋'}</span>
-              </div>
+              <SuccessTick size={56} color={actionType === 'checkin' ? '#22c55e' : '#3b82f6'} />
               <div>
-                <p className="text-white font-bold">{matched.name}</p>
-                <p className="text-green-400 text-sm font-medium">{successMsg}</p>
+                <p className="text-white font-bold text-lg">{matched.name}</p>
+                <p className={`text-sm font-semibold ${actionType === 'checkin' ? 'text-green-400' : 'text-blue-400'}`}>{successMsg}</p>
                 {isLate && lateMinutes > 0 && <p className="text-amber-400 text-xs">⚠ {lateMinutes} mins late</p>}
               </div>
             </div>
