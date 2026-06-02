@@ -152,6 +152,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const countdownRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const confirmedRef    = useRef(false);
   const faceMatcherRef  = useRef<faceapi.FaceMatcher | null>(null);
+  const matchStreakRef  = useRef<{ id: string | null; n: number }>({ id: null, n: 0 });
   const unknownDescRef  = useRef<Float32Array | null>(null);
   const modelsLoadedRef = useRef(false); // gates detection — models load after camera
   // Refs that mirror state — lets the detection interval read current values
