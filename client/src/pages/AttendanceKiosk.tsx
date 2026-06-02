@@ -48,9 +48,9 @@ const CONFIRM_SECS    = 2;  // faster confirmation after match
 
 // Nearest + second-nearest staff for a probe descriptor (min distance across each
 // staff's enrolled photos). Returns both so callers can require a confidence margin.
-function bestStaffMatch(probe, descs) {
-  let best = { id: null, dist: Infinity };
-  let second = { id: null, dist: Infinity };
+function bestStaffMatch(probe: Float32Array, descs: { id: string; faceDescriptors: number[][] }[]) {
+  let best: { id: string | null; dist: number } = { id: null, dist: Infinity };
+  let second: { id: string | null; dist: number } = { id: null, dist: Infinity };
   for (const s of descs) {
     let min = Infinity;
     for (const d of s.faceDescriptors) {
