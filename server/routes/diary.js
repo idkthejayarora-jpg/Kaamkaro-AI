@@ -1658,8 +1658,7 @@ async function correctSpeechText(raw) {
   const client = getClient();
   if (!client) return raw;
   try {
-    const msg = await client.messages.create({
-      model: AI_MODEL,
+    const msg = await aiCreate(client, {
       max_tokens: 800,
       messages: [{
         role: 'user',
