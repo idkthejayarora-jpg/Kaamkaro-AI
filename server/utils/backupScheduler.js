@@ -64,4 +64,4 @@ function startDailyBackup() {
   scheduleNext();
 }
 
-module.exports = { startDailyBackup, msUntilNextIstMidnight };
+module.exports = { startDailyBackup, msUntilNextIstMidnight, uploadToGoogleDrive };
