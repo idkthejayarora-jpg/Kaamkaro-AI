@@ -8,19 +8,11 @@ const { awardMerit } = require('../utils/merits');
 const { checkAndAwardBadges } = require('../utils/badgeEarner');
 const stockRoute = require('./stock');
 
-// Anthropic is optional — only used if API key + credits are present
-let Anthropic;
-try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
+// AI via the shared provider layer — model fallback + optional local provider.
+const { getClient, aiCreate } = require('../utils/llm');
 
 const router = express.Router();
 router.use(authMiddleware);
-
-const AI_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
-
-function getClient() {
-  if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-}
 
 // ── Fuzzy name matching ────────────────────────────────────────────────────────
 
