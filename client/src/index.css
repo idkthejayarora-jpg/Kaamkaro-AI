@@ -596,6 +596,24 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
 }
 .count-pop { animation: countPop 0.25s ease-out; }
 
+/* ── Apple-style success tick (SuccessTick.tsx) ──────────────────────────────*/
+@keyframes kkTickPop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  55%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes kkTickDraw { to { stroke-dashoffset: 0; } }
+.kk-tick-pop  { animation: kkTickPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.kk-tick-draw {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: kkTickDraw 0.4s 0.22s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kk-tick-pop  { animation: none; }
+  .kk-tick-draw { animation: none; stroke-dashoffset: 0; }
+}
+
 /* ── Custom scrollbar — thin, themed ────────────────────────────────────────*/
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
