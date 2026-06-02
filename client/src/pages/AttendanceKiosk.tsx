@@ -327,15 +327,30 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         return;
       }
 
-      const bestMatch = matcher.findBestMatch(det.descriptor);
-      if (bestMatch.label !== 'unknown') {
+      const { best, second } = bestStaffMatch(det.descriptor, descs);
+      const within    = best.id && best.dist <= ACCEPT_DISTANCE;
+      const confident = within && (second.dist - best.dist) >= MATCH_MARGIN;
+
+      if (confident) {
         if (hasUnk) { hasUnknownRef.current = false; setHasUnknown(false); unknownDescRef.current = null; }
-        const matchedStaff = descs.find(s => s.id === bestMatch.label);
+        // Require the same person across consecutive frames before acting.
+        if (matchStreakRef.current.id === best.id) matchStreakRef.current.n += 1;
+        else matchStreakRef.current = { id: best.id, n: 1 };
+        if (matchStreakRef.current.n < CONSEC_FRAMES) return;
+        matchStreakRef.current = { id: null, n: 0 };
+
+        const matchedStaff = descs.find(s => s.id === best.id);
         if (!matchedStaff) return;
         if ((cooldownRef.current[matchedStaff.id] || 0) > Date.now()) return;
         const todayRec = today.find(r => r.staffId === matchedStaff.id);
         triggerMatch(matchedStaff, !todayRec || todayRec.status !== 'in');
+      } else if (within) {
+        // A known face, but too close to another staff to be sure → DON'T act and
+        // DON'T offer enrollment; just keep scanning until a clearer frame arrives.
+        matchStreakRef.current = { id: null, n: 0 };
       } else {
+        // Genuinely unrecognised face → offer enrollment.
+        matchStreakRef.current = { id: null, n: 0 };
         unknownDescRef.current = det.descriptor;
         if (!hasUnk) { hasUnknownRef.current = true; setHasUnknown(true); }
       }
