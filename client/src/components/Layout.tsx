@@ -170,9 +170,6 @@ export default function Layout() {
         </main>
       </div>
 
-      {/* Kamal floating AI assistant */}
-      <KamalAssistant />
-
       {/* ── Badge earned — full-screen achievement overlay ── */}
       {badgeToast && (
         <div
