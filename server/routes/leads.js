@@ -6,14 +6,8 @@ const { checkAndAwardBadges } = require('../utils/badgeEarner');
 const { logAudit } = require('../utils/audit');
 const { broadcast } = require('../utils/sse');
 
-let Anthropic;
-try { Anthropic = require('@anthropic-ai/sdk'); } catch {}
-
-function getAI() {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!Anthropic || !key || key.startsWith('your-')) return null;
-  return new Anthropic({ apiKey: key });
-}
+// AI via the shared provider layer — model fallback + optional local provider.
+const { getClient: getAI, aiCreate } = require('../utils/llm');
 
 const VALID_STAGES = ['new', 'contacted', 'interested', 'catalogue_sent', 'follow_up', 'visit_scheduled', 'won', 'lost'];
 const VALID_SOURCES = ['walk_in', 'referral', 'phone', 'instagram', 'whatsapp', 'other'];
