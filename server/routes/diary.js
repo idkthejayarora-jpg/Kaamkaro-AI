@@ -2325,25 +2325,12 @@ Respond ONLY with this JSON (no markdown, no text outside the JSON):
   ]
 }`;
 
-    let aiResult;
-    try {
-      const res = await client.messages.create({
-        model: AI_MODEL, max_tokens: 3000,
-        messages: [{ role: 'user', content: aiPrompt }],
-      });
-      aiResult = extractJSON(res.content[0].text);
-    } catch (err) {
-      // Try fallback model on model-not-found errors
-      if ((err?.status === 404 || err?.status === 400) && AI_MODEL !== 'claude-3-5-haiku-20241022') {
-        const res2 = await client.messages.create({
-          model: 'claude-3-5-haiku-20241022', max_tokens: 3000,
-          messages: [{ role: 'user', content: aiPrompt }],
-        });
-        aiResult = extractJSON(res2.content[0].text);
-      } else {
-        throw err;
-      }
-    }
+    // aiCreate runs the model-fallback chain internally (and supports local).
+    const res = await aiCreate(client, {
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: aiPrompt }],
+    });
+    const aiResult = extractJSON(res.content[0].text);
 
     if (!aiResult || !Array.isArray(aiResult.entries) || aiResult.entries.length === 0) {
       return; // Bad response — local result stands
