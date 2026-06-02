@@ -14,6 +14,7 @@ import * as faceapi from '@vladmandic/face-api';
 import { X } from 'lucide-react';
 import { kioskAPI } from '../lib/api';
 import Select from '../components/Select';
+import SuccessTick from '../components/SuccessTick';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
