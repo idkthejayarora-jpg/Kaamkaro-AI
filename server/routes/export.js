@@ -24,4 +24,27 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/export/gdrive/status — is the Google Drive backup configured?
+router.get('/gdrive/status', (req, res) => {
+  res.json({ configured: gdrive.isConfigured() });
+});
+
+// POST /api/export/gdrive/now — upload a backup to Google Drive right now.
+// Lets an admin verify the Drive setup without waiting for the midnight job.
+router.post('/gdrive/now', async (req, res) => {
+  if (!gdrive.isConfigured()) {
+    return res.status(400).json({ error: 'Google Drive backup is not configured on the server.' });
+  }
+  try {
+    const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Kolkata' });
+    const payload = await buildFullExport(req.user.name);
+    const file = await gdrive.uploadDailyBackup(JSON.stringify(payload, null, 2), dateStr);
+    await logAudit(req.user.id, req.user.name, 'export', 'all', null, `Manual Google Drive backup → ${dateStr}`);
+    res.json({ ok: true, folder: dateStr, file: file.name });
+  } catch (err) {
+    console.error('[Export gdrive/now]', err);
+    res.status(502).json({ error: `Drive upload failed: ${err.message}` });
+  }
+});
+
 module.exports = router;
