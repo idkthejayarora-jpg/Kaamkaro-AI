@@ -61,7 +61,6 @@ app.use('/api/attendance',   require('./routes/attendance'));
 app.use('/api/kiosk',        require('./routes/kiosk'));
 app.use('/api/leaves',       require('./routes/leaves'));
 app.use('/api/insights',     require('./routes/insights'));
-app.use('/api/pdf',          require('./routes/pdf'));
 app.use('/api/teams',        require('./routes/teams'));
 app.use('/api/leads',        require('./routes/leads'));
 app.use('/api/stock',        require('./routes/stock'));
