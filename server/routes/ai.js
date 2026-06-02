@@ -424,7 +424,7 @@ Return ONLY a valid JSON array — no markdown, no explanation:
     return res.json({ recommendations, staffMetrics });
   } catch (err) {
     // Billing / no credits → use rule-based fallback instead of erroring
-    if (isBillingErr(err) || _billingFailed) {
+    if (isBillingErr(err)) {
       console.warn('[AI] recommendations: billing failed, using rule-based fallback');
       const recommendations = staffMetrics.map(s => {
         const issues = [], strengths = [], actions = [];
@@ -586,7 +586,7 @@ Respond with ONLY the report text — no JSON, no markdown.`;
     return res.json({ report: result.content[0].text, staffSummary });
   } catch (err) {
     // Billing / no credits → use rule-based report instead of erroring
-    if (isBillingErr(err) || _billingFailed) {
+    if (isBillingErr(err)) {
       console.warn('[AI] weekly-report: billing failed, using rule-based fallback');
       const today = new Date().toISOString().split('T')[0];
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
