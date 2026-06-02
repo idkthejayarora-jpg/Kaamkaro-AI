@@ -10,7 +10,7 @@ router.use(authMiddleware);
 
 // AI calls go through the shared provider-abstraction layer (utils/llm.js):
 // model-fallback chain + optional local (OpenAI-compatible) provider via env.
-const { getClient, aiCreate } = require('../utils/llm');
+const { getClient, aiCreate, isBillingErr } = require('../utils/llm');
 
 // ── POST /api/ai/kamal — context-aware Kamal AI with Action Mode ────────────────
 router.post('/kamal', async (req, res) => {
