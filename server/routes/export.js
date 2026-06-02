@@ -2,6 +2,7 @@ const express = require('express');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { logAudit } = require('../utils/audit');
 const { buildFullExport } = require('../utils/exportData');
+const gdrive = require('../utils/gdrive');
 
 const router = express.Router();
 router.use(authMiddleware, adminOnly);
