@@ -231,8 +231,7 @@ ${JSON.stringify(summaries)}
 
 Return ONLY valid JSON array: [{"name":"...","insight":"...","nextAction":"..."}]`;
 
-    const response = await anthropic.messages.create({
-      model:      'claude-haiku-4-5',
+    const response = await aiCreate(client, {
       max_tokens: 2500,
       messages:   [{ role: 'user', content: prompt }],
     });
