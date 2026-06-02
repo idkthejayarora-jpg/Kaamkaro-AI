@@ -263,14 +263,6 @@ export const leadsAPI = {
     api.post('/leads/parse-text', { text }).then(r => r.data),
 };
 
-export const pdfAPI = {
-  list: () => api.get('/pdf').then(r => r.data),
-  upload: (file: File) => {
-    const form = new FormData();
-    form.append('pdf', file);
-    return api.post('/pdf/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
-  },
-};
 
 export const badgesAPI = {
   list: (staffId?: string) =>
