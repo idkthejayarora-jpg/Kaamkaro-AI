@@ -48,6 +48,7 @@ function scheduleNext() {
   timer = setTimeout(async () => {
     try {
       await snapshotAllCollections('daily');
+      await uploadToGoogleDrive(); // off-site copy → Google Drive (if configured)
     } catch (err) {
       console.error('[Backup] Daily snapshot failed (non-fatal):', err.message);
     } finally {
