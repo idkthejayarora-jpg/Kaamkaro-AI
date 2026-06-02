@@ -1,7 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import Sidebar, { MobileMenuButton } from './Sidebar';
-import KamalAssistant from './KamalAssistant';
 import NotificationsBell from './NotificationsBell';
 import AnimatedBackground from './AnimatedBackground';
 import { useSSE } from '../hooks/useSSE';
