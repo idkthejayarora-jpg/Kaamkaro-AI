@@ -205,11 +205,10 @@ function computeCustomerInsight(customer, interactions, diaryEntries, staffMap) 
 // ── AI enrichment (batched single call) ────────────────────────────────────────
 
 async function enrichWithAI(customers) {
-  if (!process.env.ANTHROPIC_API_KEY || customers.length === 0) return customers;
+  const { getClient, aiCreate } = require('../utils/llm');
+  const client = getClient();
+  if (!client || customers.length === 0) return customers;
   try {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const anthropic  = new Anthropic();
-
     const summaries = customers.map(c => ({
       name:         c.customerName,
       status:       c.status,
