@@ -82,6 +82,7 @@ export const staffAPI = {
   trash: () => api.get('/staff/trash').then(r => r.data),
   restore: (id: string) => api.post(`/staff/${id}/restore`).then(r => r.data),
   deletePermanent: (id: string) => api.delete(`/staff/${id}/permanent`).then(r => r.data),
+  merge: (keepId: string, fromId: string) => api.post(`/staff/${keepId}/merge`, { fromId }).then(r => r.data),
   resetPassword: (id: string, newPassword: string) =>
     api.post(`/staff/${id}/reset-password`, { newPassword }).then(r => r.data),
   setAvailability: (id: string, availability: string) =>
