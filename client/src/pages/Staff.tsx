@@ -192,6 +192,9 @@ export default function StaffPage() {
   const [filter, setFilter]       = useState<'all' | 'absent' | 'dups' | 'kiosk'>('all');
   const [showBin, setShowBin]     = useState(false);
   const [trash, setTrash]         = useState<Staff[]>([]);
+  const [mergeName, setMergeName] = useState<string | null>(null); // open merge modal for this name group
+  const [mergeKeepId, setMergeKeepId] = useState<string>('');
+  const [merging, setMerging]     = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
