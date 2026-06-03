@@ -28,11 +28,25 @@ async function saveFacePhoto(staffId, dataUrl) {
 const router = express.Router();
 router.use(authMiddleware);
 
-// GET /api/staff
+// GET /api/staff — active (non-trashed) staff only
 router.get('/', async (req, res) => {
   try {
     const staff = await readDB('staff');
-    res.json(staff.map(({ password: _, ...s }) => s));
+    res.json(staff.filter(s => !s.deleted).map(({ password: _, ...s }) => s));
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/staff/trash — soft-deleted staff (the recycle bin), admin only
+router.get('/trash', adminOnly, async (req, res) => {
+  try {
+    const staff = await readDB('staff');
+    const trashed = staff
+      .filter(s => s.deleted)
+      .map(({ password: _, ...s }) => s)
+      .sort((a, b) => String(b.deletedAt || '').localeCompare(String(a.deletedAt || '')));
+    res.json(trashed);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
