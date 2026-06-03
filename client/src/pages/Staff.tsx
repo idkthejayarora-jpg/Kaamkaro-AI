@@ -266,6 +266,29 @@ export default function StaffPage() {
           onChange={e => setSearch(e.target.value)} className="input pl-10" />
       </div>
 
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {([
+          { key: 'all',    label: 'All',             count: staff.length, tone: 'gold'  },
+          { key: 'absent', label: 'Absent today',    count: absentCount,  tone: 'red'   },
+          { key: 'dups',   label: 'Duplicate names', count: dupCount,     tone: 'amber' },
+          { key: 'kiosk',  label: 'Kiosk-made',      count: kioskCount,   tone: 'amber' },
+        ] as const).map(({ key, label, count, tone }) => {
+          const active = filter === key;
+          const toneCls = tone === 'red'
+            ? (active ? 'bg-red-500/20 text-red-300 border-red-500/40' : 'text-red-300/70 border-red-500/20 hover:bg-red-500/10')
+            : tone === 'amber'
+            ? (active ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'text-amber-300/70 border-amber-500/20 hover:bg-amber-500/10')
+            : (active ? 'bg-gold/20 text-gold border-gold/40' : 'text-white/45 border-dark-100 hover:bg-white/5');
+          return (
+            <button key={key} onClick={() => setFilter(key)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${toneCls}`}>
+              {label}{key !== 'all' && count > 0 ? <span className="ml-1 opacity-80">· {count}</span> : ''}
+            </button>
+          );
+        })}
+      </div>
+
       {filtered.length === 0 ? (
         <div className="card flex flex-col items-center py-16 text-center">
           <Users size={40} className="text-white/10 mb-4" />
