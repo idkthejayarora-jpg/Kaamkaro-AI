@@ -376,6 +376,59 @@ export default function StaffPage() {
 
       {showModal && <AddStaffModal customers={customers} onClose={() => setShowModal(false)} onCreated={s => { setStaff(p => [...p, s]); setShowModal(false); }} />}
       {resetting && <ResetPasswordModal staff={resetting} onClose={() => setResetting(null)} onSaved={load} />}
+
+      {/* ── BIN (recently deleted) ──────────────────────────────────────────── */}
+      {showBin && (
+        <Portal>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" onClick={() => setShowBin(false)}>
+          <div className="bg-dark-300 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl animate-slide-up sm:animate-scale-in max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+              <div className="flex items-center gap-2.5">
+                <Archive size={16} className="text-white/50" />
+                <div>
+                  <h2 className="text-white font-semibold text-sm">Bin</h2>
+                  <p className="text-white/30 text-xs mt-0.5">Deleted staff — restore anytime</p>
+                </div>
+              </div>
+              <button onClick={() => setShowBin(false)} aria-label="Close" className="text-white/40 hover:text-white"><X size={16} /></button>
+            </div>
+            <div className="p-3 overflow-y-auto">
+              {trash.length === 0 ? (
+                <div className="flex flex-col items-center py-12 gap-2 text-center">
+                  <Archive size={32} className="text-white/10" />
+                  <p className="text-white/40 text-sm">Bin is empty</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {trash.map(s => (
+                    <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-dark-200 border border-dark-100">
+                      <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white/50 font-bold text-xs">{s.avatar || s.name[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{s.name}</p>
+                        <p className="text-white/30 text-[10px]">
+                          {/^kiosk_\d+$/.test(s.phone || '') ? 'No login phone' : s.phone}
+                          {(s as Staff & { deletedAt?: string }).deletedAt ? ` · deleted ${new Date((s as Staff & { deletedAt?: string }).deletedAt!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}
+                        </p>
+                      </div>
+                      <button onClick={() => handleRestore(s.id)}
+                        className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-green-500/15 text-green-300 hover:bg-green-500/25 transition-colors flex-shrink-0">
+                        <RotateCcw size={12} /> Restore
+                      </button>
+                      <button onClick={() => handlePurge(s)} title="Delete forever"
+                        className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        </Portal>
+      )}
     </div>
   );
 }
