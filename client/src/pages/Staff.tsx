@@ -188,19 +188,57 @@ export default function StaffPage() {
   const [showModal, setShowModal] = useState(false);
   const [resetting, setResetting] = useState<Staff | null>(null);
   const [loading, setLoading]     = useState(true);
+  const [today, setToday]         = useState<Record<string, { status: string; isLate: boolean }>>({});
+  const [filter, setFilter]       = useState<'all' | 'absent' | 'dups' | 'kiosk'>('all');
   const navigate = useNavigate();
 
   const load = async () => {
-    const [s, c] = await Promise.all([staffAPI.list(), customersAPI.list()]);
+    const [s, c, t] = await Promise.all([
+      staffAPI.list(),
+      customersAPI.list(),
+      attendanceAPI.today().catch(() => [] as { staffId: string; status: string; isLate: boolean }[]),
+    ]);
     setStaff(s);
     setCustomers(c.filter((cu: Customer) => !cu.assignedTo));
+    const map: Record<string, { status: string; isLate: boolean }> = {};
+    for (const r of (t as { staffId: string; status: string; isLate: boolean }[])) {
+      map[r.staffId] = { status: r.status, isLate: r.isLate };
+    }
+    setToday(map);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
 
-  const filtered = staff.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search)
-  );
+  // Today's attendance state for one staff → present / late / absent.
+  const attKey = (s: Staff): AttKey => {
+    const rec = today[s.id];
+    if (!rec || rec.status === 'absent') return 'absent';
+    if (rec.isLate) return 'late';
+    return 'present';
+  };
+
+  // Duplicate name detection — same trimmed/lowercased name on 2+ records
+  // (this is how an unrecognised face creates a second ID at the kiosk).
+  const nameCounts = staff.reduce<Record<string, number>>((m, s) => {
+    const k = (s.name || '').trim().toLowerCase();
+    if (k) m[k] = (m[k] || 0) + 1;
+    return m;
+  }, {});
+  const isDup   = (s: Staff) => nameCounts[(s.name || '').trim().toLowerCase()] > 1;
+  const isKiosk = (s: Staff) => (s as Staff & { kioskCreated?: boolean }).kioskCreated === true || /^kiosk_\d+$/.test(s.phone || '');
+
+  const absentCount = staff.filter(s => attKey(s) === 'absent').length;
+  const dupCount    = staff.filter(isDup).length;
+  const kioskCount  = staff.filter(isKiosk).length;
+
+  const filtered = staff.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search);
+    if (!matchesSearch) return false;
+    if (filter === 'absent') return attKey(s) === 'absent';
+    if (filter === 'dups')   return isDup(s);
+    if (filter === 'kiosk')  return isKiosk(s);
+    return true;
+  });
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this staff member? This cannot be undone.')) return;
