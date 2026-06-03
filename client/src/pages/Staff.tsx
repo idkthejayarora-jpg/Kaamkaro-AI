@@ -274,9 +274,14 @@ export default function StaffPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-white">Staff</h1>
           <p className="text-white/30 text-sm mt-1">{staff.length} team members</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 flex-shrink-0">
-          <Plus size={16} /><span className="hidden sm:inline">Add Staff</span>
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={openBin} className="btn-secondary flex items-center gap-2" title="Recently deleted">
+            <Archive size={16} /><span className="hidden sm:inline">Bin</span>
+          </button>
+          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={16} /><span className="hidden sm:inline">Add Staff</span>
+          </button>
+        </div>
       </div>
 
       <div className="relative">
