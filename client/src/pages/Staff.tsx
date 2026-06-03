@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ChevronRight, Users, Phone, Calendar, Trash2, X, Eye, EyeOff, KeyRound, Flame } from 'lucide-react';
+import { Plus, Search, ChevronRight, Users, Phone, Calendar, Trash2, X, Eye, EyeOff, KeyRound, Flame, Archive, RotateCcw } from 'lucide-react';
 import { staffAPI, customersAPI, attendanceAPI } from '../lib/api';
 import type { Staff, Customer } from '../types';
 import Portal from '../components/Portal';
