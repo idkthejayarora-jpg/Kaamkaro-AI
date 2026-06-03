@@ -359,7 +359,7 @@ export default function StaffPage() {
                 <button onClick={() => setResetting(s)} className="p-2 rounded-lg hover:bg-gold/10 text-white/20 hover:text-gold transition-colors" title="Set login credentials">
                   <KeyRound size={14} />
                 </button>
-                <button onClick={() => handleDelete(s.id)} className="p-2 rounded-lg hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-colors">
+                <button onClick={() => handleDelete(s)} className="p-2 rounded-lg hover:bg-red-500/10 text-white/20 hover:text-red-400 transition-colors" title="Move to bin">
                   <Trash2 size={14} />
                 </button>
                 <ChevronRight size={16} className="text-white/20 group-hover:text-gold transition-colors" />
