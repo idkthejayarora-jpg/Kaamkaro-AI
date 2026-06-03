@@ -268,6 +268,36 @@ export default function StaffPage() {
     setTrash(t => t.filter(x => x.id !== s.id));
   };
 
+  const hasFace = (s: Staff) => ((s as Staff & { faceDescriptors?: number[][] }).faceDescriptors?.length || 0) > 0;
+
+  // All non-deleted records sharing the open merge modal's name.
+  const mergeGroup = mergeName
+    ? staff.filter(s => (s.name || '').trim().toLowerCase() === mergeName)
+    : [];
+
+  const openMerge = (s: Staff) => {
+    const key = (s.name || '').trim().toLowerCase();
+    const group = staff.filter(x => (x.name || '').trim().toLowerCase() === key);
+    // Default keeper = the record that has a real login phone (the "main" one).
+    const main = group.find(x => x.phone && !/^kiosk_\d+$/.test(x.phone)) || group[0];
+    setMergeKeepId(main?.id || '');
+    setMergeName(key);
+  };
+
+  const confirmMerge = async () => {
+    if (!mergeKeepId) return;
+    setMerging(true);
+    try {
+      for (const other of mergeGroup) {
+        if (other.id !== mergeKeepId) await staffAPI.merge(mergeKeepId, other.id);
+      }
+      setMergeName(null);
+      await load();
+    } catch (err: unknown) {
+      alert((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Merge failed');
+    } finally { setMerging(false); }
+  };
+
   if (loading) return <div className="space-y-4">{Array(4).fill(0).map((_, i) => <div key={i} className="card h-20 shimmer" />)}</div>;
 
   return (
