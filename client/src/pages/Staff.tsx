@@ -299,21 +299,24 @@ export default function StaffPage() {
         <div className="space-y-2">
           {filtered.map(s => (
             <div key={s.id} className="card group flex items-center gap-4 cursor-pointer" onClick={() => navigate(`/staff/${s.id}`)}>
-              <div className="w-10 h-10 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(212,175,55,0.65)]" style={{ boxShadow: '0 0 10px rgba(212,175,55,0.4)' }}>
-                <span className="text-gold font-bold text-sm">{s.avatar}</span>
+              <div className="relative flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(212,175,55,0.65)]" style={{ boxShadow: '0 0 10px rgba(212,175,55,0.4)' }}>
+                  <span className="text-gold font-bold text-sm">{s.avatar}</span>
+                </div>
+                {/* Attendance status dot on the avatar — green present · blue late · red absent */}
+                {(() => {
+                  const cfg = ATT_STATUS[attKey(s)];
+                  return (
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-dark-300 ${cfg.dot}`}
+                      style={{ boxShadow: cfg.glow }}
+                      title={`Today: ${cfg.label}`}
+                    />
+                  );
+                })()}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* Attendance indicator dot — green present · blue late · red absent */}
-                  {(() => {
-                    const cfg = ATT_STATUS[attKey(s)];
-                    return (
-                      <span className={`flex items-center gap-1.5 text-xs font-semibold ${cfg.color}`} title={`Today: ${cfg.label}`}>
-                        <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} style={{ boxShadow: cfg.glow }} />
-                        {cfg.label}
-                      </span>
-                    );
-                  })()}
                   <p className="text-white font-semibold">{s.name}</p>
                   {isDup(s) && <span className="badge badge-red flex-shrink-0" title="Another staff record shares this name">Duplicate</span>}
                   {isKiosk(s) && <span className="badge badge-gold flex-shrink-0" title="Created at the attendance kiosk">Kiosk</span>}
