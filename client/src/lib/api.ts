@@ -79,6 +79,9 @@ export const staffAPI = {
   create: (data: Record<string, unknown>) => api.post('/staff', data).then(r => r.data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/staff/${id}`, data).then(r => r.data),
   delete: (id: string) => api.delete(`/staff/${id}`).then(r => r.data),
+  trash: () => api.get('/staff/trash').then(r => r.data),
+  restore: (id: string) => api.post(`/staff/${id}/restore`).then(r => r.data),
+  deletePermanent: (id: string) => api.delete(`/staff/${id}/permanent`).then(r => r.data),
   resetPassword: (id: string, newPassword: string) =>
     api.post(`/staff/${id}/reset-password`, { newPassword }).then(r => r.data),
   setAvailability: (id: string, availability: string) =>
