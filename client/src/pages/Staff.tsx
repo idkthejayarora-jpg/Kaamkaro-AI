@@ -331,16 +331,6 @@ export default function StaffPage() {
                       {s.streakData.currentStreak}d streak
                     </span>
                   )}
-                  {(() => {
-                    const avail = s.availability || 'available';
-                    const cfg = AVAILABILITY_CONFIG[avail as keyof typeof AVAILABILITY_CONFIG] || AVAILABILITY_CONFIG.available;
-                    const dotGlow = avail === 'available' ? '0 0 6px rgba(34,197,94,0.7)' : avail === 'on_call' ? '0 0 6px rgba(96,165,250,0.7)' : undefined;
-                    return (
-                      <span className={`text-xs flex items-center gap-1 ${cfg.color}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} style={dotGlow ? { boxShadow: dotGlow } : undefined} />{cfg.label}
-                      </span>
-                    );
-                  })()}
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
