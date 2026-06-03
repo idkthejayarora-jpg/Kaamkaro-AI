@@ -190,6 +190,8 @@ export default function StaffPage() {
   const [loading, setLoading]     = useState(true);
   const [today, setToday]         = useState<Record<string, { status: string; isLate: boolean }>>({});
   const [filter, setFilter]       = useState<'all' | 'absent' | 'dups' | 'kiosk'>('all');
+  const [showBin, setShowBin]     = useState(false);
+  const [trash, setTrash]         = useState<Staff[]>([]);
   const navigate = useNavigate();
 
   const load = async () => {
