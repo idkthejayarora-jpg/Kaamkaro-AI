@@ -242,6 +242,88 @@ router.delete('/:id/permanent', adminOnly, async (req, res) => {
   }
 });
 
+// Collections that carry a `staffId` we should re-point when merging duplicates.
+const STAFF_REF_COLLECTIONS = ['attendance', 'diary', 'tasks', 'leaves', 'merits', 'performance', 'badges', 'interactions', 'goals', 'meritGoals'];
+
+// Move every record that points at `fromId` over to `keepId` (attendance, tasks,
+// diary, leaves, merits, etc.) plus customers assigned to the duplicate.
+async function reassignStaffRefs(fromId, keepId) {
+  let moved = 0;
+  for (const col of STAFF_REF_COLLECTIONS) {
+    await withLock(col, async () => {
+      const rows = await readDB(col);
+      if (!Array.isArray(rows)) return;
+      let changed = false;
+      for (const r of rows) { if (r && r.staffId === fromId) { r.staffId = keepId; changed = true; moved++; } }
+      if (changed) await writeDB(col, rows);
+    });
+  }
+  await withLock('customers', async () => {
+    const rows = await readDB('customers');
+    if (!Array.isArray(rows)) return;
+    let changed = false;
+    for (const r of rows) { if (r && r.assignedTo === fromId) { r.assignedTo = keepId; changed = true; moved++; } }
+    if (changed) await writeDB('customers', rows);
+  });
+  return moved;
+}
+
+// POST /api/staff/:id/merge  body { fromId }
+// Merge duplicate `fromId` INTO the kept record `:id`: take the duplicate's face
+// if the keeper has none, re-link all its data (attendance/tasks/diary/…), then
+// bin the duplicate. Nothing is hard-deleted — the merged record stays in the Bin.
+router.post('/:id/merge', adminOnly, async (req, res) => {
+  try {
+    const keepId = req.params.id;
+    const { fromId } = req.body;
+    if (!fromId || fromId === keepId) return res.status(400).json({ error: 'A different duplicate record is required' });
+
+    const result = await withLock('staff', async () => {
+      const staff = await readDB('staff');
+      const keepIdx = staff.findIndex(s => s.id === keepId && !s.deleted);
+      const fromIdx = staff.findIndex(s => s.id === fromId && !s.deleted);
+      if (keepIdx === -1 || fromIdx === -1) return { error: 'not_found' };
+
+      const keep = { ...staff[keepIdx] };
+      const from = staff[fromIdx];
+
+      // Take the face only if the keeper doesn't already have one.
+      let tookFace = false;
+      if (!(keep.faceDescriptors?.length) && from.faceDescriptors?.length) {
+        keep.faceDescriptors = from.faceDescriptors;
+        if (from.facePhoto)   keep.facePhoto   = from.facePhoto;
+        if (from.facePhotoAt) keep.facePhotoAt = from.facePhotoAt;
+        tookFace = true;
+      }
+      // Fill only blank fields on the keeper from the duplicate (never clobber).
+      for (const f of ['gender', 'shiftOverride', 'avatar', 'joinDate', 'phone']) {
+        const blank = keep[f] === undefined || keep[f] === null || keep[f] === '' || /^kiosk_\d+$/.test(String(keep[f] || ''));
+        if (blank && from[f] != null && !/^kiosk_\d+$/.test(String(from[f] || ''))) keep[f] = from[f];
+      }
+      if (from.canSelfCheckin && !keep.canSelfCheckin) keep.canSelfCheckin = true;
+
+      staff[keepIdx] = keep;
+      staff[fromIdx] = {
+        ...from,
+        deleted: true, deletedAt: new Date().toISOString(), deletedBy: req.user.name, mergedInto: keepId,
+        ...(tookFace ? { faceDescriptors: [] } : {}),
+      };
+      await writeDB('staff', staff);
+      return { keep, fromName: from.name };
+    });
+
+    if (result.error) return res.status(404).json({ error: 'One of the records was not found' });
+
+    const moved = await reassignStaffRefs(fromId, keepId);
+    await logAudit(req.user.id, req.user.name, 'update', 'staff', keepId, `Merged "${result.fromName}" (${fromId}) into ${keepId} — ${moved} records re-linked`);
+    const { password: _p, ...safe } = result.keep;
+    res.json({ message: 'Merged', moved, staff: safe });
+  } catch (err) {
+    console.error('[Staff merge]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // PATCH /api/staff/:id/availability — staff updates own status (or admin updates any)
 router.patch('/:id/availability', async (req, res) => {
   try {
