@@ -1,0 +1,70 @@
+[
+  {
+    "id": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "name": "Soni (AD)",
+    "phone": "9811907375",
+    "password": "$2a$10$q.mYqovKZrhsb.M11tIVUuPAayhpcWAlvMP6gFlfY/S5Xif3q9sYa",
+    "role": "staff",
+    "email": "",
+    "avatar": "S(",
+    "customers": [],
+    "active": true,
+    "joinDate": "2026-04-18T11:44:34.152Z",
+    "createdAt": "2026-04-18T11:44:34.152Z",
+    "streakData": {
+      "currentStreak": 1,
+      "lastActivityDate": "2026-04-21",
+      "longestStreak": 1
+    },
+    "availability": "available",
+    "updatedAt": "2026-04-21T13:01:02.683Z"
+  },
+  {
+    "id": "647b2091-27ef-447c-a7c1-7aaae7af5f10",
+    "name": "irfan",
+    "phone": "9999999999",
+    "password": "$2a$10$gMuo71UlpDY2kteOQGubCun2y6HpVYFf.IMuRolQL4rZkiX50ddmK",
+    "role": "staff",
+    "active": true,
+    "avatar": "I",
+    "streakData": {
+      "currentStreak": 0,
+      "lastActivityDate": null,
+      "longestStreak": 0
+    },
+    "createdAt": "2026-05-27T07:43:23.010Z",
+    "selfRegistered": true
+  },
+  {
+    "id": "d6115bda-8f79-4f2e-a3a3-3c991c4e1041",
+    "name": "irfani",
+    "phone": "22222222222",
+    "password": "$2a$10$vvly3uHvfs7DLLIYZEqCZu1JLIwWcRSrR.paeeEvxgzfnDsVrCbBm",
+    "role": "staff",
+    "active": true,
+    "avatar": "I",
+    "streakData": {
+      "currentStreak": 0,
+      "lastActivityDate": null,
+      "longestStreak": 0
+    },
+    "createdAt": "2026-05-27T07:43:33.562Z",
+    "selfRegistered": true
+  },
+  {
+    "id": "31dd04e3-3860-4ee6-9397-f3203f1314f5",
+    "name": "irfani",
+    "phone": "7428526559",
+    "password": "$2a$10$qbcKa.3NmCEkebHWnLfAxuFIeLIvuoZ3JYBTeQFYwREl5yNWRwwj6",
+    "role": "staff",
+    "active": true,
+    "avatar": "I",
+    "streakData": {
+      "currentStreak": 0,
+      "lastActivityDate": null,
+      "longestStreak": 0
+    },
+    "createdAt": "2026-05-27T07:43:40.537Z",
+    "selfRegistered": true
+  }
+]

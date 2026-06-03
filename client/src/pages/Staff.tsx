@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ChevronRight, Users, Phone, Calendar, Trash2, X, Eye, EyeOff, KeyRound, Flame, Wifi, PhoneCall, Home } from 'lucide-react';
-import { staffAPI, customersAPI } from '../lib/api';
+import { Plus, Search, ChevronRight, Users, Phone, Calendar, Trash2, X, Eye, EyeOff, KeyRound, Flame } from 'lucide-react';
+import { staffAPI, customersAPI, attendanceAPI } from '../lib/api';
 import type { Staff, Customer } from '../types';
 import Portal from '../components/Portal';
 
-const AVAILABILITY_CONFIG = {
-  available:    { label: 'Available',     color: 'text-green-400',  bg: 'bg-green-500/10',  dot: 'bg-green-400',  icon: Wifi },
-  on_call:      { label: 'On Call',       color: 'text-blue-400',   bg: 'bg-blue-500/10',   dot: 'bg-blue-400',   icon: PhoneCall },
-  out_of_office:{ label: 'Out of Office', color: 'text-white/30',   bg: 'bg-white/5',        dot: 'bg-white/20',   icon: Home },
-};
+// Today's attendance status → single indicator dot.
+const ATT_STATUS = {
+  present: { label: 'Present', color: 'text-green-400', dot: 'bg-green-400', glow: '0 0 6px rgba(34,197,94,0.7)' },
+  late:    { label: 'Late',    color: 'text-blue-400',  dot: 'bg-blue-400',  glow: '0 0 6px rgba(96,165,250,0.7)' },
+  absent:  { label: 'Absent',  color: 'text-red-400',   dot: 'bg-red-400',   glow: '0 0 6px rgba(248,113,113,0.6)' },
+} as const;
+type AttKey = keyof typeof ATT_STATUS;
 
 // ── Add Staff Modal ────────────────────────────────────────────────────────────
 function AddStaffModal({ customers, onClose, onCreated }: {
