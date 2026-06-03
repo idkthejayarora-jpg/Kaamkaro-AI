@@ -303,9 +303,21 @@ export default function StaffPage() {
                 <span className="text-gold font-bold text-sm">{s.avatar}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Attendance indicator dot — green present · blue late · red absent */}
+                  {(() => {
+                    const cfg = ATT_STATUS[attKey(s)];
+                    return (
+                      <span className={`flex items-center gap-1.5 text-xs font-semibold ${cfg.color}`} title={`Today: ${cfg.label}`}>
+                        <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} style={{ boxShadow: cfg.glow }} />
+                        {cfg.label}
+                      </span>
+                    );
+                  })()}
                   <p className="text-white font-semibold">{s.name}</p>
-                  <span className={`badge ${s.active ? 'badge-green' : 'badge-gray'} flex-shrink-0`}>{s.active ? 'Active' : 'Inactive'}</span>
+                  {isDup(s) && <span className="badge badge-red flex-shrink-0" title="Another staff record shares this name">Duplicate</span>}
+                  {isKiosk(s) && <span className="badge badge-gold flex-shrink-0" title="Created at the attendance kiosk">Kiosk</span>}
+                  {!s.active && <span className="badge badge-gray flex-shrink-0">Inactive</span>}
                   {/^kiosk_\d+$/.test(s.phone || '') && (
                     <span className="badge badge-gold flex-shrink-0">Set login</span>
                   )}
