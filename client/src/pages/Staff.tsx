@@ -415,6 +415,59 @@ export default function StaffPage() {
       {showModal && <AddStaffModal customers={customers} onClose={() => setShowModal(false)} onCreated={s => { setStaff(p => [...p, s]); setShowModal(false); }} />}
       {resetting && <ResetPasswordModal staff={resetting} onClose={() => setResetting(null)} onSaved={load} />}
 
+      {/* ── MERGE DUPLICATES ────────────────────────────────────────────────── */}
+      {mergeName && (
+        <Portal>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" onClick={() => !merging && setMergeName(null)}>
+          <div className="bg-dark-300 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl animate-slide-up sm:animate-scale-in max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+              <div className="flex items-center gap-2.5">
+                <Combine size={16} className="text-blue-400" />
+                <div>
+                  <h2 className="text-white font-semibold text-sm">Merge duplicates</h2>
+                  <p className="text-white/30 text-xs mt-0.5">Pick the record to <b className="text-white/60">keep</b> — the others fold into it</p>
+                </div>
+              </div>
+              <button onClick={() => !merging && setMergeName(null)} aria-label="Close" className="text-white/40 hover:text-white"><X size={16} /></button>
+            </div>
+            <div className="p-4 overflow-y-auto space-y-2">
+              {mergeGroup.map(s => {
+                const selected = mergeKeepId === s.id;
+                return (
+                  <button key={s.id} onClick={() => setMergeKeepId(s.id)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${selected ? 'border-blue-500/50 bg-blue-500/10' : 'border-dark-100 bg-dark-200 hover:border-dark-50'}`}>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'border-blue-400 bg-blue-400' : 'border-white/25'}`}>
+                      {selected && <Check size={12} className="text-dark-300" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">{s.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-white/35 text-[10px]">{/^kiosk_\d+$/.test(s.phone || '') ? 'no login phone' : s.phone}</span>
+                        {hasFace(s)
+                          ? <span className="text-[10px] text-green-300 flex items-center gap-0.5"><ScanFace size={10} /> face</span>
+                          : <span className="text-[10px] text-white/25">no face</span>}
+                        {isKiosk(s) && <span className="text-[10px] text-amber-300/80">kiosk</span>}
+                      </div>
+                    </div>
+                    {selected && <span className="text-[10px] font-bold text-blue-300 flex-shrink-0">KEEP</span>}
+                  </button>
+                );
+              })}
+              <p className="text-white/35 text-[11px] leading-relaxed pt-1">
+                The kept record gets the others' face (if it has none) and <b className="text-white/55">all their attendance, tasks, diary &amp; customers re-linked</b>. The duplicates go to the Bin (restorable).
+              </p>
+            </div>
+            <div className="flex gap-2 px-4 py-4 border-t border-dark-50">
+              <button onClick={() => setMergeName(null)} disabled={merging} className="btn-ghost flex-1">Cancel</button>
+              <button onClick={confirmMerge} disabled={merging || mergeGroup.length < 2} className="btn-primary flex-1">
+                {merging ? 'Merging…' : `Merge ${Math.max(mergeGroup.length - 1, 0)} into kept`}
+              </button>
+            </div>
+          </div>
+        </div>
+        </Portal>
+      )}
+
       {/* ── BIN (recently deleted) ──────────────────────────────────────────── */}
       {showBin && (
         <Portal>
