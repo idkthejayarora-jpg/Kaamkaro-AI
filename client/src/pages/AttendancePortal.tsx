@@ -2064,17 +2064,35 @@ export default function AttendancePortal() {
             <Megaphone size={13} />
             <span className="hidden sm:inline">Broadcast</span>
           </button>
-
-          <button
-            onClick={() => setShowKiosk(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border border-dark-50 text-white/40 hover:text-white hover:border-white/20 text-xs font-semibold transition-colors"
-            title="Open Kiosk"
-          >
-            <MonitorSmartphone size={13} />
-            <span className="hidden sm:inline">Kiosk</span>
-          </button>
         </div>
       </div>
+
+      {/* ── LOG ATTENDANCE — the manager's primary action, opens the face kiosk ── */}
+      <button
+        onClick={() => setShowKiosk(true)}
+        className="group relative w-full overflow-hidden rounded-3xl border border-gold/30 p-6 sm:p-8 text-left transition-transform active:scale-[0.99] hover:border-gold/50"
+        style={{
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.24), rgba(212,175,55,0.06) 45%, rgba(20,20,22,0.55))',
+          boxShadow: '0 0 55px rgba(212,175,55,0.18)',
+        }}
+      >
+        <span className="pointer-events-none absolute inset-0 opacity-70"
+          style={{ background: 'radial-gradient(130% 130% at 100% 0%, rgba(212,175,55,0.28), transparent 55%)' }} />
+        <div className="relative flex items-center gap-4 sm:gap-6">
+          <div className="relative flex-shrink-0">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-3xl bg-gold/20 border border-gold/45 flex items-center justify-center group-hover:bg-gold/28 transition-colors">
+              <ScanFace size={42} className="text-gold" style={{ filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.7))' }} />
+            </div>
+            <span className="absolute inset-0 rounded-3xl border-2 border-gold/40 animate-ping opacity-25" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-gold/70 text-[10px] sm:text-[11px] uppercase tracking-[0.28em] font-bold">Tap to start</p>
+            <p className="text-white font-black text-3xl sm:text-5xl leading-none mt-1.5">Log Attendance</p>
+            <p className="text-white/45 text-xs sm:text-base mt-2.5">Open the face-recognition kiosk</p>
+          </div>
+          <ArrowRight size={32} className="text-gold/50 group-hover:text-gold group-hover:translate-x-1.5 transition-all flex-shrink-0" />
+        </div>
+      </button>
 
       {/* Tab row — icons only on mobile, icon+label on sm+ */}
       <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
