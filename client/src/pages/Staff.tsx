@@ -242,10 +242,27 @@ export default function StaffPage() {
     return true;
   });
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this staff member? This cannot be undone.')) return;
-    await staffAPI.delete(id);
-    setStaff(s => s.filter(x => x.id !== id));
+  const handleDelete = async (s: Staff) => {
+    if (!confirm(`Move "${s.name}" to the bin?\n\nNothing is erased — you can restore them from the Bin.`)) return;
+    await staffAPI.delete(s.id);
+    await load(); // reload from server (also reveals any duplicate-id sibling)
+  };
+
+  const openBin = async () => {
+    setShowBin(true);
+    try { setTrash(await staffAPI.trash()); } catch { setTrash([]); }
+  };
+
+  const handleRestore = async (id: string) => {
+    await staffAPI.restore(id);
+    setTrash(t => t.filter(x => x.id !== id));
+    await load();
+  };
+
+  const handlePurge = async (s: Staff) => {
+    if (!confirm(`Permanently delete "${s.name}"? This CANNOT be undone.`)) return;
+    await staffAPI.deletePermanent(s.id);
+    setTrash(t => t.filter(x => x.id !== s.id));
   };
 
   if (loading) return <div className="space-y-4">{Array(4).fill(0).map((_, i) => <div key={i} className="card h-20 shimmer" />)}</div>;
