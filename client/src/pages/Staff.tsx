@@ -394,6 +394,11 @@ export default function StaffPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                {isDup(s) && (
+                  <button onClick={() => openMerge(s)} className="p-2 rounded-lg hover:bg-blue-500/10 text-blue-400/60 hover:text-blue-400 transition-colors" title="Merge duplicates">
+                    <Combine size={14} />
+                  </button>
+                )}
                 <button onClick={() => setResetting(s)} className="p-2 rounded-lg hover:bg-gold/10 text-white/20 hover:text-gold transition-colors" title="Set login credentials">
                   <KeyRound size={14} />
                 </button>
