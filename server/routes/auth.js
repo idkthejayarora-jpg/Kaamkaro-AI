@@ -103,10 +103,10 @@ router.post('/login', async (req, res) => {
     const users = await readDB('users');
     let user = users.find(u => u.phone === phone);
 
-    // Then check staff
+    // Then check staff (skip soft-deleted / binned records)
     if (!user) {
       const staff = await readDB('staff');
-      user = staff.find(s => s.phone === phone);
+      user = staff.find(s => s.phone === phone && !s.deleted);
     }
 
     // Then check attendance managers
