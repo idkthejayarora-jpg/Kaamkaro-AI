@@ -176,12 +176,67 @@ router.post('/:id/reset-password', adminOnly, async (req, res) => {
 });
 
 // DELETE /api/staff/:id
+// DELETE /api/staff/:id — SOFT delete (moves to bin; recoverable via /restore).
+// Marks exactly ONE non-deleted record with this id, so a duplicate-id sibling
+// is never affected. Nothing is erased — money/attendance data stays intact.
 router.delete('/:id', adminOnly, async (req, res) => {
   try {
-    const deleted = await deleteOne('staff', req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Not found' });
-    await logAudit(req.user.id, req.user.name, 'delete', 'staff', req.params.id, 'Staff deleted');
-    res.json({ message: 'Staff deleted' });
+    const removed = await withLock('staff', async () => {
+      const staff = await readDB('staff');
+      const idx = staff.findIndex(s => s.id === req.params.id && !s.deleted);
+      if (idx === -1) return null;
+      staff[idx] = {
+        ...staff[idx],
+        deleted:   true,
+        deletedAt: new Date().toISOString(),
+        deletedBy: req.user.name,
+      };
+      await writeDB('staff', staff);
+      return staff[idx];
+    });
+    if (!removed) return res.status(404).json({ error: 'Not found' });
+    await logAudit(req.user.id, req.user.name, 'delete', 'staff', req.params.id, `Staff moved to bin: ${removed.name}`);
+    res.json({ message: 'Staff moved to bin', id: removed.id });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/staff/:id/restore — bring a binned staff member back.
+router.post('/:id/restore', adminOnly, async (req, res) => {
+  try {
+    const restored = await withLock('staff', async () => {
+      const staff = await readDB('staff');
+      const idx = staff.findIndex(s => s.id === req.params.id && s.deleted);
+      if (idx === -1) return null;
+      const { deleted: _d, deletedAt: _da, deletedBy: _db, ...rest } = staff[idx];
+      staff[idx] = rest;
+      await writeDB('staff', staff);
+      return rest;
+    });
+    if (!restored) return res.status(404).json({ error: 'Not found in bin' });
+    await logAudit(req.user.id, req.user.name, 'restore', 'staff', req.params.id, `Staff restored: ${restored.name}`);
+    const { password: _p, ...safe } = restored;
+    res.json({ message: 'Staff restored', staff: safe });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/staff/:id/permanent — erase a binned record for good.
+router.delete('/:id/permanent', adminOnly, async (req, res) => {
+  try {
+    const purged = await withLock('staff', async () => {
+      const staff = await readDB('staff');
+      const idx = staff.findIndex(s => s.id === req.params.id && s.deleted);
+      if (idx === -1) return null;
+      const [gone] = staff.splice(idx, 1);
+      await writeDB('staff', staff);
+      return gone;
+    });
+    if (!purged) return res.status(404).json({ error: 'Not found in bin' });
+    await logAudit(req.user.id, req.user.name, 'delete', 'staff', req.params.id, `Staff permanently deleted: ${purged.name}`);
+    res.json({ message: 'Staff permanently deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
