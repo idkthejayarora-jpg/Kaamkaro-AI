@@ -174,7 +174,7 @@ export default function StaffProfile() {
         }
       }
     });
-  }, [id, attMonth]);
+  }, [id, attMonth, attReload]);
 
   /* ── Loading / not-found states ── */
   if (loading) return (
