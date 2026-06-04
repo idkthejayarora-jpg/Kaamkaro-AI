@@ -1632,6 +1632,13 @@ function StaffTab() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button
+                      onClick={() => setCalendarFor(s)}
+                      className="p-1.5 rounded-xl text-white/30 hover:text-gold hover:bg-gold/10 transition-colors"
+                      title="View attendance calendar"
+                    >
+                      <Calendar size={15} />
+                    </button>
+                    <button
                       onClick={() => setEnrollFor(s)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gold/10 border border-gold/25 text-gold hover:bg-gold/15 transition-colors"
                     >
