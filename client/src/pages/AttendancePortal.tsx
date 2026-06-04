@@ -1402,6 +1402,100 @@ function PayrollTab() {
 
 // ── Tab: Staff ─────────────────────────────────────────────────────────────────
 
+// Month calendar for one staff — manager taps a day to view/edit check-in/out.
+function StaffAttendanceCalendar({ staff, onClose }: { staff: StaffMember; onClose: () => void }) {
+  const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`; });
+  const [recs, setRecs]   = useState<DayRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [day, setDay]     = useState<{ date: string; record: DayRecord | null } | null>(null);
+  const [reload, setReload] = useState(0);
+
+  useEffect(() => {
+    setLoading(true);
+    const [y, m] = month.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    attendanceAPI.staffHistory(staff.id, `${month}-01`, `${month}-${String(lastDay).padStart(2, '0')}`)
+      .then((r: DayRecord[]) => setRecs(Array.isArray(r) ? r : []))
+      .catch(() => setRecs([]))
+      .finally(() => setLoading(false));
+  }, [staff.id, month, reload]);
+
+  const byDate: Record<string, DayRecord> = {};
+  for (const r of recs) byDate[r.date] = r;
+
+  const [y, m] = month.split('-').map(Number);
+  const firstDow = new Date(y, m - 1, 1).getDay();
+  const lastDay  = new Date(y, m, 0).getDate();
+  const shiftMonth = (dir: number) => {
+    const d = new Date(y, m - 1 + dir, 1);
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+  const cellCls = (r?: DayRecord) => {
+    if (!r || (!r.loginAt && !r.logoutAt)) return 'bg-dark-200 text-white/25';
+    if (r.isLate) return 'bg-amber-500/25 text-amber-200';
+    return 'bg-green-500/25 text-green-200';
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" onClick={onClose}>
+      <div className="bg-dark-400 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl animate-slide-up sm:animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+          <div className="flex items-center gap-2.5">
+            <Avatar name={staff.name} size={32} />
+            <div>
+              <p className="text-white font-semibold text-sm">{staff.name}</p>
+              <p className="text-white/30 text-xs">Tap a day to view / edit times</p>
+            </div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="text-white/40 hover:text-white"><XCircle size={18} /></button>
+        </div>
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={() => shiftMonth(-1)} className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white"><ChevronLeft size={16} /></button>
+            <p className="text-white font-bold text-sm">{new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
+            <button onClick={() => shiftMonth(1)} className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white"><ChevronRight size={16} /></button>
+          </div>
+          {loading ? (
+            <div className="h-48 rounded-xl bg-dark-200 animate-pulse" />
+          ) : (
+            <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {['S','M','T','W','T','F','S'].map((d, i) => <p key={i} className="text-[9px] text-white/20 text-center font-medium pb-0.5">{d}</p>)}
+              {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
+              {Array.from({ length: lastDay }, (_, i) => {
+                const dateStr = `${month}-${String(i + 1).padStart(2, '0')}`;
+                const r = byDate[dateStr];
+                return (
+                  <button key={dateStr} onClick={() => setDay({ date: dateStr, record: r || null })}
+                    className={`aspect-square rounded-md flex items-center justify-center text-[10px] font-bold transition-all hover:ring-1 hover:ring-gold/50 active:scale-95 ${cellCls(r)}`}>
+                    {i + 1}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[10px] text-white/30">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/25 inline-block" /> Present</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500/25 inline-block" /> Late</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-dark-200 inline-block" /> No record</span>
+          </div>
+        </div>
+      </div>
+
+      {day && (
+        <AttendanceDayEditor
+          staffId={staff.id}
+          date={day.date}
+          record={day.record}
+          canEdit
+          onClose={() => setDay(null)}
+          onSaved={() => { setDay(null); setReload(n => n + 1); }}
+        />
+      )}
+    </div>,
+    document.body
+  );
+}
+
 function StaffTab() {
   const [staffList, setStaffList]   = useState<StaffMember[]>([]);
   const [loading,   setLoading]     = useState(true);
