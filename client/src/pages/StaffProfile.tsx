@@ -981,6 +981,17 @@ export default function StaffProfile() {
         )}
 
       </AnimatedTabPanel>
+
+      {dayDetail && (
+        <AttendanceDayEditor
+          staffId={id!}
+          date={dayDetail.date}
+          record={dayDetail.record}
+          canEdit={user?.role === 'admin'}
+          onClose={() => setDayDetail(null)}
+          onSaved={() => { setDayDetail(null); setAttReload(n => n + 1); }}
+        />
+      )}
     </div>
   );
 }
