@@ -1505,6 +1505,7 @@ function StaffTab() {
   const [shiftEdits, setShiftEdits] = useState<Record<string, { shiftStart: string; shiftEnd: string }>>({});
   const [savingShift,   setSavingShift]   = useState<string | null>(null);
   const [togglingRole,  setTogglingRole]  = useState<string | null>(null);
+  const [calendarFor,   setCalendarFor]   = useState<StaffMember | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
