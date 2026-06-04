@@ -1,0 +1,72 @@
+[
+  {
+    "id": "8e2f4f62-1881-41db-983d-7d0a67275f83",
+    "userId": "bf159526-fa44-457b-a97d-15a2474505aa",
+    "userName": "Admin",
+    "action": "create",
+    "resource": "staff",
+    "resourceId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "details": "Created staff: Soni (AD)",
+    "timestamp": "2026-04-18T11:44:34.155Z"
+  },
+  {
+    "id": "9de81467-dd32-4211-954c-5ecb0697528e",
+    "userId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "userName": "Soni (AD)",
+    "action": "create",
+    "resource": "customer",
+    "resourceId": "0e97ed46-202e-46fa-a568-026d3b34c6af",
+    "details": "Created: Viva wedding collection Rajasthan (H)",
+    "timestamp": "2026-04-21T10:53:17.443Z"
+  },
+  {
+    "id": "1e835423-ff8c-432a-80a5-ae3f9926e2ab",
+    "userId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "userName": "Soni (AD)",
+    "action": "create",
+    "resource": "customer",
+    "resourceId": "e6ef165c-0737-4bd6-8bc1-9eb908bf75ff",
+    "details": "Created: YT Shushma Balia",
+    "timestamp": "2026-04-21T10:53:35.581Z"
+  },
+  {
+    "id": "7ce57fc2-c13a-4855-bb33-2e17571c35ab",
+    "userId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "userName": "Soni (AD)",
+    "action": "create",
+    "resource": "customer",
+    "resourceId": "a11fdc23-c240-4698-9dec-c011c0c21d82",
+    "details": "Created: JDS ",
+    "timestamp": "2026-04-21T10:53:56.192Z"
+  },
+  {
+    "id": "218100cc-ddea-485a-a12d-4ef1716e154e",
+    "userId": "bf159526-fa44-457b-a97d-15a2474505aa",
+    "userName": "Admin",
+    "action": "delete",
+    "resource": "customer",
+    "resourceId": null,
+    "details": "Bulk deleted 1 customers",
+    "timestamp": "2026-04-21T11:16:55.058Z"
+  },
+  {
+    "id": "31c71033-b6a3-4dc4-9b25-37fdd51970a8",
+    "userId": "bf159526-fa44-457b-a97d-15a2474505aa",
+    "userName": "Admin",
+    "action": "delete",
+    "resource": "customer",
+    "resourceId": null,
+    "details": "Bulk deleted 2 customers",
+    "timestamp": "2026-04-21T11:16:59.936Z"
+  },
+  {
+    "id": "1c3baa2a-e064-485e-b9af-511fedf4754a",
+    "userId": "bf159526-fa44-457b-a97d-15a2474505aa",
+    "userName": "Admin",
+    "action": "create",
+    "resource": "task",
+    "resourceId": "5ec45c73-0eef-408a-b963-922874ac3260",
+    "details": "Task: call shiv",
+    "timestamp": "2026-04-21T12:41:24.795Z"
+  }
+]
