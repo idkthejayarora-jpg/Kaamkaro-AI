@@ -606,17 +606,21 @@ export default function StaffProfile() {
                   ))}
                   {/* Leading empty cells */}
                   {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
-                  {/* Day cells */}
-                  {calDays.map(d => (
-                    <div
-                      key={d}
-                      title={attData[d] || 'no data'}
-                      className={`aspect-square rounded-md flex items-center justify-center
-                                  text-[9px] font-bold transition-colors ${cellBg(attData[d])}`}
-                    >
-                      {parseInt(d)}
-                    </div>
-                  ))}
+                  {/* Day cells — tap to see (admins: edit) that day's check-in/out */}
+                  {calDays.map(d => {
+                    const fullDate = `${attMonth}-${String(parseInt(d)).padStart(2, '0')}`;
+                    return (
+                      <button
+                        key={d}
+                        title={attData[d] || 'no data'}
+                        onClick={() => setDayDetail({ date: fullDate, record: attRecords.find(r => r.date === fullDate) || null })}
+                        className={`aspect-square rounded-md flex items-center justify-center
+                                    text-[9px] font-bold transition-all hover:ring-1 hover:ring-gold/40 active:scale-95 ${cellBg(attData[d])}`}
+                      >
+                        {parseInt(d)}
+                      </button>
+                    );
+                  })}
                 </div>
                 {/* Legend */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2.5">
