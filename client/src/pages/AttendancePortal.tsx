@@ -1751,6 +1751,9 @@ function StaffTab() {
           onEnrolled={() => { load(); setEnrollFor(null); }}
         />
       )}
+      {calendarFor && (
+        <StaffAttendanceCalendar staff={calendarFor} onClose={() => setCalendarFor(null)} />
+      )}
     </div>
   );
 }
