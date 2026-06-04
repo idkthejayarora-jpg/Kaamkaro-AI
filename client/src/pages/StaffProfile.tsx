@@ -13,6 +13,7 @@ import { staffAPI, customersAPI, interactionsAPI, badgesAPI, attendanceAPI } fro
 import type { Staff, Customer, Performance, Interaction, Badge } from '../types';
 import { BADGE_META } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import AttendanceDayEditor, { type DayRecord } from '../components/AttendanceDayEditor';
 // Lazy — pulls in heavy face-api; kept out of the main bundle.
 const SelfScanModal = lazy(() => import('../components/SelfScanModal').then(m => ({ default: m.SelfScanModal })));
 
