@@ -111,6 +111,8 @@ export default function StaffProfile() {
     return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
   });
   const [attData,    setAttData]    = useState<Record<string, string>>({});
+  const [attReload,  setAttReload]  = useState(0); // bump to refetch attendance after an edit
+  const [dayDetail,  setDayDetail]  = useState<{ date: string; record: DayRecord | null } | null>(null);
   const [attSummary, setAttSummary] = useState<{
     presentDays: number; lateDays: number; absentDays: number;
     totalHours: number; overtimeHours: number; undertimeHours: number;
