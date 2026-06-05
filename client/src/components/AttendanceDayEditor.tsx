@@ -95,9 +95,13 @@ export default function AttendanceDayEditor({
   };
 
   // One editable / read-only time row.
-  const Row = ({ label, icon, value, set, fallback, accent }: {
-    label: string; icon: React.ReactNode; value: string | null;
-    set: (v: string | null) => void; fallback: string; accent: string;
+  // canNudge: still has buffer remaining to go earlier.
+  // backBy: how many minutes already adjusted backwards.
+  const Row = ({ label, icon, value, orig, set, accent, canNudge, backBy }: {
+    label: string; icon: React.ReactNode;
+    value: string | null; orig: string | null;
+    set: (v: string) => void; accent: string;
+    canNudge: boolean; backBy: number;
   }) => (
     <div className="flex items-center gap-3 p-3 rounded-2xl bg-dark-200 border border-dark-100">
       <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '22', color: accent }}>
@@ -106,17 +110,25 @@ export default function AttendanceDayEditor({
       <div className="flex-1 min-w-0">
         <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">{label}</p>
         <p className="text-white font-black text-xl leading-tight">{hm12(value)}</p>
+        {backBy > 0 && (
+          <p className="text-amber-400/70 text-[10px] mt-0.5">
+            adjusted −{backBy} min from {hm12(orig)}
+          </p>
+        )}
       </div>
-      {canEdit && (
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button onClick={() => set(nudge(value, -10, fallback))}
-            className="w-9 h-9 rounded-xl bg-dark-100 hover:bg-white/10 text-white/70 flex items-center justify-center transition-colors" title="−10 min">
-            <Minus size={15} />
+      {canEdit && orig != null && (
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => orig && set(minsToHM(hmToMins(value || orig) - 1))}
+            disabled={!canNudge}
+            className="w-9 h-9 rounded-xl bg-dark-100 hover:bg-white/10 text-white/70 flex items-center justify-center transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+            title={canNudge ? 'Move 1 min earlier (queue buffer)' : 'Max 10-min buffer reached'}
+          >
+            <ChevronLeft size={15} />
           </button>
-          <button onClick={() => set(nudge(value, +10, fallback))}
-            className="w-9 h-9 rounded-xl bg-dark-100 hover:bg-white/10 text-white/70 flex items-center justify-center transition-colors" title="+10 min">
-            <Plus size={15} />
-          </button>
+          <span className="text-[9px] text-white/25 font-semibold">
+            {BUFFER_MINS - backBy} min left
+          </span>
         </div>
       )}
     </div>
