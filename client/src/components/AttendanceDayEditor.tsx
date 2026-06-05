@@ -152,8 +152,8 @@ export default function AttendanceDayEditor({
           </div>
         ) : (
           <>
-            <Row label="Check in"  icon={<LogIn size={16} />}  value={login}  set={setLogin}  fallback="10:00" accent="#22c55e" />
-            <Row label="Check out" icon={<LogOut size={16} />} value={logout} set={setLogout} fallback="18:00" accent="#3b82f6" />
+            <Row label="Check in"  icon={<LogIn size={16} />}  value={login}  orig={origIn}  set={setLogin}  accent="#22c55e" canNudge={canNudgeLoginBack}  backBy={loginBackBy} />
+            <Row label="Check out" icon={<LogOut size={16} />} value={logout} orig={origOut} set={setLogout} accent="#3b82f6" canNudge={canNudgeLogoutBack} backBy={logoutBackBy} />
 
             <div className="flex items-center justify-between px-1 pt-1">
               <span className="text-white/35 text-xs">Hours worked</span>
@@ -162,7 +162,11 @@ export default function AttendanceDayEditor({
             {record?.isLate && (record?.lateMinutes ?? 0) > 0 && (
               <p className="text-amber-400 text-xs">⚠ Marked late by {record.lateMinutes} min</p>
             )}
-            {canEdit && <p className="text-white/30 text-[10px] text-center pt-1">Adjusts in 10-minute steps for line delays.</p>}
+            {canEdit && origIn && (
+              <div className="rounded-xl bg-dark-100 px-3 py-2 text-[10px] text-white/35 leading-relaxed">
+                ← Press to move time <b className="text-white/55">earlier only</b> — up to 10 min buffer for queue/rain delays. Cannot move forward (kiosk records when face was actually scanned).
+              </div>
+            )}
             {err && <p className="text-red-400 text-xs text-center">{err}</p>}
           </>
         )}
