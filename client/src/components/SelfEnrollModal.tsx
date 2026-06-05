@@ -130,18 +130,18 @@ export function SelfEnrollModal({
     for (let i = 0; i < TOTAL; i++) {
       setPromptIdx(i);
       setStatus(PROMPTS[i]);
-      // Wait 700ms for user to adjust position
-      await new Promise(r => setTimeout(r, 700));
+      // 1200ms gap — ensures each capture is a genuinely different frame
+      await new Promise(r => setTimeout(r, 1200));
 
-      // Retry up to 5 times with 200ms gap
+      // inputSize: 320 matches kiosk inference → same descriptor space.
       let desc: Float32Array | null = null;
       for (let attempt = 0; attempt < 5; attempt++) {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.6 }))
           .withFaceLandmarks(true)
           .withFaceDescriptor();
         if (det) { desc = det.descriptor; break; }
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 400));
       }
       if (!desc) {
         setStatus('No face detected — please re-position and try again');
