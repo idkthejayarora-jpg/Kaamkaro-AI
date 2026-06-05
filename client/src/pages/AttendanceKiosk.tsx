@@ -40,9 +40,9 @@ type KioskState =
 
 const MATCH_THRESHOLD = 0.5;
 // Stricter, ambiguity-aware matching — stops the kiosk confusing two staff:
-const ACCEPT_DISTANCE = 0.45; // best match must be at least this close (face-api default is a loose 0.6)
-const MATCH_MARGIN    = 0.07; // …AND clearly beat the 2nd-best person by this much, else it's ambiguous → keep scanning
-const CONSEC_FRAMES   = 2;    // require the same person N frames in a row before confirming
+const ACCEPT_DISTANCE = 0.42; // reject anything further than this (tighter = fewer false positives)
+const MATCH_MARGIN    = 0.12; // best must beat 2nd-best by this much — prevents Aashi→someone-else confusion
+const CONSEC_FRAMES   = 3;    // 3 consecutive agreeing frames before firing (was 2)
 const COOLDOWN_MS     = 60_000;
 const CONFIRM_SECS    = 2;  // faster confirmation after match
 
