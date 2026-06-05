@@ -181,7 +181,7 @@ function FaceEnrollModal({ staff, onClose, onEnrolled }: {
   const [saving,        setSaving]        = useState(false);
   const [faceDetected,  setFaceDetected]  = useState(false);
   const [dupWarning,    setDupWarning]    = useState<string | null>(null);
-  const TOTAL = 5;
+  const TOTAL = 10; // 10 varied-angle captures → tighter per-person cluster, fewer false matches
 
   const startDetectLoop = useCallback(() => {
     if (detectLoopRef.current) clearInterval(detectLoopRef.current);
