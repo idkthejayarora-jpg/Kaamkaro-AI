@@ -22,6 +22,8 @@ export interface DayRecord {
   lateMinutes?: number;
 }
 
+const BUFFER_MINS = 10; // max minutes you can adjust a time backwards
+
 function isoToHM(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
@@ -29,13 +31,14 @@ function isoToHM(iso: string | null | undefined): string | null {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// Nudge a HH:MM by deltaMin, snapped to a 10-minute grid, clamped within the day.
-function nudge(hm: string | null, deltaMin: number, fallback: string): string {
-  const [h, m] = (hm || fallback).split(':').map(Number);
-  let total = h * 60 + m + deltaMin;
-  total = Math.round(total / 10) * 10;
-  total = Math.max(0, Math.min(23 * 60 + 50, total));
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+function hmToMins(hm: string): number {
+  const [h, m] = hm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minsToHM(total: number): string {
+  const t = Math.max(0, Math.min(23 * 60 + 59, total));
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 }
 
 function hm12(hm: string | null): string {
