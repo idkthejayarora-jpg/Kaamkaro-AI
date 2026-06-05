@@ -4,14 +4,19 @@ import { X, Camera } from 'lucide-react';
 import { staffAPI } from '../lib/api';
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-const TOTAL = 5;
+const TOTAL = 10; // more samples = better descriptor cluster = fewer false matches at kiosk
 
 const PROMPTS = [
   'Look straight at the camera',
   'Tilt your head slightly left',
   'Tilt your head slightly right',
   'Chin up slightly',
+  'Chin down slightly',
   'Look straight again',
+  'Move a little closer',
+  'Move a little further back',
+  'Slight smile',
+  'Neutral expression — final shot',
 ];
 
 export function SelfEnrollModal({
