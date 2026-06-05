@@ -155,12 +155,19 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 
 // ── Face Enroll Modal ──────────────────────────────────────────────────────────
 
+// 10 varied poses — more angles = tighter descriptor cluster per person,
+// which is the primary way to stop face-mixing in the kiosk.
 const GUIDED_PROMPTS = [
   'Look straight at the camera',
-  'Tilt slightly left',
-  'Tilt slightly right',
+  'Tilt head slightly left',
+  'Tilt head slightly right',
   'Chin up slightly',
+  'Chin down slightly',
   'Look straight again',
+  'Move a little closer',
+  'Move a little further back',
+  'Slight smile',
+  'Neutral expression — final shot',
 ];
 
 function FaceEnrollModal({ staff, onClose, onEnrolled }: {
