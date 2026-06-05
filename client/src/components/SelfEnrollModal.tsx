@@ -89,7 +89,7 @@ export function SelfEnrollModal({
         if (!video || video.readyState < 3) return;
 
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
           .withFaceLandmarks(true);
 
         if (!cancelled) setFaceDet(!!det);
