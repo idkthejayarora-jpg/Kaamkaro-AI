@@ -56,10 +56,13 @@ export default function AnimatedBackground() {
   return (
     <div className="kk-bg" aria-hidden="true">
       <div className="kk-bg-aurora" />
-      <div className="kk-orb kk-orb-1" />
-      <div className="kk-orb kk-orb-2" />
-      <div className="kk-orb kk-orb-3" />
-      <div className="kk-orb kk-orb-4 kk-orb-extra" />
+      {/* Orbs and particles are desktop-only — they cost too much on phone GPUs */}
+      {!isMobile && <>
+        <div className="kk-orb kk-orb-1" />
+        <div className="kk-orb kk-orb-2" />
+        <div className="kk-orb kk-orb-3" />
+        <div className="kk-orb kk-orb-4 kk-orb-extra" />
+      </>}
       <div className="kk-dots">
         {dots.map(d => (
           <span
