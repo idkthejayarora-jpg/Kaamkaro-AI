@@ -1,12 +1,15 @@
 /**
  * AttendanceDayEditor — view (and optionally edit) one day's check-in/out times.
  *
- * Staff see it read-only by tapping a calendar day in their profile.
- * Managers/admins can adjust the times in 10-minute steps (e.g. 10:00 → 9:50 /
- * 10:10) to account for queue delays, then Save (recomputes hours + late server-side).
+ * Staff:    read-only — tap a calendar day to see their times.
+ * Manager:  can adjust check-in EARLIER by up to 10 minutes from the recorded time.
+ *           Use-case: staff arrived at 10:20 but were queuing since 10:10 → adjust to 10:10.
+ *           You can only move BACKWARDS (earlier), never forward — the kiosk recorded
+ *           when the face was scanned, so later is never valid.
+ *           Max 10-minute buffer total per field.
  */
 import { useState } from 'react';
-import { X, LogIn, LogOut, Minus, Plus, Clock } from 'lucide-react';
+import { X, LogIn, LogOut, ChevronLeft, Clock } from 'lucide-react';
 import Modal from './Modal';
 import { attendanceAPI } from '../lib/api';
 
