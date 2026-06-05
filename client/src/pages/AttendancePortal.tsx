@@ -263,17 +263,21 @@ function FaceEnrollModal({ staff, onClose, onEnrolled }: {
 
     for (let i = 0; i < TOTAL; i++) {
       setStatus(`📸 ${GUIDED_PROMPTS[i]}`);
-      await new Promise(r => setTimeout(r, 800));
+      // 1200ms gap ensures the video frame actually changes between captures —
+      // 800ms was barely one render cycle, leading to near-duplicate descriptors.
+      await new Promise(r => setTimeout(r, 1200));
 
+      // inputSize: 320 matches kiosk inference quality → same descriptor space.
+      // scoreThreshold: 0.6 rejects weak/partial detections during enrollment.
       const det = await faceapi
-        .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.6 }))
         .withFaceLandmarks(true)
         .withFaceDescriptor();
 
       if (!det) {
-        setStatus(`⚠ No face detected — repositioning…`);
+        setStatus(`⚠ No face detected — reposition and hold still…`);
         i--;
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 800));
         continue;
       }
       collected.push(det.descriptor);
