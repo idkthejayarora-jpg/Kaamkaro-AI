@@ -10,8 +10,13 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, writeDB } = require('./utils/db');
 
+const compression = require('compression');
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Gzip all responses — cuts JS/CSS transfer size by ~65% on mobile networks.
+// Must be the very first middleware so it wraps everything including static files.
+app.use(compression({ level: 6 }));
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
 // Allow same-origin requests (Railway) + localhost dev + any explicitly set CLIENT_URL
