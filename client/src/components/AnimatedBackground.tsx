@@ -16,9 +16,13 @@ import { useMemo, useEffect } from 'react';
  * particle count drops on small screens, and `prefers-reduced-motion` freezes motion.
  */
 export default function AnimatedBackground() {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   const dots = useMemo(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const count = isMobile ? 9 : 20;
+    // No particles on mobile — they animate continuously and trigger constant
+    // repaints behind backdrop-filter cards, which is the primary cause of jank.
+    if (isMobile) return [];
+    const count = 20;
     return Array.from({ length: count }, (_, i) => ({
       id: i,
       left: Math.random() * 100,                 // vw start position
