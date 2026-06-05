@@ -69,6 +69,14 @@ export default function AttendanceDayEditor({
   const prettyDate = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
   const dirty = login !== origIn || logout !== origOut;
 
+  // How many minutes has this field been adjusted backwards from original?
+  const loginBackBy  = origIn  && login  ? hmToMins(origIn)  - hmToMins(login)  : 0;
+  const logoutBackBy = origOut && logout ? hmToMins(origOut) - hmToMins(logout) : 0;
+
+  // Can we still nudge backwards (more than 0 buffer remaining)?
+  const canNudgeLoginBack  = origIn  != null && loginBackBy  < BUFFER_MINS;
+  const canNudgeLogoutBack = origOut != null && logoutBackBy < BUFFER_MINS;
+
   const hours = (login && logout) ? (() => {
     const [lh, lm] = login.split(':').map(Number);
     const [oh, om] = logout.split(':').map(Number);
