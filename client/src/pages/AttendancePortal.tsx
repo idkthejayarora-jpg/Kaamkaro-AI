@@ -1390,9 +1390,9 @@ function PayrollTab() {
 
       {/* Payslip Modal */}
       {payslipFor && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-dark-400 border border-dark-50 rounded-2xl w-full max-w-sm shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setPayslipFor(null)}>
+          <div className="bg-dark-400 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-sm shadow-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50 flex-shrink-0">
               <div>
                 <p className="text-white font-semibold">Payslip</p>
                 <p className="text-white/40 text-xs mt-0.5">{payslipFor.staffName} · {month}</p>
@@ -1401,34 +1401,56 @@ function PayrollTab() {
                 <XCircle size={16} />
               </button>
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-5 space-y-3 overflow-y-auto">
+              {/* Earnings — paid for hours actually worked (+ paid leave) */}
               <div className="flex justify-between text-sm">
-                <span className="text-white/50">Base Salary</span>
-                <span className="text-white font-semibold">{inr(payslipFor.monthlySalary)}</span>
+                <span className="text-white/50">Earned
+                  <span className="text-white/30 text-xs"> ({(payslipFor.workedHours ?? 0)}h worked{(payslipFor.paidLeaveHours ?? 0) > 0 ? ` + ${payslipFor.paidLeaveHours}h paid leave` : ''})</span>
+                </span>
+                <span className="text-white font-semibold">{inr(payslipFor.basePay ?? 0)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-white/50">Absent Deduction <span className="text-white/30 text-xs">({payslipFor.absentDays} days)</span></span>
-                <span className="text-red-400 font-semibold">-{inr(payslipFor.absentDeduction)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-white/50">Half Day <span className="text-white/30 text-xs">({payslipFor.halfDays} days)</span></span>
-                <span className="text-purple-400 font-semibold">-{inr(payslipFor.halfDayDeduction)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-white/50">Late Penalty <span className="text-white/30 text-xs">({payslipFor.lateMinutesTotal} min)</span></span>
-                <span className="text-amber-400 font-semibold">-{inr(payslipFor.latePenalty)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-white/50">OT Bonus <span className="text-white/30 text-xs">({payslipFor.overtimeHours.toFixed(1)} hrs)</span></span>
-                <span className="text-green-400 font-semibold">+{inr(payslipFor.overtimePay)}</span>
-              </div>
+              {payslipFor.overtimePay > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50">OT bonus <span className="text-white/30 text-xs">({payslipFor.overtimeHours.toFixed(1)} hrs)</span></span>
+                  <span className="text-green-400 font-semibold">+{inr(payslipFor.overtimePay)}</span>
+                </div>
+              )}
+              {payslipFor.latePenalty > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/50">Late penalty <span className="text-white/30 text-xs">({payslipFor.lateMinutesTotal} min)</span></span>
+                  <span className="text-amber-400 font-semibold">-{inr(payslipFor.latePenalty)}</span>
+                </div>
+              )}
+
               <div className="border-t border-dark-50 pt-3 mt-1">
                 <div className="flex justify-between items-center">
                   <span className="text-white font-semibold">NET PAY</span>
                   <span className="text-gold text-2xl font-black">{inr(payslipFor.netPay)}</span>
                 </div>
-                <p className="text-white/30 text-xs mt-2">Present {payslipFor.presentDays} / Working {payslipFor.workingDays} days</p>
+                <p className="text-white/30 text-xs mt-2">
+                  Present {payslipFor.presentDays} / {payslipFor.workingDaysInMonth ?? payslipFor.workingDays} working days
+                  {(payslipFor.offDays ?? 0) > 0 ? ` · ${payslipFor.offDays} off (Sun/holiday)` : ''}
+                </p>
               </div>
+
+              {/* Informational only — absent days are simply NOT PAID, never deducted */}
+              {(payslipFor.absentDays > 0 || payslipFor.halfDays > 0) && (
+                <div className="rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 mt-1 space-y-1">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">Not paid (no deduction — just unpaid days)</p>
+                  {payslipFor.absentDays > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Absent · {payslipFor.absentDays} day{payslipFor.absentDays > 1 ? 's' : ''}</span>
+                      <span className="text-white/40">missed ~{inr(payslipFor.absentDeduction)}</span>
+                    </div>
+                  )}
+                  {payslipFor.halfDays > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/50">Half-day off · {payslipFor.halfDays}</span>
+                      <span className="text-white/40">missed ~{inr(payslipFor.halfDayDeduction)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
