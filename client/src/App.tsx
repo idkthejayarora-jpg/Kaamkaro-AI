@@ -88,6 +88,7 @@ function AppRoutes() {
       {/* Authenticated shell — sidebar + header stay mounted; only page content suspends */}
       <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route path="/dashboard"       element={<Suspense fallback={<PageFallback />}><Dashboard /></Suspense>} />
+        <Route path="/kaam"            element={<Suspense fallback={<PageFallback />}><Kaam /></Suspense>} />
         <Route path="/staff"           element={<Suspense fallback={<PageFallback />}><PrivateRoute adminOnly><Staff /></PrivateRoute></Suspense>} />
         <Route path="/staff/:id"       element={<Suspense fallback={<PageFallback />}><StaffProfile /></Suspense>} />
         <Route path="/customers"       element={<Suspense fallback={<PageFallback />}><Customers /></Suspense>} />
