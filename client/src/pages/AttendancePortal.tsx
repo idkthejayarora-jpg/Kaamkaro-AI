@@ -2357,6 +2357,46 @@ export default function AttendancePortal() {
         </div>
       </button>
 
+      {/* ── Time-edit access ──────────────────────────────────────────────────
+          Admin: grant a manager a time-limited window to fix check-in/out times
+          from the physical register. Manager: read-only status of their access. */}
+      {isAdmin ? (
+        <div className={`rounded-2xl border p-4 ${grantActive ? 'border-green-500/30 bg-green-500/5' : 'border-dark-50 bg-dark-400'}`}>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Edit2 size={15} className={grantActive ? 'text-green-400' : 'text-white/40'} />
+              <div className="min-w-0">
+                <p className="text-white text-sm font-semibold">Manager time-edit access</p>
+                <p className="text-white/40 text-xs">
+                  {grantActive ? `Active — managers can fix times until ${grantUntil}` : 'Off — managers cannot edit check-in/out times'}
+                </p>
+              </div>
+            </div>
+            {grantActive ? (
+              <button onClick={doRevoke} disabled={granting}
+                className="px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 text-xs font-bold hover:bg-red-500/25 transition-colors">
+                Revoke now
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {([['2h', 2], ['8h', 8], ['24h', 24]] as const).map(([label, h]) => (
+                  <button key={label} onClick={() => doGrant(h)} disabled={granting}
+                    className="px-3 py-2 rounded-xl bg-gold/10 border border-gold/25 text-gold text-xs font-bold hover:bg-gold/20 transition-colors disabled:opacity-40">
+                    Grant {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : user?.role === 'attendance_manager' && (
+        <div className={`rounded-2xl border px-4 py-3 text-xs ${grantActive ? 'border-green-500/30 bg-green-500/8 text-green-300' : 'border-white/10 bg-white/5 text-white/50'}`}>
+          {grantActive
+            ? <><b>Time-edit access active</b> until {grantUntil} — you can fix check-in/out times from the register.</>
+            : <><b>Time editing is locked.</b> Ask an admin to grant you edit access to fix times.</>}
+        </div>
+      )}
+
       {/* Tab row — icons only on mobile, icon+label on sm+ */}
       <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
         {TABS.map(t => {
