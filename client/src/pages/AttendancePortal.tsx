@@ -636,7 +636,7 @@ function ManualEntryModal({ staffList, onClose, onSaved }: {
 
 // ── Tab: Today ─────────────────────────────────────────────────────────────────
 
-function TodayTab() {
+function TodayTab({ canEditTimes }: { canEditTimes: boolean }) {
   const [records,     setRecords]     = useState<TodayRecord[]>([]);
   const [staffList,   setStaffList]   = useState<StaffMember[]>([]);
   const [loading,     setLoading]     = useState(true);
