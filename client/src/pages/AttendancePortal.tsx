@@ -1161,6 +1161,22 @@ function PayrollTab() {
         </button>
       </div>
 
+      {/* Month-in-progress notice — payroll accrues day by day, so a partial
+          month shows pay EARNED SO FAR, not the final payslip. */}
+      {(() => {
+        const now = new Date();
+        const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        if (month !== curMonth) return null;
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        return (
+          <div className="rounded-2xl border border-blue-500/25 bg-blue-500/8 px-4 py-3 text-xs text-white/70 leading-relaxed">
+            <b className="text-blue-300">This month is still in progress</b> — day {now.getDate()} of {lastDay}.
+            These are wages <b className="text-white/90">earned so far</b> (pay accrues each working day). The full payslip is complete at month-end.
+            To see a finished month, use ‹ to go back.
+          </div>
+        );
+      })()}
+
       {/* Total payroll banner */}
       {summary && (
         <div className="bg-gradient-to-r from-gold/15 to-gold/5 border border-gold/25 rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-gold/5">
