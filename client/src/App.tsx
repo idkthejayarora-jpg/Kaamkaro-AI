@@ -59,10 +59,15 @@ const ScreenFallback = () => (
   </div>
 );
 
-function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
+function PrivateRoute({ children, adminOnly = false, managerArea = false }: { children: React.ReactNode; adminOnly?: boolean; managerArea?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <ScreenFallback />;
   if (!user) return <Navigate to="/login" replace />;
+  // Attendance manager portal — admins + attendance managers only. Plain staff
+  // must never reach it (manual entry, payroll, kiosk PIN live there).
+  if (managerArea && user.role !== 'admin' && user.role !== 'attendance_manager') {
+    return <Navigate to="/dashboard" replace />;
+  }
   if (user.role === 'attendance_manager' && adminOnly) return <Navigate to="/attendance-portal" replace />;
   if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
