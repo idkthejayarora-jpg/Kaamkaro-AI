@@ -82,13 +82,15 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
     const lastDay  = new Date(yr, mo, 0).getDate();
     const todayISO = now.toISOString().split('T')[0];
 
-    const [staffList, attendance, allLeaves, configs, attendanceCfgArr] = await Promise.all([
+    const [staffList, attendance, allLeaves, configs, attendanceCfgArr, holidays] = await Promise.all([
       readDB('staff'),
       readDB('attendance'),
       readDB('leaves').catch(() => []),
       readDB('payroll_config').catch(() => []),
       readDB('config').catch(() => []),
+      readDB('holidays').catch(() => []),
     ]);
+    const isDayOff = makeDayOff(holidays); // Sundays + declared holidays → no absence, no deduction
 
     // Get global attendance config for expectedHours fallback
     const attCfgRec = attendanceCfgArr.find(c => c.key === 'attendance');
