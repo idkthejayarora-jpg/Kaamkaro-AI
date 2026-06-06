@@ -598,6 +598,9 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
       return rec;
     });
 
+    if (record && record.__denied) {
+      return res.status(403).json({ error: 'Without edit access you can only move a time up to 10 minutes earlier. Ask an admin to grant full edit access to set/enter times.' });
+    }
     res.json(record);
   } catch (err) {
     console.error('[Attendance manual]', err);
