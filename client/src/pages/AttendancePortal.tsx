@@ -1440,7 +1440,7 @@ function PayrollTab() {
 // ── Tab: Staff ─────────────────────────────────────────────────────────────────
 
 // Month calendar for one staff — manager taps a day to view/edit check-in/out.
-function StaffAttendanceCalendar({ staff, onClose }: { staff: StaffMember; onClose: () => void }) {
+function StaffAttendanceCalendar({ staff, onClose, canEdit = true }: { staff: StaffMember; onClose: () => void; canEdit?: boolean }) {
   const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`; });
   const [recs, setRecs]   = useState<DayRecord[]>([]);
   const [loading, setLoading] = useState(true);
