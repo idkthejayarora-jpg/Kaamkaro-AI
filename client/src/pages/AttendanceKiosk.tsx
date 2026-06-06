@@ -128,6 +128,7 @@ function PinScreen({ onUnlock }: { onUnlock: (pin: string) => void }) {
 export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void }) {
   const [kioskState,    setKioskState]    = useState<KioskState>('loading');
   const [modelStatus,   setModelStatus]   = useState('');
+  const [needsTap,      setNeedsTap]      = useState(false); // autoplay blocked → show tap-to-start
   const [descriptors,   setDescriptors]   = useState<StaffDescriptor[]>([]);
   const [todayStatus,   setTodayStatus]   = useState<TodayRecord[]>([]);
   const [time,          setTime]          = useState(now12h());
