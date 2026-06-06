@@ -1523,7 +1523,7 @@ function StaffAttendanceCalendar({ staff, onClose, canEdit = true }: { staff: St
           staffId={staff.id}
           date={day.date}
           record={day.record}
-          canEdit
+          canEdit={canEdit}
           onClose={() => setDay(null)}
           onSaved={() => { setDay(null); setReload(n => n + 1); }}
         />
