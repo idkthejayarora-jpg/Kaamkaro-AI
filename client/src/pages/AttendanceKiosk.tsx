@@ -154,6 +154,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const streamRef       = useRef<MediaStream | null>(null);
   const detectRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   const cooldownRef     = useRef<Record<string, number>>({});
+  const learnCooldownRef = useRef<Record<string, number>>({}); // throttle auto-learn per staff
   const countdownRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const confirmedRef    = useRef(false);
   const faceMatcherRef  = useRef<faceapi.FaceMatcher | null>(null);
