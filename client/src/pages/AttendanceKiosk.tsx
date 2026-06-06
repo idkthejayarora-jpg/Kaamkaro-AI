@@ -11,7 +11,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
-import { X } from 'lucide-react';
+import { X, Camera } from 'lucide-react';
 import { kioskAPI } from '../lib/api';
 import Select from '../components/Select';
 import SuccessTick from '../components/SuccessTick';
