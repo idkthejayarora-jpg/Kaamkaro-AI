@@ -1,12 +1,12 @@
 /**
- * AttendanceDayEditor — view (and optionally edit) one day's check-in/out times.
+ * AttendanceDayEditor — view / edit one day's check-in & check-out times.
  *
- * Staff:    read-only — tap a calendar day to see their times.
- * Manager:  can adjust check-in EARLIER by up to 10 minutes from the recorded time.
- *           Use-case: staff arrived at 10:20 but were queuing since 10:10 → adjust to 10:10.
- *           You can only move BACKWARDS (earlier), never forward — the kiosk recorded
- *           when the face was scanned, so later is never valid.
- *           Max 10-minute buffer total per field.
+ * Three levels of access:
+ *   • Staff (read-only)     — just see the times.
+ *   • Nudge (manager always) — move an EXISTING time earlier by up to 10 min
+ *                              (queue/rain buffer). No grant needed.
+ *   • Full edit (admin, or  — set any time freely and ENTER times for days the
+ *     manager-when-granted)    kiosk missed, from the physical register.
  */
 import { useState } from 'react';
 import { X, LogIn, LogOut, ChevronLeft, Clock } from 'lucide-react';
@@ -22,7 +22,7 @@ export interface DayRecord {
   lateMinutes?: number;
 }
 
-const BUFFER_MINS = 10; // max minutes you can adjust a time backwards
+const BUFFER_MINS = 10; // max minutes a non-granted manager can move a time earlier
 
 function isoToHM(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -30,32 +30,23 @@ function isoToHM(iso: string | null | undefined): string | null {
   if (isNaN(d.getTime())) return null;
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
-
-function hmToMins(hm: string): number {
-  const [h, m] = hm.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function minsToHM(total: number): string {
-  const t = Math.max(0, Math.min(23 * 60 + 59, total));
-  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
-}
-
+const hmToMins = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
+const minsToHM = (t: number) => { const x = Math.max(0, Math.min(23 * 60 + 59, t)); return `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`; };
 function hm12(hm: string | null): string {
   if (!hm) return '—';
   const [h, m] = hm.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
 export default function AttendanceDayEditor({
-  staffId, date, record, canEdit, onClose, onSaved,
+  staffId, date, record, canFullEdit, canNudge, onClose, onSaved,
 }: {
   staffId: string;
   date: string;
   record: DayRecord | null;
-  canEdit: boolean;
+  canFullEdit: boolean;   // admin, or manager while an edit grant is active
+  canNudge: boolean;      // manager/admin — ≤10-min earlier on existing times, always
   onClose: () => void;
   onSaved?: () => void;
 }) {
@@ -69,18 +60,11 @@ export default function AttendanceDayEditor({
   const prettyDate = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
   const dirty = login !== origIn || logout !== origOut;
 
-  // How many minutes has this field been adjusted backwards from original?
   const loginBackBy  = origIn  && login  ? hmToMins(origIn)  - hmToMins(login)  : 0;
   const logoutBackBy = origOut && logout ? hmToMins(origOut) - hmToMins(logout) : 0;
 
-  // Can we still nudge backwards (more than 0 buffer remaining)?
-  const canNudgeLoginBack  = origIn  != null && loginBackBy  < BUFFER_MINS;
-  const canNudgeLogoutBack = origOut != null && logoutBackBy < BUFFER_MINS;
-
   const hours = (login && logout) ? (() => {
-    const [lh, lm] = login.split(':').map(Number);
-    const [oh, om] = logout.split(':').map(Number);
-    const diff = (oh * 60 + om) - (lh * 60 + lm);
+    const diff = hmToMins(logout) - hmToMins(login);
     return diff > 0 ? (diff / 60).toFixed(1) : '0.0';
   })() : null;
 
@@ -94,14 +78,10 @@ export default function AttendanceDayEditor({
     } finally { setSaving(false); }
   };
 
-  // One editable / read-only time row.
-  // canNudge: still has buffer remaining to go earlier.
-  // backBy: how many minutes already adjusted backwards.
-  const Row = ({ label, icon, value, orig, set, accent, canNudge, backBy }: {
-    label: string; icon: React.ReactNode;
-    value: string | null; orig: string | null;
-    set: (v: string) => void; accent: string;
-    canNudge: boolean; backBy: number;
+  // One row: full-edit shows a free time input; nudge-only shows a ≤10-min ← button.
+  const Row = ({ label, icon, value, orig, set, accent, backBy }: {
+    label: string; icon: React.ReactNode; value: string | null; orig: string | null;
+    set: (v: string | null) => void; accent: string; backBy: number;
   }) => (
     <div className="flex items-center gap-3 p-3 rounded-2xl bg-dark-200 border border-dark-100">
       <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '22', color: accent }}>
@@ -109,30 +89,37 @@ export default function AttendanceDayEditor({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">{label}</p>
-        <p className="text-white font-black text-xl leading-tight">{hm12(value)}</p>
-        {backBy > 0 && (
-          <p className="text-amber-400/70 text-[10px] mt-0.5">
-            adjusted −{backBy} min from {hm12(orig)}
-          </p>
+        {canFullEdit ? (
+          <input
+            type="time"
+            value={value || ''}
+            onChange={e => set(e.target.value || null)}
+            className="bg-transparent text-white font-black text-xl leading-tight outline-none w-full mt-0.5"
+          />
+        ) : (
+          <p className="text-white font-black text-xl leading-tight">{hm12(value)}</p>
         )}
+        {backBy > 0 && <p className="text-amber-400/70 text-[10px] mt-0.5">−{backBy} min from {hm12(orig)}</p>}
       </div>
-      {canEdit && orig != null && (
+      {/* Nudge-only: ≤10-min earlier on an existing time (no grant needed) */}
+      {!canFullEdit && canNudge && orig != null && (
         <div className="flex flex-col items-center gap-1 flex-shrink-0">
           <button
-            onClick={() => orig && set(minsToHM(hmToMins(value || orig) - 1))}
-            disabled={!canNudge}
+            onClick={() => set(minsToHM(hmToMins(value || orig) - 1))}
+            disabled={backBy >= BUFFER_MINS}
             className="w-9 h-9 rounded-xl bg-dark-100 hover:bg-white/10 text-white/70 flex items-center justify-center transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
-            title={canNudge ? 'Move 1 min earlier (queue buffer)' : 'Max 10-min buffer reached'}
+            title={backBy >= BUFFER_MINS ? 'Max 10-min buffer' : 'Move 1 min earlier'}
           >
             <ChevronLeft size={15} />
           </button>
-          <span className="text-[9px] text-white/25 font-semibold">
-            {BUFFER_MINS - backBy} min left
-          </span>
+          <span className="text-[9px] text-white/25 font-semibold">{BUFFER_MINS - backBy} left</span>
         </div>
       )}
     </div>
   );
+
+  // No record + can't enter (staff, or manager without grant) → nothing to show/do.
+  const nothingToShow = !record && !canFullEdit;
 
   return (
     <Modal onClose={onClose} className="max-w-sm">
@@ -145,15 +132,16 @@ export default function AttendanceDayEditor({
       </div>
 
       <div className="p-5 space-y-3">
-        {!record && !canEdit ? (
+        {nothingToShow ? (
           <div className="flex flex-col items-center py-8 gap-2">
             <Clock size={26} className="text-white/15" />
             <p className="text-white/40 text-sm">No attendance recorded</p>
+            {canNudge && <p className="text-white/25 text-[11px] text-center">Ask an admin to grant edit access to enter times.</p>}
           </div>
         ) : (
           <>
-            <Row label="Check in"  icon={<LogIn size={16} />}  value={login}  orig={origIn}  set={setLogin}  accent="#22c55e" canNudge={canNudgeLoginBack}  backBy={loginBackBy} />
-            <Row label="Check out" icon={<LogOut size={16} />} value={logout} orig={origOut} set={setLogout} accent="#3b82f6" canNudge={canNudgeLogoutBack} backBy={logoutBackBy} />
+            <Row label="Check in"  icon={<LogIn size={16} />}  value={login}  orig={origIn}  set={setLogin}  accent="#22c55e" backBy={loginBackBy} />
+            <Row label="Check out" icon={<LogOut size={16} />} value={logout} orig={origOut} set={setLogout} accent="#3b82f6" backBy={logoutBackBy} />
 
             <div className="flex items-center justify-between px-1 pt-1">
               <span className="text-white/35 text-xs">Hours worked</span>
@@ -162,17 +150,21 @@ export default function AttendanceDayEditor({
             {record?.isLate && (record?.lateMinutes ?? 0) > 0 && (
               <p className="text-amber-400 text-xs">⚠ Marked late by {record.lateMinutes} min</p>
             )}
-            {canEdit && origIn && (
-              <div className="rounded-xl bg-dark-100 px-3 py-2 text-[10px] text-white/35 leading-relaxed">
-                ← Press to move time <b className="text-white/55">earlier only</b> — up to 10 min buffer for queue/rain delays. Cannot move forward (kiosk records when face was actually scanned).
+            {canFullEdit ? (
+              <div className="rounded-xl bg-dark-100 px-3 py-2 text-[10px] text-white/40 leading-relaxed">
+                Full edit access — set any check-in/out time from the physical register. Leave a field blank to clear it.
               </div>
-            )}
+            ) : canNudge && (origIn || origOut) ? (
+              <div className="rounded-xl bg-dark-100 px-3 py-2 text-[10px] text-white/35 leading-relaxed">
+                ← Moves a time <b className="text-white/55">earlier only</b>, up to 10 min (queue/rain buffer). For bigger changes, ask an admin for edit access.
+              </div>
+            ) : null}
             {err && <p className="text-red-400 text-xs text-center">{err}</p>}
           </>
         )}
       </div>
 
-      {canEdit && (record || login || logout) && (
+      {(canFullEdit || canNudge) && !nothingToShow && (
         <div className="flex gap-2 px-5 py-4 border-t border-dark-100">
           <button onClick={() => { setLogin(origIn); setLogout(origOut); }} disabled={saving || !dirty} className="btn-secondary flex-1 py-2.5 text-sm disabled:opacity-40">Reset</button>
           <button onClick={save} disabled={saving || !dirty} className="btn-primary flex-1 py-2.5 text-sm disabled:opacity-40">{saving ? 'Saving…' : 'Save'}</button>
