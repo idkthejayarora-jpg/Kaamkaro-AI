@@ -768,9 +768,11 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
                 )}
 
                 <div className="flex gap-2">
-                  <button onClick={handleEnrollLink} disabled={enrollBusy}
+                  <button onClick={handleEnrollLink} disabled={enrollBusy || (enrollMode === 'select' && !enrollStaffId)}
                     className="flex-1 py-2.5 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold/90 transition disabled:opacity-40">
-                    {enrollBusy ? 'Saving…' : 'Link Face'}
+                    {enrollBusy ? 'Saving…' : enrollMode === 'select'
+                      ? (enrollStaffId ? `Add scan to ${enrollSelectedName}` : 'Pick a staff member')
+                      : 'Create & Link'}
                   </button>
                   <button onClick={cancelEnroll} disabled={enrollBusy}
                     className="px-3 py-2.5 rounded-xl border border-white/10 text-white/40 hover:text-white text-sm transition">
