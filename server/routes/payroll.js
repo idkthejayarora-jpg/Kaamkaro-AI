@@ -143,6 +143,8 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
             // full_day, sick, emergency → paid leave, no deduction
             fullLeaveDays++;
           }
+        } else if (isDayOff(dateStr)) {
+          // Weekly off (Sunday) or declared holiday — not absent, no pay deduction.
         } else {
           absentDays++;
         }
