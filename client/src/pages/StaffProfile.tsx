@@ -280,6 +280,7 @@ export default function StaffProfile() {
     if (v === 'leave')         return 'bg-blue-500/25 text-blue-300/90';
     if (v === 'sick')          return 'bg-purple-500/25 text-purple-300/90';
     if (v === 'half_day')      return 'bg-cyan-500/25 text-cyan-300/90';
+    if (v === 'holiday')       return 'bg-white/8 text-white/30'; // Sunday / declared holiday
     return 'bg-dark-200 text-white/20';
   };
 
