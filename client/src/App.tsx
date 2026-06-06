@@ -120,7 +120,7 @@ function AppRoutes() {
         <Route path="/badges"          element={<Suspense fallback={<PageFallback />}><Badges /></Suspense>} />
         <Route path="/calendar"        element={<Suspense fallback={<PageFallback />}><Calendar /></Suspense>} />
         <Route path="/settings"        element={<Suspense fallback={<PageFallback />}><Settings /></Suspense>} />
-        <Route path="/attendance-portal" element={<Suspense fallback={<PageFallback />}><AttendancePortal /></Suspense>} />
+        <Route path="/attendance-portal" element={<Suspense fallback={<PageFallback />}><PrivateRoute managerArea><AttendancePortal /></PrivateRoute></Suspense>} />
       </Route>
       <Route path="*" element={<Navigate to={user?.role === 'attendance_manager' ? '/attendance-portal' : '/dashboard'} replace />} />
     </Routes>
