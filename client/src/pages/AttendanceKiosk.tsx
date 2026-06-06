@@ -144,6 +144,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const [enrollStaffList, setEnrollStaffList] = useState<StaffBasic[]>([]);
   const [enrollMode,      setEnrollMode]      = useState<'select' | 'create'>('select');
   const [enrollStaffId,   setEnrollStaffId]   = useState('');
+  const [enrollSearch,    setEnrollSearch]    = useState('');
   const [enrollNewName,   setEnrollNewName]   = useState('');
   const [enrollNewPhone,  setEnrollNewPhone]  = useState('');
   const [enrollBusy,      setEnrollBusy]      = useState(false);
