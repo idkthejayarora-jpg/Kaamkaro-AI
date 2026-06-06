@@ -562,6 +562,11 @@ router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res
       const records = await readDB('attendance');
       let rec = records.find(r => r.staffId === staffId && r.date === date);
 
+      // Ungranted manager: only a ≤10-min earlier nudge of an existing record.
+      if (!fullEdit && !isValidNudge(rec, loginAt, logoutAt)) {
+        return { __denied: true };
+      }
+
       if (rec) {
         rec.loginAt        = loginISO;
         rec.logoutAt       = logoutISO;
