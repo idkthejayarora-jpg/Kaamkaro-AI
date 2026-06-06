@@ -111,17 +111,19 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
       const monthlySalary     = payCfg?.monthlySalary       ?? 0;
       const overtimeMultiplier = payCfg?.overtimeMultiplier  ?? 1.5;
       const latePenaltyPerMin  = payCfg?.latePenaltyPerMin   ?? 0;
-      // Salary divisor: the notional days the monthly salary is spread over.
-      // Default = calendar days, so Sundays/holidays earn nothing (no-pay days).
-      const workingDays        = payCfg?.workingDaysOverride  ?? lastDay;
+      const workingDays        = payCfg?.workingDaysOverride  ?? workingDaysInMonth;
 
-      // Effective expected hours per day for this staff member
-      const effectiveExpectedHours = s.shiftOverride
+      // Expected hours per working day for this staff member.
+      const expectedHoursPerDay = s.shiftOverride
         ? (shiftHours(s.shiftOverride) ?? globalExpectedHours)
         : globalExpectedHours;
 
-      const dailyRate  = workingDays > 0 ? monthlySalary / workingDays : 0;
-      const hourlyRate = effectiveExpectedHours > 0 ? dailyRate / effectiveExpectedHours : 0;
+      // WORK-HOURS model: the monthly salary is earned across the month's expected
+      // working hours. hourlyRate = salary ÷ (working days × hours/day). Pay tracks
+      // actual hours worked, so full attendance at full hours = the full salary,
+      // late/early reduces it, Sundays/holidays/absences contribute zero hours.
+      const expectedMonthlyHours = workingDays * expectedHoursPerDay;
+      const hourlyRate = expectedMonthlyHours > 0 ? monthlySalary / expectedMonthlyHours : 0;
 
       let presentDays     = 0;
       let absentDays      = 0;
@@ -129,7 +131,8 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
       let fullLeaveDays   = 0;
       let lateMinutesTotal = 0;
       let overtimeHoursTotal = 0;
-      let totalHours      = 0;
+      let workedHours     = 0;  // actual hours physically worked
+      let paidLeaveHours  = 0;  // hours credited for paid leave (not worked, still paid)
 
       for (let d = 1; d <= lastDay; d++) {
         const dd      = String(d).padStart(2, '0');
@@ -143,33 +146,38 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
 
         if (rec) {
           presentDays++;
-          totalHours += rec.hoursWorked || 0;
+          const h = rec.hoursWorked || 0;
+          workedHours += h;
+          overtimeHoursTotal += Math.max(0, h - expectedHoursPerDay); // hours beyond a full day
           if (rec.isLate) lateMinutesTotal += rec.lateMinutes || 0;
-          overtimeHoursTotal += rec.overtimeHours || 0;
         } else if (leave) {
           if (leave.type === 'half_day_am' || leave.type === 'half_day_pm') {
             halfDays++;
+            paidLeaveHours += expectedHoursPerDay / 2; // worked half is in `rec` if present that day
           } else {
-            // full_day, sick, emergency → paid leave, no deduction
+            // full_day, sick, emergency → paid leave at full expected hours
             fullLeaveDays++;
+            paidLeaveHours += expectedHoursPerDay;
           }
         } else if (isDayOff(dateStr)) {
-          // Weekly off (Sunday) or declared holiday — not absent, no pay deduction.
+          // Weekly off (Sunday) or declared holiday — zero hours, no pay, no penalty.
         } else {
-          absentDays++;
+          absentDays++; // working day with no record/leave → zero hours → unpaid
         }
       }
 
-      // Daily-pay model: you earn the day-rate ONLY for days actually worked
-      // (plus paid leave). Sundays, declared holidays and absences earn nothing.
-      const paidDays = presentDays + fullLeaveDays + (halfDays * 0.5);
-      const basePay  = dailyRate * paidDays;
+      // Pay all worked + paid-leave hours at the normal rate; overtime hours (beyond
+      // a full day) get the extra premium on top.
+      const paidHours      = workedHours + paidLeaveHours;
+      const basePay        = hourlyRate * paidHours;
+      const overtimePay    = Math.round(hourlyRate * (overtimeMultiplier - 1) * overtimeHoursTotal);
+      const latePenalty    = Math.round(lateMinutesTotal * latePenaltyPerMin);
+      const netPay         = Math.max(0, Math.round(basePay + overtimePay - latePenalty));
 
-      const absentDeduction  = Math.round(absentDays * dailyRate);          // info: lost to absence
-      const halfDayDeduction = Math.round(halfDays * dailyRate * 0.5);      // info: unpaid half
-      const latePenalty      = Math.round(lateMinutesTotal * latePenaltyPerMin);
-      const overtimePay      = Math.round(overtimeHoursTotal * hourlyRate * overtimeMultiplier);
-      const netPay           = Math.max(0, Math.round(basePay - latePenalty + overtimePay));
+      // Informational "lost pay" figures (an absent day ≈ a full day's hours unpaid).
+      const dayRate          = hourlyRate * expectedHoursPerDay;
+      const absentDeduction  = Math.round(absentDays * dayRate);
+      const halfDayDeduction = Math.round(halfDays * dayRate * 0.5);
 
       return {
         staffId:          s.id,
@@ -177,10 +185,13 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
         avatar:           s.avatar || s.name[0].toUpperCase(),
         monthlySalary,
         workingDays,
-        workingDaysInMonth,         // actual working days (excl. Sundays + holidays)
+        workingDaysInMonth,
         offDays:          offDaysInMonth,
-        paidDays:         Math.round(paidDays * 100) / 100,
-        dailyRate:        Math.round(dailyRate),
+        expectedHoursPerDay,
+        expectedMonthlyHours: Math.round(expectedMonthlyHours * 10) / 10,
+        hourlyRate:       Math.round(hourlyRate),
+        workedHours:      Math.round(workedHours * 10) / 10,
+        paidLeaveHours:   Math.round(paidLeaveHours * 10) / 10,
         basePay:          Math.round(basePay),
         presentDays,
         absentDays,
@@ -188,7 +199,7 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
         fullLeaveDays,
         lateMinutesTotal,
         overtimeHours:    Math.round(overtimeHoursTotal * 100) / 100,
-        totalHours:       Math.round(totalHours * 100) / 100,
+        totalHours:       Math.round(workedHours * 100) / 100,
         absentDeduction,
         halfDayDeduction,
         latePenalty,
