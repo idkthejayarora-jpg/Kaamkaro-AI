@@ -108,9 +108,10 @@ function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   );
 }
 
-function StatusChip({ status }: { status: 'in' | 'out' | 'absent' }) {
+function StatusChip({ status }: { status: 'in' | 'out' | 'absent' | 'off' }) {
   if (status === 'in')     return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/25">● In</span>;
   if (status === 'out')    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/12 text-blue-400 border border-blue-500/20">● Out</span>;
+  if (status === 'off')    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/8 text-white/40 border border-white/10">Day off</span>;
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/6 text-white/30 border border-white/10">Absent</span>;
 }
 
