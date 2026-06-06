@@ -959,6 +959,7 @@ function MonthlyTab() {
     if (val === 'leave')            return 'bg-blue-500/15 text-blue-400';
     if (val === 'sick')             return 'bg-amber-600/20 text-amber-500';
     if (val === 'half_day')         return 'bg-purple-500/15 text-purple-400';
+    if (val === 'holiday')          return 'bg-white/5 text-white/25';
     return 'bg-dark-200 text-white/10';
   };
 
@@ -970,6 +971,7 @@ function MonthlyTab() {
     if (val === 'leave')    return 'Le';
     if (val === 'sick')     return 'S';
     if (val === 'half_day') return '½';
+    if (val === 'holiday')  return '·';
     return '';
   };
 
