@@ -11,7 +11,7 @@ import {
   CheckCircle2, AlertTriangle, XCircle, ChevronLeft, ChevronRight,
   Camera, Trash2, Eye, EyeOff, Save, CalendarOff, Megaphone,
   Send, ChevronDown, ChevronUp, Edit2, IndianRupee, TrendingUp,
-  UserX, ScanFace, ChevronRight as ArrowRight,
+  UserX, ScanFace, ChevronRight as ArrowRight, CalendarDays, Plus, Sun,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
