@@ -1237,11 +1237,11 @@ function PayrollTab() {
                         <div>{(s.workedHours ?? 0)}h<span className="text-white/30"> / {s.expectedMonthlyHours ?? 0}h</span></div>
                         <div className="text-white/25 text-[10px]">{s.presentDays}/{s.workingDaysInMonth ?? s.workingDays} days{(s.offDays ?? 0) > 0 ? ` · ${s.offDays} off` : ''}</div>
                       </td>
-                      <td className="px-3 py-3 text-center text-red-400">
-                        {s.absentDeduction > 0 ? `-${inr(s.absentDeduction)}` : '—'}
+                      <td className="px-3 py-3 text-center text-white/40">
+                        {s.absentDays > 0 ? <span>{s.absentDays}d <span className="text-white/25 text-[10px]">(~{inr(s.absentDeduction)})</span></span> : '—'}
                       </td>
-                      <td className="px-3 py-3 text-center text-purple-400">
-                        {s.halfDayDeduction > 0 ? `-${inr(s.halfDayDeduction)}` : '—'}
+                      <td className="px-3 py-3 text-center text-white/40">
+                        {s.halfDays > 0 ? <span>{s.halfDays} <span className="text-white/25 text-[10px]">(~{inr(s.halfDayDeduction)})</span></span> : '—'}
                       </td>
                       <td className="px-3 py-3 text-center text-amber-400">
                         {s.latePenalty > 0 ? `-${inr(s.latePenalty)}` : '—'}
