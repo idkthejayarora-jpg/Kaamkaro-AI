@@ -206,7 +206,8 @@ router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) 
           staffId:     s.id,
           staffName:   s.name,
           avatar:      s.avatar || s.name[0].toUpperCase(),
-          status:      rec ? (openSession ? 'in' : 'out') : 'absent',
+          // On a day off, staff who didn't check in are 'off', not 'absent'.
+          status:      rec ? (openSession ? 'in' : 'out') : (todayIsOff ? 'off' : 'absent'),
           loginAt:     rec?.loginAt || null,
           logoutAt:    rec?.logoutAt || null,
           isLate:      rec?.isLate || false,
