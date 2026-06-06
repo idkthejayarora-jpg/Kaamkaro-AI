@@ -310,6 +310,9 @@ router.get('/monthly', authMiddleware, async (req, res) => {
               // Half day: expect only half the shift
               expectedTotal += staffExpected / 2;
             }
+          } else if (isDayOff(dateStr)) {
+            // Weekly off (Sunday) or declared holiday — never absent, no undertime.
+            dailyMap[dd] = 'holiday';
           } else {
             // Only mark absent for past/today, not future
             if (dateStr <= todayStr()) {
