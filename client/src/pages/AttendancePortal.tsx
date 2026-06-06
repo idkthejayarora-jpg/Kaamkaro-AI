@@ -1545,7 +1545,8 @@ function StaffAttendanceCalendar({ staff, onClose, canFullEdit = false, canNudge
           staffId={staff.id}
           date={day.date}
           record={day.record}
-          canEdit={canEdit}
+          canFullEdit={canFullEdit}
+          canNudge={canNudge}
           onClose={() => setDay(null)}
           onSaved={() => { setDay(null); setReload(n => n + 1); }}
         />
