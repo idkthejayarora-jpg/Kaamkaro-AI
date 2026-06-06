@@ -218,6 +218,7 @@ export default function StaffPage() {
   // Today's attendance state for one staff → present / late / absent.
   const attKey = (s: Staff): AttKey => {
     const rec = today[s.id];
+    if (rec?.status === 'off') return 'off';            // Sunday / declared holiday
     if (!rec || rec.status === 'absent') return 'absent';
     if (rec.isLate) return 'late';
     return 'present';
