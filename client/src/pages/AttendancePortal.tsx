@@ -2421,7 +2421,7 @@ export default function AttendancePortal() {
       </div>
 
       {/* Tab content */}
-      {tab === 'today'     && <TodayTab />}
+      {tab === 'today'     && <TodayTab canEditTimes={canEditTimes} />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'monthly'   && <MonthlyTab />}
       {tab === 'payroll'   && <PayrollTab />}
