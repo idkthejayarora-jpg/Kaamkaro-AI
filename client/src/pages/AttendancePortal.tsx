@@ -2136,6 +2136,107 @@ function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 
+// ── Tab: Holidays ──────────────────────────────────────────────────────────────
+interface Holiday { id: string; date: string; label: string; type: 'holiday' | 'working'; createdBy?: string; }
+
+function HolidaysTab() {
+  const [list, setList]   = useState<Holiday[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [date, setDate]   = useState('');
+  const [label, setLabel] = useState('');
+  const [type, setType]   = useState<'holiday' | 'working'>('holiday');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]     = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try { setList(await holidaysAPI.list()); } catch { setList([]); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const add = async () => {
+    if (!date) { setErr('Pick a date'); return; }
+    setSaving(true); setErr('');
+    try {
+      await holidaysAPI.add({ date, label: label.trim() || undefined, type });
+      setDate(''); setLabel(''); setType('holiday');
+      await load();
+    } catch (e: unknown) {
+      setErr((e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to save');
+    } finally { setSaving(false); }
+  };
+
+  const remove = async (h: Holiday) => {
+    if (!confirm(`Remove "${h.label}" on ${h.date}?`)) return;
+    await holidaysAPI.remove(h.id);
+    setList(l => l.filter(x => x.id !== h.id));
+  };
+
+  const fmt = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const isSunday = (d: string) => d && new Date(d + 'T00:00:00Z').getUTCDay() === 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 text-xs text-white/55 leading-relaxed">
+        <b className="text-white/80">Sundays are off by default</b> every week — they're never counted as absent and never dock pay.
+        Add a <b className="text-amber-300">Holiday</b> for any other day off, or open an off-day with <b className="text-green-300">Working day</b> (e.g. a Sunday in high season).
+      </div>
+
+      {/* Add form */}
+      <div className="rounded-2xl bg-dark-400 border border-dark-50 p-4 space-y-3">
+        <p className="text-white font-semibold text-sm flex items-center gap-2"><Plus size={14} className="text-gold" /> Add holiday / working day</p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input type="date" value={date} onChange={e => setDate(e.target.value)}
+            className="bg-dark-300 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-gold/40 flex-1" />
+          <input placeholder="Label (e.g. Diwali)" value={label} onChange={e => setLabel(e.target.value)}
+            className="bg-dark-300 border border-dark-50 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40 flex-1" />
+        </div>
+        <div className="flex rounded-xl overflow-hidden border border-dark-50 w-full sm:w-auto">
+          {(['holiday', 'working'] as const).map(t => (
+            <button key={t} onClick={() => setType(t)}
+              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-semibold transition-colors ${type === t ? (t === 'working' ? 'bg-green-500/20 text-green-300' : 'bg-amber-500/20 text-amber-300') : 'text-white/40 hover:text-white/70'}`}>
+              {t === 'holiday' ? '🔴 Holiday (day off)' : '🟢 Working day (open it)'}
+            </button>
+          ))}
+        </div>
+        {type === 'working' && date && !isSunday(date) && (
+          <p className="text-white/35 text-[11px]">Note: this date isn't a Sunday — it's already a working day unless you also marked it a holiday.</p>
+        )}
+        {err && <p className="text-red-400 text-xs">{err}</p>}
+        <button onClick={add} disabled={saving} className="btn-primary text-sm w-full sm:w-auto px-5">{saving ? 'Saving…' : 'Add'}</button>
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-2xl bg-dark-400 animate-pulse" />)}</div>
+      ) : list.length === 0 ? (
+        <div className="rounded-2xl bg-dark-400 border border-dark-50 flex flex-col items-center py-10 gap-2 text-center">
+          <Sun size={28} className="text-white/15" />
+          <p className="text-white/40 text-sm">No custom holidays yet — only the weekly Sunday off applies</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {list.map(h => (
+            <div key={h.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border bg-dark-400 ${h.type === 'working' ? 'border-green-500/25' : 'border-amber-500/25'}`}>
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${h.type === 'working' ? 'bg-green-500/15 text-green-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                {h.type === 'working' ? <Sun size={15} /> : <CalendarOff size={15} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{h.label}</p>
+                <p className="text-white/35 text-[11px]">{fmt(h.date)} · {h.type === 'working' ? 'open / working' : 'day off'}</p>
+              </div>
+              <button onClick={() => remove(h)} className="p-2 rounded-lg text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type Tab = 'today' | 'analytics' | 'monthly' | 'payroll' | 'staff' | 'leaves' | 'holidays' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
