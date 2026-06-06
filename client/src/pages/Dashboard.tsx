@@ -958,9 +958,10 @@ function StaffDashboard() {
       {/* ── INSIGHT STRIP — attendance · merit · top customer (compact) ───── */}
       <div className="space-y-2">
 
-        {/* Attendance this month — just pills */}
+        {/* Attendance this month — staff see their OWN attendance (their profile),
+            NOT the manager portal. */}
         {monthAtt && (
-          <button onClick={() => navigate('/attendance-portal')}
+          <button onClick={() => user?.id && navigate(`/staff/${user.id}`)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-dark-300 border border-dark-100 hover:border-dark-50 transition-colors text-left group">
             <UserCheck size={13} className="text-green-400 flex-shrink-0" />
             <div className="flex items-center gap-1.5 flex-1 flex-wrap">
