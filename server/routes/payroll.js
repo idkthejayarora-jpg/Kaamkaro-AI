@@ -99,11 +99,20 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
 
     const activeStaff = staffList.filter(s => s.active !== false);
 
+    // Working days in the month = all days minus Sundays + declared holidays.
+    let workingDaysInMonth = 0;
+    for (let d = 1; d <= lastDay; d++) {
+      if (!isDayOff(`${monthStr}-${String(d).padStart(2, '0')}`)) workingDaysInMonth++;
+    }
+    const offDaysInMonth = lastDay - workingDaysInMonth;
+
     const staffResults = activeStaff.map(s => {
       const payCfg = configs.find(c => c.staffId === s.id);
       const monthlySalary     = payCfg?.monthlySalary       ?? 0;
       const overtimeMultiplier = payCfg?.overtimeMultiplier  ?? 1.5;
       const latePenaltyPerMin  = payCfg?.latePenaltyPerMin   ?? 0;
+      // Salary divisor: the notional days the monthly salary is spread over.
+      // Default = calendar days, so Sundays/holidays earn nothing (no-pay days).
       const workingDays        = payCfg?.workingDaysOverride  ?? lastDay;
 
       // Effective expected hours per day for this staff member
