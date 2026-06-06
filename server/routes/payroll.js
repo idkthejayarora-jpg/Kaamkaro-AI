@@ -160,13 +160,16 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
         }
       }
 
-      const absentDeduction  = Math.round(absentDays * dailyRate);
-      const halfDayDeduction = Math.round(halfDays * dailyRate * 0.5);
+      // Daily-pay model: you earn the day-rate ONLY for days actually worked
+      // (plus paid leave). Sundays, declared holidays and absences earn nothing.
+      const paidDays = presentDays + fullLeaveDays + (halfDays * 0.5);
+      const basePay  = dailyRate * paidDays;
+
+      const absentDeduction  = Math.round(absentDays * dailyRate);          // info: lost to absence
+      const halfDayDeduction = Math.round(halfDays * dailyRate * 0.5);      // info: unpaid half
       const latePenalty      = Math.round(lateMinutesTotal * latePenaltyPerMin);
       const overtimePay      = Math.round(overtimeHoursTotal * hourlyRate * overtimeMultiplier);
-      const netPay           = Math.max(0, Math.round(
-        monthlySalary - absentDeduction - halfDayDeduction - latePenalty + overtimePay
-      ));
+      const netPay           = Math.max(0, Math.round(basePay - latePenalty + overtimePay));
 
       return {
         staffId:          s.id,
@@ -174,6 +177,11 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
         avatar:           s.avatar || s.name[0].toUpperCase(),
         monthlySalary,
         workingDays,
+        workingDaysInMonth,         // actual working days (excl. Sundays + holidays)
+        offDays:          offDaysInMonth,
+        paidDays:         Math.round(paidDays * 100) / 100,
+        dailyRate:        Math.round(dailyRate),
+        basePay:          Math.round(basePay),
         presentDays,
         absentDays,
         halfDays,
