@@ -243,13 +243,15 @@ router.get('/monthly', authMiddleware, async (req, res) => {
     const lastDay  = new Date(yr, mo, 0).getDate();
     const toDate   = `${monthStr}-${String(lastDay).padStart(2, '0')}`;
 
-    const [staff, attendance, allLeaves] = await Promise.all([
+    const [staff, attendance, allLeaves, holidays] = await Promise.all([
       readDB('staff'),
       readDB('attendance'),
       readDB('leaves').catch(() => []),
+      readDB('holidays').catch(() => []),
     ]);
     const monthRecs   = attendance.filter(r => r.date >= fromDate && r.date <= toDate);
     const monthLeaves = allLeaves.filter(l => l.date >= fromDate && l.date <= toDate);
+    const isDayOff    = makeDayOff(holidays); // Sundays + declared holidays (minus working overrides)
 
     // Helper: compute shift duration in hours from a shiftOverride or config
     function shiftDurationHours(override) {
