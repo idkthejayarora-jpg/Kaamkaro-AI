@@ -395,7 +395,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         unknownDescRef.current = det.descriptor;
         if (!hasUnk) { hasUnknownRef.current = true; setHasUnknown(true); }
       }
-    }, 250);
+    }, 350); // 350ms — eases CPU on tablets while 3-frame confirm still triggers in ~1s
 
     return () => { if (detectRef.current) clearInterval(detectRef.current); };
   // Only restart when kioskState changes — everything else read from refs
