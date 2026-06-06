@@ -1364,11 +1364,11 @@ function PayrollTab() {
                 {summary.staff.length > 0 && (
                   <tr className="bg-dark-500 border-t border-gold/20">
                     <td className="px-4 py-3 text-white/60 font-semibold text-xs" colSpan={3}>Total</td>
-                    <td className="px-3 py-3 text-center text-red-400 font-semibold">
-                      -{inr(summary.staff.reduce((s, r) => s + r.absentDeduction, 0))}
+                    <td className="px-3 py-3 text-center text-white/40 font-semibold">
+                      {summary.staff.reduce((s, r) => s + r.absentDays, 0)}d
                     </td>
-                    <td className="px-3 py-3 text-center text-purple-400 font-semibold">
-                      -{inr(summary.staff.reduce((s, r) => s + r.halfDayDeduction, 0))}
+                    <td className="px-3 py-3 text-center text-white/40 font-semibold">
+                      {summary.staff.reduce((s, r) => s + r.halfDays, 0)}
                     </td>
                     <td className="px-3 py-3 text-center text-amber-400 font-semibold">
                       -{inr(summary.staff.reduce((s, r) => s + r.latePenalty, 0))}
