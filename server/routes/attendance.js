@@ -440,6 +440,10 @@ router.get('/analytics', authMiddleware, attendanceManagerOrAdmin, async (req, r
 // Body: { staffId, date, loginAt, logoutAt } — loginAt/logoutAt are HH:MM strings
 router.post('/manual', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
   try {
+    // Managers may only edit times while an admin has granted a time-window.
+    if (!(await canEditAttendance(req.user))) {
+      return res.status(403).json({ error: 'Time-edit access is not active. Ask an admin to grant edit access.' });
+    }
     const { staffId, date, loginAt, logoutAt } = req.body;
     if (!staffId || !date) {
       return res.status(400).json({ error: 'staffId and date are required' });
