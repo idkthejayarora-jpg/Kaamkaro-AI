@@ -35,6 +35,23 @@ async function getAttendanceConfig() {
   };
 }
 
+// ── Time-edit grant ────────────────────────────────────────────────────────────
+// Admins can edit attendance times anytime. Attendance managers can only edit
+// while an admin has granted a time-limited window (to fix glitches from the
+// physical register). Stored as config { key: 'attendanceEditGrant', value: { expiresAt, grantedBy } }.
+async function getEditGrant() {
+  const config = await readDB('config').catch(() => []);
+  return config.find(c => c.key === 'attendanceEditGrant')?.value || null;
+}
+function grantActive(grant) {
+  return !!(grant && grant.expiresAt && new Date(grant.expiresAt).getTime() > Date.now());
+}
+async function canEditAttendance(user) {
+  if (user?.role === 'admin') return true;
+  if (user?.role === 'attendance_manager') return grantActive(await getEditGrant());
+  return false;
+}
+
 // ── POST /api/attendance/login ────────────────────────────────────────────────
 // Called from the frontend right after a successful auth login.
 router.post('/login', authMiddleware, async (req, res) => {
