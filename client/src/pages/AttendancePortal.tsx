@@ -67,7 +67,9 @@ interface LeaveRecord {
 interface PayrollStaff {
   staffId: string; staffName: string; avatar: string;
   monthlySalary: number; workingDays: number;
-  workingDaysInMonth?: number; offDays?: number; paidDays?: number; dailyRate?: number; basePay?: number;
+  workingDaysInMonth?: number; offDays?: number; basePay?: number;
+  expectedHoursPerDay?: number; expectedMonthlyHours?: number; hourlyRate?: number;
+  workedHours?: number; paidLeaveHours?: number;
   presentDays: number; absentDays: number; halfDays: number; fullLeaveDays: number;
   lateMinutesTotal: number; overtimeHours: number; totalHours: number;
   absentDeduction: number; halfDayDeduction: number; latePenalty: number;
