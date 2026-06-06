@@ -43,6 +43,10 @@ const MATCH_THRESHOLD = 0.5;
 const ACCEPT_DISTANCE = 0.42; // reject anything further than this (tighter = fewer false positives)
 const MATCH_MARGIN    = 0.12; // best must beat 2nd-best by this much — prevents Aashi→someone-else confusion
 const CONSEC_FRAMES   = 3;    // 3 consecutive agreeing frames before firing (was 2)
+// Auto-learn window: append a confidently-matched scan only when it's a genuinely
+// new angle/lighting (>= LEARN_MIN) but still safely below the reject line (<= LEARN_MAX).
+const LEARN_MIN       = 0.30;
+const LEARN_MAX       = 0.40;
 const COOLDOWN_MS     = 60_000;
 const CONFIRM_SECS    = 2;  // faster confirmation after match
 
