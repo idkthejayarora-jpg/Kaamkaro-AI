@@ -11,6 +11,7 @@ import RippleEffect from './components/RippleEffect';
 // which is the primary reason the app was slow to open on phones.
 const Login           = lazy(() => import('./pages/Login'));
 const Dashboard       = lazy(() => import('./pages/Dashboard'));
+const Kaam            = lazy(() => import('./pages/Kaam'));
 const Staff           = lazy(() => import('./pages/Staff'));
 const StaffProfile    = lazy(() => import('./pages/StaffProfile'));
 const Customers       = lazy(() => import('./pages/Customers'));
