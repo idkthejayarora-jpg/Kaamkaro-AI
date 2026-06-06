@@ -988,7 +988,8 @@ export default function StaffProfile() {
           staffId={id!}
           date={dayDetail.date}
           record={dayDetail.record}
-          canEdit={user?.role === 'admin'}
+          canFullEdit={user?.role === 'admin'}
+          canNudge={user?.role === 'admin'}
           onClose={() => setDayDetail(null)}
           onSaved={() => { setDayDetail(null); setAttReload(n => n + 1); }}
         />
