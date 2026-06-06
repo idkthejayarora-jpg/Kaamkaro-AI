@@ -1812,7 +1812,7 @@ function StaffTab({ canEditTimes }: { canEditTimes: boolean }) {
         />
       )}
       {calendarFor && (
-        <StaffAttendanceCalendar staff={calendarFor} onClose={() => setCalendarFor(null)} canEdit={canEditTimes} />
+        <StaffAttendanceCalendar staff={calendarFor} onClose={() => setCalendarFor(null)} canFullEdit={canEditTimes} canNudge />
       )}
     </div>
   );
