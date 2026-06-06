@@ -18,7 +18,7 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import * as faceapi from '@vladmandic/face-api';
-import { attendanceAPI, staffAPI, leavesAPI, broadcastAPI, payrollAPI } from '../lib/api';
+import { attendanceAPI, staffAPI, leavesAPI, broadcastAPI, payrollAPI, holidaysAPI } from '../lib/api';
 import Select from '../components/Select';
 import { KioskView } from './AttendanceKiosk';
 import AttendanceDayEditor, { type DayRecord } from '../components/AttendanceDayEditor';
