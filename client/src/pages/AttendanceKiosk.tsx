@@ -429,6 +429,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     setKioskState('enrolling');
     setEnrollMode('select');
     setEnrollStaffId('');
+    setEnrollSearch('');
     setEnrollNewName('');
     setEnrollNewPhone('');
     setEnrollMsg('');
