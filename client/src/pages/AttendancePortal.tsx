@@ -1533,7 +1533,7 @@ function StaffAttendanceCalendar({ staff, onClose, canEdit = true }: { staff: St
   );
 }
 
-function StaffTab() {
+function StaffTab({ canEditTimes }: { canEditTimes: boolean }) {
   const [staffList, setStaffList]   = useState<StaffMember[]>([]);
   const [loading,   setLoading]     = useState(true);
   const [enrollFor, setEnrollFor]   = useState<StaffMember | null>(null);
