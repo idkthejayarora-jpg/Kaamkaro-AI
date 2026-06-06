@@ -337,39 +337,51 @@ router.post('/enroll', async (req, res) => {
     if (!staffId || !Array.isArray(descriptors) || descriptors.length === 0)
       return res.status(400).json({ error: 'staffId and descriptors required' });
 
-    const staff = await readDB('staff');
-    const idx   = staff.findIndex(s => s.id === staffId);
-    if (idx === -1) return res.status(404).json({ error: 'Staff not found' });
+    const MAX_DESCRIPTORS = 25; // cap per staff — keeps matching fast + size bounded
 
-    staff[idx].faceDescriptors = descriptors;
-    staff[idx].updatedAt = new Date().toISOString();
+    // Serialised read-modify-write so concurrent kiosk enrolls don't clobber.
+    const result = await withLock('staff', async () => {
+      const staff = await readDB('staff');
+      const idx   = staff.findIndex(s => s.id === staffId);
+      if (idx === -1) return { error: 'Staff not found' };
 
-    // Save face photo if provided
-    if (facePhoto && typeof facePhoto === 'string' && facePhoto.startsWith('data:image')) {
-      try {
-        const fsExtra = require('fs-extra');
-        const pathMod = require('path');
-        const DATA_DIR = process.env.DATA_PATH
-          ? pathMod.resolve(process.env.DATA_PATH)
-          : pathMod.join(__dirname, '../data');
-        const faceDir = pathMod.join(DATA_DIR, 'faces');
-        await fsExtra.ensureDir(faceDir);
-        const m = facePhoto.match(/^data:image\/\w+;base64,(.+)$/s);
-        if (m) {
-          await fsExtra.writeFile(pathMod.join(faceDir, `${staffId}.jpg`), Buffer.from(m[1], 'base64'));
-          staff[idx].facePhoto   = `/api/staff/${staffId}/face-photo`;
-          staff[idx].facePhotoAt = new Date().toISOString();
+      // APPEND new descriptors to the existing set (don't overwrite) — every scan
+      // becomes a fresh training sample, so recognition keeps improving over time.
+      // Brand-new staff start empty, so this behaves like a plain enroll for them.
+      const existing = Array.isArray(staff[idx].faceDescriptors) ? staff[idx].faceDescriptors : [];
+      staff[idx].faceDescriptors = [...existing, ...descriptors].slice(-MAX_DESCRIPTORS);
+      staff[idx].updatedAt = new Date().toISOString();
+
+      // Save face photo only if one was provided (auto-learn sends none → keep old photo)
+      if (facePhoto && typeof facePhoto === 'string' && facePhoto.startsWith('data:image')) {
+        try {
+          const fsExtra = require('fs-extra');
+          const pathMod = require('path');
+          const DATA_DIR = process.env.DATA_PATH
+            ? pathMod.resolve(process.env.DATA_PATH)
+            : pathMod.join(__dirname, '../data');
+          const faceDir = pathMod.join(DATA_DIR, 'faces');
+          await fsExtra.ensureDir(faceDir);
+          const m = facePhoto.match(/^data:image\/\w+;base64,(.+)$/s);
+          if (m) {
+            await fsExtra.writeFile(pathMod.join(faceDir, `${staffId}.jpg`), Buffer.from(m[1], 'base64'));
+            staff[idx].facePhoto   = `/api/staff/${staffId}/face-photo`;
+            staff[idx].facePhotoAt = new Date().toISOString();
+          }
+        } catch (photoErr) {
+          console.error('[Kiosk enroll photo]', photoErr.message);
         }
-      } catch (photoErr) {
-        console.error('[Kiosk enroll photo]', photoErr.message);
       }
-    }
 
-    await writeDB('staff', staff);
+      await writeDB('staff', staff);
+      return { staff: staff[idx], count: staff[idx].faceDescriptors.length };
+    });
 
-    const { password: _, faceDescriptors: __, ...safe } = staff[idx];
-    console.log(`[Kiosk] Face enrolled for: ${staff[idx].name}`);
-    res.json({ message: 'Face enrolled', staff: safe });
+    if (result.error) return res.status(404).json({ error: result.error });
+
+    const { password: _, faceDescriptors: __, ...safe } = result.staff;
+    console.log(`[Kiosk] Face enrolled for: ${result.staff.name} (${result.count} samples)`);
+    res.json({ message: 'Face enrolled', staff: safe, sampleCount: result.count });
   } catch (err) {
     console.error('[Kiosk enroll]', err);
     res.status(500).json({ error: 'Server error' });
