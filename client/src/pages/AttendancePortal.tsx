@@ -2275,9 +2275,29 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function AttendancePortal() {
+  const { user, isAdmin } = useAuth();
   const [tab, setTab] = useState<Tab>('today');
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [showKiosk, setShowKiosk] = useState(false);
+
+  // Time-edit grant: admins edit times anytime; managers only during a granted window.
+  const [grant, setGrant] = useState<{ active: boolean; expiresAt: string | null; grantedBy: string | null } | null>(null);
+  const [granting, setGranting] = useState(false);
+  const loadGrant = useCallback(() => { attendanceAPI.editGrant().then(setGrant).catch(() => {}); }, []);
+  useEffect(() => {
+    loadGrant();
+    const t = setInterval(loadGrant, 60_000); // refresh so expiry reflects automatically
+    return () => clearInterval(t);
+  }, [loadGrant]);
+
+  const grantActive = !!(grant?.active && grant.expiresAt && new Date(grant.expiresAt).getTime() > Date.now());
+  const canEditTimes = isAdmin || (user?.role === 'attendance_manager' && grantActive);
+
+  const doGrant = async (hours: number) => { setGranting(true); try { setGrant(await attendanceAPI.grantEdit(hours)); } finally { setGranting(false); } };
+  const doRevoke = async () => { setGranting(true); try { setGrant(await attendanceAPI.revokeEdit()); } finally { setGranting(false); } };
+  const grantUntil = grantActive && grant?.expiresAt
+    ? new Date(grant.expiresAt).toLocaleString('en-IN', { weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
+    : '';
 
   return (
     <div className="space-y-5 relative">
