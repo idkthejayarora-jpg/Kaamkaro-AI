@@ -201,16 +201,40 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     async function init() {
       // ── Step 1: open camera immediately ────────────────────────────────────
       setModelStatus('Requesting camera…');
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
-      } catch (err) {
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setModelStatus('This browser blocks camera access. Open the kiosk in Chrome/Safari over HTTPS.');
+        return;
+      }
+
+      // Try a good front-camera resolution first; fall back to bare video:true so
+      // cheap/older tablet cameras that reject specific constraints still work.
+      let stream: MediaStream | null = null;
+      const attempts: MediaStreamConstraints[] = [
+        { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+        { video: { facingMode: 'user' }, audio: false },
+        { video: true, audio: false },
+      ];
+      let lastErr: unknown = null;
+      for (const constraints of attempts) {
+        try { stream = await navigator.mediaDevices.getUserMedia(constraints); break; }
+        catch (err) { lastErr = err; }
         if (cancelled) return;
-        setModelStatus('Camera denied — allow access in browser settings and reload');
-        if (import.meta.env.DEV) console.error('[Kiosk] getUserMedia failed:', err);
+      }
+
+      if (!stream) {
+        if (cancelled) return;
+        const name = (lastErr as { name?: string })?.name || '';
+        setModelStatus(
+          name === 'NotAllowedError' || name === 'SecurityError'
+            ? 'Camera blocked. Tap the camera/lock icon in the address bar → Allow → reload.'
+          : name === 'NotFoundError' || name === 'OverconstrainedError'
+            ? 'No camera found on this device.'
+          : name === 'NotReadableError'
+            ? 'Camera is in use by another app. Close it and reload.'
+            : 'Could not start the camera. Check permissions and reload.'
+        );
+        if (import.meta.env.DEV) console.error('[Kiosk] getUserMedia failed:', lastErr);
         return; // stay on loading screen with the error message
       }
       if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
@@ -219,7 +243,8 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       const vid = videoRef.current;
       if (vid) {
         vid.srcObject = stream;
-        try { await vid.play(); } catch { /* Safari needs user gesture; video shows when user taps */ }
+        try { await vid.play(); }
+        catch { if (!cancelled) setNeedsTap(true); } // autoplay blocked → user taps to start
       }
 
       // Camera is live — switch to idle so user sees themselves right away
