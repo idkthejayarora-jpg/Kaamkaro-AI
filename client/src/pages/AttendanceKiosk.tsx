@@ -513,6 +513,12 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   const inCount  = todayStatus.filter(r => r.status === 'in').length;
   const allCount = todayStatus.length;
 
+  // Staff filtered by the enroll search box
+  const filteredEnrollStaff = enrollStaffList.filter(s =>
+    s.name.toLowerCase().includes(enrollSearch.trim().toLowerCase())
+  );
+  const enrollSelectedName = enrollStaffList.find(s => s.id === enrollStaffId)?.name?.split(' ')[0] || '';
+
   // Whether the bottom panel is "expanded" (has content beyond just dots)
   const panelExpanded = kioskState === 'enrolling'
     || kioskState === 'matched'
