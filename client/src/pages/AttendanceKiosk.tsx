@@ -577,6 +577,19 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         style={{ transform: 'scaleX(-1)' }}
       />
 
+      {/* Tap-to-start — some tablets/iOS block autoplay until a user gesture */}
+      {needsTap && (
+        <button
+          onClick={() => { videoRef.current?.play().then(() => setNeedsTap(false)).catch(() => {}); }}
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/80 text-white"
+        >
+          <div className="w-16 h-16 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center">
+            <Camera size={28} className="text-gold" />
+          </div>
+          <p className="text-lg font-bold">Tap to start camera</p>
+        </button>
+      )}
+
       {/* ── Loading overlay — camera permission / camera starting ── */}
       {kioskState === 'loading' && (
         <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-4 z-40">
