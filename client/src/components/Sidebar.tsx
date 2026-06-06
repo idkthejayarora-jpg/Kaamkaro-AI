@@ -46,6 +46,7 @@ const attendanceManagerNav = [
 
 const staffNav = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/kaam',        icon: Briefcase,       label: 'Kaam' },
   { to: '/customers',   icon: UserCheck,       label: 'My Customers' },
   { to: '/crm',         icon: Filter,          label: 'CRM Leads' },
   { to: '/vendors',     icon: Building2,       label: 'Vendors' },
