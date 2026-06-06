@@ -439,7 +439,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       while (captures.length < 5) {
         await new Promise(r => setTimeout(r, 250));
         const det = await faceapi
-          .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
+          .detectSingleFace(videoRef.current!, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
           .withFaceLandmarks(true).withFaceDescriptor();
         if (det) captures.push(det.descriptor);
       }
