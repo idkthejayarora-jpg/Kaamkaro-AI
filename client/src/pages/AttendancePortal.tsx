@@ -27,7 +27,7 @@ import AttendanceDayEditor, { type DayRecord } from '../components/AttendanceDay
 
 interface TodayRecord {
   staffId: string; staffName: string; avatar: string;
-  status: 'in' | 'out' | 'absent';
+  status: 'in' | 'out' | 'absent' | 'off';
   loginAt: string | null; logoutAt: string | null;
   isLate: boolean; lateMinutes: number; hoursWorked: number;
   faceEnrolled: boolean;
