@@ -198,6 +198,56 @@ router.patch('/config', authMiddleware, attendanceManagerOrAdmin, async (req, re
   }
 });
 
+// ── Time-edit grant endpoints ──────────────────────────────────────────────────
+// GET — managers + admins can read the current grant status (to show banners / gate UI)
+router.get('/edit-grant', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
+  try {
+    const grant = await getEditGrant();
+    res.json({
+      active:    grantActive(grant),
+      expiresAt: grant?.expiresAt || null,
+      grantedBy: grant?.grantedBy || null,
+    });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST — ADMIN ONLY. Grant managers a time-limited edit window. Body: { hours }
+router.post('/edit-grant', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const hours = Math.max(0.5, Math.min(72, Number(req.body.hours) || 0));
+    if (!hours) return res.status(400).json({ error: 'hours is required' });
+    const expiresAt = new Date(Date.now() + hours * 3600000).toISOString();
+    const value = { expiresAt, grantedBy: req.user.name, grantedAt: new Date().toISOString() };
+    await withLock('config', async () => {
+      const configs = await readDB('config');
+      const rec = configs.find(c => c.key === 'attendanceEditGrant');
+      if (rec) rec.value = value;
+      else configs.push({ id: 'attendance-edit-grant', key: 'attendanceEditGrant', value });
+      await writeDB('config', configs);
+    });
+    res.json({ active: true, expiresAt, grantedBy: req.user.name });
+  } catch (err) {
+    console.error('[Attendance edit-grant POST]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE — ADMIN ONLY. Revoke the edit window immediately.
+router.delete('/edit-grant', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await withLock('config', async () => {
+      const configs = await readDB('config');
+      const rec = configs.find(c => c.key === 'attendanceEditGrant');
+      if (rec) { rec.value = { expiresAt: null, revokedBy: req.user.name, revokedAt: new Date().toISOString() }; await writeDB('config', configs); }
+    });
+    res.json({ active: false, expiresAt: null });
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── GET /api/attendance/today ─────────────────────────────────────────────────
 // Today's status for all staff — who's in, out, or absent.
 router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
