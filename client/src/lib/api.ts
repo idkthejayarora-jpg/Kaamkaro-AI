@@ -355,6 +355,13 @@ export const attendanceAPI = {
   selfCheckout: () => api.post('/attendance/self-checkout').then(r => r.data),
 };
 
+export const holidaysAPI = {
+  list: (month?: string) => api.get('/holidays', { params: month ? { month } : {} }).then(r => r.data),
+  add:  (data: { date: string; label?: string; type?: 'holiday' | 'working' }) =>
+    api.post('/holidays', data).then(r => r.data),
+  remove: (id: string) => api.delete(`/holidays/${id}`).then(r => r.data),
+};
+
 export const payrollAPI = {
   configs: () => api.get('/payroll/config').then(r => r.data),
   setConfig: (staffId: string, data: { monthlySalary: number; overtimeMultiplier?: number; latePenaltyPerMin?: number; workingDaysOverride?: number | null }) =>
