@@ -10,6 +10,7 @@ const ATT_STATUS = {
   present: { label: 'Present', color: 'text-green-400', dot: 'bg-green-400', glow: '0 0 6px rgba(34,197,94,0.7)' },
   late:    { label: 'Late',    color: 'text-blue-400',  dot: 'bg-blue-400',  glow: '0 0 6px rgba(96,165,250,0.7)' },
   absent:  { label: 'Absent',  color: 'text-red-400',   dot: 'bg-red-400',   glow: '0 0 6px rgba(248,113,113,0.6)' },
+  off:     { label: 'Day off', color: 'text-white/40',  dot: 'bg-white/30',  glow: 'none' }, // Sunday / holiday
 } as const;
 type AttKey = keyof typeof ATT_STATUS;
 
