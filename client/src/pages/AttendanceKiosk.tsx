@@ -735,11 +735,21 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
                 </div>
 
                 {enrollMode === 'select' ? (
-                  <Select value={enrollStaffId} onChange={e => setEnrollStaffId(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white">
-                    <option value="">— Pick a staff member —</option>
-                    {enrollStaffList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </Select>
+                  <div className="space-y-2">
+                    <input autoFocus placeholder="Search staff by name…" value={enrollSearch}
+                      onChange={e => setEnrollSearch(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-gold/40" />
+                    <div className="max-h-44 overflow-y-auto rounded-xl border border-white/8 divide-y divide-white/5">
+                      {filteredEnrollStaff.length === 0 ? (
+                        <p className="text-white/30 text-xs text-center py-4">No staff found</p>
+                      ) : filteredEnrollStaff.map(s => (
+                        <button key={s.id} onClick={() => setEnrollStaffId(s.id)}
+                          className={`w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center justify-between ${enrollStaffId === s.id ? 'bg-gold/20 text-gold font-semibold' : 'text-white/70 hover:bg-white/5'}`}>
+                          {s.name}{enrollStaffId === s.id && <span>✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <input placeholder="Full name *" value={enrollNewName}
