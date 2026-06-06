@@ -52,6 +52,32 @@ async function canEditAttendance(user) {
   return false;
 }
 
+// ── ≤10-min "nudge" — allowed for managers even without an edit grant ──────────
+// Lets a manager move an EXISTING time earlier by up to 10 min (queue/rain buffer),
+// but never add/clear a field or move forward. Bigger changes need the full grant.
+const NUDGE_MAX = 10;
+function existingMinIST(iso) {
+  if (!iso) return null;
+  // Times with a TZ (kiosk, UTC 'Z') → convert to IST; plain local strings → read directly.
+  if (/[zZ]$|[+-]\d\d:?\d\d$/.test(iso)) {
+    const s = new Date(iso).toLocaleString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit' });
+    const mm = s.match(/(\d\d):(\d\d)/); return mm ? (+mm[1]) * 60 + (+mm[2]) : null;
+  }
+  const m = iso.match(/T(\d\d):(\d\d)/); return m ? (+m[1]) * 60 + (+m[2]) : null;
+}
+function hmMins(hm) { if (!hm) return null; const [h, m] = hm.split(':').map(Number); return h * 60 + m; }
+function nudgeFieldOk(origMin, newMin) {
+  if (origMin == null && newMin == null) return true;   // unchanged (empty)
+  if (origMin == null || newMin == null) return false;  // can't add or clear a field
+  const diff = origMin - newMin;                        // positive = moved earlier
+  return diff >= 0 && diff <= NUDGE_MAX;
+}
+function isValidNudge(existingRec, newLoginHM, newLogoutHM) {
+  if (!existingRec) return false; // no existing record → entering needs the full grant
+  return nudgeFieldOk(existingMinIST(existingRec.loginAt),  newLoginHM)
+      && nudgeFieldOk(existingMinIST(existingRec.logoutAt), newLogoutHM);
+}
+
 // ── POST /api/attendance/login ────────────────────────────────────────────────
 // Called from the frontend right after a successful auth login.
 router.post('/login', authMiddleware, async (req, res) => {
