@@ -442,6 +442,28 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
     setKioskState('idle');
   }, []);
 
+  // Silently append a confidently-matched scan to a staff member's profile so
+  // recognition keeps improving. Fire-and-forget — never disrupts a check-in.
+  const maybeLearnFace = useCallback((staffId: string, descriptor: Float32Array) => {
+    // Throttle to at most once per 60s per staff — avoids hammering the server
+    // and over-weighting a single session's lighting.
+    if ((learnCooldownRef.current[staffId] || 0) > Date.now()) return;
+    learnCooldownRef.current[staffId] = Date.now() + 60_000;
+
+    const arr = Array.from(descriptor);
+    // Optimistically add to the in-memory descriptors so the very next frames benefit.
+    setDescriptors(prev => prev.map(s =>
+      s.id === staffId
+        ? { ...s, faceDescriptors: [...s.faceDescriptors, arr].slice(-25) }
+        : s
+    ));
+    // Persist (no photo → server keeps existing photo, just appends the sample).
+    kioskAPI.enroll(pin, staffId, [arr]).catch(() => {
+      // On failure, allow a retry sooner rather than blocking for the full minute.
+      learnCooldownRef.current[staffId] = 0;
+    });
+  }, [pin]);
+
   const captureAndEnroll = useCallback(async (staffId: string) => {
     if (!videoRef.current) return;
     setEnrollBusy(true);
