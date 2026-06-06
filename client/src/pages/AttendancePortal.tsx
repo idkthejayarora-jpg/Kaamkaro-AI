@@ -2242,6 +2242,7 @@ export default function AttendancePortal() {
       {tab === 'payroll'   && <PayrollTab />}
       {tab === 'staff'     && <StaffTab />}
       {tab === 'leaves'    && <LeavesTab />}
+      {tab === 'holidays'  && <HolidaysTab />}
       {tab === 'settings'  && <SettingsTab onOpenKiosk={() => setShowKiosk(true)} />}
 
       {broadcastOpen && <BroadcastModal onClose={() => setBroadcastOpen(false)} />}
