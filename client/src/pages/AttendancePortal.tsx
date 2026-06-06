@@ -683,13 +683,15 @@ function TodayTab({ canEditTimes }: { canEditTimes: boolean }) {
       <div className="flex items-center justify-between">
         <p className="text-white/40 text-xs">Auto-updates every 60 seconds</p>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setManualOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold/10 border border-gold/25 text-gold text-xs font-semibold hover:bg-gold/15 transition-colors"
-          >
-            <Edit2 size={11} />
-            Manual Entry
-          </button>
+          {canEditTimes && (
+            <button
+              onClick={() => setManualOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold/10 border border-gold/25 text-gold text-xs font-semibold hover:bg-gold/15 transition-colors"
+            >
+              <Edit2 size={11} />
+              Manual Entry
+            </button>
+          )}
           <button onClick={load} className="p-1.5 rounded-lg hover:bg-dark-200 text-white/30 hover:text-white transition-colors">
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
