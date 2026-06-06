@@ -1212,8 +1212,8 @@ function PayrollTab() {
                   <th className="text-left px-4 py-3 font-semibold min-w-[140px]">Staff</th>
                   <th className="px-3 py-3 text-center font-semibold">Base Salary</th>
                   <th className="px-3 py-3 text-center font-semibold">Hours worked</th>
-                  <th className="px-3 py-3 text-center font-semibold text-red-400/60">Absent Deduct</th>
-                  <th className="px-3 py-3 text-center font-semibold text-purple-400/60">Half Day</th>
+                  <th className="px-3 py-3 text-center font-semibold text-white/40">Absent (unpaid)</th>
+                  <th className="px-3 py-3 text-center font-semibold text-white/40">Half-day</th>
                   <th className="px-3 py-3 text-center font-semibold text-amber-400/60">Late Penalty</th>
                   <th className="px-3 py-3 text-center font-semibold text-green-400/60">OT Bonus</th>
                   <th className="px-3 py-3 text-center font-semibold">Net Pay</th>
