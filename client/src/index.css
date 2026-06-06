@@ -574,6 +574,10 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
 
 /* Utility classes */
 .animate-fade-in-up  { animation: fadeInUp  0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+/* Opacity-only page entrance — NO transform, so it never becomes a containing
+   block for position:fixed children (which would push modals down the page). */
+@keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-page-in { animation: pageIn 0.28s ease-out both; }
 .animate-scale-in    { animation: scaleIn   0.22s cubic-bezier(0.175, 0.885, 0.32, 1.1) both; }
 .animate-slide-down  { animation: slideDown 0.22s ease-out both; }
 .animate-subtle-pop  { animation: subtlePop 0.3s ease-out; }
