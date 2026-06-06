@@ -345,6 +345,14 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         if ((cooldownRef.current[matchedStaff.id] || 0) > Date.now()) return;
         const todayRec = today.find(r => r.staffId === matchedStaff.id);
         triggerMatch(matchedStaff, !todayRec || todayRec.status !== 'in');
+        // Auto-learn: if this confident scan is a NEW-ish angle (not a near-dup of
+        // an existing sample), silently append it so the profile keeps improving.
+        // best.dist is the min distance to this staff's existing samples:
+        //   < LEARN_MIN → too similar, no new info → skip
+        //   > LEARN_MAX → too close to the reject line → don't risk learning it
+        if (best.id && best.dist >= LEARN_MIN && best.dist <= LEARN_MAX) {
+          maybeLearnFace(best.id, det.descriptor);
+        }
       } else if (within) {
         // A known face, but too close to another staff to be sure → DON'T act and
         // DON'T offer enrollment; just keep scanning until a clearer frame arrives.
