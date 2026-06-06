@@ -2136,7 +2136,7 @@ function SettingsTab({ onOpenKiosk }: { onOpenKiosk: () => void }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 
-type Tab = 'today' | 'analytics' | 'monthly' | 'payroll' | 'staff' | 'leaves' | 'settings';
+type Tab = 'today' | 'analytics' | 'monthly' | 'payroll' | 'staff' | 'leaves' | 'holidays' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'today',     label: 'Today',     icon: Clock },
@@ -2145,6 +2145,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'payroll',   label: 'Payroll',   icon: IndianRupee },
   { id: 'staff',     label: 'Staff',     icon: Users },
   { id: 'leaves',    label: 'Leaves',    icon: CalendarOff },
+  { id: 'holidays',  label: 'Holidays',  icon: CalendarDays },
   { id: 'settings',  label: 'Settings',  icon: Settings },
 ];
 
