@@ -7,6 +7,7 @@
 const express = require('express');
 const { readDB, writeDB, withLock } = require('../utils/db');
 const { authMiddleware, attendanceManagerOrAdmin } = require('../middleware/auth');
+const { makeDayOff } = require('../utils/workdays');
 
 const router = express.Router();
 
