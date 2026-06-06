@@ -186,13 +186,15 @@ router.patch('/config', authMiddleware, attendanceManagerOrAdmin, async (req, re
 router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
   try {
     const today = todayStr();
-    const [staff, attendance, leaves] = await Promise.all([
+    const [staff, attendance, leaves, holidays] = await Promise.all([
       readDB('staff'),
       readDB('attendance'),
       readDB('leaves').catch(() => []),
+      readDB('holidays').catch(() => []),
     ]);
     const todayRecs   = attendance.filter(r => r.date === today);
     const todayLeaves = leaves.filter(l => l.date === today);
+    const todayIsOff  = makeDayOff(holidays)(today); // Sunday / declared holiday?
 
     const result = staff
       .filter(s => s.active !== false)
