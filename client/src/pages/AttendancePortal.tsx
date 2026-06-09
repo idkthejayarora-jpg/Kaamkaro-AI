@@ -2422,27 +2422,29 @@ export default function AttendancePortal() {
         </div>
       )}
 
-      {/* Tab row — icons only on mobile, icon+label on sm+ */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
-        {TABS.map(t => {
-          const Icon = t.icon;
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              title={t.label}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
-                active
-                  ? 'bg-gradient-to-b from-gold/22 to-gold/8 border border-gold/35 text-gold shadow-sm shadow-gold/10'
-                  : 'text-white/40 hover:text-white hover:bg-dark-200 border border-transparent'
-              }`}
-            >
-              <Icon size={13} />
-              <span className="hidden sm:inline">{t.label}</span>
-            </button>
-          );
-        })}
+      {/* Tab navigation — glass pill bar, solid-gold active chip */}
+      <div className="sticky top-0 z-20 -mx-1 px-1">
+        <div className="rounded-2xl border border-dark-50 bg-dark-400/70 backdrop-blur-xl p-1 flex items-center gap-0.5 overflow-x-auto no-scrollbar">
+          {TABS.map(t => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                title={t.label}
+                className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+                  active
+                    ? 'bg-gold text-black shadow-md shadow-gold/25'
+                    : 'text-white/45 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon size={14} />
+                <span className="hidden sm:inline">{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tab content */}

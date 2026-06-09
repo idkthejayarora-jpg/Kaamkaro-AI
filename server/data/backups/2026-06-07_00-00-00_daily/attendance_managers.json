@@ -1,0 +1,11 @@
+[
+  {
+    "id": "20d5a473-9b98-445b-b20a-a9d98d4edc90",
+    "name": "Arkan",
+    "phone": "arkan",
+    "password": "$2a$10$c7snZEzlV0jDVQhpAYwRKe/W0SAomPVTh82nnW.c46F3fMoVtl8J2",
+    "role": "attendance_manager",
+    "active": true,
+    "createdAt": "2026-05-26T13:24:23.149Z"
+  }
+]
