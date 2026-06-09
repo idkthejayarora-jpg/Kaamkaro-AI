@@ -2386,28 +2386,36 @@ export default function AttendancePortal() {
           Admin: grant a manager a time-limited window to fix check-in/out times
           from the physical register. Manager: read-only status of their access. */}
       {isAdmin ? (
-        <div className={`rounded-2xl border p-4 ${grantActive ? 'border-green-500/30 bg-green-500/5' : 'border-dark-50 bg-dark-400'}`}>
+        <div className={`rounded-2xl border p-4 transition-colors ${grantActive ? 'border-green-500/30 bg-gradient-to-br from-green-500/10 to-dark-400' : 'border-dark-50 bg-dark-400'}`}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Edit2 size={15} className={grantActive ? 'text-green-400' : 'text-white/40'} />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 border ${grantActive ? 'bg-green-500/15 border-green-500/30' : 'bg-dark-300 border-dark-100'}`}>
+                <Edit2 size={16} className={grantActive ? 'text-green-400' : 'text-white/35'} />
+              </div>
               <div className="min-w-0">
-                <p className="text-white text-sm font-semibold">Manager time-edit access</p>
-                <p className="text-white/40 text-xs">
-                  {grantActive ? `Active — managers can fix times until ${grantUntil}` : 'Off — managers cannot edit check-in/out times'}
+                <p className="text-white text-sm font-bold flex items-center gap-2">
+                  Manager time-edit access
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${grantActive ? 'bg-green-500/20 text-green-300' : 'bg-white/8 text-white/40'}`}>
+                    {grantActive ? 'ON' : 'OFF'}
+                  </span>
+                </p>
+                <p className="text-white/40 text-xs mt-0.5">
+                  {grantActive ? `Managers can fix register times until ${grantUntil}` : 'Managers can only nudge times ±10 min until you grant access'}
                 </p>
               </div>
             </div>
             {grantActive ? (
               <button onClick={doRevoke} disabled={granting}
-                className="px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 text-xs font-bold hover:bg-red-500/25 transition-colors">
+                className="px-4 py-2 rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 text-xs font-bold hover:bg-red-500/25 transition-colors active:scale-95">
                 Revoke now
               </button>
             ) : (
               <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-white/30 text-[10px] font-semibold uppercase tracking-wider mr-1 hidden sm:inline">Grant</span>
                 {([['2h', 2], ['8h', 8], ['24h', 24]] as const).map(([label, h]) => (
                   <button key={label} onClick={() => doGrant(h)} disabled={granting}
-                    className="px-3 py-2 rounded-xl bg-gold/10 border border-gold/25 text-gold text-xs font-bold hover:bg-gold/20 transition-colors disabled:opacity-40">
-                    Grant {label}
+                    className="px-3.5 py-2 rounded-xl bg-gold/12 border border-gold/30 text-gold text-xs font-bold hover:bg-gold/22 transition-colors disabled:opacity-40 active:scale-95">
+                    {label}
                   </button>
                 ))}
               </div>
@@ -2415,10 +2423,11 @@ export default function AttendancePortal() {
           </div>
         </div>
       ) : user?.role === 'attendance_manager' && (
-        <div className={`rounded-2xl border px-4 py-3 text-xs ${grantActive ? 'border-green-500/30 bg-green-500/8 text-green-300' : 'border-white/10 bg-white/5 text-white/50'}`}>
-          {grantActive
-            ? <><b>Time-edit access active</b> until {grantUntil} — you can fix check-in/out times from the register.</>
-            : <><b>Time editing is locked.</b> Ask an admin to grant you edit access to fix times.</>}
+        <div className={`rounded-2xl border px-4 py-3 flex items-center gap-2.5 text-xs ${grantActive ? 'border-green-500/30 bg-gradient-to-br from-green-500/10 to-dark-400 text-green-300' : 'border-white/10 bg-dark-400 text-white/55'}`}>
+          <Edit2 size={14} className={grantActive ? 'text-green-400 flex-shrink-0' : 'text-white/40 flex-shrink-0'} />
+          <span>{grantActive
+            ? <><b className="text-white">Edit access active</b> until {grantUntil} — set or fix any check-in/out time from the register.</>
+            : <><b className="text-white/80">Edit access off.</b> You can move a time ≤10 min earlier; ask an admin for full access to set/enter times.</>}</span>
         </div>
       )}
 
