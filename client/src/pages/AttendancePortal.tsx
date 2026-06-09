@@ -657,10 +657,11 @@ function TodayTab({ canEditTimes }: { canEditTimes: boolean }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const present = records.filter(r => r.status !== 'absent').length;
+  const present = records.filter(r => r.status === 'in' || r.status === 'out').length; // actually worked today (not 'off'/'absent')
   const late    = records.filter(r => r.isLate).length;
   const absent  = records.filter(r => r.status === 'absent').length;
   const inNow   = records.filter(r => r.status === 'in').length;
+  const offToday = records.filter(r => r.status === 'off').length;
 
   return (
     <div className="space-y-5">
