@@ -682,7 +682,9 @@ function TodayTab({ canEditTimes }: { canEditTimes: boolean }) {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <p className="text-white/40 text-xs">Auto-updates every 60 seconds</p>
+        <p className="text-white/40 text-xs">
+          {offToday > 0 ? <span className="text-white/55">Day off today · {offToday} staff off (Sun/holiday)</span> : 'Auto-updates every 60 seconds'}
+        </p>
         <div className="flex items-center gap-2">
           {canEditTimes && (
             <button
