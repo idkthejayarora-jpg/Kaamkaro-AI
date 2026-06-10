@@ -117,7 +117,7 @@ router.patch('/:id/complete', async (req, res) => {
         } catch { resolvedName = req.user.name; }
       }
 
-      const today  = new Date().toISOString().split('T')[0];
+      const today  = require('../utils/dates').istToday();
       const isLate = t.dueDate && t.dueDate < today;
 
       if (t.isLoop) {
