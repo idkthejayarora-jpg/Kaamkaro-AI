@@ -22,6 +22,7 @@ import { attendanceAPI, staffAPI, leavesAPI, broadcastAPI, payrollAPI, holidaysA
 import { useAuth } from '../contexts/AuthContext';
 import Select from '../components/Select';
 import AttendanceDayEditor, { type DayRecord } from '../components/AttendanceDayEditor';
+import PageHeader from '../components/PageHeader';
 
 // Lazy chunks — both pull the 1.3 MB face-api dependency, so it is only
 // downloaded when the kiosk overlay or the enroll modal is actually opened.
