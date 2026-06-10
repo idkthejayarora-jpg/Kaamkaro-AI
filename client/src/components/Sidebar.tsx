@@ -111,6 +111,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const { user, logout, isAdmin, updateUser, isSwitched, originalAdmin, switchBack } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [attSearchParams, setAttSearchParams] = useSearchParams();
+  const activeAttTab = location.pathname === '/attendance-portal'
+    ? (attSearchParams.get('tab') || 'today')
+    : null;
   const [showSwitcher, setShowSwitcher] = useState(false);
 
   const defaultNav = user?.role === 'attendance_manager' ? attendanceManagerNav : isAdmin ? adminNav : staffNav;
