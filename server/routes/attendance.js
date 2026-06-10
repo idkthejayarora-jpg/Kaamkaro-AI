@@ -204,9 +204,43 @@ router.get('/config', authMiddleware, async (req, res) => {
 });
 
 // ── PATCH /api/attendance/config ──────────────────────────────────────────────
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+// Whitelist + validate config updates — reject unknown keys and bad values so a
+// malformed client (or crafted request) can't corrupt the attendance config.
+function sanitizeConfigUpdates(body) {
+  const out = {};
+  if (body.shiftStart !== undefined) { if (!HHMM.test(body.shiftStart)) return null; out.shiftStart = body.shiftStart; }
+  if (body.shiftEnd   !== undefined) { if (!HHMM.test(body.shiftEnd))   return null; out.shiftEnd   = body.shiftEnd; }
+  if (body.lateGraceMins !== undefined) {
+    const n = Number(body.lateGraceMins);
+    if (!Number.isFinite(n) || n < 0 || n > 240) return null;
+    out.lateGraceMins = n;
+  }
+  if (body.expectedHours !== undefined) {
+    const n = Number(body.expectedHours);
+    if (!Number.isFinite(n) || n <= 0 || n > 24) return null;
+    out.expectedHours = n;
+  }
+  if (body.kioskPin !== undefined) {
+    if (typeof body.kioskPin !== 'string' || !/^\d{4,8}$/.test(body.kioskPin)) return null;
+    out.kioskPin = body.kioskPin;
+  }
+  if (body.womenShift !== undefined) {
+    if (body.womenShift === null) { out.womenShift = null; }
+    else {
+      const w = body.womenShift;
+      const eh = Number(w?.expectedHours);
+      if (!w || !HHMM.test(w.shiftStart) || !HHMM.test(w.shiftEnd) || !Number.isFinite(eh) || eh <= 0 || eh > 24) return null;
+      out.womenShift = { shiftStart: w.shiftStart, shiftEnd: w.shiftEnd, expectedHours: eh };
+    }
+  }
+  return out;
+}
+
 router.patch('/config', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = sanitizeConfigUpdates(req.body || {});
+    if (updates === null) return res.status(400).json({ error: 'Invalid config values' });
     const configs = await readDB('config');
     const rec = configs.find(c => c.key === 'attendance');
     if (rec) {
