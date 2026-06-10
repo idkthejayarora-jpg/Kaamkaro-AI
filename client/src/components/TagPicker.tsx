@@ -28,7 +28,7 @@ export default function TagPicker({ selected, onChange, isAdmin, defs: propDefs 
 
   useEffect(() => {
     if (propDefs) { setDefs(propDefs); return; }
-    tagDefsAPI.list().then(setDefs).catch(() => {});
+    tagDefsAPI.list().then(setDefs).catch(err => console.error('[TagPicker] failed to load tag definitions', err));
   }, [propDefs]);
 
   const toggle = (name: string) => {
