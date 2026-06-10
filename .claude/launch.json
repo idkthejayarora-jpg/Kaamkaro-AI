@@ -4,8 +4,19 @@
     {
       "name": "kj-jewellery",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["/Users/jaigopalarora/kj-jewellery/server.js"],
+      "runtimeArgs": [
+        "/Users/jaigopalarora/kj-jewellery/server.js"
+      ],
       "port": 3000
+    },
+    {
+      "name": "kaamkaro",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 5173
     }
   ]
 }
