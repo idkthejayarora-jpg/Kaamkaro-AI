@@ -282,16 +282,27 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally empty — runs once on mount
 
-  // Refresh today status
+  // Refresh today status — guarded so slow responses can't stack requests or
+  // land after unmount.
+  const refreshPollRef = useRef({ inFlight: false, cancelled: false });
   const refreshToday = useCallback(async () => {
-    try { setTodayStatus(await kioskAPI.today(pin)); } catch {}
+    const g = refreshPollRef.current;
+    if (g.inFlight) return;
+    g.inFlight = true;
+    try {
+      const v = await kioskAPI.today(pin);
+      if (!g.cancelled) setTodayStatus(v);
+    } catch {}
+    finally { g.inFlight = false; }
   }, [pin]);
 
   useEffect(() => {
     if (kioskState === 'idle' || kioskState === 'matched' || kioskState === 'success') {
+      const g = refreshPollRef.current;
+      g.cancelled = false;
       refreshToday();
       const t = setInterval(refreshToday, 30_000);
-      return () => clearInterval(t);
+      return () => { g.cancelled = true; clearInterval(t); };
     }
   }, [kioskState, refreshToday]);
 
