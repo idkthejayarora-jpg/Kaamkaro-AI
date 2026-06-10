@@ -43,7 +43,20 @@
   --color-dark-300: 28  28  30;   /* #1C1C1E  cards / grouped bg       */
   --color-dark-400: 14  14  16;   /* #0E0E10  sidebar                  */
   --color-dark-500:  0   0   0;   /* #000000  page background          */
+
+  /* ── Apple motion + hairline tokens ─────────────────────────────────────── */
+  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+  --hairline:   rgba(255, 255, 255, 0.08);
+
+  /* ── SF-style type scale (size / line-height / weight / tracking) ───────── */
+  --type-large-title: 600 28px/34px var(--font-sans, inherit);
+  --type-title:       600 22px/28px var(--font-sans, inherit);
+  --type-headline:    600 17px/22px var(--font-sans, inherit);
+  --type-body:        400 15px/20px var(--font-sans, inherit);
+  --type-footnote:    400 13px/18px var(--font-sans, inherit);
+  --type-caption:     400 11px/14px var(--font-sans, inherit);
 }
+html.light { --hairline: rgba(0, 0, 0, 0.10); }
 
 /* ── Light mode ───────────────────────────────────────────────────────────────
    Apple iOS/macOS light palette — every dark-N slot flips to a system gray.
