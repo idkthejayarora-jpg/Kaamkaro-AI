@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
+import { loadFaceModels } from '../lib/faceModels';
 import { X, Camera } from 'lucide-react';
 import { staffAPI } from '../lib/api';
 
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
 const TOTAL = 10; // more samples = better descriptor cluster = fewer false matches at kiosk
 
 const PROMPTS = [
@@ -67,11 +67,7 @@ export function SelfEnrollModal({
 
       setStatus('Loading face recognition models…');
       try {
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
+        await loadFaceModels();
       } catch {
         // Stop the camera — we won't be needing it
         stream.getTracks().forEach(t => t.stop());

@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { XCircle } from 'lucide-react';
 import * as faceapi from '@vladmandic/face-api';
+import { loadFaceModels } from '../lib/faceModels';
 import { staffAPI } from '../lib/api';
 
 interface StaffMember { id: string; name: string; }
@@ -79,12 +80,7 @@ export default function FaceEnrollModal({ staff, onClose, onEnrolled }: {
     async function init() {
       try {
         setStatus('Loading face models…');
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
+        await loadFaceModels();
         if (cancelled) return;
 
         const stream = await navigator.mediaDevices.getUserMedia({

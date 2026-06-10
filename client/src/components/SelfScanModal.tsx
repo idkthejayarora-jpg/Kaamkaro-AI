@@ -1,9 +1,9 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import * as faceapi from '@vladmandic/face-api';
+import { loadFaceModels } from '../lib/faceModels';
 import { X } from 'lucide-react';
 import { attendanceAPI } from '../lib/api';
 
-const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
 
 export function SelfScanModal({
   faceDescriptors,
@@ -67,11 +67,7 @@ export function SelfScanModal({
 
       setStatus('Loading face recognition…');
       try {
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
+        await loadFaceModels();
       } catch { if (!cancelled) setStatus('Failed to load models — check connection'); return; }
       if (cancelled) return;
 

@@ -21,7 +21,17 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        // SF-first stack — Apple devices render the native system font;
+        // others fall back to the bundled Plus Jakarta Sans / Inter.
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      transitionTimingFunction: {
+        apple: 'cubic-bezier(0.32, 0.72, 0, 1)',
+      },
+      borderRadius: {
+        control: '10px',  // buttons, inputs, chips
+        card:    '14px',  // cards, list groups
+        sheet:   '20px',  // modals, sheets, large panels
       },
       animation: {
         'fade-in':        'fadeIn 0.3s ease-in-out',

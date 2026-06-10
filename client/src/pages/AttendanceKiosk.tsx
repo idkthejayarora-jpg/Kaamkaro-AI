@@ -11,6 +11,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as faceapi from '@vladmandic/face-api';
+import { loadFaceModels } from '../lib/faceModels';
 import { X, Camera } from 'lucide-react';
 import { kioskAPI } from '../lib/api';
 import Select from '../components/Select';
