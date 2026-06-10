@@ -324,8 +324,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                         }}
                         className={`sidebar-link w-full ${active ? 'active' : ''}`}
                       >
-                        <Icon size={16} className="sidebar-icon flex-shrink-0 transition-all duration-200"
-                          style={active ? { filter: 'drop-shadow(0 0 6px #C9A84Ccc)' } : undefined} />
+                        <Icon size={16} className="sidebar-icon flex-shrink-0 transition-all duration-200" />
                         <span className="flex-1">{label}</span>
                         {active && <ChevronRight size={12} />}
                       </button>
@@ -400,8 +399,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                   >
                     {({ isActive }) => (
                       <>
-                        <Icon size={16} className="sidebar-icon flex-shrink-0 transition-all duration-200"
-                          style={isActive ? { filter: 'drop-shadow(0 0 6px #C9A84Ccc)' } : undefined} />
+                        <Icon size={16} className="sidebar-icon flex-shrink-0 transition-all duration-200" />
                         <span className="flex-1">{label}</span>
                         <ChevronRight size={12} className="opacity-0 group-hover:opacity-100" />
                       </>

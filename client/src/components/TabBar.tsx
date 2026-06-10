@@ -23,7 +23,7 @@ export function useTabSlider(active: string) {
     } else {
       setSliderStyle({
         left, width,
-        transition: 'left 0.22s cubic-bezier(0.4,0,0.2,1), width 0.22s cubic-bezier(0.4,0,0.2,1)',
+        transition: 'left 0.25s cubic-bezier(0.32,0.72,0,1), width 0.25s cubic-bezier(0.32,0.72,0,1)',
       });
     }
   }, [active]);
