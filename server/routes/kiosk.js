@@ -398,15 +398,6 @@ router.post('/quick-staff', async (req, res) => {
     const { name, phone } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
 
-    const staff = await readDB('staff');
-
-    // Phone uniqueness check if provided
-    if (phone?.trim()) {
-      const [users, managers] = await Promise.all([readDB('users'), readDB('attendance_managers').catch(() => [])]);
-      const taken = [...users, ...staff, ...managers].find(u => u.phone === phone.trim());
-      if (taken) return res.status(409).json({ error: 'Phone number already in use' });
-    }
-
     const autoPhone = phone?.trim() || `kiosk_${Date.now()}`;
     const hashed    = await bcrypt.hash(uuidv4(), 10); // random unguessable password
     const newStaff  = {
@@ -422,8 +413,20 @@ router.post('/quick-staff', async (req, res) => {
       kioskCreated: true,
     };
 
-    staff.push(newStaff);
-    await writeDB('staff', staff);
+    // Uniqueness check + insert serialized under the staff lock so two concurrent
+    // requests can't both pass the check and clobber each other's write.
+    const result = await withLock('staff', async () => {
+      const staff = await readDB('staff');
+      if (phone?.trim()) {
+        const [users, managers] = await Promise.all([readDB('users'), readDB('attendance_managers').catch(() => [])]);
+        const taken = [...users, ...staff, ...managers].find(u => u.phone === phone.trim());
+        if (taken) return { conflict: true };
+      }
+      staff.push(newStaff);
+      await writeDB('staff', staff);
+      return { conflict: false };
+    });
+    if (result.conflict) return res.status(409).json({ error: 'Phone number already in use' });
 
     const { password: _, ...safe } = newStaff;
     console.log(`[Kiosk] Quick staff created: ${newStaff.name}`);
