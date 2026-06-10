@@ -813,8 +813,8 @@ html.light .gradient-sep {
     radial-gradient(40% 40% at 82% 18%, rgb(var(--accent-rgb-light) / 0.10), transparent 70%),
     radial-gradient(50% 50% at 75% 85%, rgb(var(--accent-rgb)       / 0.13), transparent 72%),
     radial-gradient(35% 35% at 25% 80%, rgb(var(--accent-rgb-dark)  / 0.10), transparent 70%);
-  will-change: transform, opacity;
-  animation: kkAuroraShift 26s ease-in-out infinite alternate;
+  /* Static — the drifting animation was a constant compositing cost behind
+     every backdrop-filter surface; the gradient alone gives the ambient feel. */
 }
 @keyframes kkAuroraShift {
   0%   { transform: translate3d(0, 0, 0) scale(1);            opacity: 0.9;  }
