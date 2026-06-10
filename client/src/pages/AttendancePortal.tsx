@@ -1533,11 +1533,13 @@ function StaffTab({ canEditTimes }: { canEditTimes: boolean }) {
       )}
 
       {enrollFor && (
-        <FaceEnrollModal
-          staff={enrollFor}
-          onClose={() => setEnrollFor(null)}
-          onEnrolled={() => { load(); setEnrollFor(null); }}
-        />
+        <React.Suspense fallback={null}>
+          <FaceEnrollModal
+            staff={enrollFor}
+            onClose={() => setEnrollFor(null)}
+            onEnrolled={() => { load(); setEnrollFor(null); }}
+          />
+        </React.Suspense>
       )}
       {calendarFor && (
         <StaffAttendanceCalendar staff={calendarFor} onClose={() => setCalendarFor(null)} canFullEdit={canEditTimes} canNudge />
