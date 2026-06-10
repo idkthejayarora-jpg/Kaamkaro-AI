@@ -727,10 +727,6 @@ html.light .gradient-sep {
   /* Static gold sweep — the infinite spin burned GPU on every profile visit */
 }
 
-@keyframes kkIDCardSpin {
-  to { transform: rotate(360deg); }
-}
-
 /* Inner dark surface sitting above the glow on z:1 */
 .kk-id-card-inner {
   position: relative;
@@ -764,11 +760,6 @@ html.light .gradient-sep {
     rgba(201,168,76,0.025) 4px
   );
   pointer-events: none;
-}
-
-@keyframes kkScanMove {
-  from { transform: translateY(0); }
-  to   { transform: translateY(40px); }
 }
 
 /* Pulsing status dot on the avatar */
@@ -813,11 +804,6 @@ html.light .gradient-sep {
     radial-gradient(35% 35% at 25% 80%, rgb(var(--accent-rgb-dark)  / 0.10), transparent 70%);
   /* Static — the drifting animation was a constant compositing cost behind
      every backdrop-filter surface; the gradient alone gives the ambient feel. */
-}
-@keyframes kkAuroraShift {
-  0%   { transform: translate3d(0, 0, 0) scale(1);            opacity: 0.9;  }
-  50%  { transform: translate3d(2%, -1.5%, 0) scale(1.08);    opacity: 1;    }
-  100% { transform: translate3d(-2%, 1.5%, 0) scale(1.03);    opacity: 0.82; }
 }
 
 /* ── Faint dot-grid texture, vignette-masked at the edges ─────────────────── */

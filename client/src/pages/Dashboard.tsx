@@ -1078,7 +1078,7 @@ export default function Dashboard() {
         {/* Eyebrow */}
         <p className="text-white/40 text-[11px] uppercase tracking-[0.22em] font-bold mb-1">{today}</p>
         {/* Title */}
-        <h1 className="text-3xl font-black text-white tracking-tight leading-none">
+        <h1 className="kk-large-title text-white">
           {isAdmin ? 'Command Center' : 'My Dashboard'}
         </h1>
         <p className="text-white/30 text-sm mt-1.5">

@@ -187,7 +187,7 @@ export default function Settings() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <SettingsIcon size={18} className="text-gold" />
-          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <h1 className="kk-large-title text-white">Settings</h1>
         </div>
         <p className="text-white/40 text-sm">Manage your account, security, and appearance.</p>
       </div>
