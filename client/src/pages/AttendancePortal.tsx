@@ -2305,7 +2305,9 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 
 export default function AttendancePortal() {
   const { user, isAdmin } = useAuth();
-  const [tab, setTab] = useState<Tab>('today');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = (searchParams.get('tab') as Tab) || 'today';
+  const setTab = (t: Tab) => setSearchParams({ tab: t }, { replace: true });
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [showKiosk, setShowKiosk] = useState(false);
 
