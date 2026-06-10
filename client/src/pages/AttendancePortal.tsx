@@ -6,6 +6,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Clock, Calendar, Users, Settings, MonitorSmartphone, RefreshCw,
   CheckCircle2, AlertTriangle, XCircle, ChevronLeft, ChevronRight,
