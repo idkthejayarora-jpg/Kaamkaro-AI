@@ -2073,7 +2073,9 @@ export default function AttendancePortal() {
       {/* Kiosk overlay — rendered at document.body via portal so it covers
           the nav sidebar (which has z-50 + CSS transform stacking context) */}
       {showKiosk && createPortal(
-        <KioskView pin="__auto__" onClose={() => setShowKiosk(false)} />,
+        <React.Suspense fallback={null}>
+          <KioskView pin="__auto__" onClose={() => setShowKiosk(false)} />
+        </React.Suspense>,
         document.body
       )}
       {/* Page header */}
