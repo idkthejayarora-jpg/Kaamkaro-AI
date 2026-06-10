@@ -213,7 +213,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-svh w-64 z-50 flex flex-col
+        fixed top-0 left-0 h-svh w-60 z-50 flex flex-col
         kk-glass-nav border-r border-dark-50
         transform transition-transform duration-300 ease-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
