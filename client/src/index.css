@@ -230,8 +230,7 @@ html.light .sidebar-link:hover {
 }
 html.light .sidebar-link.active {
   color: var(--accent-dark, #8B6914) !important;
-  background: rgb(var(--accent-rgb) / 0.10) !important;
-  box-shadow: inset 3px 0 0 var(--accent-dark, #8B6914) !important;
+  background: rgb(var(--accent-rgb) / 0.12) !important;
 }
 html.light .sidebar-link.active:hover {
   background: rgb(var(--accent-rgb) / 0.14) !important;
