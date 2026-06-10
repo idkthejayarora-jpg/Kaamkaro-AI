@@ -256,12 +256,7 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
       // ── Step 2: load face-api models in background ─────────────────────────
       setModelStatus('Loading face recognition…');
       try {
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-        ]);
+        await loadFaceModels();
         if (!cancelled) modelsLoadedRef.current = true;
       } catch (err) {
         if (import.meta.env.DEV) console.error('[Kiosk] model load failed:', err);
