@@ -354,12 +354,10 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
        compositor promote on hover only, via the transform transition. */
   }
   .card:hover {
-    border-color: rgba(255,255,255,0.16);
+    border-color: rgba(255,255,255,0.14);
     box-shadow:
-      0 1px 0 rgba(255,255,255,0.14) inset,
-      0 0 0 0.5px rgba(255,255,255,0.05),
-      0 14px 44px rgba(0,0,0,0.36),
-      0 0 28px rgb(var(--accent-rgb) / 0.06);
+      0 1px 0 rgba(255,255,255,0.10) inset,
+      0 6px 18px rgba(0,0,0,0.38);
   }
   /* Only lift cards that don't contain focused inputs — prevents jarring jump on interactive cards */
   .card:not(:focus-within):hover {
