@@ -831,34 +831,13 @@ html.light .gradient-sep {
 }
 
 /* ── Light mode — soften so it never muddies white surfaces ───────────────── */
-html.light .kk-orb       { opacity: 0.32; filter: blur(72px); }
 html.light .kk-bg-aurora { opacity: 0.55; }
 html.light .kk-bg-grid   { opacity: 0.4; }
-html.light .kk-dot       { box-shadow: none; }
 
-/* ── Scroll pause — freeze ambient motion while the user scrolls ──────────────
-   backdrop-filter cards must re-sample the background every frame; if the
-   background is ALSO drifting, that doubles the compositing cost during the
-   most jank-prone moment. AnimatedBackground toggles `kk-scrolling` on <html>
-   during active scroll, so the field holds still mid-scroll then resumes. */
-html.kk-scrolling .kk-bg-aurora,
-html.kk-scrolling .kk-orb,
-html.kk-scrolling .kk-dot { animation-play-state: paused; }
-
-/* ── Mobile — drop the heaviest layers entirely ───────────────────────────────
-   Orbs are large blurred (44px+) layers that are by far the costliest element
-   behind the glass. On phones the aurora + grid alone give the ambient feel. */
+/* ── Mobile — lighter glass on small screens (cheaper backdrop sampling) ──── */
 @media (max-width: 768px) {
-  .kk-orb     { display: none; }
   .kk-bg-grid { background-size: 30px 30px; }
-  /* Lighter glass on small screens — cheaper backdrop sampling */
   .card          { backdrop-filter: blur(10px) saturate(160%); -webkit-backdrop-filter: blur(10px) saturate(160%); }
   .kk-glass-nav  { backdrop-filter: blur(14px) saturate(170%); -webkit-backdrop-filter: blur(14px) saturate(170%); }
   .kk-glass-bar  { backdrop-filter: blur(12px) saturate(170%); -webkit-backdrop-filter: blur(12px) saturate(170%); }
-}
-
-/* ── Accessibility — freeze all ambient motion ────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .kk-bg-aurora, .kk-orb { animation: none !important; }
-  .kk-dot { display: none; }
 }
