@@ -2321,11 +2321,23 @@ export default function AttendancePortal() {
   // Time-edit grant: admins edit times anytime; managers only during a granted window.
   const [grant, setGrant] = useState<{ active: boolean; expiresAt: string | null; grantedBy: string | null } | null>(null);
   const [granting, setGranting] = useState(false);
-  const loadGrant = useCallback(() => { attendanceAPI.editGrant().then(setGrant).catch(() => {}); }, []);
+  // Polling guards: skip if a request is already in flight; ignore results after unmount.
+  const grantPollRef = useRef({ inFlight: false, cancelled: false });
+  const loadGrant = useCallback(() => {
+    const g = grantPollRef.current;
+    if (g.inFlight) return;
+    g.inFlight = true;
+    attendanceAPI.editGrant()
+      .then(v => { if (!g.cancelled) setGrant(v); })
+      .catch(() => {})
+      .finally(() => { g.inFlight = false; });
+  }, []);
   useEffect(() => {
+    const g = grantPollRef.current;
+    g.cancelled = false;
     loadGrant();
     const t = setInterval(loadGrant, 60_000); // refresh so expiry reflects automatically
-    return () => clearInterval(t);
+    return () => { g.cancelled = true; clearInterval(t); };
   }, [loadGrant]);
 
   const grantActive = !!(grant?.active && grant.expiresAt && new Date(grant.expiresAt).getTime() > Date.now());
