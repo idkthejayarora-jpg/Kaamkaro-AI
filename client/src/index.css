@@ -411,23 +411,26 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
   }
 
   /* Buttons */
+  /* Primary — flat Apple-style filled button: solid accent, subtle inner
+     highlight, soft NEUTRAL elevation (no coloured glow). */
   .btn-primary {
-    @apply text-white font-semibold px-4 py-2 rounded-xl
-           active:scale-95 transition-all duration-150
+    @apply text-white font-semibold px-4 rounded-control
+           active:scale-[0.97] transition-all duration-150
            disabled:opacity-35 disabled:cursor-not-allowed;
+    height: 36px;
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%),
+      linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 60%),
       var(--accent);
     box-shadow:
-      0 1px 0 rgba(255,255,255,0.25) inset,
-      0 0 0 0.5px rgb(var(--accent-rgb) / 0.4),
-      0 6px 18px rgb(var(--accent-rgb) / 0.28);
+      0 1px 0 rgba(255,255,255,0.18) inset,
+      0 1px 3px rgba(0,0,0,0.40);
+    transition-timing-function: var(--ease-apple);
   }
   .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
     box-shadow:
-      0 1px 0 rgba(255,255,255,0.3) inset,
-      0 0 0 0.5px rgb(var(--accent-rgb) / 0.5),
-      0 8px 24px rgb(var(--accent-rgb) / 0.42);
+      0 1px 0 rgba(255,255,255,0.22) inset,
+      0 2px 6px rgba(0,0,0,0.45);
   }
   .btn-secondary {
     @apply font-medium px-4 py-2 rounded-xl
