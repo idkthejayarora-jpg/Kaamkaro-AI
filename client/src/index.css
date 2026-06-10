@@ -724,8 +724,7 @@ html.light .gradient-sep {
     rgba(201,168,76,0.60) 270deg 310deg,
     transparent 310deg 360deg
   );
-  animation: kkIDCardSpin 4s linear infinite;
-  will-change: transform;
+  /* Static gold sweep — the infinite spin burned GPU on every profile visit */
 }
 
 @keyframes kkIDCardSpin {
