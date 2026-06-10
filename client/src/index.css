@@ -764,7 +764,6 @@ html.light .gradient-sep {
     rgba(201,168,76,0.025) 4px
   );
   pointer-events: none;
-  animation: kkScanMove 10s linear infinite;
 }
 
 @keyframes kkScanMove {
