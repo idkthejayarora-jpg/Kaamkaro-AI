@@ -39,9 +39,19 @@ const adminNav = [
 ];
 
 const attendanceManagerNav = [
-  { to: '/attendance-portal', icon: CalendarClock,  label: 'Attendance' },
-  { to: '/chat',              icon: MessageSquare,  label: 'Chat' },
-  { to: '/settings',         icon: Settings,       label: 'Settings' },
+  { to: '/chat',     icon: MessageSquare, label: 'Chat' },
+  { to: '/settings', icon: Settings,      label: 'Settings' },
+];
+
+const attendanceTabs = [
+  { id: 'today',     icon: Clock,         label: 'Today' },
+  { id: 'analytics', icon: TrendingUp,    label: 'Analytics' },
+  { id: 'monthly',   icon: Calendar,      label: 'Monthly' },
+  { id: 'payroll',   icon: IndianRupee,   label: 'Payroll' },
+  { id: 'staff',     icon: Users,         label: 'Staff' },
+  { id: 'leaves',    icon: CalendarOff,   label: 'Leaves' },
+  { id: 'holidays',  icon: CalendarDays,  label: 'Holidays' },
+  { id: 'settings',  icon: Settings,      label: 'Att. Settings' },
 ];
 
 const staffNav = [
