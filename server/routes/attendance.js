@@ -496,7 +496,7 @@ router.get('/analytics', authMiddleware, attendanceManagerOrAdmin, async (req, r
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = istDateStr(d);
 
       const dayRecs = attendance.filter(r => r.date === dateStr);
       const present = dayRecs.length;
