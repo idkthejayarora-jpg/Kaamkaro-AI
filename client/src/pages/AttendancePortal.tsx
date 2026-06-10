@@ -1499,50 +1499,58 @@ function StaffAttendanceCalendar({ staff, onClose, canFullEdit = false, canNudge
     return 'bg-green-500/25 text-green-200';
   };
 
-  return createPortal(
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" onClick={onClose}>
-      <div className="bg-dark-400 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl animate-slide-up sm:animate-scale-in" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
-          <div className="flex items-center gap-2.5">
-            <Avatar name={staff.name} size={32} />
-            <div>
-              <p className="text-white font-semibold text-sm">{staff.name}</p>
-              <p className="text-white/30 text-xs">Tap a day to view / edit times</p>
+  // The AttendanceDayEditor is rendered as a SEPARATE portal (sibling, not child)
+  // so its backdrop click does not bubble up through React's tree to this calendar's
+  // onClick={onClose}, which would otherwise close both modals at once.
+  return (
+    <>
+      {createPortal(
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in" onClick={onClose}>
+          <div className="bg-dark-400 border border-dark-50 rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl animate-slide-up sm:animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-dark-50">
+              <div className="flex items-center gap-2.5">
+                <Avatar name={staff.name} size={32} />
+                <div>
+                  <p className="text-white font-semibold text-sm">{staff.name}</p>
+                  <p className="text-white/30 text-xs">Tap a day to view / edit times</p>
+                </div>
+              </div>
+              <button onClick={onClose} aria-label="Close" className="text-white/40 hover:text-white"><XCircle size={18} /></button>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <button onClick={() => shiftMonth(-1)} className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white"><ChevronLeft size={16} /></button>
+                <p className="text-white font-bold text-sm">{new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
+                <button onClick={() => shiftMonth(1)} className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white"><ChevronRight size={16} /></button>
+              </div>
+              {loading ? (
+                <div className="h-48 rounded-xl bg-dark-200 animate-pulse" />
+              ) : (
+                <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+                  {['S','M','T','W','T','F','S'].map((d, i) => <p key={i} className="text-[9px] text-white/20 text-center font-medium pb-0.5">{d}</p>)}
+                  {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
+                  {Array.from({ length: lastDay }, (_, i) => {
+                    const dateStr = `${month}-${String(i + 1).padStart(2, '0')}`;
+                    const r = byDate[dateStr];
+                    return (
+                      <button key={dateStr} onClick={() => setDay({ date: dateStr, record: r || null })}
+                        className={`aspect-square rounded-md flex items-center justify-center text-[10px] font-bold transition-all hover:ring-1 hover:ring-gold/50 active:scale-95 ${cellCls(r)}`}>
+                        {i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[10px] text-white/30">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/25 inline-block" /> Present</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500/25 inline-block" /> Late</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-dark-200 inline-block" /> No record</span>
+              </div>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-white/40 hover:text-white"><XCircle size={18} /></button>
-        </div>
-        <div className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={() => shiftMonth(-1)} className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white"><ChevronLeft size={16} /></button>
-            <p className="text-white font-bold text-sm">{new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</p>
-            <button onClick={() => shiftMonth(1)} className="p-2 rounded-xl hover:bg-dark-200 text-white/40 hover:text-white"><ChevronRight size={16} /></button>
-          </div>
-          {loading ? (
-            <div className="h-48 rounded-xl bg-dark-200 animate-pulse" />
-          ) : (
-            <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-              {['S','M','T','W','T','F','S'].map((d, i) => <p key={i} className="text-[9px] text-white/20 text-center font-medium pb-0.5">{d}</p>)}
-              {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
-              {Array.from({ length: lastDay }, (_, i) => {
-                const dateStr = `${month}-${String(i + 1).padStart(2, '0')}`;
-                const r = byDate[dateStr];
-                return (
-                  <button key={dateStr} onClick={() => setDay({ date: dateStr, record: r || null })}
-                    className={`aspect-square rounded-md flex items-center justify-center text-[10px] font-bold transition-all hover:ring-1 hover:ring-gold/50 active:scale-95 ${cellCls(r)}`}>
-                    {i + 1}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-[10px] text-white/30">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/25 inline-block" /> Present</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-500/25 inline-block" /> Late</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-dark-200 inline-block" /> No record</span>
-          </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {day && (
         <AttendanceDayEditor
@@ -1555,8 +1563,7 @@ function StaffAttendanceCalendar({ staff, onClose, canFullEdit = false, canNudge
           onSaved={() => { setDay(null); setReload(n => n + 1); }}
         />
       )}
-    </div>,
-    document.body
+    </>
   );
 }
 
