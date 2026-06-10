@@ -2111,9 +2111,9 @@ export default function AttendancePortal() {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-gold/70 text-[10px] sm:text-[11px] uppercase tracking-[0.28em] font-bold">Tap to start</p>
-            <p className="text-white font-black text-3xl sm:text-5xl leading-none mt-1.5">Log Attendance</p>
-            <p className="text-white/45 text-xs sm:text-base mt-2.5">Open the face-recognition kiosk</p>
+            <p className="kk-caption text-gold/70">Tap to start</p>
+            <p className="text-white font-bold tracking-tight text-3xl sm:text-[40px] leading-none mt-1.5">Log Attendance</p>
+            <p className="kk-footnote text-white/45 mt-2">Open the face-recognition kiosk</p>
           </div>
           <ArrowRight size={32} className="text-gold/50 group-hover:text-gold group-hover:translate-x-1.5 transition-all flex-shrink-0" />
         </div>
