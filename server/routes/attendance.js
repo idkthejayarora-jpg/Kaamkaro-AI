@@ -12,7 +12,8 @@ const { makeDayOff } = require('../utils/workdays');
 
 const router = express.Router();
 
-const todayStr = () => new Date().toISOString().split('T')[0];
+const { istToday, istDateStr } = require('../utils/dates');
+const todayStr = istToday;
 
 // Recalculate total hours from all closed sessions in a record
 function calcHours(sessions = []) {
