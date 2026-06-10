@@ -2437,45 +2437,40 @@ export default function AttendancePortal() {
         </div>
       )}
 
-      {/* Section nav on the LEFT (vertical on desktop), content on the right.
-          On mobile it falls back to a horizontal scrolling pill bar up top. */}
-      <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-5">
-        {/* Left rail */}
-        <nav className="lg:sticky lg:top-2 lg:self-start mb-3 lg:mb-0">
-          <div className="lg:hidden text-white/30 text-[10px] uppercase tracking-[0.2em] font-bold px-1 mb-1.5">Sections</div>
-          <div className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar rounded-2xl border border-dark-50 bg-dark-400/70 backdrop-blur-xl p-1.5">
-            {TABS.map(t => {
-              const Icon = t.icon;
-              const active = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 lg:w-full ${
-                    active
-                      ? 'bg-gold text-black shadow-md shadow-gold/25'
-                      : 'text-white/45 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Icon size={16} className="flex-shrink-0" />
-                  <span>{t.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* Active section content */}
-        <div className="min-w-0">
-          {tab === 'today'     && <TodayTab canEditTimes={canEditTimes} />}
-          {tab === 'analytics' && <AnalyticsTab />}
-          {tab === 'monthly'   && <MonthlyTab />}
-          {tab === 'payroll'   && <PayrollTab />}
-          {tab === 'staff'     && <StaffTab canEditTimes={canEditTimes} />}
-          {tab === 'leaves'    && <LeavesTab />}
-          {tab === 'holidays'  && <HolidaysTab />}
-          {tab === 'settings'  && <SettingsTab onOpenKiosk={() => setShowKiosk(true)} />}
+      {/* Mobile tab bar — horizontal scroll, hidden on desktop (sidebar handles it) */}
+      <nav className="lg:hidden">
+        <div className="flex gap-1 overflow-x-auto no-scrollbar rounded-2xl border border-dark-50 bg-dark-400/70 backdrop-blur-xl p-1.5">
+          {TABS.map(t => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                  active
+                    ? 'bg-gold text-black shadow-md shadow-gold/25'
+                    : 'text-white/45 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon size={15} className="flex-shrink-0" />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
+      </nav>
+
+      {/* Active section content */}
+      <div className="min-w-0">
+        {tab === 'today'     && <TodayTab canEditTimes={canEditTimes} />}
+        {tab === 'analytics' && <AnalyticsTab />}
+        {tab === 'monthly'   && <MonthlyTab />}
+        {tab === 'payroll'   && <PayrollTab />}
+        {tab === 'staff'     && <StaffTab canEditTimes={canEditTimes} />}
+        {tab === 'leaves'    && <LeavesTab />}
+        {tab === 'holidays'  && <HolidaysTab />}
+        {tab === 'settings'  && <SettingsTab onOpenKiosk={() => setShowKiosk(true)} />}
       </div>
 
       {broadcastOpen && <BroadcastModal onClose={() => setBroadcastOpen(false)} />}
