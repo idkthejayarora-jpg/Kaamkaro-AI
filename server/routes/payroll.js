@@ -81,7 +81,7 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
       `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const [yr, mo] = monthStr.split('-').map(Number);
     const lastDay  = new Date(yr, mo, 0).getDate();
-    const todayISO = now.toISOString().split('T')[0];
+    const todayISO = require('../utils/dates').istToday();
 
     const [staffList, attendance, allLeaves, configs, attendanceCfgArr, holidays] = await Promise.all([
       readDB('staff'),
