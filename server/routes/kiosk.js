@@ -15,7 +15,8 @@ const router = express.Router();
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const todayStr = () => new Date().toISOString().split('T')[0];
+const { istToday } = require('../utils/dates');
+const todayStr = istToday;
 
 async function getAttendanceConfig() {
   const config = await readDB('config').catch(() => []);
