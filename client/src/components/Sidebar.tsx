@@ -12,6 +12,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { exportAPI, staffAPI, broadcastAPI, attendanceAPI } from '../lib/api';
 import { useState, useRef, useEffect } from 'react';
 import AccountSwitcher from './AccountSwitcher';
+import SidebarClock from './SidebarClock';
 
 // ── Nav definitions ────────────────────────────────────────────────────────────
 const adminNav = [
