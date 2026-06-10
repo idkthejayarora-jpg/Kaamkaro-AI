@@ -320,6 +320,20 @@ html.light .divide-white\/20 > * + * { border-color: rgba(0,0,0,0.12) !important
 /* ── Components ───────────────────────────────────────────────────────────────*/
 @layer components {
 
+  /* ── SF-style type scale helpers ──────────────────────────────────────────
+     Use on headings/labels instead of ad-hoc text-[NNpx] font-black combos. */
+  .kk-large-title { font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em; }
+  .kk-title       { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
+  .kk-headline    { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .kk-body        { font-size: 15px; line-height: 20px; font-weight: 400; }
+  .kk-footnote    { font-size: 13px; line-height: 18px; font-weight: 400; }
+  .kk-caption     { font-size: 11px; line-height: 14px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+  .kk-nums        { font-variant-numeric: tabular-nums; }
+
+  /* iOS inset-grouped list — rows divided by hairlines inside one card */
+  .kk-group { @apply rounded-2xl overflow-hidden; background: rgb(var(--color-dark-300) / 0.7); border: 1px solid var(--hairline); }
+  .kk-group > * + * { border-top: 1px solid var(--hairline); }
+
   /* Cards — Liquid Glass: translucent frosted surface, specular edge, depth.
      Ambient background shows through via backdrop-filter for refraction. */
   .card {
