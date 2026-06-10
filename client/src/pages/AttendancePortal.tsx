@@ -2098,20 +2098,17 @@ export default function AttendancePortal() {
       {/* ── LOG ATTENDANCE — the manager's primary action, opens the face kiosk ── */}
       <button
         onClick={() => setShowKiosk(true)}
-        className="group relative w-full overflow-hidden rounded-3xl border border-gold/30 p-6 sm:p-8 text-left transition-transform active:scale-[0.99] hover:border-gold/50"
+        className="group relative w-full overflow-hidden rounded-sheet border border-gold/25 p-6 sm:p-8 text-left transition-transform active:scale-[0.99] hover:border-gold/40"
         style={{
-          background: 'linear-gradient(135deg, rgba(212,175,55,0.24), rgba(212,175,55,0.06) 45%, rgba(20,20,22,0.55))',
-          boxShadow: '0 0 55px rgba(212,175,55,0.18)',
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.16), rgba(212,175,55,0.04) 45%, rgba(20,20,22,0.55))',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
         }}
       >
-        <span className="pointer-events-none absolute inset-0 opacity-70"
-          style={{ background: 'radial-gradient(130% 130% at 100% 0%, rgba(212,175,55,0.28), transparent 55%)' }} />
         <div className="relative flex items-center gap-4 sm:gap-6">
           <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-3xl bg-gold/20 border border-gold/45 flex items-center justify-center group-hover:bg-gold/28 transition-colors">
-              <ScanFace size={42} className="text-gold" style={{ filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.7))' }} />
+            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-sheet bg-gold/15 border border-gold/35 flex items-center justify-center group-hover:bg-gold/22 transition-colors">
+              <ScanFace size={42} className="text-gold" />
             </div>
-            <span className="absolute inset-0 rounded-3xl border-2 border-gold/40 animate-ping opacity-25" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-gold/70 text-[10px] sm:text-[11px] uppercase tracking-[0.28em] font-bold">Tap to start</p>
