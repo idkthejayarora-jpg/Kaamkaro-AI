@@ -140,7 +140,7 @@ export default function StaffProfile() {
       setPerformance((p as Performance[]).sort((a, b) => a.week.localeCompare(b.week)));
       setInteractions(i as Interaction[]);
       setBadges((b as Badge[]).sort((x, y) => y.earnedAt.localeCompare(x.earnedAt)));
-    }).catch(() => {})
+    }).catch(err => console.error('[StaffProfile] failed to load profile data', err))
       .finally(() => setLoading(false));
   }, [id]);
 
