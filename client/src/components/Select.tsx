@@ -139,7 +139,7 @@ export default function Select({ value, defaultValue, onChange, children, classN
             transformOrigin: openUp ? 'bottom center' : 'top center',
             animation: closing
               ? 'selectOut 0.14s ease-in forwards'
-              : 'selectIn 0.28s ease forwards',
+              : 'selectIn 0.20s cubic-bezier(0.32,0.72,0,1) forwards',
           }}
           onMouseDown={e => e.stopPropagation()}
           onWheel={e => e.stopPropagation()}
