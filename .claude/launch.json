@@ -20,8 +20,10 @@
     },
     {
       "name": "self-tracker",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "env",
       "runtimeArgs": [
+        "PORT=3001",
+        "npm",
         "run",
         "dev",
         "--prefix",
