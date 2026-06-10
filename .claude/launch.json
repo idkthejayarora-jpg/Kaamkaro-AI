@@ -17,6 +17,17 @@
         "dev"
       ],
       "port": 5173
+    },
+    {
+      "name": "self-tracker",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/jaigopalarora/self-tracker"
+      ],
+      "port": 5173
     }
   ]
 }
