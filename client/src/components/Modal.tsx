@@ -42,7 +42,7 @@ export default function Modal({
       onClick={disableBackdropClose ? undefined : onClose}
     >
       <div
-        className={`glass-panel rounded-t-2xl sm:rounded-2xl w-full animate-slide-up sm:animate-scale-in max-h-[92vh] flex flex-col ${className}`}
+        className={`glass-panel rounded-t-sheet sm:rounded-sheet w-full animate-slide-up sm:animate-scale-in max-h-[92vh] flex flex-col ${className}`}
         onClick={e => e.stopPropagation()}
       >
         {children}
