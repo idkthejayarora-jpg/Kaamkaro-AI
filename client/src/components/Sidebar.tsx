@@ -1,11 +1,11 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Users, UserCheck, Building2,
   BookOpen, Sparkles, LogOut, Menu, X, ChevronRight,
   ClipboardList, Shield, Download, Trophy, Clock, Target,
   Sun, Moon, FileText, Webhook, Radio, MessageSquare, Filter, TrendingUp,
   GripVertical, Settings2, Settings, Package, RefreshCw, Award, Calendar,
-  ShieldOff, CalendarClock, Briefcase,
+  ShieldOff, CalendarClock, Briefcase, CalendarOff, CalendarDays, IndianRupee,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
