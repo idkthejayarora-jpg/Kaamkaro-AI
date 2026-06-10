@@ -487,6 +487,35 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto">
+          {/* Attendance tabs — shown inline for attendance_manager role */}
+          {user?.role === 'attendance_manager' && (
+            <div className="mb-3">
+              <p className="text-white/20 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2 mt-2">Attendance</p>
+              <ul className="space-y-0.5">
+                {attendanceTabs.map(({ id, icon: Icon, label }) => {
+                  const active = activeAttTab === id;
+                  return (
+                    <li key={id}>
+                      <button
+                        onClick={() => {
+                          navigate(`/attendance-portal?tab=${id}`, { replace: false });
+                          onClose();
+                        }}
+                        className={`sidebar-link w-full ${active ? 'active' : ''}`}
+                      >
+                        <Icon size={16} className="sidebar-icon flex-shrink-0 transition-all duration-200"
+                          style={active ? { filter: 'drop-shadow(0 0 6px #C9A84Ccc)' } : undefined} />
+                        <span className="flex-1">{label}</span>
+                        {active && <ChevronRight size={12} />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mx-3 my-3 border-t border-dark-50" />
+            </div>
+          )}
+
           {/* Section header + customize toggle */}
           <div className="flex items-center justify-between px-3 mb-2 mt-2">
             <p className="text-white/20 text-[10px] font-semibold uppercase tracking-widest">Menu</p>
