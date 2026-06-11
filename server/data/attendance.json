@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "id": "d90b4230-0e86-498c-9a28-66555d42aad0",
+    "staffId": "87287f17-ecef-4a8a-8bad-8db86411b5c4",
+    "staffName": "Soni (AD)",
+    "date": "2026-06-04",
+    "loginAt": "2026-06-04T02:25:00",
+    "logoutAt": "2026-06-04T15:25:00",
+    "hoursWorked": 13,
+    "sessions": [
+      {
+        "loginAt": "2026-06-04T02:25:00",
+        "logoutAt": "2026-06-04T15:25:00"
+      }
+    ],
+    "manualOverride": true,
+    "overriddenBy": "Admin",
+    "isLate": false,
+    "lateMinutes": 0
+  }
+]

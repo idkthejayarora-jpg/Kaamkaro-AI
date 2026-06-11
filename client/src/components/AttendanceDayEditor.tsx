@@ -39,6 +39,54 @@ function hm12(hm: string | null): string {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+// One row: full-edit shows a free time input; nudge-only shows a ≤10-min ← button.
+// IMPORTANT: defined at module scope (NOT inside AttendanceDayEditor). When it was
+// declared inside the component it became a new function type on every render, so
+// React unmounted/remounted the <input type="time"> on every keystroke and on every
+// parent re-render (e.g. the 60s edit-grant poll) — the field lost focus and the
+// native picker dismissed mid-entry, which read as the editor "glitching".
+function Row({ label, icon, value, orig, set, accent, backBy, canFullEdit, canNudge }: {
+  label: string; icon: React.ReactNode; value: string | null; orig: string | null;
+  set: (v: string | null) => void; accent: string; backBy: number;
+  canFullEdit: boolean; canNudge: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-2xl bg-dark-200 border border-dark-100">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: accent + '22', color: accent }}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">{label}</p>
+        {canFullEdit ? (
+          <input
+            type="time"
+            value={value || ''}
+            onChange={e => set(e.target.value || null)}
+            className="bg-transparent text-white font-black text-xl leading-tight outline-none w-full mt-0.5"
+          />
+        ) : (
+          <p className="text-white font-black text-xl leading-tight">{hm12(value)}</p>
+        )}
+        {backBy > 0 && <p className="text-amber-400/70 text-[10px] mt-0.5">−{backBy} min from {hm12(orig)}</p>}
+      </div>
+      {/* Nudge-only: ≤10-min earlier on an existing time (no grant needed) */}
+      {!canFullEdit && canNudge && orig != null && (
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <button
+            onClick={() => set(minsToHM(hmToMins(value || orig) - 1))}
+            disabled={backBy >= BUFFER_MINS}
+            className="w-9 h-9 rounded-xl bg-dark-100 hover:bg-white/10 text-white/70 flex items-center justify-center transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+            title={backBy >= BUFFER_MINS ? 'Max 10-min buffer' : 'Move 1 min earlier'}
+          >
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-[9px] text-white/25 font-semibold">{BUFFER_MINS - backBy} left</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AttendanceDayEditor({
   staffId, date, record, canFullEdit, canNudge, onClose, onSaved,
 }: {
