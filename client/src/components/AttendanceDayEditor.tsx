@@ -148,8 +148,8 @@ export default function AttendanceDayEditor({
           </div>
         ) : (
           <>
-            <Row label="Check in"  icon={<LogIn size={16} />}  value={login}  orig={origIn}  set={setLogin}  accent="#22c55e" backBy={loginBackBy} />
-            <Row label="Check out" icon={<LogOut size={16} />} value={logout} orig={origOut} set={setLogout} accent="#3b82f6" backBy={logoutBackBy} />
+            <Row label="Check in"  icon={<LogIn size={16} />}  value={login}  orig={origIn}  set={setLogin}  accent="#22c55e" backBy={loginBackBy}  canFullEdit={canFullEdit} canNudge={canNudge} />
+            <Row label="Check out" icon={<LogOut size={16} />} value={logout} orig={origOut} set={setLogout} accent="#3b82f6" backBy={logoutBackBy} canFullEdit={canFullEdit} canNudge={canNudge} />
 
             <div className="flex items-center justify-between px-1 pt-1">
               <span className="text-white/35 text-xs">Hours worked</span>
