@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "id": "b9ef80a8-d56c-4226-8484-eabf0f152823",
+    "name": "Rakhi",
+    "color": "#ef4444",
+    "createdAt": "2026-06-11T12:30:09.116Z"
+  },
+  {
+    "id": "bf61e027-474f-428f-a69d-721e657c2563",
+    "name": "Jewellery",
+    "color": "#C9A84C",
+    "createdAt": "2026-06-11T12:30:09.116Z"
+  },
+  {
+    "id": "a53c8bb8-d62f-4c69-9acc-420f1a6ab4fa",
+    "name": "Both",
+    "color": "#10b981",
+    "createdAt": "2026-06-11T12:30:09.116Z"
+  },
+  {
+    "id": "c110165a-82b3-4492-9187-db0376354d23",
+    "name": "Seasonal",
+    "color": "#3b82f6",
+    "createdAt": "2026-06-11T12:30:09.116Z"
+  },
+  {
+    "id": "fcd3297b-2a76-4f95-992f-035f11d2178c",
+    "name": "VIP",
+    "color": "#a855f7",
+    "createdAt": "2026-06-11T12:30:09.116Z"
+  },
+  {
+    "id": "b92f0538-4f29-498c-8856-a58fa8d34356",
+    "name": "Bulk",
+    "color": "#f59e0b",
+    "createdAt": "2026-06-11T12:30:09.116Z"
+  }
+]
