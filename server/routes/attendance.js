@@ -396,6 +396,13 @@ router.get('/monthly', authMiddleware, async (req, res) => {
     const monthRecs   = attendance.filter(r => r.date >= fromDate && r.date <= toDate);
     const monthLeaves = allLeaves.filter(l => l.date >= fromDate && l.date <= toDate);
     const isDayOff    = makeDayOff(holidays); // Sundays + declared holidays (minus working overrides)
+    const today       = todayStr(); // hoisted — istToday() is an Intl call, too slow for the day loop
+
+    // Group once by staffId — avoids re-scanning every month record per staff member.
+    const recsByStaff   = new Map();
+    for (const r of monthRecs)   { const a = recsByStaff.get(r.staffId);   a ? a.push(r) : recsByStaff.set(r.staffId, [r]); }
+    const leavesByStaff = new Map();
+    for (const l of monthLeaves) { const a = leavesByStaff.get(l.staffId); a ? a.push(l) : leavesByStaff.set(l.staffId, [l]); }
 
     // Helper: compute shift duration in hours from a shiftOverride or config
     function shiftDurationHours(override) {
