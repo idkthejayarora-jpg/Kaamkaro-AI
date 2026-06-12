@@ -63,17 +63,32 @@ async function ensureDirs() {
   if (BACKUP_DIR) await fs.ensureDir(BACKUP_DIR);
 }
 
+// ── Read cache — skip disk I/O when the file hasn't changed ───────────────────
+// Keyed by file path, validated by mtime+size on every read (a cheap stat versus
+// a full read). The RAW JSON STRING is cached, not the parsed object: each caller
+// still gets its own fresh JSON.parse copy, so route code that mutates the result
+// keeps exactly the same isolation semantics as reading from disk.
+const readCache = new Map(); // filePath → { mtimeMs, size, content }
+
 async function readDB(collection) {
   const filePath = path.join(DATA_DIR, `${collection}.json`);
   try {
-    // Read directly and treat a missing file as empty — avoids the extra
-    // stat+create syscall that fs.ensureFile did on every single read.
+    const stat = await fs.stat(filePath);
+    const cached = readCache.get(filePath);
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+      return cached.content ? JSON.parse(cached.content) : [];
+    }
     const content = await fs.readFile(filePath, 'utf-8');
     if (!content.trim()) return [];
-    return JSON.parse(content);
+    const data = JSON.parse(content); // parse BEFORE caching — never cache malformed JSON
+    readCache.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, content });
+    return data;
   } catch (err) {
     if (err && err.code === 'ENOENT') return []; // file not created yet
-    return []; // malformed/locked — fail soft as before
+    // Malformed/locked — fail soft as before, but log LOUDLY: silent [] here can
+    // cascade into a route writing the empty state back and wiping the collection.
+    console.error(`[DB] readDB('${collection}') failed — returning [] (data NOT loaded):`, err.message);
+    return [];
   }
 }
 
@@ -81,7 +96,18 @@ async function writeDB(collection, data) {
   return queueWrite(collection, async () => {
     await ensureDirs();
     const filePath = path.join(DATA_DIR, `${collection}.json`);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    const json = JSON.stringify(data, null, 2);
+    // Atomic write: temp file + rename. A crash mid-write must never leave a
+    // truncated JSON file — readDB would fail-soft to [] and the next write
+    // would persist that empty state, silently wiping the collection.
+    const tmpPath = `${filePath}.tmp`;
+    await fs.writeFile(tmpPath, json, 'utf-8');
+    await fs.rename(tmpPath, filePath);
+    // Refresh the read cache so the next readDB is served from memory.
+    try {
+      const stat = await fs.stat(filePath);
+      readCache.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, content: json });
+    } catch { readCache.delete(filePath); }
     // Real-time backup to Desktop
     await backupCollection(collection, data);
   });
