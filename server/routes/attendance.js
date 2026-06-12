@@ -545,13 +545,17 @@ router.get('/analytics', authMiddleware, attendanceManagerOrAdmin, async (req, r
     const activeStaff = staff.filter(s => s.active !== false);
     const totalStaff  = activeStaff.length;
 
+    // Group records by date once — beats rescanning the full history per day.
+    const recsByDate = new Map();
+    for (const r of attendance) { const a = recsByDate.get(r.date); a ? a.push(r) : recsByDate.set(r.date, [r]); }
+
     const dailyTrend = [];
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = istDateStr(d);
 
-      const dayRecs = attendance.filter(r => r.date === dateStr);
+      const dayRecs = recsByDate.get(dateStr) || [];
       const present = dayRecs.length;
       const late    = dayRecs.filter(r => r.isLate).length;
       const absent  = Math.max(0, totalStaff - present);
