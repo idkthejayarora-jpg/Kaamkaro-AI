@@ -155,8 +155,8 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
         // Only count days up to today
         if (dateStr > todayISO) continue;
 
-        const rec   = attendance.find(r => r.staffId === s.id && r.date === dateStr);
-        const leave = allLeaves.find(l => l.staffId === s.id && l.date === dateStr);
+        const rec   = recByKey.get(`${s.id}|${dateStr}`);
+        const leave = leaveByKey.get(`${s.id}|${dateStr}`);
 
         if (rec) {
           presentDays++;
