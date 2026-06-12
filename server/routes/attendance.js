@@ -318,7 +318,8 @@ router.delete('/edit-grant', authMiddleware, adminOnly, async (req, res) => {
 router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) => {
   try {
     const today = todayStr();
-    const [staff, attendance, leaves, holidays] = await Promise.all([
+    const [cfg, staff, attendance, leaves, holidays] = await Promise.all([
+      getAttendanceConfig(),
       readDB('staff'),
       readDB('attendance'),
       readDB('leaves').catch(() => []),
@@ -327,6 +328,7 @@ router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) 
     const todayRecs   = attendance.filter(r => r.date === today);
     const todayLeaves = leaves.filter(l => l.date === today);
     const todayIsOff  = makeDayOff(holidays)(today); // Sunday / declared holiday?
+    const nowMins     = istNowMinutes();
 
     const result = staff
       .filter(s => s.active !== false)
@@ -334,6 +336,11 @@ router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) 
         const rec = todayRecs.find(r => r.staffId === s.id);
         const openSession = rec?.sessions?.find(ss => !ss.logoutAt);
         const leaveRec = todayLeaves.find(l => l.staffId === s.id);
+        // Effective shift start (override → gender → default) → check-in window.
+        const genderShift = (s.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+        const effShift = s.shiftOverride || genderShift || cfg;
+        const [sh, sm] = String(effShift.shiftStart || cfg.shiftStart || '09:30').split(':').map(Number);
+        const withinCheckinWindow = nowMins <= (sh * 60 + sm) + CHECKIN_WINDOW_MINS;
         return {
           staffId:     s.id,
           staffName:   s.name,
@@ -347,6 +354,7 @@ router.get('/today', authMiddleware, attendanceManagerOrAdmin, async (req, res) 
           hoursWorked: rec?.hoursWorked || 0,
           faceEnrolled: !!(s.faceDescriptors?.length),
           leaveToday:  leaveRec ? { type: leaveRec.type, reason: leaveRec.reason } : null,
+          withinCheckinWindow,
         };
       })
       .sort((a, b) => {
