@@ -8,7 +8,7 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
-const { readDB, writeDB, withLock } = require('./utils/db');
+const { readDB, writeDB, withLock, DATA_DIR } = require('./utils/db');
 
 const compression = require('compression');
 const app = express();
