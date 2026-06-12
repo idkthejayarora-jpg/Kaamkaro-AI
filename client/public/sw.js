@@ -50,7 +50,9 @@ self.addEventListener('fetch', event => {
   }
 
   // Everything else (HTML navigation, manifest, sw.js, icons) — network-first.
-  // Fall back to cached index.html ONLY if genuinely offline.
+  // Fall back to cached index.html if offline. Safari (and the SW spec) require
+  // respondWith to always receive a real Response — never undefined/null — so we
+  // synthesize a 503 if there is nothing in cache yet.
   event.respondWith(
     fetch(request)
       .then(response => {
@@ -59,6 +61,13 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(() => caches.match('/index.html'))
+      .catch(() =>
+        caches.match('/index.html').then(cached =>
+          cached || new Response('Offline — please try again.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain' },
+          })
+        )
+      )
   );
 });
