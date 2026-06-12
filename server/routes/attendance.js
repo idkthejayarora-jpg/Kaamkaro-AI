@@ -12,8 +12,12 @@ const { makeDayOff } = require('../utils/workdays');
 
 const router = express.Router();
 
-const { istToday, istDateStr } = require('../utils/dates');
+const { istToday, istDateStr, istNowMinutes } = require('../utils/dates');
 const todayStr = istToday;
+
+// A face scan only counts as a check-in within this many minutes of shift start
+// (mirrors kiosk.js). Past it, a first scan of the day is a missed check-in.
+const CHECKIN_WINDOW_MINS = 4 * 60; // 4 hours
 
 // Recalculate total hours from all closed sessions in a record
 function calcHours(sessions = []) {
