@@ -13,8 +13,16 @@ api.interceptors.response.use(
   res => res,
   err => {
     // 401 → force logout and redirect to login
-    // EXCEPT for kiosk routes — the kiosk overlay handles auth errors internally
-    if (err.response?.status === 401 && !err.config?.url?.includes('/kiosk/')) {
+    // EXCEPT where a 401 is an expected, in-page answer:
+    //  • kiosk routes — the kiosk overlay handles auth errors internally
+    //  • login/register — wrong credentials must show the inline error, not reload
+    //  • change-password — wrong CURRENT password must not log the user out
+    const url401 = err.config?.url || '';
+    const expected401 = url401.includes('/kiosk/')
+      || url401.includes('/auth/login')
+      || url401.includes('/auth/register')
+      || url401.includes('/auth/change-password');
+    if (err.response?.status === 401 && !expected401) {
       localStorage.removeItem('kk_token');
       localStorage.removeItem('kk_user');
       window.location.href = '/login';
