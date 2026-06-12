@@ -117,10 +117,12 @@ app.use((err, req, res, next) => {
 // Only creates the admin account if no users exist.
 // All other data starts empty — add your own staff, customers, and vendors.
 async function seed() {
-  // Ensure data dir exists
+  // Ensure data dir exists — MUST match db.js's resolution (DATA_PATH on Railway).
+  // Checking server/data here while writeDB targets the volume could make the
+  // "create empty collection" pass overwrite live volume data with [].
   const path = require('path');
   const fs   = require('fs-extra');
-  const dataDir = path.join(__dirname, 'data');
+  const dataDir = DATA_DIR;
   await fs.ensureDir(dataDir);
 
   // Create admin account if no users exist (check-then-write under the lock so
