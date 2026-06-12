@@ -1,6 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, writeDB } = require('../utils/db');
+const { istToday, istDateStr } = require('../utils/dates');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const { getCurrentWeek, updateStaffStreak } = require('../utils/streak');
 const { logAudit } = require('../utils/audit');
@@ -30,7 +31,7 @@ router.post('/kamal', async (req, res) => {
       return (now - new Date(c.lastContact).getTime()) > 7 * 86400000;
     });
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = istToday();
     const dueTasks = tasks.filter(t => !t.completed && t.dueDate <= todayStr);
 
     const currentUserStaff = staff.find(s => s.id === req.user.id);
@@ -213,7 +214,7 @@ CUSTOMER ID LOOKUP: ${customerIdMap}${customers.length > 60 ? ` ...+${customers.
             customerName: actionPayload.customerName || null,
             title: actionPayload.title,
             notes: '[Created by Kamal AI]',
-            dueDate: actionPayload.dueDate || new Date().toISOString().split('T')[0],
+            dueDate: actionPayload.dueDate || istToday(),
             completed: false,
             completedAt: null,
             createdAt: new Date().toISOString(),
@@ -254,7 +255,7 @@ router.get('/recommendations', async (req, res) => {
     ]);
 
     const client = getClient();
-    const today = new Date().toISOString().split('T')[0];
+    const today = istToday();
 
     // ── Build full per-staff context from ALL data ──────────────────────────────
     const staffMetrics = staff.map(s => {
@@ -471,7 +472,7 @@ router.get('/dashboard-summary', async (req, res) => {
       if (!c.lastContact || ['closed','churned'].includes(c.status)) return false;
       return (Date.now() - new Date(c.lastContact).getTime()) > 7 * 86400000;
     });
-    const dueTasks = tasks.filter(t => !t.completed && t.dueDate <= new Date().toISOString().split('T')[0]);
+    const dueTasks = tasks.filter(t => !t.completed && t.dueDate <= istToday());
 
     // Pipeline deal value
     const pipelineValue = customers.reduce((sum, c) => sum + (c.dealValue || 0), 0);
@@ -505,8 +506,8 @@ router.get('/weekly-report', async (req, res) => {
       readDB('leads').catch(() => []),
     ]);
 
-    const today   = new Date().toISOString().split('T')[0];
-    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const today   = istToday();
+    const weekAgo = istDateStr(new Date(Date.now() - 7 * 86400000));
 
     // Build per-staff complete summary — ALL history + recent spotlight
     const staffSummary = staff.map(s => {
@@ -588,8 +589,8 @@ Respond with ONLY the report text — no JSON, no markdown.`;
     // Billing / no credits → use rule-based report instead of erroring
     if (isBillingErr(err)) {
       console.warn('[AI] weekly-report: billing failed, using rule-based fallback');
-      const today = new Date().toISOString().split('T')[0];
-      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+      const today = istToday();
+      const weekAgo = istDateStr(new Date(Date.now() - 7 * 86400000));
       const [staff2, interactions2, customers2, tasks2, diary2, leads2] = await Promise.all([
         readDB('staff'), readDB('interactions').catch(() => []),
         readDB('customers').catch(() => []), readDB('tasks').catch(() => []),
@@ -1152,7 +1153,7 @@ router.get('/sales-insights', async (req, res) => {
       });
 
     // ── Outreach tips: leads in warm/hot pipeline stages ─────────────────────
-    const today = new Date().toISOString().split('T')[0];
+    const today = istToday();
     const HOT_STAGES  = new Set(['visit_scheduled', 'negotiating']);
     const WARM_STAGES = new Set(['interested', 'catalogue_seen', 'follow_up']);
     const STAGE_LABELS = {

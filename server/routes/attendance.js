@@ -245,19 +245,23 @@ router.patch('/config', authMiddleware, attendanceManagerOrAdmin, async (req, re
   try {
     const updates = sanitizeConfigUpdates(req.body || {});
     if (updates === null) return res.status(400).json({ error: 'Invalid config values' });
-    const configs = await readDB('config');
-    const rec = configs.find(c => c.key === 'attendance');
-    if (rec) {
-      rec.value = { ...rec.value, ...updates };
-      await writeDB('config', configs);
-      res.json(rec.value);
-    } else {
+    // Locked: config holds other keys too — two concurrent PATCHes (or a PATCH racing
+    // another config write) must not clobber each other's read state.
+    const value = await withLock('config', async () => {
+      const configs = await readDB('config');
+      const rec = configs.find(c => c.key === 'attendance');
+      if (rec) {
+        rec.value = { ...rec.value, ...updates };
+        await writeDB('config', configs);
+        return rec.value;
+      }
       // Create it
       const newRec = { id: 'attendance-config', key: 'attendance', value: { shiftStart: '09:30', shiftEnd: '18:30', lateGraceMins: 15, expectedHours: 9, kioskPin: '1234', ...updates } };
       configs.push(newRec);
       await writeDB('config', configs);
-      res.json(newRec.value);
-    }
+      return newRec.value;
+    });
+    res.json(value);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

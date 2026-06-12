@@ -20,6 +20,7 @@
  */
 
 const express = require('express');
+const { istDateStr } = require('../utils/dates');
 const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne } = require('../utils/db');
 const { updateStaffStreak } = require('../utils/streak');
@@ -79,7 +80,7 @@ function parseMessage(text) {
       const now = new Date();
       if (targetDay === 'tomorrow') {
         now.setDate(now.getDate() + 1);
-        followUpDate = now.toISOString().split('T')[0];
+        followUpDate = istDateStr(now);
       } else {
         const days = { monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6, sunday:0 };
         if (targetDay in days) {
@@ -87,10 +88,10 @@ function parseMessage(text) {
           const curr   = now.getDay();
           const diff   = (target - curr + 7) % 7 || 7;
           now.setDate(now.getDate() + diff);
-          followUpDate = now.toISOString().split('T')[0];
+          followUpDate = istDateStr(now);
         } else if (targetDay === 'next week') {
           now.setDate(now.getDate() + 7);
-          followUpDate = now.toISOString().split('T')[0];
+          followUpDate = istDateStr(now);
         }
       }
     }

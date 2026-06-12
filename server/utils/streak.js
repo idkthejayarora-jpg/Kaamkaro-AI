@@ -10,7 +10,7 @@ function getCurrentWeek() {
 }
 
 function toDateStr(date = new Date()) {
-  return new Date(date).toISOString().split('T')[0];
+  return require('./dates').istDateStr(new Date(date));
 }
 
 /**

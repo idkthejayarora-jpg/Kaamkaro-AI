@@ -136,7 +136,7 @@ router.patch('/:id/complete', async (req, res) => {
           customerName: t.customerName || null,
           title:        t.title,
           notes:        '',
-          dueDate:      nextDue.toISOString().split('T')[0],
+          dueDate:      istDateStr(nextDue),
           completed:    false,
           completedAt:  null,
           createdAt:    new Date().toISOString(),
@@ -192,7 +192,7 @@ router.patch('/:id', async (req, res) => {
     // ── Reschedule penalty: -0.5 pts ONLY when task was already overdue ──────
     // Loop tasks: never penalised (cadence adjustments are normal).
     if (updates.dueDate && updates.dueDate !== t.dueDate) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = istToday();
       const isOverdue = t.dueDate && t.dueDate < today;
       if (isOverdue && !t.isLoop) {
         const staffList   = await readDB('staff');

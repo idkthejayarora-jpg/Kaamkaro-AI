@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { readDB, insertOne, updateOne, deleteOne } = require('../utils/db');
 const { authMiddleware } = require('../middleware/auth');
 const { updateStaffStreak } = require('../utils/streak');
+const { istToday, istDateStr } = require('../utils/dates');
 const { broadcast } = require('../utils/sse');
 const { awardMerit } = require('../utils/merits');
 const { checkAndAwardBadges } = require('../utils/badgeEarner');
@@ -1073,7 +1074,7 @@ async function detectAndCreateLoopTask(staffId, staffName, customer, now) {
     if (priorEntries.length < 3) return;
 
     // Check last 21 days
-    const cutoff = new Date(Date.now() - 21 * 86400000).toISOString().split('T')[0];
+    const cutoff = istDateStr(new Date(Date.now() - 21 * 86400000));
     const dates = priorEntries
       .map(d => d.date || d.createdAt?.split('T')[0])
       .filter(d => d && d >= cutoff)
@@ -1112,7 +1113,7 @@ async function detectAndCreateLoopTask(staffId, staffName, customer, now) {
     const intervalLabel  = { daily: 'daily', every2days: 'every 2 days', weekly: 'weekly' }[loopInterval];
     const nextDue = new Date();
     nextDue.setDate(nextDue.getDate() + intervalDays);
-    const dueDate = nextDue.toISOString().split('T')[0];
+    const dueDate = istDateStr(nextDue);
 
     const task = {
       id:           uuidv4(),
@@ -1206,7 +1207,7 @@ router.post('/', async (req, res) => {
       staffId: req.user.id,
       staffName: req.user.name,
       content,
-      date: date || new Date().toISOString().split('T')[0],
+      date: date || istToday(),
       status: 'processing',
       aiEntries: [],
       translatedContent: null,
@@ -1294,7 +1295,7 @@ function skipSunday(dt) {
 function parseDueDateFromText(text) {
   const lower = text.toLowerCase();
   const d = new Date();
-  const fmt = (dt) => skipSunday(dt).toISOString().split('T')[0];
+  const fmt = (dt) => istDateStr(skipSunday(dt));
 
   // ── N-unit patterns (highest priority — most specific) ──────────────────────
   // "2 din baad/mein", "do din baad", "3 dino mein"
@@ -2003,7 +2004,7 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
             const staffList = await readDB('staff').catch(() => []);
             const staffMember = staffList.find(s => s.id === staffId);
             const resolvedName = staffMember?.name || staffName;
-            const today2 = new Date().toISOString().split('T')[0];
+            const today2 = istToday();
             const isLate = task.dueDate && task.dueDate < today2;
             if (isLate) await awardMerit(staffId, resolvedName, -1, `Late: ${task.title}`, 'overdue', task.id).catch(() => {});
             await awardMerit(staffId, resolvedName, 1, `Task completed: ${task.title}`, 'task', task.id).catch(() => {});
@@ -2142,7 +2143,7 @@ async function processDiaryEntry(entryId, rawContent, staffId, staffName) {
       const followUpDate = parseDueDateFromText(content);
       const tomorrow = (() => {
         const d = new Date(); d.setDate(d.getDate() + 1);
-        return d.toISOString().split('T')[0];
+        return istDateStr(d);
       })();
 
       for (const { customer } of resolvedList) {
@@ -2581,7 +2582,7 @@ router.post('/task-voice', async (req, res) => {
 
     // ── New due date from content (for rescheduling) ──────────────────────────
     const newDueDate = parseDueDateFromText(content);
-    const tomorrow   = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
+    const tomorrow   = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return istDateStr(d); })();
 
     const updatedTasks  = [];
     const createdTasks  = [];
