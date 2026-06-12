@@ -9,4 +9,15 @@ const istToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: TZ });
 // YYYY-MM-DD in IST for an arbitrary Date
 const istDateStr = (d) => d.toLocaleDateString('sv-SE', { timeZone: TZ });
 
-module.exports = { istToday, istDateStr, TZ };
+// Minutes since midnight (0–1439) for "now" in IST. TZ-safe wall-clock value —
+// use this instead of Date.setHours() (which is server-local, i.e. UTC on Railway)
+// whenever comparing against an "HH:MM" shift time.
+const istNowMinutes = () => {
+  const hm = new Date().toLocaleTimeString('en-GB', {
+    timeZone: TZ, hour12: false, hour: '2-digit', minute: '2-digit',
+  }); // "HH:MM" (00:00–23:59)
+  const [h, m] = hm.split(':').map(Number);
+  return (h % 24) * 60 + m;
+};
+
+module.exports = { istToday, istDateStr, istNowMinutes, TZ };
