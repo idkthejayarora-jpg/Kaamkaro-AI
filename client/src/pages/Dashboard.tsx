@@ -719,8 +719,9 @@ function StaffDashboard() {
         attendanceAPI.today().catch(() => [] as { staffId: string; status: string }[]),
       ]);
       setSelfStaff(staffRec);
-      const myRec = (todayRecs as { staffId: string; status: string }[]).find(r => r.staffId === user.id);
+      const myRec = (todayRecs as { staffId: string; status: string; withinCheckinWindow?: boolean }[]).find(r => r.staffId === user.id);
       setSelfStatus((myRec?.status as 'in' | 'out' | 'absent') || 'absent');
+      setSelfWithinWindow(myRec?.withinCheckinWindow ?? true);
     } catch { /**/ }
   }, [user]);
 
