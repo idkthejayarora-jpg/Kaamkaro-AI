@@ -759,8 +759,9 @@ function StaffDashboard() {
     if (unread.length > 0) { setUnreadQueue(unread); setBcastModalIdx(0); setBcastModal(true); playNotifBeep(); }
     // Set self-checkin state — no layout shift
     setSelfStaff(staffRec as (Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][]; gender?: string; shiftOverride?: { shiftStart: string; shiftEnd: string } | null }) | null);
-    const myRec = (todayRecs as { staffId: string; status: string }[]).find(r => r.staffId === user!.id);
+    const myRec = (todayRecs as { staffId: string; status: string; withinCheckinWindow?: boolean }[]).find(r => r.staffId === user!.id);
     setSelfStatus((myRec?.status as 'in' | 'out' | 'absent') || 'absent');
+    setSelfWithinWindow(myRec?.withinCheckinWindow ?? true);
     setLoading(false);
   }, [user]);
 
