@@ -99,6 +99,20 @@ router.get('/summary', authMiddleware, attendanceManagerOrAdmin, async (req, res
 
     const activeStaff = staffList.filter(s => s.active !== false);
 
+    // Index this month's records/leaves by "staffId|date" once. The day loop below
+    // runs staff × days times — a .find() over the FULL attendance history there
+    // was the hottest loop on the server.
+    const monthFrom = `${monthStr}-01`;
+    const monthTo   = `${monthStr}-${String(lastDay).padStart(2, '0')}`;
+    const recByKey   = new Map();
+    for (const r of attendance) {
+      if (r.date >= monthFrom && r.date <= monthTo) recByKey.set(`${r.staffId}|${r.date}`, r);
+    }
+    const leaveByKey = new Map();
+    for (const l of allLeaves) {
+      if (l.date >= monthFrom && l.date <= monthTo) leaveByKey.set(`${l.staffId}|${l.date}`, l);
+    }
+
     // Working days in the month = all days minus Sundays + declared holidays.
     let workingDaysInMonth = 0;
     for (let d = 1; d <= lastDay; d++) {
