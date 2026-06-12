@@ -163,12 +163,17 @@ router.get('/today', async (req, res) => {
     const [staff, attendance] = await Promise.all([readDB('staff'), readDB('attendance')]);
     const today = todayStr();
     const todayRecs = attendance.filter(r => r.date === today);
+    const cfg = req.attendanceCfg;
+    const nowMins = istNowMinutes();
 
     const result = staff
       .filter(s => s.active !== false)
       .map(s => {
         const rec = todayRecs.find(r => r.staffId === s.id);
         const openSession = rec?.sessions?.find(ss => !ss.logoutAt);
+        // Is "now" still inside this staff's check-in window (≤ shiftStart + 4h)?
+        const [sh, sm] = effectiveShiftStart(s, cfg).split(':').map(Number);
+        const withinCheckinWindow = nowMins <= (sh * 60 + sm) + CHECKIN_WINDOW_MINS;
         return {
           staffId:     s.id,
           staffName:   s.name,
@@ -179,6 +184,7 @@ router.get('/today', async (req, res) => {
           isLate:      rec?.isLate || false,
           lateMinutes: rec?.lateMinutes || 0,
           hoursWorked: rec?.hoursWorked || 0,
+          withinCheckinWindow,
         };
       });
 
