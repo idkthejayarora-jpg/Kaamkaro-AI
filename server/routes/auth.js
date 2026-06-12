@@ -103,16 +103,17 @@ router.post('/login', async (req, res) => {
     const users = await readDB('users');
     let user = users.find(u => u.phone === phone);
 
+    // Check attendance_managers before staff — a manager whose phone also
+    // exists in the staff table must log in with role:attendance_manager, not staff.
+    if (!user) {
+      const managers = await readDB('attendance_managers');
+      user = managers.find(m => m.phone === phone);
+    }
+
     // Then check staff (skip soft-deleted / binned records)
     if (!user) {
       const staff = await readDB('staff');
       user = staff.find(s => s.phone === phone && !s.deleted);
-    }
-
-    // Then check attendance managers
-    if (!user) {
-      const managers = await readDB('attendance_managers');
-      user = managers.find(m => m.phone === phone);
     }
 
     if (!user) {
