@@ -466,7 +466,7 @@ router.get('/monthly', authMiddleware, async (req, res) => {
             dailyMap[dd] = 'holiday';
           } else {
             // Only mark absent for past/today, not future
-            if (dateStr <= todayStr()) {
+            if (dateStr <= today) {
               dailyMap[dd]   = 'absent';
               expectedTotal += staffExpected;
             }
