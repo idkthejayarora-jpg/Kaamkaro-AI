@@ -8,15 +8,25 @@ import { attendanceAPI } from '../lib/api';
 export function SelfScanModal({
   faceDescriptors,
   currentStatus,
+  withinCheckinWindow = true,
   onClose,
   onDone,
 }: {
   faceDescriptors: number[][];
   currentStatus: 'in' | 'out' | 'absent';
+  // Server flag: is "now" still within the staff's check-in window (≤ shiftStart + 4h)?
+  withinCheckinWindow?: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
-  const isCheckin = currentStatus !== 'in';
+  // Check-in vs check-out (mirrors the kiosk):
+  //  • open session ('in')      → check-out
+  //  • no record yet ('absent') → check-in ONLY within the morning window; a first
+  //    scan past it is a missed check-in, so treat it as a check-out (not an evening
+  //    "in-time").  ('out' = stepped out earlier → re-entry check-in.)
+  const isCheckin = currentStatus === 'in' ? false
+                  : currentStatus === 'absent' ? withinCheckinWindow
+                  : true;
   const [phase, setPhase]         = useState<'loading' | 'scanning' | 'matched' | 'processing' | 'success' | 'error'>('loading');
   const [status, setStatus]       = useState('Starting camera…');
   const [errorMsg, setError]      = useState('');
