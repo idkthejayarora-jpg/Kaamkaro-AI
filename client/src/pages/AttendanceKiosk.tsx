@@ -26,6 +26,8 @@ interface StaffDescriptor {
 interface TodayRecord {
   staffId: string; staffName: string; avatar: string;
   status: 'in' | 'out' | 'absent'; loginAt: string | null;
+  // Server flag: is "now" still within this staff's check-in window (≤ shiftStart + 4h)?
+  withinCheckinWindow?: boolean;
 }
 interface StaffBasic { id: string; name: string; avatar: string; }
 
