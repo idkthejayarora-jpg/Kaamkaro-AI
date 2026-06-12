@@ -699,6 +699,7 @@ function StaffDashboard() {
   // Self-checkin (on-tour) state
   const [selfStaff, setSelfStaff]   = useState<(Staff & { canSelfCheckin?: boolean; faceDescriptors?: number[][]; gender?: string; shiftOverride?: { shiftStart: string; shiftEnd: string } | null }) | null>(null);
   const [selfStatus, setSelfStatus] = useState<'in' | 'out' | 'absent'>('absent');
+  const [selfWithinWindow, setSelfWithinWindow] = useState(true);
   const [showSelfScan, setShowSelfScan]     = useState(false);
   const [showSelfEnroll, setShowSelfEnroll] = useState(false);
   const [showLeave, setShowLeave]           = useState(false);
