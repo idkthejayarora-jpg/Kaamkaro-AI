@@ -15,8 +15,22 @@ const router = express.Router();
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const { istToday } = require('../utils/dates');
+const { istToday, istNowMinutes } = require('../utils/dates');
 const todayStr = istToday;
+
+// A face scan only counts as a CHECK-IN when it lands within this many minutes
+// of the staff member's shift start. Past the window, a first scan of the day is
+// treated as a check-out attempt — so a missed morning check-in can't be recorded
+// as an evening "in-time".
+const CHECKIN_WINDOW_MINS = 4 * 60; // 4 hours
+
+// Effective shift start ("HH:MM") for a staff member:
+// personal shiftOverride → gender-based shift → default config.
+function effectiveShiftStart(member, cfg) {
+  const genderShift = (member.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
+  const shift = member.shiftOverride || genderShift || cfg;
+  return shift.shiftStart || cfg.shiftStart || '00:00';
+}
 
 async function getAttendanceConfig() {
   const config = await readDB('config').catch(() => []);
