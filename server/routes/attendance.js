@@ -415,8 +415,8 @@ router.get('/monthly', authMiddleware, async (req, res) => {
     const result = staff
       .filter(s => s.active !== false)
       .map(s => {
-        const recs   = monthRecs.filter(r => r.staffId === s.id);
-        const leaves = monthLeaves.filter(l => l.staffId === s.id);
+        const recs   = recsByStaff.get(s.id)   || [];
+        const leaves = leavesByStaff.get(s.id) || [];
 
         // Per-staff effective expected hours — priority: shiftOverride → gender shift → default
         const genderShift = (s.gender === 'female' && cfg.womenShift) ? cfg.womenShift : null;
