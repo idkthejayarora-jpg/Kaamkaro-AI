@@ -88,8 +88,22 @@ const distDir   = path.join(__dirname, '../client/dist');
 const indexHtml = path.join(distDir, 'index.html');
 const fs = require('fs');
 if (fs.existsSync(indexHtml)) {
-  app.use(express.static(distDir));
-  app.get('*', (req, res) => res.sendFile(indexHtml));
+  app.use(express.static(distDir, {
+    setHeaders: (res, filePath) => {
+      if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        // Vite content-hashes everything in /assets — safe to cache forever.
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else {
+        // index.html, sw.js, manifest, icons — always revalidate. A cached stale
+        // index.html would reference asset hashes deleted by the next deploy.
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  }));
+  app.get('*', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(indexHtml);
+  });
 }
 
 // ── Express error middleware — must be AFTER all routes ───────────────────────
