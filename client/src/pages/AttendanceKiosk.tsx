@@ -385,7 +385,17 @@ export function KioskView({ pin, onClose }: { pin: string; onClose?: () => void 
         if (!matchedStaff) return;
         if ((cooldownRef.current[matchedStaff.id] || 0) > Date.now()) return;
         const todayRec = today.find(r => r.staffId === matchedStaff.id);
-        triggerMatch(matchedStaff, !todayRec || todayRec.status !== 'in');
+        // Decide check-in vs check-out:
+        //  • open session ('in')          → check-out (leaving / stepping out)
+        //  • prior closed session ('out') → check-in  (re-entry after stepping out)
+        //  • no record yet ('absent')     → check-in ONLY within the morning window
+        //    (≤ shiftStart + 4h). A first scan past the window is a missed check-in,
+        //    so treat it as a check-out — it must not be logged as an evening "in-time".
+        let isCheckin: boolean;
+        if (todayRec?.status === 'in')        isCheckin = false;
+        else if (todayRec?.status === 'out')  isCheckin = true;
+        else                                  isCheckin = todayRec?.withinCheckinWindow ?? true;
+        triggerMatch(matchedStaff, isCheckin);
         // Auto-learn: if this confident scan is a NEW-ish angle (not a near-dup of
         // an existing sample), silently append it so the profile keeps improving.
         // best.dist is the min distance to this staff's existing samples:
